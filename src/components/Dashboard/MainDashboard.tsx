@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   FiMapPin,
   FiCalendar,
-  FiDollarSign,
   FiBook,
   FiCreditCard,
   FiChevronRight,
@@ -17,6 +16,10 @@ import { DropdownOption } from "@/types/HeroSectionTypes";
 import Dropdown from "../utils/DropdownCustom";
 import DataTable, { TableColumn } from "../utils/TableComponent";
 import { FaMoneyBill } from "react-icons/fa";
+import { VehicleSearchService } from "@/controllers/booking/vechicle";
+import { useLocationSearch } from "@/hooks/useLocationSearch";
+import LocationDropdown from "../utils/LocationDropdown";
+import { bookingOptionsData } from "@/context/Constarain";
 
 interface BookingHistoryItem {
   id: number;
@@ -69,27 +72,38 @@ const StatCard: React.FC<StatCardProps> = ({
 export default function Dashboard(): React.ReactElement {
   const router = useRouter();
   const [bookingType, setBookingType] = useState<string>("12-hours");
-  const [fromDate, setFromDate] = useState<Date>(new Date(2025, 9, 17));
-  const [untilDate, setUntilDate] = useState<Date>(new Date(2025, 9, 17));
+  const [fromDate, setFromDate] = useState<Date>(new Date());
+  const [untilDate, setUntilDate] = useState<Date>(new Date());
   const [category, setCategory] = useState<string>("suv-electric");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [location, setLocation] = useState<string>("");
 
-  const bookingOptions: DropdownOption[] = [
-    { value: "1-hour", label: "1 Hour" },
-    { value: "3-hours", label: "3 Hours" },
-    { value: "6-hours", label: "6 Hours" },
-    { value: "12-hours", label: "12 Hours" },
-    { value: "24-hours", label: "24 Hours" },
-    { value: "airport", label: "Airport Transfers" },
-  ];
+  // Location state
+  const [searchValue, setSearchValue] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState<{
+    name: string;
+    lat: number | null;
+    lng: number | null;
+  } | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [categoryOptions, setcategoryOptions] = useState([]);
 
-  const categoryOptions: DropdownOption[] = [
-    { value: "suv-electric", label: "SUV (Electric)" },
-    { value: "sedan-electric", label: "Sedan (Electric)" },
-    { value: "bus", label: "Bus" },
-    { value: "track", label: "Track" },
-  ];
+  const locationDropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    showLocationDropdown,
+    setShowLocationDropdown,
+    locationSuggestions,
+    isLoadingPlaces,
+    searchError,
+    handleLocationSelect,
+    handleSearchInputFocus,
+    handleSearchInputChange,
+  } = useLocationSearch();
+
+  const bookingOptions = bookingOptionsData;
+
   const [bookings] = useState<BookingHistoryItem[]>([
     {
       id: 1,
@@ -184,9 +198,43 @@ export default function Dashboard(): React.ReactElement {
     { name: "Delete", icon: FiTrash2, handleAction: () => handleDelete() },
   ];
 
+  // Get vehicle types
+  const getvechileType = async () => {
+    const result = await VehicleSearchService.getVechielType();
+    const data = result[0].data;
+    const transformedOptions = data.map((item: any) => ({
+      value: item.id,
+      label: item.name.replace("_", " "),
+    }));
+
+    setcategoryOptions(transformedOptions);
+  };
+
+  useEffect(() => {
+    getvechileType();
+  }, []);
+
+  // Handle clicks outside location dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        locationDropdownRef.current &&
+        !locationDropdownRef.current.contains(event.target as Node) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target as Node)
+      ) {
+        setShowLocationDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [setShowLocationDropdown]);
+
   const handleEdit = () => {};
 
   const handleDelete = () => {};
+
   const formatDateForDisplay = (date: Date): string => {
     return date.toLocaleDateString("en-US", {
       month: "2-digit",
@@ -218,6 +266,55 @@ export default function Dashboard(): React.ReactElement {
     [router]
   );
 
+  const handleSearchInputChangeEvent = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    setSearchValue(value);
+    handleSearchInputChange(value);
+    setErrorMessage("");
+  };
+
+  const onLocationSelect = async (location: any) => {
+    const selected = await handleLocationSelect(location);
+    setSelectedLocation(selected);
+    setSearchValue(selected.name);
+  };
+
+  const handleSearch = async () => {
+    setErrorMessage("");
+    if (!searchValue.trim()) {
+      setErrorMessage("Please enter a location");
+      return;
+    }
+
+    if (!selectedLocation || !selectedLocation.lat || !selectedLocation.lng) {
+      setErrorMessage("Please select a valid location from the suggestions");
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      const searchUrl = await VehicleSearchService.buildSearchUrl(
+        {
+          name: selectedLocation.name,
+          lat: selectedLocation.lat,
+          lng: selectedLocation.lng,
+        },
+        bookingType,
+        category,
+        fromDate,
+        untilDate
+      );
+      router.push(searchUrl);
+    } catch (error) {
+      setErrorMessage("Failed to search vehicles. Please try again.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -229,7 +326,7 @@ export default function Dashboard(): React.ReactElement {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+      <div className="mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
           <StatCard
@@ -277,19 +374,28 @@ export default function Dashboard(): React.ReactElement {
                 />
               </div>
 
-              <div className="flex-1">
+              <div className="flex-1 relative">
                 <div className="flex items-center px-3 md:px-4 py-3 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
                   <FiMapPin className="w-4 h-4 text-gray-500 mr-2 md:mr-3 flex-shrink-0" />
                   <input
+                    ref={searchInputRef}
                     type="text"
-                    placeholder="Search location"
-                    value={location}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setLocation(e.target.value)
-                    }
+                    placeholder="Search by city, airport, address"
+                    value={searchValue}
+                    onChange={handleSearchInputChangeEvent}
+                    onFocus={handleSearchInputFocus}
                     className="w-full bg-transparent focus:outline-none text-sm text-gray-700 placeholder-gray-500"
                   />
                 </div>
+
+                <LocationDropdown
+                  isOpen={showLocationDropdown}
+                  suggestions={locationSuggestions}
+                  isLoading={isLoadingPlaces}
+                  error={searchError}
+                  onLocationSelect={onLocationSelect}
+                  dropdownRef={locationDropdownRef}
+                />
               </div>
             </div>
 
@@ -344,23 +450,56 @@ export default function Dashboard(): React.ReactElement {
             </div>
 
             {/* Search Button - Full width on mobile */}
-            <button className="w-full md:w-auto md:px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 transition-colors shadow-md flex items-center justify-center gap-2 font-medium">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              <span className="hidden md:inline">Search</span>
+            <button
+              onClick={handleSearch}
+              disabled={isSearching}
+              className="w-full md:w-auto md:px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 transition-colors shadow-md flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSearching ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="hidden md:inline">Searching...</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <span className="hidden md:inline">Search</span>
+                </>
+              )}
             </button>
           </div>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="font-medium text-sm">{errorMessage}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Booking Log */}

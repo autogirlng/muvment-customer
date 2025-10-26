@@ -21,6 +21,8 @@ export interface VehicleSearchParams {
   size?: number;
   minPrice?: number;
   maxPrice?: number;
+  fromDate?: string;
+  untilDate?: string;
 }
 
 export interface Vehicle {
