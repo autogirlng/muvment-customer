@@ -413,22 +413,10 @@ export default function HeroBookingSection() {
 
           {/* From Date */}
           <div className="relative flex-1 w-full md:min-w-32">
-            <button
-              onClick={() => handleDropdownToggle("from")}
-              className="w-full px-4 py-4 text-left bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center hover:border-gray-400 transition-colors"
-            >
-              <span className="text-gray-700 font-medium text-sm">
-                {formatDateForDisplay(fromDate)}
-              </span>
-              <FiCalendar className="w-4 h-4 text-gray-500" />
-            </button>
-
             <Calendar
               selectedDate={fromDate}
               onDateSelect={(date: any) => handleDateSelect(date, "from")}
               minDate={new Date()}
-              isOpen={openDropdown === "from"}
-              onClose={() => setOpenDropdown(null)}
               className="left-0"
             />
           </div>
@@ -437,22 +425,10 @@ export default function HeroBookingSection() {
 
           {/* Until Date */}
           <div className="relative flex-1 w-full md:min-w-32">
-            <button
-              onClick={() => handleDropdownToggle("until")}
-              className="w-full px-4 py-4 text-left bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center hover:border-gray-400 transition-colors"
-            >
-              <span className="text-gray-700 font-medium text-sm">
-                {formatDateForDisplay(untilDate)}
-              </span>
-              <FiCalendar className="w-4 h-4 text-gray-500" />
-            </button>
-
             <Calendar
               selectedDate={untilDate}
               onDateSelect={(date: any) => handleDateSelect(date, "until")}
               minDate={fromDate}
-              isOpen={openDropdown === "until"}
-              onClose={() => setOpenDropdown(null)}
               className="left-0"
             />
           </div>

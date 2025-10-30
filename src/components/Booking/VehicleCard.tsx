@@ -4,7 +4,9 @@ import {
   getDisplayLabel,
   getDisplayPrice,
 } from "@/app/services/vechilePriceUtiles";
-import React, { useState, useMemo } from "react";
+import { ro } from "date-fns/locale";
+import { useRouter } from "next/navigation";
+import React, { useState, useMemo, use } from "react";
 import { FiMapPin, FiUser, FiDroplet, FiHeart } from "react-icons/fi";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
 
@@ -51,7 +53,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
   }, [photos]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
+  const route = useRouter();
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (images.length > 0) {
@@ -75,7 +77,11 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
   };
 
   const handleCardClick = () => {
-    console.log(`Navigate to /vehicles/${id}`);
+    route.push(
+      `/Booking/details/${id}?vehicleType=${encodeURIComponent(
+        vehicleTypeName
+      )}&bookingType=${bookingType}`
+    );
   };
 
   const currentImage = images[currentImageIndex];

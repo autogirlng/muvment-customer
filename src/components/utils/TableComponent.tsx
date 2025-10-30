@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { TbDots } from "react-icons/tb";
-import Image from "next/image";
 
 export interface TableColumn<T> {
   key: keyof T;
@@ -25,7 +24,7 @@ interface DataTableProps<T> {
   pageSize?: number;
 }
 
-export default function DataTable<T extends { id: number }>({
+export default function DataTable<T extends { id: string | number }>({
   columns,
   data,
   height = "max-h-[400px]",
@@ -38,7 +37,7 @@ export default function DataTable<T extends { id: number }>({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
-  // Unique rows (avoid duplicates)
+  // Ensure unique rows
   const uniqueRows = useMemo(() => {
     const seen = new Set();
     return data.filter((item) => {
@@ -70,9 +69,7 @@ export default function DataTable<T extends { id: number }>({
       { threshold: 0.1 }
     );
 
-    if (sentinelRef.current) {
-      observer.observe(sentinelRef.current);
-    }
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, [displayedData, uniqueRows, pageSize]);
 
@@ -91,27 +88,30 @@ export default function DataTable<T extends { id: number }>({
   }, []);
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg shadow overflow-hidden w-full">
       {title && (
         <div className="px-4 py-3 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+          <h2 className="text-base md:text-lg font-semibold text-gray-900">
+            {title}
+          </h2>
         </div>
       )}
 
-      <div className={`${height} overflow-y-auto`}>
-        <table className="w-full border-collapse">
+      {/* Responsive container for scrolling */}
+      <div className={`overflow-x-auto ${height}`}>
+        <table className="min-w-full border-collapse">
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
             <tr>
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
-                  className="px-4 py-3 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
+                  className="px-3 md:px-4 py-2 md:py-3 text-left text-xs md:text-sm font-semibold text-gray-900 whitespace-nowrap"
                 >
                   {column.label}
                 </th>
               ))}
               {seeMoreData && (
-                <th className="py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-3 md:px-4 py-2 md:py-3 text-left text-xs md:text-sm font-semibold text-gray-900">
                   Action
                 </th>
               )}
@@ -123,18 +123,21 @@ export default function DataTable<T extends { id: number }>({
               <tr>
                 <td
                   colSpan={columns.length + (seeMoreData ? 1 : 0)}
-                  className="text-center py-6 text-gray-500"
+                  className="text-center py-6 text-gray-500 text-sm"
                 >
                   No data found
                 </td>
               </tr>
             ) : (
               displayedData.map((row, index) => (
-                <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                <tr
+                  key={row.id}
+                  className="hover:bg-gray-50 transition-colors text-xs md:text-sm"
+                >
                   {columns.map((column) => (
                     <td
                       key={String(column.key)}
-                      className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap"
+                      className="px-3 md:px-4 py-3 text-gray-700 whitespace-nowrap"
                     >
                       {column.render
                         ? column.render(row[column.key], row)
@@ -143,7 +146,7 @@ export default function DataTable<T extends { id: number }>({
                   ))}
 
                   {seeMoreData && (
-                    <td className="relative px-4 py-3">
+                    <td className="relative px-3 md:px-4 py-3 text-right">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -151,13 +154,13 @@ export default function DataTable<T extends { id: number }>({
                         }}
                         className="p-2 hover:bg-gray-100 rounded-md text-gray-700"
                       >
-                        <TbDots />
+                        <TbDots className="text-lg md:text-xl" />
                       </button>
 
                       {expandedRow === index && (
                         <div
                           ref={popupRef}
-                          className="absolute right-0 mt-2 w-40 bg-white shadow-lg border rounded-lg p-2 z-20"
+                          className="absolute right-2 mt-2 w-36 md:w-40 bg-white shadow-lg border rounded-lg p-2 z-20"
                         >
                           {seeMoreData.map((action, i) => (
                             <div
@@ -166,9 +169,9 @@ export default function DataTable<T extends { id: number }>({
                                 action.handleAction?.(row);
                                 setExpandedRow(null);
                               }}
-                              className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 rounded-md"
+                              className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-gray-100 rounded-md"
                             >
-                              <action.icon className="text-lg text-gray-600" />
+                              <action.icon className="text-base text-gray-600" />
                               <span className="text-sm text-gray-700">
                                 {action.name}
                               </span>
@@ -187,14 +190,14 @@ export default function DataTable<T extends { id: number }>({
         <div ref={sentinelRef} className="h-1" />
         {displayedData.length === uniqueRows.length &&
           displayedData.length > 0 && (
-            <div className="flex justify-center items-center py-4 text-gray-500 text-sm">
+            <div className="flex justify-center items-center py-4 text-gray-500 text-xs md:text-sm">
               End of results
             </div>
           )}
       </div>
 
       <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-        <p className="text-sm text-gray-600">
+        <p className="text-xs md:text-sm text-gray-600">
           Showing {displayedData.length} of {uniqueRows.length} records
         </p>
       </div>

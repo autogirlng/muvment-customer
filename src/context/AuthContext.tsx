@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import { AuthService } from "@/controllers/auth/auth";
 
 interface User {
   id: string;
@@ -71,21 +72,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = (
+  const login = async (
     userData: User,
     tokens: { accessToken: string; refreshToken: string }
   ) => {
-    // Set state
-    const getUser = setUser(userData);
     setAccessToken(tokens.accessToken);
     setRefreshToken(tokens.refreshToken);
 
     // Store in cookies (expires in 7 days)
-    Cookies.set("muvment_user", JSON.stringify(userData), {
-      expires: 7,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
 
     Cookies.set("muvment_access_token", tokens.accessToken, {
       expires: 7,
@@ -94,6 +88,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
 
     Cookies.set("muvment_refresh_token", tokens.refreshToken, {
+      expires: 7,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    const getUser = await AuthService.getUserInformation();
+    // console.log("Fetched user information on login:", getUser);
+    if (getUser) {
+      setUser(getUser);
+    } else {
+      setUser(userData);
+    }
+    Cookies.set("muvment_user", JSON.stringify(getUser), {
       expires: 7,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",

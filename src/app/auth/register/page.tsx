@@ -578,7 +578,7 @@ export default function SignupComponent() {
               <p className="text-sm text-gray-600">
                 Already a user?{" "}
                 <a
-                  href="/login"
+                  href="/auth/login"
                   className="text-blue-500 hover:underline font-medium"
                 >
                   Sign In

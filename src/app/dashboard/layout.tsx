@@ -16,7 +16,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
     if (!isAuthenticated || !accessToken) {
       logout();
-      router.replace("/login");
+      router.replace("/auth/login");
       return;
     }
     if (

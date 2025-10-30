@@ -91,7 +91,6 @@ export default function LoginComponent() {
         });
         toast.error(response.message);
       } else {
-        console.log(response);
         const user = response.data.data;
         const accessToken = response.data.data.accessToken;
         const refreshToken = response.data.data.refreshToken;

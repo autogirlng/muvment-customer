@@ -9,7 +9,7 @@ import { NavItem } from "./NavItem";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 
-export const Navbar = ({ showSearch = false }: { showSearch?: boolean }) => {
+export const Navbar = () => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -53,7 +53,7 @@ export const Navbar = ({ showSearch = false }: { showSearch?: boolean }) => {
 
           <div className="hidden md:flex items-center gap-6">
             <button
-              onClick={() => router.push("/host")}
+              onClick={() => router.push("/")}
               className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
             >
               Become a host
@@ -81,7 +81,9 @@ export const Navbar = ({ showSearch = false }: { showSearch?: boolean }) => {
                             {user.firstName} {user.lastName}
                           </p>
                           <button
-                            onClick={() => handleNavClick("/account")}
+                            onClick={() =>
+                              handleNavClick("/dashboard/account/profile")
+                            }
                             className="text-sm text-blue-600 hover:underline"
                           >
                             View Account

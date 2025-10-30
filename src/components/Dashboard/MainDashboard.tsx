@@ -1,38 +1,21 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import {
-  FiMapPin,
-  FiCalendar,
-  FiBook,
-  FiCreditCard,
-  FiChevronRight,
-  FiEdit,
-  FiTrash2,
-} from "react-icons/fi";
+import { FiMapPin, FiBook, FiCreditCard, FiChevronRight } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import Calendar from "@/components/utils/Calender";
-import { DropdownOption } from "@/types/HeroSectionTypes";
 import Dropdown from "../utils/DropdownCustom";
-import DataTable, { TableColumn } from "../utils/TableComponent";
-import { FaMoneyBill } from "react-icons/fa";
+
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
 import LocationDropdown from "../utils/LocationDropdown";
 import { bookingOptionsData } from "@/context/Constarain";
-
-interface BookingHistoryItem {
-  id: number;
-  date: string;
-  car: string;
-  location: string;
-  amount: string;
-  status: "Completed" | "Cancelled";
-}
+import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
+import { BookingService } from "@/controllers/booking/bookingService";
 
 interface StatCardProps {
   title: string;
-  value: string;
+  value: number | string;
   icon: React.ReactNode;
   borderColor: string;
   bgColor: string;
@@ -87,7 +70,13 @@ export default function Dashboard(): React.ReactElement {
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [categoryOptions, setcategoryOptions] = useState([]);
-
+  const [statictis, setStatictis] = useState<{
+    bookings: number;
+    payments: number;
+  }>({
+    bookings: 0,
+    payments: 0,
+  });
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -103,100 +92,6 @@ export default function Dashboard(): React.ReactElement {
   } = useLocationSearch();
 
   const bookingOptions = bookingOptionsData;
-
-  const [bookings] = useState<BookingHistoryItem[]>([
-    {
-      id: 1,
-      date: "Oct 15, 2025",
-      car: "Tesla Model S",
-      location: "Downtown",
-      amount: "$125",
-      status: "Completed",
-    },
-    {
-      id: 2,
-      date: "Oct 12, 2025",
-      car: "BMW i7",
-      location: "Airport",
-      amount: "$95",
-      status: "Completed",
-    },
-    {
-      id: 3,
-      date: "Oct 10, 2025",
-      car: "Audi e-tron",
-      location: "Business District",
-      amount: "$150",
-      status: "Completed",
-    },
-    {
-      id: 4,
-      date: "Oct 8, 2025",
-      car: "Mercedes EQS",
-      location: "Airport",
-      amount: "$110",
-      status: "Cancelled",
-    },
-    {
-      id: 5,
-      date: "Oct 5, 2025",
-      car: "Tesla Model 3",
-      location: "City Center",
-      amount: "$85",
-      status: "Completed",
-    },
-    {
-      id: 6,
-      date: "Oct 1, 2025",
-      car: "Nissan Leaf",
-      location: "Mall Area",
-      amount: "$75",
-      status: "Completed",
-    },
-    {
-      id: 7,
-      date: "Sep 28, 2025",
-      car: "Hyundai Ioniq",
-      location: "Highway",
-      amount: "$200",
-      status: "Completed",
-    },
-    {
-      id: 8,
-      date: "Sep 25, 2025",
-      car: "Tesla Model X",
-      location: "Beach Road",
-      amount: "$140",
-      status: "Completed",
-    },
-  ]);
-
-  const tableColumns: TableColumn<BookingHistoryItem>[] = [
-    { key: "date", label: "Date" },
-    { key: "car", label: "Car" },
-    { key: "location", label: "Location" },
-    { key: "amount", label: "Amount" },
-    {
-      key: "status",
-      label: "Status",
-      render: (value) => (
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            value === "Completed"
-              ? "bg-green-100 text-green-600 border border-green-400"
-              : "bg-red-100 text-red-600 border border-red-400"
-          }`}
-        >
-          {value}
-        </span>
-      ),
-    },
-  ];
-
-  const seeMoreActions = [
-    { name: "Edit", icon: FiEdit, handleAction: () => handleEdit() },
-    { name: "Delete", icon: FiTrash2, handleAction: () => handleDelete() },
-  ];
 
   // Get vehicle types
   const getvechileType = async () => {
@@ -230,18 +125,6 @@ export default function Dashboard(): React.ReactElement {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [setShowLocationDropdown]);
-
-  const handleEdit = () => {};
-
-  const handleDelete = () => {};
-
-  const formatDateForDisplay = (date: Date): string => {
-    return date.toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-    });
-  };
 
   const handleDateSelect = (date: Date, type: "from" | "until"): void => {
     if (type === "from") {
@@ -315,6 +198,22 @@ export default function Dashboard(): React.ReactElement {
     }
   };
 
+  const handleDashboardLoad = async () => {
+    try {
+      const response = await BookingService.getDashboardCounts();
+      setStatictis({
+        bookings: response.bookings,
+        payments: response.payments,
+      });
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+    }
+  };
+
+  useEffect(() => {
+    handleDashboardLoad();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -329,29 +228,29 @@ export default function Dashboard(): React.ReactElement {
       <div className="mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-          <StatCard
+          {/* <StatCard
             title="Wallet Balance"
             value="2,450.00"
             icon={<FaMoneyBill className="w-8 h-8 text-blue-600" />}
             borderColor="border-blue-500"
             bgColor="bg-blue-100"
             onViewMore={() => handleViewMore("/wallet")}
-          />
+          /> */}
           <StatCard
             title="Total Bookings"
-            value="24"
+            value={statictis.bookings}
             icon={<FiBook className="w-8 h-8 text-green-600" />}
             borderColor="border-green-500"
             bgColor="bg-green-100"
-            onViewMore={() => handleViewMore("/bookings")}
+            onViewMore={() => handleViewMore("/dashboard/my-booking")}
           />
           <StatCard
-            title="Transactions"
-            value="18"
+            title="Payment"
+            value={statictis.payments}
             icon={<FiCreditCard className="w-8 h-8 text-purple-600" />}
             borderColor="border-purple-500"
             bgColor="bg-purple-100"
-            onViewMore={() => handleViewMore("/transactions")}
+            onViewMore={() => handleViewMore("/dashboard/payment")}
           />
         </div>
 
@@ -402,37 +301,19 @@ export default function Dashboard(): React.ReactElement {
             {/* Second Row */}
             <div className="flex flex-col md:flex-row gap-3 md:gap-4">
               <div className="relative flex-1">
-                <button
-                  onClick={() => handleDropdownToggle("from")}
-                  className="w-full px-3 md:px-4 py-3 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 transition-colors flex justify-between items-center text-sm text-gray-700 font-medium"
-                >
-                  <span>{formatDateForDisplay(fromDate)}</span>
-                  <FiCalendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                </button>
                 <Calendar
                   selectedDate={fromDate}
                   onDateSelect={(date: Date) => handleDateSelect(date, "from")}
                   minDate={new Date()}
-                  isOpen={openDropdown === "from"}
-                  onClose={() => setOpenDropdown(null)}
                   className="left-0"
                 />
               </div>
 
               <div className="relative flex-1">
-                <button
-                  onClick={() => handleDropdownToggle("until")}
-                  className="w-full px-3 md:px-4 py-3 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 transition-colors flex justify-between items-center text-sm text-gray-700 font-medium"
-                >
-                  <span>{formatDateForDisplay(untilDate)}</span>
-                  <FiCalendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                </button>
                 <Calendar
                   selectedDate={untilDate}
                   onDateSelect={(date: Date) => handleDateSelect(date, "until")}
                   minDate={fromDate}
-                  isOpen={openDropdown === "until"}
-                  onClose={() => setOpenDropdown(null)}
                   className="left-0"
                 />
               </div>
@@ -503,14 +384,7 @@ export default function Dashboard(): React.ReactElement {
         </div>
 
         {/* Booking Log */}
-        <DataTable
-          title="Booking History"
-          columns={tableColumns}
-          data={bookings}
-          seeMoreData={seeMoreActions}
-          height="max-h-[400px]"
-          pageSize={4}
-        />
+        <BookingHistoryComponent showHeader={false} limit={4} />
       </div>
     </div>
   );

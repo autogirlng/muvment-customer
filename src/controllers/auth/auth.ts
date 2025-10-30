@@ -1,4 +1,4 @@
-import { AuthController } from "../connnector/app.callers";
+import { AuthController, getSingleData } from "../connnector/app.callers";
 import Cookies from "js-cookie";
 
 // Request interfaces
@@ -83,6 +83,7 @@ const COOKIE_OPTIONS = {
 
 export class AuthService {
   private static readonly BASE_URL = "/api/v1/auth";
+  private static readonly GET_USER_INFORMATION = "/api/v1/users/me";
 
   /**
    * Safe cookie setter with error handling
@@ -362,6 +363,25 @@ export class AuthService {
     }
   }
 
+  static getUserType(): string | null {
+    const user = this.getCurrentUser();
+    return user ? user.userType : null;
+  }
+
+  static async getUserInformation(): Promise<any> {
+    try {
+      const response = await getSingleData(this.GET_USER_INFORMATION);
+      console.log({ checkeer: response?.data });
+      console.log("User information response:", response?.data[0].data);
+      if (response && response.data) {
+        return response.data[0].data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching user information:", error);
+      return null;
+    }
+  }
   /**
    * Check if user is authenticated
    */

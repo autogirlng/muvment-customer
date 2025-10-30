@@ -16,7 +16,11 @@ export const menuItems = [
   { name: "Dashboard", link: "/dashboard", icon: MdDashboard },
   { name: "Explore", link: "/Booking/search", icon: MdExplore },
   { name: "Payment", link: "/dashboard/payment", icon: MdPayment },
-  { name: "My Bookings", link: "/dashboard/bookings", icon: MdEventAvailable },
+  {
+    name: "My Bookings",
+    link: "/dashboard/my-booking",
+    icon: MdEventAvailable,
+  },
   { name: "Favorites", link: "/dashboard/favorites", icon: MdFavorite },
   {
     name: "Account",
