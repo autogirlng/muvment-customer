@@ -133,45 +133,19 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
             {/* From Date */}
             <div className="relative w-full">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "from" ? null : "from")
-                }
-                className="w-full px-4 py-4 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 flex justify-between items-center"
-              >
-                <span className="text-gray-700 font-medium text-sm">
-                  {fromDate.toLocaleDateString()}
-                </span>
-                <FiCalendar className="w-4 h-4 text-gray-500" />
-              </button>
               <Calendar
                 selectedDate={fromDate}
                 onDateSelect={setFromDate}
                 minDate={new Date()}
-                isOpen={openDropdown === "from"}
-                onClose={() => setOpenDropdown(null)}
               />
             </div>
 
             {/* Until Date */}
             <div className="relative w-full">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "until" ? null : "until")
-                }
-                className="w-full px-4 py-4 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 flex justify-between items-center"
-              >
-                <span className="text-gray-700 font-medium text-sm">
-                  {untilDate.toLocaleDateString()}
-                </span>
-                <FiCalendar className="w-4 h-4 text-gray-500" />
-              </button>
               <Calendar
                 selectedDate={untilDate}
                 onDateSelect={setUntilDate}
                 minDate={fromDate}
-                isOpen={openDropdown === "until"}
-                onClose={() => setOpenDropdown(null)}
               />
             </div>
 
@@ -293,23 +267,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             isCompact ? "md:min-w-24" : "md:min-w-32"
           }`}
         >
-          <button
-            onClick={() =>
-              setOpenDropdown(openDropdown === "from" ? null : "from")
-            }
-            className="w-full px-4 py-4 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 flex justify-between items-center"
-          >
-            <span className="text-gray-700 font-medium text-sm">
-              {fromDate.toLocaleDateString()}
-            </span>
-            <FiCalendar className="w-4 h-4 text-gray-500" />
-          </button>
           <Calendar
             selectedDate={fromDate}
             onDateSelect={setFromDate}
             minDate={new Date()}
-            isOpen={openDropdown === "from"}
-            onClose={() => setOpenDropdown(null)}
           />
         </div>
 
@@ -321,23 +282,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             isCompact ? "md:min-w-24" : "md:min-w-32"
           }`}
         >
-          <button
-            onClick={() =>
-              setOpenDropdown(openDropdown === "until" ? null : "until")
-            }
-            className="w-full px-4 py-4 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 flex justify-between items-center"
-          >
-            <span className="text-gray-700 font-medium text-sm">
-              {untilDate.toLocaleDateString()}
-            </span>
-            <FiCalendar className="w-4 h-4 text-gray-500" />
-          </button>
           <Calendar
             selectedDate={untilDate}
             onDateSelect={setUntilDate}
             minDate={fromDate}
-            isOpen={openDropdown === "until"}
-            onClose={() => setOpenDropdown(null)}
           />
         </div>
 

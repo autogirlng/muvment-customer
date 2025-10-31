@@ -119,6 +119,7 @@ export default function SignupComponent() {
     };
   };
 
+  const router = useRouter();
   INITIAL_VALUES.referralCode = ReferalCode as string;
 
   const getPhoneNumberPlaceholder = (country: string): string => {
@@ -277,7 +278,10 @@ export default function SignupComponent() {
             <div className="absolute inset-0 bg-black/50"></div>
           </div>
           <div className="absolute inset-0 flex items-start justify-start p-8">
-            <div className="text-white">
+            <div
+              className="text-white cursor-pointer"
+              onClick={() => router.push(`/`)}
+            >
               <h1 className="text-4xl font-bold mb-2">Muvment</h1>
             </div>
           </div>
