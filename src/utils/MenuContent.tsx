@@ -21,13 +21,13 @@ export const menuItems = [
     link: "/dashboard/my-booking",
     icon: MdEventAvailable,
   },
-  { name: "Favorites", link: "/dashboard/favorites", icon: MdFavorite },
+  // { name: "Favorites", link: "/dashboard/favorites", icon: MdFavorite },
   {
     name: "Account",
     link: "/dashboard/account/profile",
     icon: MdAccountCircle,
   },
-  { name: "Settings", link: "/dashboard/settings", icon: MdSettings },
+  // { name: "Settings", link: "/dashboard/settings", icon: MdSettings },
   {
     name: "Notifications",
     link: "/dashboard/notification",

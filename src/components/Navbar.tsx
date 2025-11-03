@@ -44,7 +44,7 @@ export const Navbar = () => {
             className="flex items-center gap-2 flex-shrink-0"
           >
             <Image
-              src="/Images/image.png"
+              src="/images/image.png"
               alt="Logo"
               width={120}
               height={120}

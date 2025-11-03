@@ -146,7 +146,7 @@ const ScreenLoader: React.FC = () => {
           >
             <motion.div whileHover={{ scale: 1.1 }} className="relative">
               <Image
-                src="/Images/spinner.png"
+                src="/images/spinner.png"
                 alt="Car"
                 width={140}
                 height={80}

@@ -178,7 +178,7 @@ class LoadingManager {
   `;
 
     const carImage = document.createElement("img");
-    carImage.src = "/Images/spinner.png"; // <-- replace with your actual image path
+    carImage.src = "/images/spinner.png"; // <-- replace with your actual image path
     carImage.alt = "car";
     carImage.style.cssText = `
     width: 80px;
