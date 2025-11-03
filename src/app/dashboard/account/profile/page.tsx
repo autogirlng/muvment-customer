@@ -106,9 +106,9 @@ export default function ProfilePage() {
               Profile Picture
             </label>
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-              {profile.profilePicture ? (
+              {profile.profilePictureUrl ? (
                 <img
-                  src={profile.profilePicture}
+                  src={profile.profilePictureUrl}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
