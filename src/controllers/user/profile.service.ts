@@ -12,6 +12,7 @@ export interface UserProfile {
   phoneNumber: string;
   email: string;
   profilePictureUrl?: string;
+  profilePicture?: string;
   verified: boolean;
   referralCode: string;
 }
