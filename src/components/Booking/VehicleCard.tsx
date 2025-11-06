@@ -4,30 +4,12 @@ import {
   getDisplayLabel,
   getDisplayPrice,
 } from "@/app/services/vechilePriceUtiles";
+import { VehicleCardProps } from "@/types/vehicle";
 import { ro } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import React, { useState, useMemo, use } from "react";
 import { FiMapPin, FiUser, FiDroplet, FiHeart } from "react-icons/fi";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
-
-export interface VehicleCardProps {
-  id: string;
-  name: string;
-  city: string;
-  vehicleTypeName: string;
-  allPricingOptions: {
-    bookingTypeId: string;
-    bookingTypeName: string;
-    price: number;
-    platformFeeType: string;
-  }[];
-  extraHourlyRate: number;
-  willProvideDriver: boolean;
-  willProvideFuel: boolean;
-  numberOfSeats: number;
-  photos: { cloudinaryUrl: string; isPrimary: boolean }[];
-  bookingType?: string;
-}
 
 const VehicleCard: React.FC<VehicleCardProps> = ({
   id,

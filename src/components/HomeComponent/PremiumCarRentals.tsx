@@ -1,21 +1,22 @@
-import { FaShoppingBag, FaPiggyBank, FaFlask } from "react-icons/fa";
+import React from "react";
+import { FaCar, FaTag, FaCalendarAlt } from "react-icons/fa";
 
-export default function PremiumCarRental() {
+const CarRentalFeatures: React.FC = () => {
   const features = [
     {
-      icon: FaShoppingBag,
+      icon: <FaCar className="w-6 h-6 text-blue-500" />,
       title: "Wide Selection Of Vehicles",
       description:
-        "Whether you need a compact car for city driving, a spacious SUV for a family trip, or a luxury car for a special occasion, Muvment has you covered.",
+        "Whether you need a compact car for city driving, a spacious SUV for a family trip, or a luxury car for a special occasion, Movment has you covered.",
     },
     {
-      icon: FaPiggyBank,
+      icon: <FaTag className="w-6 h-6 text-blue-500" />,
       title: "Affordable Pricing",
       description:
         "We offer competitive rates and transparent pricing, with no hidden fees. Enjoy the best value for your money.",
     },
     {
-      icon: FaFlask,
+      icon: <FaCalendarAlt className="w-6 h-6 text-blue-500" />,
       title: "Flexible Rental Periods",
       description:
         "Rent by the hour, day, week, or month. Whatever your needs, we have a rental plan that fits.",
@@ -23,43 +24,35 @@ export default function PremiumCarRental() {
   ];
 
   return (
-    <div className="min-h-screen flex item-center   bg-white px-6 py-16">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <h1 className="text-4xl md:text-5xl font-bold text-center mb-16 text-black">
+    <div className="min-h-[80vh] bg-white flex items-center justify-center p-6 ">
+      <div className="max-w-6xl w-full">
+        <h1 className="text-[1.2rem] md:text-[2rem] font-bold text-center mb-6 md:mb-12 text-gray-900">
           Delivering Premium Car Rental Experiences
         </h1>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {features.map((feature, idx) => {
-            const Icon = feature.icon;
-            return (
-              <div
-                key={idx}
-                className="bg-gray-50 rounded-2xl p-8 border border-gray-100"
-              >
-                {/* Icon Container */}
-                <div className="mb-6">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Icon className="w-8 h-8 text-blue-500" />
-                  </div>
-                </div>
-
-                {/* Title */}
-                <h3 className="text-xl font-bold text-black mb-4">
-                  {feature.title}
-                </h3>
-
-                {/* Description */}
-                <p className="text-gray-600 leading-relaxed text-sm md:text-base">
-                  {feature.description}
-                </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {features.map((feature, index) => (
+            <div
+              key={index}
+              className="border border-gray-100 rounded-lg p-8 hover:shadow-lg transition-shadow duration-300"
+            >
+              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-6">
+                {feature.icon}
               </div>
-            );
-          })}
+
+              <h2 className="text-xl font-semibold mb-4 text-gray-900">
+                {feature.title}
+              </h2>
+
+              <p className="text-gray-600 leading-relaxed">
+                {feature.description}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default CarRentalFeatures;

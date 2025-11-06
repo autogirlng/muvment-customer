@@ -1,288 +1,344 @@
-"use client";
-import React, { useState, useRef } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import React, { useState } from "react";
 import {
   FaStar,
-  FaHeart,
-  FaMapMarkerAlt,
-  FaChevronLeft,
-  FaChevronRight,
-  FaCar,
+  FaUserTie,
   FaGasPump,
+  FaHeart,
+  FaRegHeart,
   FaUsers,
-  FaCog,
+  FaChevronRight,
+  FaChevronLeft,
 } from "react-icons/fa";
+import { MdLocationOn } from "react-icons/md";
 
-export default function TopVehiclesSection() {
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+export interface TopVehicle {
+  photos: Array<{
+    isPrimary: boolean;
+    cloudinaryUrl: string;
+  }>;
+  allPricingOptions: Array<{
+    bookingTypeName: string;
+    price: number;
+  }>;
+  name: string;
+  rating?: number;
+  willProvideDriver: boolean;
+  willProvideFuel: boolean;
+  numberOfSeats: number;
+  vehicleTypeName: string;
+  city: string;
+  id: string;
+}
 
-  const topVehicles = [
-    {
-      id: "1",
-      name: "Tesla Model S Plaid",
-      type: "Electric Sedan",
-      location: "Lagos",
-      dailyPrice: 85000,
-      rating: 4.9,
-      reviews: 127,
-      image: "/images/vehicles/tesla-model-s.png",
-      features: ["Auto Pilot", "Ludicrous Mode", "Premium Sound"],
-      specs: { seats: 5, power: "Electric", transmission: "Auto" },
-    },
-    {
-      id: "2",
-      name: "Mercedes-Benz EQS",
-      type: "Luxury Electric",
-      location: "Abuja",
-      dailyPrice: 92000,
-      rating: 4.8,
-      reviews: 89,
-      image: "/images/vehicles/mercedes-eqs.png",
-      features: ["MBUX Hyperscreen", "Air Suspension", "Massage Seats"],
-      specs: { seats: 5, power: "Electric", transmission: "Auto" },
-    },
-    {
-      id: "3",
-      name: "BMW i7",
-      type: "Executive Sedan",
-      location: "Port Harcourt",
-      dailyPrice: 78000,
-      rating: 4.7,
-      reviews: 64,
-      image: "/images/vehicles/bmw-i7.png",
-      features: ["Theatre Screen", "Crystal Headlights", "Sky Lounge"],
-      specs: { seats: 5, power: "Electric", transmission: "Auto" },
-    },
-    {
-      id: "4",
-      name: "Audi e-tron GT",
-      type: "Sports Electric",
-      location: "Lagos",
-      dailyPrice: 95000,
-      rating: 4.9,
-      reviews: 42,
-      image: "/images/vehicles/audi-etron.png",
-      features: ["Quattro AWD", "Sport Seats", "Bang & Olufsen"],
-      specs: { seats: 4, power: "Electric", transmission: "Auto" },
-    },
-    {
-      id: "5",
-      name: "Porsche Taycan",
-      type: "Performance EV",
-      location: "Abuja",
-      dailyPrice: 110000,
-      rating: 4.9,
-      reviews: 56,
-      image: "/images/vehicles/porsche-taycan.png",
-      features: ["Launch Control", "Sport Chrono", "Premium Package"],
-      specs: { seats: 4, power: "Electric", transmission: "Auto" },
-    },
-  ];
+export interface TopRatingProps {
+  vehicle: TopVehicle;
+  onFavorite: () => void;
+  isFavorited: boolean;
+}
 
-  const toggleFavorite = (vehicleId: string) => {
-    setFavorites((prev) =>
-      prev.includes(vehicleId)
-        ? prev.filter((id) => id !== vehicleId)
-        : [...prev, vehicleId]
+const TopRating: React.FC<TopRatingProps> = ({
+  vehicle,
+  onFavorite,
+  isFavorited,
+}) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showTooltip, setShowTooltip] = useState<string | null>(null);
+  const router = useRouter();
+  const price = vehicle.allPricingOptions[0]?.price || 0;
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === vehicle.photos.length - 1 ? 0 : prev + 1
     );
   };
 
-  const scroll = (direction: "left" | "right") => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 400;
-      scrollContainerRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
+  const prevImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? vehicle.photos.length - 1 : prev - 1
+    );
   };
 
-  const formatPrice = (price: number) => {
-    return `₦${price.toLocaleString()}`;
+  const goToImage = (index: number) => {
+    setCurrentImageIndex(index);
+  };
+
+  // console.log(vehicle);
+
+  const handleRouteToDetails = () => {
+    router.push(`/Booking/details/${vehicle.id}`);
   };
 
   return (
-    <section className="w-full bg-gradient-to-b from-gray-50 to-white py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg mb-6">
-            <FaStar className="w-7 h-7 text-white" />
-          </div>
-          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-            Most Popular{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              Electric Rides
-            </span>
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Discover our most-booked premium electric vehicles, loved by
-            customers for their exceptional performance and luxury features
-          </p>
-        </div>
+    <div className="flex-shrink-0 w-full md:w-full lg:w-[calc(50%-12px)] bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden mb-2">
+      {" "}
+      {/* Mobile Layout - Current Design */}
+      <div className="md:hidden">
+        {/* Image Section */}
+        <div className="relative h-48 rounded-t-xl overflow-hidden">
+          <img
+            src={
+              vehicle.photos[currentImageIndex]?.cloudinaryUrl ||
+              "/placeholder.jpg"
+            }
+            alt={vehicle.name}
+            className="w-full h-full object-cover"
+          />
 
-        {/* Scroll Controls */}
-        <div className="flex justify-between items-center mb-8">
-          <h3 className="text-2xl font-bold text-gray-900">
-            Top Rated Vehicles
-          </h3>
-          <div className="flex gap-3">
-            <button
-              onClick={() => scroll("left")}
-              className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center hover:scale-105"
-            >
-              <FaChevronLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <button
-              onClick={() => scroll("right")}
-              className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center hover:scale-105"
-            >
-              <FaChevronRight className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-        </div>
+          {/* Image Navigation */}
+          {vehicle.photos.length > 1 && (
+            <>
+              <button
+                onClick={prevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
+              >
+                <FaChevronLeft className="w-3 h-3 text-gray-700" />
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
+              >
+                <FaChevronRight className="w-3 h-3 text-gray-700" />
+              </button>
 
-        {/* Vehicles Grid */}
-        <div
-          ref={scrollContainerRef}
-          className="flex gap-8 overflow-x-auto scrollbar-hide pb-8 scroll-smooth"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          {topVehicles.map((vehicle, index) => (
-            <div
-              key={vehicle.id}
-              className="flex-none w-80 lg:w-96 bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 group overflow-hidden"
-            >
-              {/* Image Section */}
-              <div className="relative h-48 overflow-hidden">
-                <Image
-                  src={vehicle.image}
-                  alt={vehicle.name}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-
-                {/* Favorite Button */}
-                <button
-                  onClick={() => toggleFavorite(vehicle.id)}
-                  className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    favorites.includes(vehicle.id)
-                      ? "bg-red-500 text-white shadow-lg"
-                      : "bg-white/90 text-gray-400 hover:bg-white hover:text-red-500"
-                  }`}
-                >
-                  <FaHeart
-                    className={`w-4 h-4 ${
-                      favorites.includes(vehicle.id) ? "fill-current" : ""
+              {/* Dots Indicator */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                {vehicle.photos.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToImage(index)}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${
+                      index === currentImageIndex
+                        ? "bg-white w-4"
+                        : "bg-white/50"
                     }`}
                   />
-                </button>
-
-                {/* Location Badge */}
-                <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-2">
-                  <FaMapMarkerAlt className="w-3 h-3 text-blue-600" />
-                  <span className="text-sm font-semibold text-gray-800">
-                    {vehicle.location}
-                  </span>
-                </div>
-
-                {/* Rating Badge */}
-                <div className="absolute bottom-4 right-4 bg-black/80 text-white rounded-full px-3 py-1 flex items-center gap-1">
-                  <FaStar className="w-3 h-3 text-yellow-400 fill-current" />
-                  <span className="text-sm font-semibold">
-                    {vehicle.rating}
-                  </span>
-                  <span className="text-xs text-gray-300">
-                    ({vehicle.reviews})
-                  </span>
-                </div>
+                ))}
               </div>
+            </>
+          )}
 
-              {/* Content Section */}
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {vehicle.name}
-                    </h3>
-                    <p className="text-gray-500 text-sm">{vehicle.type}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatPrice(vehicle.dailyPrice)}
-                    </div>
-                    <div className="text-gray-500 text-sm">per day</div>
-                  </div>
-                </div>
+          {/* Badges */}
+          <div className="absolute top-3 left-3 flex gap-2">
+            <span className="bg-gray-100 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+              {vehicle.city}
+            </span>
+            <span className="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+              <FaStar className="w-3 h-3" />
+              {vehicle.rating?.toFixed(1) || "4.5"}
+            </span>
+          </div>
 
-                {/* Features */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {vehicle.features.map((feature, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-medium"
-                    >
-                      {feature}
-                    </span>
-                  ))}
-                </div>
+          {/* Favorite Button */}
+          <button
+            onClick={onFavorite}
+            className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
+          >
+            {isFavorited ? (
+              <FaHeart className="w-4 h-4 text-red-500" />
+            ) : (
+              <FaRegHeart className="w-4 h-4 text-gray-600" />
+            )}
+          </button>
 
-                {/* Specs */}
-                <div className="flex justify-between items-center py-3 border-t border-gray-100">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <FaUsers className="w-4 h-4" />
-                    <span className="text-sm">{vehicle.specs.seats} seats</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <FaGasPump className="w-4 h-4" />
-                    <span className="text-sm">{vehicle.specs.power}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <FaCog className="w-4 h-4" />
-                    <span className="text-sm">
-                      {vehicle.specs.transmission}
-                    </span>
-                  </div>
-                </div>
-
-                {/* CTA Button */}
-                <Link
-                  href={`/vehicles/${vehicle.id}`}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group/btn"
-                >
-                  <FaCar className="w-4 h-4" />
-                  Book This Ride
-                  <FaChevronRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform duration-300" />
-                </Link>
-              </div>
-            </div>
-          ))}
+          {/* Seats Badge */}
+          <div className="absolute bottom-3 left-3">
+            <span className="bg-white text-gray-700 text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
+              <FaUsers className="w-3 h-3" />
+              {vehicle.numberOfSeats}
+            </span>
+          </div>
         </div>
 
-        {/* View All CTA */}
-        <div className="text-center mt-12">
-          <Link
-            href="/explore/top-vehicles"
-            className="inline-flex items-center gap-3 bg-white border border-gray-200 text-gray-700 font-semibold py-4 px-8 rounded-2xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 shadow-sm hover:shadow-md"
-          >
-            View All Premium Vehicles
-            <FaChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-          </Link>
+        {/* Content Section */}
+        <div className="p-4">
+          <div className="flex justify-between items-start mb-2">
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-gray-900 mb-1">
+                {vehicle.name}
+              </h3>
+              <p className="text-sm text-gray-500 mb-2">
+                NGN {price.toLocaleString()}/day
+              </p>
+              <p className="text-sm text-gray-600">{vehicle.vehicleTypeName}</p>
+            </div>
+          </div>
+
+          {/* Location & Action */}
+          <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-1 text-sm text-gray-600">
+              <MdLocationOn className="w-4 h-4 text-blue-600" />
+              <span>{vehicle.city}</span>
+            </div>
+            <button className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:gap-2 transition-all">
+              Open Front Door
+              <FaChevronRight className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </div>
+      {/* Desktop Layout - Horizontal Card as shown in design */}
+      <div className="hidden md:flex">
+        {/* Image Section - Left Side */}
+        <div className="relative w-[280px] h-[220px] flex-shrink-0">
+          <img
+            src={
+              vehicle.photos[currentImageIndex]?.cloudinaryUrl ||
+              "/placeholder.jpg"
+            }
+            alt={vehicle.name}
+            className="w-full h-full object-cover rounded-l-xl"
+          />
 
-      <style jsx>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
-    </section>
+          {/* Image Navigation */}
+          {vehicle.photos.length > 1 && (
+            <>
+              <button
+                onClick={prevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
+              >
+                <FaChevronLeft className="w-3 h-3 text-white" />
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
+              >
+                <FaChevronRight className="w-3 h-3 text-white" />
+              </button>
+
+              {/* Dots Indicator */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                {vehicle.photos.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToImage(index)}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${
+                      index === currentImageIndex
+                        ? "bg-white w-4"
+                        : "bg-white/50"
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Favorite Button - Top Right Corner */}
+          <button
+            onClick={onFavorite}
+            className="absolute top-2 right-2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors"
+          >
+            {isFavorited ? (
+              <FaHeart className="w-3.5 h-3.5 text-red-500" />
+            ) : (
+              <FaRegHeart className="w-3.5 h-3.5 text-gray-600" />
+            )}
+          </button>
+
+          {/* Seats Badge - Bottom Left */}
+          <div className="absolute bottom-2 left-2">
+            <span className="bg-white/90 text-gray-700 text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
+              <FaUsers className="w-3 h-3" />
+              {vehicle.numberOfSeats}
+            </span>
+          </div>
+
+          {/* Badges - Moved inside image container for desktop */}
+          <div className="absolute top-3 left-3 flex gap-2">
+            <span className="bg-gray-100 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+              {vehicle.city}
+            </span>
+            <span className="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+              <FaStar className="w-3 h-3" />
+              {vehicle.rating?.toFixed(1) || "4.5"}
+            </span>
+          </div>
+        </div>
+
+        {/* Content Section - Right Side */}
+        <div className="flex-1 pl-8 py-6 flex flex-col justify-between">
+          {/* Top Section */}
+          <div>
+            <h3 className="text-base font-bold text-gray-900 mb-1">
+              {vehicle.name}
+            </h3>
+            <p className="text-sm font-semibold text-gray-900 mb-2">
+              NGN {price.toLocaleString()}/day
+            </p>
+            <p className="text-xs text-gray-600">{vehicle.vehicleTypeName}</p>
+          </div>
+
+          {/* Bottom Section */}
+          <div className="flex items-center justify-between mt-3">
+            {/* Left: Location and Icons */}
+            <div className="flex items-center gap-3">
+              {/* Location with Tooltip */}
+              <div className="relative">
+                <div
+                  className="flex items-center gap-1 cursor-pointer"
+                  onMouseEnter={() => setShowTooltip("location")}
+                  onMouseLeave={() => setShowTooltip(null)}
+                >
+                  <MdLocationOn className="w-4 h-4 text-gray-600" />
+                  <span className="text-xs text-gray-700">{vehicle.city}</span>
+                </div>
+                {showTooltip === "location" && (
+                  <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-10">
+                    Vehicle location
+                  </div>
+                )}
+              </div>
+
+              {/* Driver Icon with Tooltip */}
+              {vehicle.willProvideDriver && (
+                <div className="relative">
+                  <div
+                    className="cursor-pointer"
+                    onMouseEnter={() => setShowTooltip("driver")}
+                    onMouseLeave={() => setShowTooltip(null)}
+                  >
+                    <FaUserTie className="w-4 h-4 text-gray-600" />
+                  </div>
+                  {showTooltip === "driver" && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-10">
+                      Driver provided
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Fuel Icon with Tooltip */}
+              {vehicle.willProvideFuel && (
+                <div className="relative">
+                  <div
+                    className="cursor-pointer"
+                    onMouseEnter={() => setShowTooltip("fuel")}
+                    onMouseLeave={() => setShowTooltip(null)}
+                  >
+                    <FaGasPump className="w-4 h-4 text-gray-600" />
+                  </div>
+                  {showTooltip === "fuel" && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-10">
+                      Fuel provided
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Action Button */}
+            <button
+              onClick={handleRouteToDetails}
+              className="text-blue-600 text-xs pr-4 font-medium flex items-center gap-1 hover:gap-2 transition-all"
+            >
+              Open Front Door
+              <FaChevronRight className="w-2.5 h-2.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-}
+};
+
+export default TopRating;

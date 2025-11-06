@@ -64,7 +64,6 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
   const [error, setError] = useState<string | null>(null);
   const [caseDetails, setCaseDetails] = useState<CaseDetails | null>(null);
 
-  // Initialize Google Maps Service
   useEffect(() => {
     const initGoogleMaps = async () => {
       try {
@@ -83,11 +82,9 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
       try {
         setLoading(true);
         const data = await VehicleSearchService.getVehicleById(id as string);
-        console.log("Fetched vehicle data:", data);
         setVehicle(data[0].data);
         setError(null);
       } catch (err) {
-        console.error("Error fetching vehicle:", err);
         setError("Failed to load vehicle details");
         setCaseDetails(null); // Ensure case details are null on error
       } finally {
@@ -104,7 +101,6 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
     const convertedParams = getDisplayLabel(bookingTypeParam);
     if (vehicle?.allPricingOptions && vehicle.allPricingOptions.length > 0) {
       if (bookingTypeParam) {
-        console.log("Booking type param found:", bookingTypeParam);
         const matchingOption = vehicle.allPricingOptions.find(
           (opt: any) =>
             opt.bookingTypeName === convertedParams ||
@@ -326,10 +322,7 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
         willProvideFuel: vehicle.willProvideFuel,
         extraHourlyRate: vehicle.extraHourlyRate,
       });
-
-      // Store segments
       setSegments(calculationRequest.segments);
-      // Cast result to any to satisfy the expected store setter type (BookingCalculationResponse -> CalculatedPrice)
       setCalculatedPrice(result as any);
       setCalculatedPriceSummary(result);
     } catch (error) {
@@ -345,8 +338,6 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
       alert("Please calculate booking first");
       return;
     }
-
-    // Navigate to checkout or booking confirmation page
     router.push(
       `/Booking/checkout/${id}?calculationId=${calculatedPrice.calculationId}`
     );
