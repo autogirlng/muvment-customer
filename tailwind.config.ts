@@ -8,7 +8,7 @@ const config: Config = {
         fadeIn: "fadeIn 0.15s ease-out",
       },
       fontFamily: {
-        sans: ["Inter", ...defaultTheme.fontFamily.sans],
+        sans: ["var(--font-inter)", ...defaultTheme.fontFamily.sans],
       },
     },
   },

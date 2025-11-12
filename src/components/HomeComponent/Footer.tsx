@@ -124,37 +124,46 @@ function Footer() {
     formData.email.trim() !== "" && Object.keys(errors).length === 0;
 
   return (
-    <footer className="px-2 bg-white text-black">
-      <div className="py-8 md:py-20 px-6 md:px-[60px] lg:px-[100px] 3xl:px-[143px] ">
-        <div className="w-full max-w-[1553px] mx-auto text-grey-500 space-y-8 md:space-y-20">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-10 md:gap-8 3xl:gap-10 gap-y-10">
-            <div className="md:col-span-3 lg:col-span-2 space-y-10 max-w-[471px]">
-              <Image src="/images/image.png" alt="" width={438} height={45} />
-              <p className="!font-normal text-xl 3xl:text-h6">
+    <footer className="px-4 md:px-6 lg:px-8 mb-24 bg-white text-black">
+      <div className="py-8 md:py-12 lg:py-16 px-6 md:px-10 lg:px-16 bg-[#F8F9FA] rounded-[32px] md:rounded-[48px] mx-2 md:mx-4 lg:mx-6">
+        <div className="w-full max-w-[1400px] mx-auto text-grey-500 space-y-8 md:space-y-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-10 md:gap-8 lg:gap-12 gap-y-10">
+            <div className="md:col-span-3 lg:col-span-2 space-y-6 max-w-[400px]">
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/images/image.png"
+                  alt="Muvment"
+                  width={180}
+                  height={90}
+                  className="h-auto"
+                />
+                <span className="text-grey-400 text-sm">By Autogirl</span>
+              </div>
+              <p className="!font-normal text-base md:text-lg text-grey-600">
                 Be the first to receive all the recent updates, articles, and
                 valuable materials.
               </p>
 
               <form
                 onSubmit={handleSubmit}
-                className="flex flex-col md:flex-row gap-[10px]"
+                className="flex flex-col sm:flex-row gap-3"
               >
                 <Input
                   name="email"
                   type="email"
-                  placeholder="Email Address"
+                  placeholder="Email address"
                   value={formData.email}
                   onChange={handleInputChange}
                   error={errors.email}
                   disabled={isSubmitting}
                   fluid={true}
-                  className="flex-1"
+                  className="flex-1 !rounded-full bg-white"
                 />
                 <Button
                   type="submit"
                   color="primary"
                   variant="filled"
-                  className="!rounded-[18px] !py-4 !px-[28px] h-fit"
+                  className="!rounded-full !py-3 !px-8 h-fit whitespace-nowrap"
                   loading={isSubmitting}
                   disabled={isSubmitting || !isFormValid}
                 >
@@ -164,12 +173,9 @@ function Footer() {
             </div>
 
             {footerNav.map((nav) => (
-              <div
-                className="space-y-[30px] !font-normal text-xl 3xl:text-h6"
-                key={nav.title}
-              >
-                <p className="text-grey-400">{nav.title}</p>
-                <ul className="space-y-5 list-none">
+              <div className="space-y-6 !font-normal text-base" key={nav.title}>
+                <p className="text-grey-900 font-medium">{nav.title}</p>
+                <ul className="space-y-4 list-none text-grey-600">
                   {nav.links.map((navLink) => (
                     <li key={navLink.name} className="flex gap-1">
                       {navLink.scrollTo ? (
@@ -203,23 +209,23 @@ function Footer() {
             ))}
           </div>
 
-          <div className="flex flex-col md:flex-row justify-between items-center pt-10 border-t border-grey-200">
-            <div className="w-full md:w-fit flex flex-col md:flex-row items-center gap-5 md:gap-10">
-              <div className="w-full md:w-fit flex flex-col md:flex-row md:items-center gap-5 md:gap-10 text-xl md:text-base">
+          <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-grey-300">
+            <div className="w-full md:w-fit flex flex-col md:flex-row items-center gap-5 md:gap-8">
+              <div className="w-full md:w-fit flex flex-col md:flex-row md:items-center gap-5 md:gap-8 text-sm">
                 <Link
                   href="/terms-of-service"
-                  className="font-medium hover:text-primary-500"
+                  className="font-normal text-grey-600 hover:text-primary-500"
                 >
                   Terms of Service
                 </Link>
                 <Link
                   href="/privacy-policy"
-                  className="font-medium hover:text-primary-500"
+                  className="font-normal text-grey-600 hover:text-primary-500"
                 >
                   Privacy Policy
                 </Link>
               </div>
-              <div className="w-full md:w-fit flex items-center justify-center gap-5 mt-5 md:mt-0 py-10 md:py-0 border-t border-grey-200 md:border-none">
+              <div className="w-full md:w-fit flex items-center justify-center gap-4 mt-5 md:mt-0 py-8 md:py-0 border-t border-grey-300 md:border-none text-grey-600">
                 <Link
                   href="https://www.instagram.com/autogirlng"
                   target="_blank"
@@ -257,7 +263,7 @@ function Footer() {
                 </Link>
               </div>
             </div>
-            <p className="text-sm md:text-base text-grey-400 ">
+            <p className="text-sm text-grey-500 mt-5 md:mt-0">
               © <span>{currentYear}</span> Muvment. All rights reserved.
             </p>
           </div>

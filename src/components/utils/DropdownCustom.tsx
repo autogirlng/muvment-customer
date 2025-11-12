@@ -12,6 +12,7 @@ interface DropdownProps {
   className?: string;
   isOpen?: boolean;
   onToggle?: () => void;
+  customTrigger?: React.ReactNode;
 }
 
 const Dropdown: React.FC<DropdownProps> = ({
@@ -22,6 +23,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   className = "",
   isOpen = false,
   onToggle,
+  customTrigger,
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const selectedOption = options.find((opt) => opt.value === selectedValue);
@@ -42,59 +44,53 @@ const Dropdown: React.FC<DropdownProps> = ({
 
   const handleSelect = (value: string) => {
     onSelect(value);
+    if (onToggle) onToggle();
   };
+
+  // Default trigger for the dropdown
+  const defaultTrigger = (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="w-full flex justify-between items-center focus:outline-none group"
+    >
+      <span
+        className={`text-sm ${
+          selectedValue ? "font-medium text-gray-900" : "text-gray-500"
+        }`}
+      >
+        {selectedOption?.label || placeholder}
+      </span>
+      <FiChevronDown
+        className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+          isOpen ? "rotate-180" : ""
+        } group-hover:text-gray-600`}
+      />
+    </button>
+  );
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
-      {/* Dropdown Button */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex justify-between items-center px-4 py-3 bg-white text-gray-800 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-      >
-        <span
-          className={
-            selectedValue ? "text-gray-900 font-medium" : "text-gray-500"
-          }
-        >
-          {selectedOption?.label || placeholder}
-        </span>
-        <FiChevronDown
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
+      {/* Dropdown Trigger */}
+      {customTrigger || defaultTrigger}
 
       {/* Dropdown Menu */}
       {isOpen && (
         <div
           className="
-            absolute left-0 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl
-            z-[9999] animate-fadeIn
-            overflow-hidden
-            
-            sm:w-[280px]
-            md:w-[100%]
-          "
-          style={{
-            maxHeight: "30vh",
-            bottom:
-              window.innerHeight -
-                dropdownRef.current?.getBoundingClientRect().bottom! <
-              250
-                ? "100%"
-                : "auto",
-          }}
+          absolute left-0 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg
+          z-50 animate-fadeIn overflow-hidden
+          max-h-60 overflow-y-auto
+        "
         >
-          <ul className="divide-y divide-gray-100 h-full overflow-y-auto scrollbar-hide">
+          <ul className="py-1">
             {options.map((option) => (
               <li key={option.value}>
                 <button
                   type="button"
                   onClick={() => handleSelect(option.value)}
                   disabled={option.disabled}
-                  className={`w-full text-left px-4 py-3 text-sm transition-colors duration-150 ${
+                  className={`w-full text-left px-3 py-2 text-sm transition-colors duration-150 ${
                     option.value === selectedValue
                       ? "bg-blue-50 text-blue-600 font-medium"
                       : "hover:bg-gray-50 text-gray-800"

@@ -3,6 +3,7 @@ import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { TopVehicle } from "@/types/vehicle";
 import React, { useState, useEffect, useRef } from "react";
 import { TbMedal2 } from "react-icons/tb";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import TopRating from "./TopVech";
 import { useRouter } from "next/navigation";
 
@@ -11,7 +12,7 @@ interface TopRatedVehiclesProps {
 }
 
 const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
-  cardsPerSlide = 2, // show 2 on desktop by default
+  cardsPerSlide = 2,
 }) => {
   const [vehicles, setVehicles] = useState<TopVehicle[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -25,7 +26,6 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
   const MAX_DOTS = 5;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  // Swipe references
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
@@ -71,11 +71,10 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
     }
   };
 
-  // Move next (2 at a time)
+  // Move next (1 card at a time for smooth peek effect)
   const handleNext = () => {
-    const step = visibleCards;
     const maxIndex = Math.max(vehicles.length - visibleCards, 0);
-    const newIndex = Math.min(currentIndex + step, maxIndex);
+    const newIndex = Math.min(currentIndex + 1, maxIndex);
     setCurrentIndex(newIndex);
 
     // Fetch next page when near end
@@ -84,16 +83,18 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
     }
   };
 
-  // Move previous (2 at a time)
+  // Move previous (1 card at a time)
   const handlePrev = () => {
-    const step = visibleCards;
-    setCurrentIndex(Math.max(currentIndex - step, 0));
+    setCurrentIndex(Math.max(currentIndex - 1, 0));
   };
+
+  // Check if arrows should be disabled
+  const isPrevDisabled = currentIndex === 0;
+  const isNextDisabled = currentIndex >= vehicles.length - visibleCards;
 
   // Handle dots
   const handleDotClick = (dotIndex: number) => {
     const totalVehicles = vehicles.length;
-    const slidesCount = Math.ceil(totalVehicles / visibleCards);
     const targetIndex = Math.min(
       dotIndex * visibleCards,
       totalVehicles - visibleCards
@@ -109,7 +110,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
     return Math.min(active, slidesCount - 1, MAX_DOTS - 1);
   };
 
-  // Smooth scroll logic (shows 2 full cards and small peek of 3rd)
+  // Smooth scroll logic (shows 2 full cards and peek of 3rd)
   useEffect(() => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
@@ -186,32 +187,65 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
           </button>
         </div>
 
-        {/* Carousel */}
-        <div
-          className="relative pl-12"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div
-            ref={scrollContainerRef}
-            className="flex gap-4 overflow-x-hidden scroll-smooth select-none w-full pr-20"
+        {/* Carousel with Navigation Arrows */}
+        <div className="relative">
+          {/* Left Arrow - Desktop */}
+          <button
+            onClick={handlePrev}
+            disabled={isPrevDisabled}
+            className={`hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${
+              isPrevDisabled
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-gray-50"
+            }`}
           >
-            {vehicles.map((vehicle) => (
-              <TopRating
-                key={vehicle.id}
-                vehicle={vehicle}
-                onFavorite={() => toggleFavorite(vehicle.id)}
-                isFavorited={favorites.has(vehicle.id)}
-              />
-            ))}
+            <FaChevronLeft className="w-4 h-4 text-gray-700" />
+          </button>
+
+          {/* Carousel Container */}
+          <div
+            className="relative px-4 md:px-16"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div
+              ref={scrollContainerRef}
+              className="flex gap-4 overflow-x-hidden scroll-smooth select-none w-full"
+              style={{
+                // This creates the peek effect by showing slightly more than 2 cards
+                maxWidth: "100%",
+              }}
+            >
+              {vehicles.map((vehicle) => (
+                <TopRating
+                  key={vehicle.id}
+                  vehicle={vehicle}
+                  onFavorite={() => toggleFavorite(vehicle.id)}
+                  isFavorited={favorites.has(vehicle.id)}
+                />
+              ))}
+            </div>
+
+            {loading && (
+              <div className="text-center py-4">
+                <div className="inline-block w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
           </div>
 
-          {loading && (
-            <div className="text-center py-4">
-              <div className="inline-block w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
+          {/* Right Arrow - Desktop */}
+          <button
+            onClick={handleNext}
+            disabled={isNextDisabled}
+            className={`hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${
+              isNextDisabled
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-gray-50"
+            }`}
+          >
+            <FaChevronRight className="w-4 h-4 text-gray-700" />
+          </button>
         </div>
 
         {/* Dots */}

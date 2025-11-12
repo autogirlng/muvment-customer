@@ -1,232 +1,226 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  isSameMonth,
-  isSameDay,
-  isToday,
-  addMonths,
-  subMonths,
-  isBefore,
-  startOfDay,
-} from "date-fns";
-import { FiChevronLeft, FiChevronRight, FiX, FiCalendar } from "react-icons/fi";
+import { FiChevronDown, FiCalendar } from "react-icons/fi";
 
 interface CalendarProps {
-  selectedDate?: Date;
+  selectedDate: Date;
   onDateSelect: (date: Date) => void;
   minDate?: Date;
   maxDate?: Date;
   className?: string;
+  customTrigger?: React.ReactNode;
 }
 
 const Calendar: React.FC<CalendarProps> = ({
   selectedDate,
   onDateSelect,
-  minDate,
+  minDate = new Date(),
   maxDate,
   className = "",
+  customTrigger,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(selectedDate || new Date());
-  const [position, setPosition] = useState<"top" | "bottom">("bottom");
+  const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate));
   const calendarRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const today = startOfDay(new Date());
 
-  // Detect available space above/below the trigger
-  useEffect(() => {
-    if (!isOpen || !buttonRef.current) return;
-
-    const rect = buttonRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-
-    // 320px roughly equals the height of the calendar
-    if (spaceBelow < 320 && spaceAbove > spaceBelow) {
-      setPosition("top");
-    } else {
-      setPosition("bottom");
-    }
-  }, [isOpen]);
-
-  // Close when clicking outside
+  // Close calendar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         calendarRef.current &&
-        !calendarRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
+        !calendarRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
       }
     };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+  const formatDateForDisplay = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
+  };
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
-
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-  const startDay = monthStart.getDay();
-  const previousMonthDays = Array.from(
-    { length: startDay === 0 ? 6 : startDay - 1 },
-    (_, i) => {
-      const date = new Date(monthStart);
-      date.setDate(date.getDate() - (startDay === 0 ? 6 : startDay - 1) + i);
-      return date;
-    }
+  // Default trigger for the calendar
+  const defaultTrigger = (
+    <button
+      type="button"
+      onClick={() => setIsOpen(!isOpen)}
+      className="flex items-center gap-2 focus:outline-none group w-full"
+    >
+      <span className="text-sm font-medium text-gray-900">
+        {formatDateForDisplay(selectedDate)}
+      </span>
+      <FiChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+    </button>
   );
 
-  const endDay = monthEnd.getDay();
-  const nextMonthDays = Array.from(
-    { length: endDay === 0 ? 0 : 7 - endDay },
-    (_, i) => {
-      const date = new Date(monthEnd);
-      date.setDate(date.getDate() + i + 1);
-      return date;
-    }
-  );
+  // Calendar logic for generating days
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
 
-  const allDays = [...previousMonthDays, ...days, ...nextMonthDays];
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
 
   const isDateDisabled = (date: Date) => {
-    if (minDate && isBefore(date, startOfDay(minDate))) return true;
-    if (maxDate && isBefore(startOfDay(maxDate), date)) return true;
+    if (minDate && date < minDate) return true;
+    if (maxDate && date > maxDate) return true;
     return false;
   };
 
-  const handleDateSelect = (date: Date) => {
-    if (isDateDisabled(date)) return;
-    onDateSelect(date);
-    setIsOpen(false);
+  const navigateMonth = (direction: "prev" | "next") => {
+    setCurrentMonth((prev) => {
+      const newMonth = new Date(prev);
+      if (direction === "prev") {
+        newMonth.setMonth(prev.getMonth() - 1);
+      } else {
+        newMonth.setMonth(prev.getMonth() + 1);
+      }
+      return newMonth;
+    });
   };
 
-  const goToPreviousMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-  const goToNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  const generateCalendarDays = () => {
+    const daysInMonth = getDaysInMonth(currentMonth);
+    const firstDay = getFirstDayOfMonth(currentMonth);
+    const days = [];
 
-  const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    // Previous month's days
+    const prevMonth = new Date(currentMonth);
+    prevMonth.setMonth(currentMonth.getMonth() - 1);
+    const prevMonthDays = getDaysInMonth(prevMonth);
+
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const date = new Date(prevMonth);
+      date.setDate(prevMonthDays - i);
+      days.push({ date, isCurrentMonth: false, isDisabled: true });
+    }
+
+    // Current month's days
+    for (let i = 1; i <= daysInMonth; i++) {
+      const date = new Date(currentMonth);
+      date.setDate(i);
+      days.push({
+        date,
+        isCurrentMonth: true,
+        isDisabled: isDateDisabled(date),
+      });
+    }
+
+    // Next month's days to fill the grid
+    const totalCells = 42; // 6 weeks
+    let nextMonthDay = 1;
+    while (days.length < totalCells) {
+      const date = new Date(currentMonth);
+      date.setMonth(currentMonth.getMonth() + 1);
+      date.setDate(nextMonthDay);
+      days.push({ date, isCurrentMonth: false, isDisabled: true });
+      nextMonthDay++;
+    }
+
+    return days;
+  };
+
+  const handleDateClick = (date: Date, isDisabled: boolean) => {
+    if (!isDisabled) {
+      onDateSelect(date);
+      setIsOpen(false);
+    }
+  };
+
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   return (
-    <div className={`relative ${className}`}>
-      {/* Calendar Trigger Button */}
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
-      >
-        <span className={selectedDate ? "text-gray-900" : "text-gray-500"}>
-          {selectedDate ? format(selectedDate, "MMM dd, yyyy") : "Select date"}
-        </span>
-        <FiCalendar className="w-5 h-5 text-gray-400" />
-      </button>
+    <div ref={calendarRef} className={`relative ${className}`}>
+      {/* Calendar Trigger */}
+      {customTrigger || defaultTrigger}
 
       {/* Calendar Dropdown */}
       {isOpen && (
         <div
-          ref={calendarRef}
-          className={`absolute z-50 w-[280px] md:w-[320px] bg-white rounded-xl shadow-2xl border border-gray-200 ${
-            position === "top" ? "bottom-full mb-2" : "top-full mt-2"
-          }`}
+          className="
+          absolute left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg
+          z-50 animate-fadeIn p-4 min-w-64
+        "
         >
           {/* Calendar Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-4">
             <button
-              type="button"
-              onClick={goToPreviousMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={() => navigateMonth("prev")}
+              className="p-1 hover:bg-gray-100 rounded"
             >
-              <FiChevronLeft className="w-5 h-5 text-gray-600" />
+              <FiChevronDown className="w-4 h-4 rotate-90" />
             </button>
-
-            <h3 className="text-lg font-semibold text-gray-900">
-              {format(currentMonth, "MMMM yyyy")}
+            <h3 className="text-sm font-semibold text-gray-900">
+              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </h3>
-
-            <div className="flex items-center space-x-2">
-              <button
-                type="button"
-                onClick={goToNextMonth}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <FiChevronRight className="w-5 h-5 text-gray-600" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors md:hidden"
-              >
-                <FiX className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
+            <button
+              onClick={() => navigateMonth("next")}
+              className="p-1 hover:bg-gray-100 rounded"
+            >
+              <FiChevronDown className="w-4 h-4 -rotate-90" />
+            </button>
           </div>
 
-          {/* Week Days Header */}
-          <div className="grid grid-cols-7 gap-1 px-4 pt-4">
-            {weekDays.map((day) => (
-              <div
-                key={day}
-                className="text-center text-sm font-medium text-gray-500 py-2"
-              >
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+              <div key={day} className="text-xs text-gray-500 text-center py-1">
                 {day}
               </div>
             ))}
           </div>
 
-          {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-1 p-4">
-            {allDays.map((date, index) => {
-              const isCurrentMonth = isSameMonth(date, currentMonth);
-              const isSelected = selectedDate && isSameDay(date, selectedDate);
-              const isTodayDate = isToday(date);
-              const disabled = isDateDisabled(date);
-
-              return (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => handleDateSelect(date)}
-                  disabled={disabled}
-                  className={`h-10 rounded-lg text-sm font-medium transition-all duration-200
+          <div className="grid grid-cols-7 gap-1">
+            {generateCalendarDays().map(
+              ({ date, isCurrentMonth, isDisabled }, index) => {
+                const isSelected =
+                  date.toDateString() === selectedDate.toDateString();
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleDateClick(date, isDisabled)}
+                    disabled={isDisabled}
+                    className={`
+                    w-8 h-8 text-xs rounded transition-colors
+                    ${isSelected ? "bg-blue-600 text-white" : ""}
                     ${
-                      !isCurrentMonth
-                        ? "text-gray-400"
-                        : "text-gray-900 hover:bg-gray-100"
-                    }
-                    ${
-                      isSelected
-                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                      !isSelected && isCurrentMonth && !isDisabled
+                        ? "hover:bg-gray-100 text-gray-900"
                         : ""
                     }
                     ${
-                      isTodayDate && !isSelected
-                        ? "bg-blue-100 text-blue-600 font-semibold"
+                      !isCurrentMonth || isDisabled
+                        ? "text-gray-400 cursor-not-allowed"
                         : ""
-                    }
-                    ${
-                      disabled
-                        ? "opacity-30 cursor-not-allowed"
-                        : "cursor-pointer"
                     }
                   `}
-                >
-                  {format(date, "d")}
-                </button>
-              );
-            })}
+                  >
+                    {date.getDate()}
+                  </button>
+                );
+              }
+            )}
           </div>
         </div>
       )}

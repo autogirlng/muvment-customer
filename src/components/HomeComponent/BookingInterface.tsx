@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FiMapPin, FiCalendar } from "react-icons/fi";
+import { FiMapPin, FiCalendar, FiChevronDown } from "react-icons/fi";
 import Image from "next/image";
 import { DropdownOption } from "@/types/HeroSectionTypes";
 import Dropdown from "../utils/DropdownCustom";
@@ -16,7 +16,7 @@ export default function HeroBookingSection() {
   const router = useRouter();
 
   // Form state
-  const [bookingType, setBookingType] = useState("12-hours");
+  const [bookingType, setBookingType] = useState("select Type");
   const [fromDate, setFromDate] = useState(new Date());
   const [untilDate, setUntilDate] = useState(new Date());
   const [category, setCategory] = useState("suv-electric");
@@ -343,7 +343,7 @@ export default function HeroBookingSection() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-auto pt-[11rem] md:pt-0 pb-2">
+    <div className="relative w-full h-screen overflow-hidden">
       {/* Background with overlay */}
       <div className="absolute inset-0">
         <Image
@@ -353,146 +353,174 @@ export default function HeroBookingSection() {
           className="object-cover w-full h-full"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-800/70 via-gray-800/40 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900/70 via-gray-800/50 to-gray-900/30"></div>
       </div>
 
       {/* Content */}
-      <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-12">
+      <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-12 lg:px-20 xl:px-32">
         {/* Header */}
-        <div className="mb-12 max-w-2xl">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+        <div className="mb-8 max-w-2xl">
+          <h1 className="text-5xl md:text-5xl font-bold text-white mb-3 leading-tight">
             Find your perfect ride
           </h1>
-          <p className="text-sm md:text-xl text-gray-200">
+          <p className="text-base md:text-lg text-gray-200">
             Browse and book cars effortlessly from our wide selection
           </p>
         </div>
 
-        {/* Booking Form */}
-        <div className="flex flex-col md:flex-row gap-4 items-center bg-white rounded-2xl p-2 md:p-4">
-          {/* Booking Type */}
-          <div className="relative flex-1 w-full md:min-w-32">
-            <Dropdown
-              options={bookingOptions}
-              selectedValue={bookingType}
-              onSelect={(value: any) => setBookingType(value)}
-              placeholder="Select booking type"
-              isOpen={openDropdown === "booking"}
-              onToggle={() => handleDropdownToggle("booking")}
-            />
-          </div>
+        {/* Booking Form - Simplified Layout like inspiration */}
+        <div className="w-full max-w-4xl">
+          <div className="bg-white rounded-2xl shadow-2xl px-4 py-3 md:px-6 md:py-4">
+            <div className="flex flex-col md:flex-row items-stretch gap-0">
+              {/* Booking Type */}
+              <div className="flex-1 min-w-0 py-2 md:py-0 md:pr-4 border-b md:border-b-0 md:border-r border-gray-200">
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Booking Type
+                </label>
+                <div className="relative">
+                  <Dropdown
+                    options={bookingOptions}
+                    selectedValue={bookingType}
+                    onSelect={(value: any) => setBookingType(value)}
+                    placeholder={bookingType}
+                    isOpen={openDropdown === "booking"}
+                    onToggle={() => handleDropdownToggle("booking")}
+                  />
+                </div>
+              </div>
 
-          <div className="hidden md:block w-px h-10 bg-gray-200"></div>
+              {/* Location Input - Takes most space */}
+              <div className="flex-1 min-w-0 py-2 md:py-0 md:px-4 border-b md:border-b-0 md:border-r border-gray-200 relative">
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Where
+                </label>
+                <div className="flex items-center relative">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search by city, airport, address"
+                    className="w-full bg-transparent focus:outline-none text-sm text-gray-900 placeholder-gray-400"
+                    value={searchValue}
+                    onChange={handleSearchInputChangeEvent}
+                    onFocus={handleSearchInputFocus}
+                  />
+                </div>
 
-          {/* Location with Autocomplete */}
-          <div className="relative flex-1 w-full md:min-w-32">
-            <div className="flex items-center px-4 py-3 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
-              <FiMapPin className="w-4 h-4 text-gray-500 mr-3" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search by city, airport, address"
-                className="w-full bg-transparent focus:outline-none text-sm text-gray-700 placeholder-gray-500"
-                value={searchValue}
-                onChange={handleSearchInputChangeEvent}
-                onFocus={handleSearchInputFocus}
-              />
+                {/* Make sure this sits absolutely inside a relative container */}
+                <div className="absolute top-full left-0 w-full z-50">
+                  <LocationDropdown
+                    isOpen={showLocationDropdown}
+                    suggestions={locationSuggestions}
+                    isLoading={isLoadingPlaces}
+                    error={searchError}
+                    onLocationSelect={onLocationSelect}
+                    dropdownRef={locationDropdownRef}
+                  />
+                </div>
+              </div>
+
+              {/* From Date */}
+              <div className="flex-shrink-0 w-full md:w-auto py-2 md:py-0 md:px-4 border-b md:border-b-0 md:border-r border-gray-200">
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  From
+                </label>
+                <div className="relative">
+                  <Calendar
+                    selectedDate={fromDate}
+                    onDateSelect={(date: any) => handleDateSelect(date, "from")}
+                    minDate={new Date()}
+                  />
+                </div>
+              </div>
+
+              {/* Until Date */}
+              <div className="flex-shrink-0 w-full md:w-auto py-2 md:py-0 md:px-4 md:border-r border-gray-200">
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Until
+                </label>
+                <div className="relative">
+                  <Calendar
+                    selectedDate={untilDate}
+                    onDateSelect={(date: any) =>
+                      handleDateSelect(date, "until")
+                    }
+                    minDate={fromDate}
+                  />
+                </div>
+              </div>
+
+              {/* Category */}
+              <div className="flex-1 w-full md:w-auto py-2 md:py-0 md:px-4 md:border-r border-gray-200">
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Category
+                </label>
+                <div className="relative">
+                  <Dropdown
+                    options={categoryOptions}
+                    selectedValue={category}
+                    onSelect={(value: any) => setCategory(value)}
+                    placeholder="Select category"
+                    isOpen={openDropdown === "category"}
+                    onToggle={() => handleDropdownToggle("category")}
+                  />
+                </div>
+              </div>
+
+              {/* Search Button */}
+              <div className="flex items-center justify-center py-2 md:py-0 md:pl-4">
+                <button
+                  onClick={handleSearch}
+                  disabled={isSearching}
+                  className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 md:p-3.5 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  title="Search"
+                >
+                  {isSearching ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
-
-            <LocationDropdown
-              isOpen={showLocationDropdown}
-              suggestions={locationSuggestions}
-              isLoading={isLoadingPlaces}
-              error={searchError}
-              onLocationSelect={onLocationSelect}
-              dropdownRef={locationDropdownRef}
-            />
           </div>
 
-          <div className="hidden md:block w-px h-10 bg-gray-200"></div>
-
-          {/* From Date */}
-          <div className="relative flex-1 w-full md:min-w-32">
-            <Calendar
-              selectedDate={fromDate}
-              onDateSelect={(date: any) => handleDateSelect(date, "from")}
-              minDate={new Date()}
-              className="left-0"
-            />
-          </div>
-
-          <div className="hidden md:block w-px h-10 bg-gray-200"></div>
-
-          {/* Until Date */}
-          <div className="relative flex-1 w-full md:min-w-32">
-            <Calendar
-              selectedDate={untilDate}
-              onDateSelect={(date: any) => handleDateSelect(date, "until")}
-              minDate={fromDate}
-              className="left-0"
-            />
-          </div>
-
-          <div className="hidden md:block w-px h-10 bg-gray-200"></div>
-
-          {/* Category */}
-          <div className="relative flex-1 w-full md:min-w-32">
-            <Dropdown
-              options={categoryOptions}
-              selectedValue={category}
-              onSelect={(value: any) => setCategory(value)}
-              placeholder="Select category"
-              isOpen={openDropdown === "category"}
-              onToggle={() => handleDropdownToggle("category")}
-            />
-          </div>
-
-          {/* Search Button */}
-          <button
-            onClick={handleSearch}
-            disabled={isSearching}
-            className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSearching ? (
-              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            )}
-          </button>
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="font-medium">{errorMessage}</span>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Error Message */}
-        {errorMessage && (
-          <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg max-w-4xl">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="font-medium">{errorMessage}</span>
-            </div>
-          </div>
-        )}
-
         {/* Bottom Location Badge */}
-        <div className="mb-3 md:absolute bottom-6 left-6 flex items-center gap-2 text-white text-base md:text-xl font-semibold bg-black/40 px-3 py-2 rounded-full backdrop-blur-sm">
+        <div className="absolute bottom-8 left-4 md:left-12 lg:left-20 xl:left-32 flex items-center gap-2 text-white text-xl md:text-2xl font-semibold">
           <FiMapPin
-            className={`w-5 h-5 md:w-6 md:h-6 ${
+            className={`w-6 h-6 ${
               locationPermissionStatus === "granted"
                 ? "text-blue-400"
                 : locationPermissionStatus === "denied"
@@ -506,7 +534,7 @@ export default function HeroBookingSection() {
           {locationPermissionStatus === "denied" && (
             <button
               onClick={handleRetryLocation}
-              className="ml-2 text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors"
+              className="ml-2 text-sm bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-colors"
               title="Retry location access"
             >
               Retry

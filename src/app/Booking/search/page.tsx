@@ -5,14 +5,12 @@ import { FiFilter } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 
 import { FilterState } from "@/types/filters";
-import {
-  VehicleSearchService,
-  VehicleSearchParams,
-} from "@/controllers/booking/vechicle";
+import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import VehicleCard from "@/components/Booking/VehicleCard";
 import { createFilterConfig } from "@/hooks/filterConfig";
 import { SearchBar } from "@/components/Booking/SearchBar";
 import { GenericFilterSidebar } from "@/components/Booking/GenericFilterSidebar";
+import { VehicleSearchParams } from "@/types/vehicle";
 
 export default function ExploreVehiclesPage() {
   const router = useRouter();

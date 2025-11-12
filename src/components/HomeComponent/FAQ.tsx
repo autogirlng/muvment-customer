@@ -15,10 +15,10 @@ interface FAQProps {
 }
 
 export default function FAQ({
-  title = "Frequently Asked Questions",
-  description = "Find answers to common questions about our services",
+  title = "FAQs",
+  description = "",
   faqs = defaultFAQs,
-  className = "",
+  className = "bg-white",
 }: FAQProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -27,16 +27,10 @@ export default function FAQ({
   };
 
   return (
-    <section
-      id="faq"
-      className={`py-20 lg:py-28 bg-gradient-to-br from-gray-50 to-white ${className}`}
-    >
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="faq" className={`py-20 lg:py-28  to-white ${className}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg mb-6">
-            <FaQuestionCircle className="w-7 h-7 text-white" />
-          </div>
+        <div className="text-start mb-3">
           <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
             {title}
           </h2>
@@ -45,7 +39,6 @@ export default function FAQ({
               {description}
             </p>
           )}
-          <div className="w-20 h-1 bg-gradient-to-r from-blue-500 to-purple-600 mx-auto mt-6 rounded-full"></div>
         </div>
 
         {/* FAQ Accordion */}
@@ -60,9 +53,6 @@ export default function FAQ({
                 className="w-full px-6 py-6 text-left flex items-center justify-between focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-20 rounded-2xl"
               >
                 <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-sm font-semibold mt-1">
-                    {index + 1}
-                  </div>
                   <h3 className="text-lg lg:text-xl font-semibold text-gray-900 pr-4">
                     {faq.title}
                   </h3>
@@ -92,32 +82,11 @@ export default function FAQ({
             </div>
           ))}
         </div>
-
-        {/* CTA Section */}
-        <div className="text-center mt-16">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 border border-blue-100">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Still have questions?
-            </h3>
-            <p className="text-gray-600 text-lg mb-6">
-              Our support team is here to help you get the answers you need
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-blue-600 text-white font-semibold py-3 px-8 rounded-xl hover:bg-blue-700 transition-colors duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                Contact Support
-              </button>
-              <button className="border-2 border-gray-300 text-gray-700 font-semibold py-3 px-8 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition-all duration-300">
-                Send us an Email
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
 }
 
-// Default FAQ data
 const defaultFAQs: FAQItem[] = [
   {
     title: "Do I need an account to book?",

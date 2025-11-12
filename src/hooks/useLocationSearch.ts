@@ -23,7 +23,6 @@ export const useLocationSearch = () => {
 
   const googleMapsService = useRef<GoogleMapsService>(new GoogleMapsService());
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
-
   useEffect(() => {
     const initialize = async () => {
       const loadedRecentSearches = getRecentSearches();
@@ -52,6 +51,7 @@ export const useLocationSearch = () => {
 
       try {
         const suggestions = await googleMapsService.current.searchPlaces(query);
+
         setLocationSuggestions(suggestions);
       } catch (error) {
         setSearchError("Location search is currently unavailable.");
