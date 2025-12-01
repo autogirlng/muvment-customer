@@ -21,14 +21,12 @@ const Calendar: React.FC<CalendarProps> = ({
   customTrigger,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  // ✅ Safe fallback to today if selectedDate is undefined
   const [currentMonth, setCurrentMonth] = useState(
     selectedDate ? new Date(selectedDate) : new Date()
   );
   const calendarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // ✅ Keep month synced when selectedDate changes
     if (selectedDate) {
       setCurrentMonth(new Date(selectedDate));
     }
@@ -64,7 +62,7 @@ const Calendar: React.FC<CalendarProps> = ({
       onClick={() => setIsOpen(!isOpen)}
       className="flex items-center gap-2 focus:outline-none group w-full"
     >
-      <span className="text-sm font-medium text-gray-900">
+      <span className="text-sm font-medium text-gray-400">
         {formatDateForDisplay(selectedDate)}
       </span>
       <FiChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />

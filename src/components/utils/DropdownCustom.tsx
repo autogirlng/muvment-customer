@@ -56,7 +56,7 @@ const Dropdown: React.FC<DropdownProps> = ({
     >
       <span
         className={`text-sm ${
-          selectedValue ? "font-medium text-gray-900" : "text-gray-500"
+          selectedValue ? "font-medium text-gray-400" : "text-gray-400"
         }`}
       >
         {selectedOption?.label || placeholder}

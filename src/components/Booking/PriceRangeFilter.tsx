@@ -1,61 +1,126 @@
+import React, { useState, useRef, useEffect } from "react";
+
 interface PriceRangeFilterProps {
-  range: [number, number];
-  onChange: (range: [number, number]) => void;
-  maxPrice: number;
+  range?: [number, number];
+  onChange?: (range: [number, number]) => void;
+  maxPrice?: number;
 }
 
 const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
-  range,
-  onChange,
-  maxPrice,
+  range = [30, 500],
+  onChange = () => {},
+  maxPrice = 500,
 }) => {
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-NG", {
+  const [min, setMin] = useState(range[0]);
+  const [max, setMax] = useState(range[1]);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const minThumbRef = useRef<HTMLDivElement>(null);
+  const maxThumbRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState<"min" | "max" | null>(null);
+
+  const getPercent = (value: number) => (value / maxPrice) * 100;
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "NGN",
       minimumFractionDigits: 0,
-    }).format(amount);
-
-  const handleChange = (index: 0 | 1, value: number) => {
-    const newRange: [number, number] = [...range];
-    newRange[index] = value;
-    onChange(newRange);
+      maximumFractionDigits: 0,
+    }).format(price);
   };
 
+  const handleMouseDown = (type: "min" | "max") => (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(type);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !trackRef.current) return;
+
+      const rect = trackRef.current.getBoundingClientRect();
+      const percent = Math.max(
+        0,
+        Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)
+      );
+      const value = Math.round((percent / 100) * maxPrice);
+
+      if (isDragging === "min") {
+        const newMin = Math.min(value, max - 1);
+        setMin(newMin);
+        onChange([newMin, max]);
+      } else {
+        const newMax = Math.max(value, min + 1);
+        setMax(newMax);
+        onChange([min, newMax]);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(null);
+    };
+
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [isDragging, min, max, maxPrice, onChange]);
+
+  const minPercent = getPercent(min);
+  const maxPercent = getPercent(max);
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-600">{formatCurrency(range[0])}/day</span>
-        <span className="text-gray-600">{formatCurrency(range[1])}/day</span>
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-sm font-medium text-gray-700">Price Range</h3>
+        <span className="text-sm  text-gray-900">{formatPrice(max)}/day</span>
       </div>
-      <div className="relative">
-        <input
-          type="range"
-          min="0"
-          max={maxPrice}
-          step="1000"
-          value={range[0]}
-          onChange={(e) => handleChange(0, Number(e.target.value))}
-          className="absolute w-full h-2 bg-transparent appearance-none z-20"
+
+      <div
+        ref={trackRef}
+        className="relative h-1 bg-gray-300 rounded-full cursor-pointer"
+      >
+        {/* Progress fill */}
+        <div
+          className="absolute h-1 bg-blue-500 rounded-full"
+          style={{
+            left: `${minPercent}%`,
+            right: `${100 - maxPercent}%`,
+          }}
         />
-        <input
-          type="range"
-          min="0"
-          max={maxPrice}
-          step="1000"
-          value={range[1]}
-          onChange={(e) => handleChange(1, Number(e.target.value))}
-          className="absolute w-full h-2 bg-transparent appearance-none z-20"
+
+        {/* Min thumb */}
+        <div
+          ref={minThumbRef}
+          onMouseDown={handleMouseDown("min")}
+          className="absolute w-4 h-4 bg-white border-2 border-blue-500 rounded-full shadow-md cursor-grab active:cursor-grabbing"
+          style={{
+            left: `${minPercent}%`,
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
         />
-        <div className="relative h-2 bg-gray-200 rounded-full">
-          <div
-            className="absolute h-2 bg-blue-600 rounded-full"
-            style={{
-              left: `${(range[0] / maxPrice) * 100}%`,
-              right: `${100 - (range[1] / maxPrice) * 100}%`,
-            }}
-          />
-        </div>
+
+        {/* Max thumb */}
+        <div
+          ref={maxThumbRef}
+          onMouseDown={handleMouseDown("max")}
+          className="absolute w-4 h-4 bg-white border-2 border-blue-500 rounded-full shadow-md cursor-grab active:cursor-grabbing"
+          style={{
+            left: `${maxPercent}%`,
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between mt-6 text-xs text-gray-500">
+        <span>{formatPrice(min)}/day</span>
+        <span>{formatPrice(maxPrice)}/day</span>
       </div>
     </div>
   );

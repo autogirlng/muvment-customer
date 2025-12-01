@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FiMapPin, FiCalendar, FiChevronDown } from "react-icons/fi";
 import Image from "next/image";
-import { DropdownOption } from "@/types/HeroSectionTypes";
 import Dropdown from "../utils/DropdownCustom";
 import Calendar from "../utils/Calender";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
@@ -374,7 +373,7 @@ export default function HeroBookingSection() {
             <div className="flex flex-col md:flex-row items-stretch gap-0">
               {/* Booking Type */}
               <div className="flex-1 min-w-0 py-2 md:py-0 md:pr-4 border-b md:border-b-0 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+                <label className="block text-xs font-medium text-gray-400 mb-1">
                   Booking Type
                 </label>
                 <div className="relative">
@@ -391,7 +390,7 @@ export default function HeroBookingSection() {
 
               {/* Location Input - Takes most space */}
               <div className="flex-1 min-w-0 py-2 md:py-0 md:px-4 border-b md:border-b-0 md:border-r border-gray-200 relative">
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+                <label className="block text-xs font-medium text-gray-400 mb-1">
                   Where
                 </label>
                 <div className="flex items-center relative">
@@ -421,7 +420,7 @@ export default function HeroBookingSection() {
 
               {/* From Date */}
               <div className="flex-shrink-0 w-full md:w-auto py-2 md:py-0 md:px-4 border-b md:border-b-0 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+                <label className="block text-xs font-medium text-gray-400 mb-1">
                   From
                 </label>
                 <div className="relative">
@@ -435,7 +434,7 @@ export default function HeroBookingSection() {
 
               {/* Until Date */}
               <div className="flex-shrink-0 w-full md:w-auto py-2 md:py-0 md:px-4 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+                <label className="block text-xs font-medium text-gray-400 mb-1">
                   Until
                 </label>
                 <div className="relative">
@@ -451,7 +450,7 @@ export default function HeroBookingSection() {
 
               {/* Category */}
               <div className="flex-1 w-full md:w-auto py-2 md:py-0 md:px-4 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+                <label className="block text-xs font-medium text-gray-400 mb-1">
                   Category
                 </label>
                 <div className="relative">

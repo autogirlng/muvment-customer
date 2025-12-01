@@ -5,6 +5,7 @@ import ButtonFilter from "./ButtonFilter";
 import ButtonGridFilter from "./ButtonGridFilter";
 import CheckboxFilter from "./CheckBoxFilter";
 import PriceRangeFilter from "./PriceRangeFilter";
+import NewFilterSearch from "./SelectFilter";
 
 interface FilterSectionProps {
   config: FilterConfig;
@@ -63,6 +64,16 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           />
         );
 
+      case "select":
+        return (
+          <NewFilterSearch
+            options={config.options || []}
+            selected={getSelectedValues(config.id, filterState)}
+            onChange={(values) => onFilterChange(config.id, values)}
+            type={config.title}
+          />
+        );
+
       default:
         return null;
     }
@@ -70,27 +81,36 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
   if (showAccordion) {
     return (
-      <div className="border rounded-lg">
+      <div className="">
         <button
           onClick={onToggle}
-          className="w-full flex justify-between items-center p-3 font-semibold text-gray-900"
+          className="w-full flex justify-between items-center p-4 font-semibold text-gray-900 hover:bg-gray-50 rounded-xl transition-colors"
         >
-          {config.title}
-          {isOpen ? <FiChevronUp /> : <FiChevronDown />}
+          <span className="text-base">{config.title}</span>
+          {isOpen ? (
+            <FiChevronUp className="w-5 h-5 text-gray-500" />
+          ) : (
+            <FiChevronDown className="w-5 h-5 text-gray-500" />
+          )}
         </button>
-        {isOpen && <div className="px-4 pb-4">{renderContent()}</div>}
+        {isOpen && (
+          <div className="px-4 pb- border-t border-gray-200 pt-4">
+            {renderContent()}
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="pb-6 border-b border-gray-200">
-      <h3 className="font-semibold text-gray-900 mb-4">{config.title}</h3>
+    <div className="pb-4 ">
+      <h3 className="font-semibold text-gray-900 mb-4 text-base">
+        {config.title}
+      </h3>
       {renderContent()}
     </div>
   );
 };
-
 const getSelectedValues = (
   filterId: string,
   filterState: FilterState
@@ -101,8 +121,19 @@ const getSelectedValues = (
     years: "selectedYears",
     seats: "selectedSeats",
     features: "selectedFeatures",
+    priceRange: "priceRange",
   };
 
   const key = mapping[filterId];
-  return key ? (filterState[key] as string[]) : [];
+  if (!key) return [];
+
+  const value = filterState[key];
+
+  // Handle price range separately since it's a tuple
+  if (key === "priceRange") {
+    return value as string[];
+  }
+
+  // For array-based filters
+  return Array.isArray(value) ? (value as any) : [];
 };
