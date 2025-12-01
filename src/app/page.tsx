@@ -25,9 +25,7 @@ function page() {
       <FAQ />
       {/* <SaveBigRentals /> */}
       {/* <RideSection /> */}
-      {/* <TopVehiclesSection />
-      
-      <FAQ /> */}
+      {/* <TopVehiclesSection />*/}
       <Footer />
     </div>
   );

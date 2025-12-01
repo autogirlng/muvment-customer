@@ -19,16 +19,15 @@ export const createFilterConfig = (
   },
   {
     id: "make",
-    title: "Make",
-    type: "checkbox",
+    title: " Vehicle Make",
+    type: "select",
     options: makes,
   },
   {
     id: "years",
     title: "Years",
-    type: "button-grid",
+    type: "select",
     options: years.map((year) => ({ id: year, name: year })),
-    gridCols: 5,
   },
   {
     id: "seats",
@@ -38,8 +37,8 @@ export const createFilterConfig = (
   },
   {
     id: "features",
-    title: "Features",
-    type: "checkbox",
+    title: "Vehicle Features",
+    type: "button",
     options: features,
   },
 ];

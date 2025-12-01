@@ -203,7 +203,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       </div>
 
       {/* Desktop: Show all fields in a row */}
-      <div className="hidden md:flex md:flex-row gap-4 items-center">
+      <div className="hidden  gap-4 items-center">
         {/* Booking Type */}
         <div
           className={`relative flex-1 ${

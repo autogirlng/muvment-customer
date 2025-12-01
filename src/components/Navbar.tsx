@@ -8,8 +8,13 @@ import { Avatar } from "./Avatar";
 import { NavItem } from "./NavItem";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
+import { NavbarSearchBar } from "./HomeComponent/NavbarSearchBar";
 
-export const Navbar = () => {
+interface NavbarProps {
+  showSearchBar?: boolean;
+}
+
+export const Navbar = ({ showSearchBar = false }: NavbarProps) => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -33,12 +38,13 @@ export const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white shadow-md" : "bg-white/70 backdrop-blur-md"
-      }`}
+      className={`fixed top-0 left-0 right-0  z-50 transition-all duration-300 ${
+        isScrolled ? "bg-white shadow-md" : "bg-white/90 backdrop-blur-md"
+      } pt-3 pb-1`}
     >
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
+          {/* Logo */}
           <button
             onClick={() => router.push("/")}
             className="flex items-center gap-2 flex-shrink-0"
@@ -46,11 +52,19 @@ export const Navbar = () => {
             <Image
               src="/images/image.png"
               alt="Logo"
-              width={120}
-              height={120}
+              width={150}
+              height={150}
             />
           </button>
 
+          {/* Center Search Bar - Only on desktop when showSearchBar is true */}
+          {showSearchBar && (
+            <div className="hidden lg:flex flex-1 justify-center mx-8">
+              <NavbarSearchBar />
+            </div>
+          )}
+
+          {/* Right side - Desktop */}
           <div className="hidden md:flex items-center gap-6">
             <button
               onClick={() => router.push("/")}
@@ -123,6 +137,7 @@ export const Navbar = () => {
             </div>
           </div>
 
+          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-full hover:shadow-md transition-shadow"
@@ -133,6 +148,7 @@ export const Navbar = () => {
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
           <div className="px-4 py-4 space-y-2">

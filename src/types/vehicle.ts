@@ -1,13 +1,13 @@
 export interface VehicleSearchParams {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   radiusInKm?: number;
   bookingTypeId?: string;
   vehicleTypeId?: string;
   vehicleMakeId?: string;
   vehicleModelId?: string;
   vehicleColorId?: string;
-  featureIds?: string[];
+  featureIds?: string;
   minSeats?: number;
   minYear?: number;
   willProvideDriver?: boolean;
@@ -17,6 +17,8 @@ export interface VehicleSearchParams {
   maxPrice?: number;
   fromDate?: string;
   untilDate?: string;
+  yearOfRelease?: string;
+  numberOfSeats?: string;
 }
 
 export interface Vehicle {
