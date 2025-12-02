@@ -133,11 +133,10 @@ function Footer() {
                 <Image
                   src="/images/image.png"
                   alt="Muvment"
-                  width={180}
+                  width={250}
                   height={90}
                   className="h-auto"
                 />
-                <span className="text-grey-400 text-sm">By Autogirl</span>
               </div>
               <p className="!font-normal text-base md:text-lg text-grey-600">
                 Be the first to receive all the recent updates, articles, and

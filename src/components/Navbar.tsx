@@ -9,12 +9,17 @@ import { NavItem } from "./NavItem";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { NavbarSearchBar } from "./HomeComponent/NavbarSearchBar";
+import SlidingBanner from "./Dashboard/SlidingBanner";
 
 interface NavbarProps {
   showSearchBar?: boolean;
+  showAnnouncementBar?: boolean;
 }
 
-export const Navbar = ({ showSearchBar = false }: NavbarProps) => {
+export const Navbar = ({
+  showSearchBar = false,
+  showAnnouncementBar = false,
+}: NavbarProps) => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -35,13 +40,25 @@ export const Navbar = ({ showSearchBar = false }: NavbarProps) => {
   };
 
   const items = user ? menuItems : guestMenuItems;
-
+  const announcementMessages = [
+    "We've moved! Autogirl.ng is now Muvment.ng | Enjoy an exclusive 5% OFF all website orders.",
+    // "Limited time offer: Get 10% off your first booking!",
+    // "New electric vehicles now available for rent!",
+  ];
   return (
     <nav
       className={`fixed top-0 left-0 right-0  z-50 transition-all duration-300 ${
         isScrolled ? "bg-white shadow-md" : "bg-white/90 backdrop-blur-md"
-      } pt-3 pb-1`}
+      }  `}
     >
+      {showAnnouncementBar && (
+        <SlidingBanner
+          messages={announcementMessages}
+          backgroundColor="bg-gradient-to-r from-violet-600 to-indigo-600"
+          textColor="text-white"
+          duration={5000}
+        />
+      )}
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -52,8 +69,8 @@ export const Navbar = ({ showSearchBar = false }: NavbarProps) => {
             <Image
               src="/images/image.png"
               alt="Logo"
-              width={150}
-              height={150}
+              width={180}
+              height={180}
             />
           </button>
 
@@ -85,7 +102,7 @@ export const Navbar = ({ showSearchBar = false }: NavbarProps) => {
               </button>
 
               {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2">
+                <div className="absolute right-0 z-9999 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2">
                   {user && (
                     <div className="px-4 py-3 border-b border-gray-200">
                       <div className="flex items-center gap-3">

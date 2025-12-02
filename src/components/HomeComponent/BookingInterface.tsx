@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FiMapPin, FiCalendar, FiChevronDown } from "react-icons/fi";
+import { FiMapPin } from "react-icons/fi";
 import Image from "next/image";
 import Dropdown from "../utils/DropdownCustom";
 import Calendar from "../utils/Calender";
@@ -342,7 +342,7 @@ export default function HeroBookingSection() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-screen overflow-hidden mt-[7rem] md:mt-0">
       {/* Background with overlay */}
       <div className="absolute inset-0">
         <Image
@@ -359,7 +359,7 @@ export default function HeroBookingSection() {
       <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-12 lg:px-20 xl:px-32">
         {/* Header */}
         <div className="mb-8 max-w-2xl">
-          <h1 className="text-5xl md:text-5xl font-bold text-white mb-3 leading-tight">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-3  leading-tight">
             Find your perfect ride
           </h1>
           <p className="text-base md:text-lg text-gray-200">
