@@ -1,51 +1,52 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { FiMapPin, FiBook, FiCreditCard, FiChevronRight } from "react-icons/fi";
-import { useRouter } from "next/navigation";
-import Calendar from "@/components/utils/Calender";
-import Dropdown from "../utils/DropdownCustom";
-
+import {
+  FiMapPin,
+  FiBook,
+  FiCreditCard,
+  FiChevronRight,
+  FiCalendar,
+} from "react-icons/fi";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
 import LocationDropdown from "../utils/LocationDropdown";
 import { bookingOptionsData } from "@/context/Constarain";
 import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
 import { BookingService } from "@/controllers/booking/bookingService";
+import { useRouter } from "next/navigation";
+import DashboardDropdown from "../utils/DasboardDropdown";
+import DashboardCalendar from "../utils/DashboardCalender";
 
 interface StatCardProps {
   title: string;
   value: number | string;
   icon: React.ReactNode;
-  borderColor: string;
-  bgColor: string;
-  onViewMore: () => void;
+  iconBgColor: string;
+  onViewDetails: () => void;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
   icon,
-  borderColor,
-  bgColor,
-  onViewMore,
+  iconBgColor,
+  onViewDetails,
 }) => {
   return (
-    <div className={`bg-white rounded-lg shadow p-6 border-l-4 ${borderColor}`}>
-      <div className="flex items-center justify-between">
+    <div className="bg-white rounded-lg border border-blue-300 shadow-[-8px_0_20px_-10px_#0673FF] p-6">
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-gray-600 text-sm font-medium">{title}</p>
-          <p className="text-2xl md:text-3xl font-bold text-gray-900 mt-2">
-            {value}
-          </p>
+          <p className="text-gray-600 text-sm mb-1">{title}</p>
+          <p className="text-3xl font-bold text-gray-900">{value}</p>
         </div>
-        <div className={`${bgColor} p-4 rounded-lg`}>{icon}</div>
+        <div className={`${iconBgColor} p-3 rounded-lg`}>{icon}</div>
       </div>
       <button
-        onClick={onViewMore}
-        className="mt-4 w-full flex items-center justify-between text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+        onClick={onViewDetails}
+        className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
       >
-        <span>View More</span>
+        View Details
         <FiChevronRight className="w-4 h-4" />
       </button>
     </div>
@@ -214,72 +215,79 @@ export default function Dashboard(): React.ReactElement {
     handleDashboardLoad();
   }, []);
 
+  // Get current user name - you can replace this with actual user data
+  const userName = "Liam Michael";
+  const currentDate = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Dashboard
-          </h1>
+      {/* Hero Banner */}
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl relative">
+        <div className="max-w-8xl mx-auto px-4 md:px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">
+                Good Morning, {userName}
+              </h1>
+              <p className="text-blue-100 text-sm">Book your next rental car</p>
+              <p className="text-blue-100 text-xs mt-1">{currentDate}</p>
+            </div>
+            {/* <div className="hidden md:block absolute right-0">
+              <Image src="/images/b.png" alt="Logo" width={200} height={700} />
+            </div> */}
+          </div>
         </div>
       </div>
 
-      <div className="mx-auto px-4 md:px-6 py-6 md:py-8">
+      <div className=" mx-auto  py-6 md:py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-          {/* <StatCard
-            title="Wallet Balance"
-            value="2,450.00"
-            icon={<FaMoneyBill className="w-8 h-8 text-blue-600" />}
-            borderColor="border-blue-500"
-            bgColor="bg-blue-100"
-            onViewMore={() => handleViewMore("/wallet")}
-          /> */}
           <StatCard
             title="Total Bookings"
             value={statictis.bookings}
-            icon={<FiBook className="w-8 h-8 text-green-600" />}
-            borderColor="border-green-500"
-            bgColor="bg-green-100"
-            onViewMore={() => handleViewMore("/dashboard/my-booking")}
+            icon={<FiBook className="w-6 h-6 text-blue-600" />}
+            iconBgColor="bg-blue-100"
+            onViewDetails={() => handleViewMore("/dashboard/my-booking")}
           />
           <StatCard
-            title="Payment"
+            title="Payments"
             value={statictis.payments}
-            icon={<FiCreditCard className="w-8 h-8 text-purple-600" />}
-            borderColor="border-purple-500"
-            bgColor="bg-purple-100"
-            onViewMore={() => handleViewMore("/dashboard/payment")}
+            icon={<FiCreditCard className="w-6 h-6 text-blue-600" />}
+            iconBgColor="bg-blue-100"
+            onViewDetails={() => handleViewMore("/dashboard/payment")}
           />
+          {/* <StatCard
+            title="Pending Actions"
+            value={statictis.bookings}
+            icon={<FiCalendar className="w-6 h-6 text-blue-600" />}
+            iconBgColor="bg-blue-100"
+            onViewDetails={() => handleViewMore("/dashboard/pending")}
+          /> */}
         </div>
 
         {/* Booking Form */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6 md:mb-8">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
           <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">
-            Book a Car
+            Book a car
           </h2>
-          <div className="flex flex-col gap-3 md:gap-4">
+          <div className="space-y-4">
             {/* First Row */}
-            <div className="flex flex-col md:flex-row gap-3 md:gap-4">
-              <div className="flex-1">
-                <Dropdown
-                  options={bookingOptions}
-                  selectedValue={bookingType}
-                  onSelect={setBookingType}
-                  placeholder="Select booking type"
-                  isOpen={openDropdown === "booking"}
-                  onToggle={() => handleDropdownToggle("booking")}
-                />
-              </div>
-
-              <div className="flex-1 relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative">
+                <label className="block text-sm text-gray-600 mb-2">
+                  Booking Type
+                </label>
                 <div className="flex items-center px-3 md:px-4 py-3 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
                   <FiMapPin className="w-4 h-4 text-gray-500 mr-2 md:mr-3 flex-shrink-0" />
                   <input
                     ref={searchInputRef}
                     type="text"
-                    placeholder="Search by city, airport, address"
+                    placeholder="Enter location"
                     value={searchValue}
                     onChange={handleSearchInputChangeEvent}
                     onFocus={handleSearchInputFocus}
@@ -296,70 +304,67 @@ export default function Dashboard(): React.ReactElement {
                   dropdownRef={locationDropdownRef}
                 />
               </div>
+
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  Pickup Date
+                </label>
+                <div className="relative">
+                  <DashboardCalendar
+                    selectedDate={fromDate}
+                    onDateSelect={(date: Date) =>
+                      handleDateSelect(date, "from")
+                    }
+                    minDate={new Date()}
+                    className="left-0"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Second Row */}
-            <div className="flex flex-col md:flex-row gap-3 md:gap-4">
-              <div className="relative flex-1">
-                <Calendar
-                  selectedDate={fromDate}
-                  onDateSelect={(date: Date) => handleDateSelect(date, "from")}
-                  minDate={new Date()}
-                  className="left-0"
-                />
-              </div>
-
-              <div className="relative flex-1">
-                <Calendar
-                  selectedDate={untilDate}
-                  onDateSelect={(date: Date) => handleDateSelect(date, "until")}
-                  minDate={fromDate}
-                  className="left-0"
-                />
-              </div>
-
-              <div className="flex-1">
-                <Dropdown
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  Category
+                </label>
+                <DashboardDropdown
                   options={categoryOptions}
                   selectedValue={category}
                   onSelect={setCategory}
-                  placeholder="Select category"
+                  placeholder="Choose category"
                   isOpen={openDropdown === "category"}
                   onToggle={() => handleDropdownToggle("category")}
                 />
               </div>
+
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  Returned Date
+                </label>
+                <div className="relative">
+                  <DashboardCalendar
+                    selectedDate={untilDate}
+                    onDateSelect={(date: Date) =>
+                      handleDateSelect(date, "until")
+                    }
+                    minDate={fromDate}
+                    className="left-0"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Search Button - Full width on mobile */}
-            <button
-              onClick={handleSearch}
-              disabled={isSearching}
-              className="w-full md:w-auto md:px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 transition-colors shadow-md flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSearching ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span className="hidden md:inline">Searching...</span>
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  <span className="hidden md:inline">Search</span>
-                </>
-              )}
-            </button>
+            {/* Search Button - Centered */}
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={handleSearch}
+                disabled={isSearching}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-12 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSearching ? "Searching..." : "Search"}
+              </button>
+            </div>
           </div>
 
           {/* Error Message */}
