@@ -342,7 +342,7 @@ export default function HeroBookingSection() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden mt-[7rem] md:mt-0">
+    <div className="relative w-full h-screen overflow-hidden mt-[5rem] md:mt-0">
       {/* Background with overlay */}
       <div className="absolute inset-0">
         <Image
