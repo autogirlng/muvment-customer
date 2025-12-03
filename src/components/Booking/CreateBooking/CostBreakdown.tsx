@@ -4,9 +4,7 @@ import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { createData, updateData } from "@/controllers/connnector/app.callers";
 import { EstimatedBookingPrice, Trips } from "@/types/vehicleDetails";
-import { FiCheckCircle, FiCircle, FiCreditCard } from "react-icons/fi"; // Added icons for selection
-
-// ... (Previous Interfaces remain the same) ...
+import { FiCheckCircle, FiCircle, FiCreditCard } from "react-icons/fi";
 
 export type PersonalInformationMyselfValues = {
   guestName: string;
@@ -33,7 +31,7 @@ const CostBreakdown = ({
   const [priceReEstimated, setPriceReEstimated] = useState<boolean>(false);
   const [pricing, setPricing] = useState<EstimatedBookingPrice>();
   const [paymentGateway, setPaymentGateway] =
-    useState<PaymentGateway>("MONNIFY"); // ✅ NEW: Gateway State
+    useState<PaymentGateway>("MONNIFY");
   const router = useRouter();
 
   useEffect(() => {
@@ -130,7 +128,6 @@ const CostBreakdown = ({
     };
 
     try {
-      // 1. Create the Booking
       const booking: any = await createData("/api/v1/bookings", data);
       const bookingId = booking?.data?.data?.bookingId;
 
@@ -138,7 +135,6 @@ const CostBreakdown = ({
         throw new Error("Booking ID not returned from API");
       }
 
-      // 2. Initiate Payment based on Gateway Selection
       let authUrl = "";
 
       if (paymentGateway === "MONNIFY") {
@@ -148,13 +144,10 @@ const CostBreakdown = ({
         });
         authUrl = payment?.data?.data?.authorizationUrl;
       } else if (paymentGateway === "PAYSTACK") {
-        // --- PAYSTACK FLOW ---
-        // Assuming path param as requested: POST {baseURL}payments/initialize/{bookingId}
         const payment = await createData(
           `/api/v1/payments/initialize/${bookingId}`,
-          {} // Empty body
+          {}
         );
-        // Paystack response: data is the string directly
         authUrl = payment?.data?.data;
       }
 
@@ -162,11 +155,9 @@ const CostBreakdown = ({
         throw new Error("Payment authorization URL missing");
       }
 
-      // 3. Redirect user
       router.push(authUrl);
     } catch (err) {
       console.error("Booking or payment failed:", err);
-      // Optional: Add toast notification here
     }
   };
 
@@ -209,13 +200,11 @@ const CostBreakdown = ({
               </span>
             </div>
 
-            {/* Payment Gateway Selection */}
             <div className="mb-6">
               <h3 className="text-sm font-semibold mb-3 text-gray-700">
                 Select Payment Method
               </h3>
               <div className="flex flex-col gap-3">
-                {/* Monnify Option */}
                 <div
                   onClick={() => setPaymentGateway("MONNIFY")}
                   className={cn(
@@ -225,14 +214,12 @@ const CostBreakdown = ({
                       : "border-gray-100 bg-white hover:border-blue-200"
                   )}
                 >
-                  {/* Monnify Logo */}
                   <img
                     src="/images/paymentgateway/monnify.svg"
                     alt="Monnify"
-                    className="h-8 w-auto object-contain" // Adjusted height for visibility
+                    className="h-8 w-auto object-contain"
                   />
 
-                  {/* Check Icon */}
                   {paymentGateway === "MONNIFY" ? (
                     <FiCheckCircle
                       className="text-blue-600 min-w-[24px]"
@@ -246,7 +233,6 @@ const CostBreakdown = ({
                   )}
                 </div>
 
-                {/* Paystack Option */}
                 <div
                   onClick={() => setPaymentGateway("PAYSTACK")}
                   className={cn(
@@ -256,14 +242,12 @@ const CostBreakdown = ({
                       : "border-gray-100 bg-white hover:border-blue-200"
                   )}
                 >
-                  {/* Paystack Logo */}
                   <img
                     src="/images/paymentgateway/paystack1.svg"
                     alt="Paystack"
-                    className="h-8 w-auto object-contain" // Adjusted height for visibility
+                    className="h-8 w-auto object-contain"
                   />
 
-                  {/* Check Icon */}
                   {paymentGateway === "PAYSTACK" ? (
                     <FiCheckCircle
                       className="text-blue-600 min-w-[24px]"
