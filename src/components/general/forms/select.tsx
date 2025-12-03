@@ -1,159 +1,198 @@
-import React, { LegacyRef, ReactNode } from "react";
-
+import React, { ReactNode } from "react";
 import * as Select from "@radix-ui/react-select";
-
 import cn from "classnames";
 import Tooltip from "./tooltip";
 
 type OptionProps = {
-    value: string;
-    option: string;
-    flag?: string | ReactNode;
+  value: string;
+  option: string;
+  flag?: string | ReactNode;
 };
 
 type SelectInputProps = {
-    className?: string;
-    defaultValue?: string;
-    id: string;
-    label?: string;
-    placeholder?: string;
-    variant?: "outlined" | "filled";
-    options: OptionProps[];
-    onChange?: (value: string) => void;
-    value?: string;
-    error?: string;
-    info?: boolean;
-    tooltipTitle?: string;
-    tooltipDescription?: string;
-    disabled?: boolean;
-    width?: string;
+  className?: string;
+  defaultValue?: string;
+  id: string;
+  label?: string;
+  placeholder?: string;
+  variant?: "outlined" | "filled";
+  options: OptionProps[];
+  onChange?: (value: string) => void;
+  value?: string;
+  error?: string;
+  info?: boolean;
+  tooltipTitle?: string;
+  tooltipDescription?: string;
+  disabled?: boolean;
+  width?: string;
 };
 
 const SelectInput = ({
-    className,
-    defaultValue,
-    id,
-    label,
-    placeholder,
-    variant,
-    options,
-    value,
-    onChange,
-    error,
-    info,
-    tooltipTitle,
-    tooltipDescription,
-    disabled = false,
-    width,
+  className,
+  defaultValue,
+  id,
+  label,
+  placeholder,
+  variant,
+  options,
+  value,
+  onChange,
+  error,
+  info,
+  tooltipTitle,
+  tooltipDescription,
+  disabled = false,
+  width,
 }: SelectInputProps) => {
-    return (
-        <div className="w-full custom-radix-select">
-            {label && (
-                <label
-                    htmlFor={id}
-                    className={cn(
-                        "label text-sm block font-medium text-nowrap",
-                        variant === "filled" ? "text-white" : "text-grey-900",
-                        info ? "flex items-center gap-3" : ""
-                    )}
-                >
-                    <span> {label}</span>
-                    {info && (
-                        <Tooltip
-                            title={tooltipTitle || ""}
-                            description={tooltipDescription || ""}
-                        />
-                    )}
-                </label>
-            )}
-            <Select.Root
-                defaultValue={defaultValue}
-                value={value}
-                onValueChange={onChange}
+  return (
+    <div className={cn("w-full flex flex-col gap-1.5", width)}>
+      {label && (
+        <label
+          htmlFor={id}
+          className={cn(
+            "text-sm font-medium text-nowrap flex items-center gap-2",
+            variant === "filled" ? "text-white" : "text-grey-900"
+          )}
+        >
+          <span>{label}</span>
+          {info && (
+            <Tooltip
+              title={tooltipTitle || ""}
+              description={tooltipDescription || ""}
+            />
+          )}
+        </label>
+      )}
+
+      <Select.Root
+        defaultValue={defaultValue}
+        value={value}
+        onValueChange={onChange}
+        disabled={disabled}
+      >
+        <Select.Trigger
+          className={cn(
+            "group flex items-center justify-between w-full cursor-pointer rounded-[12px] px-4 text-sm h-[45px] gap-2 outline-none transition-all duration-200 ease-in-out",
+            "disabled:bg-[#e4e7ec] disabled:text-grey-400 disabled:cursor-not-allowed disabled:border-grey-300",
+            error
+              ? "border border-error-500 focus:ring-2 focus:ring-error-500/20"
+              : variant === "filled"
+              ? "bg-gray-800 text-gray-400 border-none hover:bg-gray-700"
+              : "bg-white text-gray-900 border border-[#e4e7ec] hover:border-primary-500",
+            className
+          )}
+          aria-label={id}
+        >
+          <span className="truncate">
+            <Select.Value
+              placeholder={
+                <span className="text-[#4A5565]">{placeholder || ""}</span>
+              }
+            />
+          </span>
+          <Select.Icon className="transition-transform duration-200 group-data-[state=open]:rotate-180">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              fill={variant === "filled" ? "#FFFFFF" : "#667085"}
+              viewBox="0 0 256 256"
             >
-                <Select.Trigger
-                    className={cn(
-                        "flex items-center justify-between w-full cursor-pointer rounded-[12px] p-4 text-sm h-[56px] gap-[5px] outline-none data-[placeholder]:text-[#4A5565] disabled:bg-[#e4e7ec] disabled:text-grey-400 disabled:border-grey-300",
-                        error
-                            ? "border border-error-500 focus:border-error-500"
-                            : variant === "filled"
-                                ? "bg-grey-800 text-grey-400 border-none"
-                                : "bg-white text-grey-900 border border-[#e4e7ec]",
-                        className
-                    )}
-                    aria-label={id}
-                    disabled={disabled}
-                >
-                    <Select.Value placeholder={placeholder || ""} />
-                    {!disabled && (
-                        <Select.Icon>
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="20"
-                                height="20"
-                                fill={variant === "filled" ? "#FFFFFF" : "#000000"}
-                                viewBox="0 0 256 256"
-                            >
-                                <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
-                            </svg>
-                        </Select.Icon>
-                    )}
-                </Select.Trigger>
-                <Select.Content
-                    position="popper"
-                    sideOffset={5}
-                    className={cn(
-                        "!overflow-auto rounded-2xl cursor-pointer z-[999] max-h-[250px] min-w-[240px]",
-                        width,
-                        variant === "filled"
-                            ? "text-[#4A5565] border-none"
-                            : "bg-white border border-[#e4e7ec] "
-                    )}
-                >
-                    <Select.Viewport className="px-4 py-[3px]">
-                        <Select.Group className="space-y-3">
-                            {options.map((option: OptionProps, index) => (
-                                <SelectItem
-                                    key={index}
-                                    value={option.value}
-                                    className="flex items-center gap-2"
-                                >
-                                    <span className="flex items-center gap-0.5">
-                                        {option?.flag && (
-                                            <span className="w-6 h-6">{option?.flag}</span>
-                                        )}
-                                        <span> {option.option}</span>
-                                    </span>
-                                </SelectItem>
-                            ))}
-                        </Select.Group>
-                    </Select.Viewport>
-                </Select.Content>
-            </Select.Root>
-            {error && (
-                <p className="text-error-500 text-sm mt-2 text-nowrap">{error}</p>
+              <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
+            </svg>
+          </Select.Icon>
+        </Select.Trigger>
+
+        <Select.Portal>
+          <Select.Content
+            position="popper"
+            sideOffset={5}
+            className={cn(
+              "z-[999] overflow-hidden rounded-xl shadow-xl animate-in fade-in zoom-in-95 duration-100",
+              // Mobile/Responsive fix: Ensure dropdown matches trigger width
+              "w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)]",
+              variant === "filled"
+                ? "bg-grey-800 text-white"
+                : "bg-white border border-[#e4e7ec]"
             )}
-        </div>
-    );
+          >
+            <Select.Viewport className="p-1.5">
+              <Select.Group>
+                {options.map((option, index) => (
+                  <SelectItem
+                    key={index}
+                    value={option.value}
+                    variant={variant}
+                  >
+                    <span className="flex items-center gap-2 truncate">
+                      {option?.flag && (
+                        <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+                          {option.flag}
+                        </span>
+                      )}
+                      <span className="truncate">{option.option}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </Select.Group>
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
+
+      {error && <p className="text-error-500 text-sm">{error}</p>}
+    </div>
+  );
 };
 
 type SelectItemProps = {
-    className?: string;
-    children: ReactNode;
-    value: string;
+  className?: string;
+  children: ReactNode;
+  value: string;
+  variant?: "outlined" | "filled";
 };
 
-const SelectItem = ({ children, className, ...props }: SelectItemProps) => {
-    return (
-        <Select.Item
-            className={cn(
-                "text-xs 3xl:text-sm flex items-center py-4 h-4 relative select-none data-[disabled]:text-grey-400 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:text-primary-500",
-                className
-            )}
-            {...props}
+const SelectItem = ({
+  children,
+  className,
+  variant,
+  ...props
+}: SelectItemProps) => {
+  return (
+    <Select.Item
+      className={cn(
+        "relative flex items-center w-full cursor-pointer select-none rounded-lg py-2.5 px-3 text-sm outline-none transition-colors",
+        // Default state
+        variant === "filled" ? "text-grey-300" : "text-grey-700",
+        // Disabled state
+        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        // Highlighted/Hover state
+        variant === "filled"
+          ? "data-[highlighted]:bg-grey-700 data-[highlighted]:text-white"
+          : "data-[highlighted]:bg-primary-50 data-[highlighted]:text-primary-600",
+        className
+      )}
+      {...props}
+    >
+      <Select.ItemText>{children}</Select.ItemText>
+
+      {/* Optional: Add a checkmark if needed */}
+      <Select.ItemIndicator className="absolute right-3 inline-flex items-center justify-center">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className="w-4 h-4"
         >
-            <Select.ItemText>{children}</Select.ItemText>
-        </Select.Item>
-    );
+          <path
+            fillRule="evenodd"
+            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </Select.ItemIndicator>
+    </Select.Item>
+  );
 };
+
 export default SelectInput;
