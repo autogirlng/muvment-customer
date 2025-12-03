@@ -41,9 +41,7 @@ export const Navbar = ({
 
   const items = user ? menuItems : guestMenuItems;
   const announcementMessages = [
-    "We've moved! Autogirl.ng is now Muvment.ng | Enjoy an exclusive 5% OFF all website orders.",
-    // "Limited time offer: Get 10% off your first booking!",
-    // "New electric vehicles now available for rent!",
+    "We've moved! Autogirl.ng is now Muvment.ng | use coupon code : Muvment2025 to get ₦5,000 naira off your booking on the website today",
   ];
   return (
     <nav

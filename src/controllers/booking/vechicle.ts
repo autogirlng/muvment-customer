@@ -26,14 +26,30 @@ export class VehicleSearchService {
 
   static async searchVehicles(params?: VehicleSearchParams): Promise<any> {
     try {
-      // Remove empty params before sending
       const filteredParams = Object.fromEntries(
         Object.entries(params || {}).filter(
           ([_, v]) => v !== null && v !== undefined && v !== ""
         )
       );
 
-      const response = await getTableData(this.SEARCH_BASE_URL, filteredParams);
+      const apiPayload: any = {
+        ...filteredParams,
+        radiusInKm: 100,
+      };
+
+      if (apiPayload.lat !== undefined) {
+        apiPayload.latitude = apiPayload.lat;
+        delete apiPayload.lat;
+      }
+
+      if (apiPayload.lng !== undefined) {
+        apiPayload.longitude = apiPayload.lng;
+        delete apiPayload.lng;
+      }
+
+      console.log("Sending API Payload:", apiPayload);
+
+      const response = await getTableData(this.SEARCH_BASE_URL, apiPayload);
 
       if (!response || !response.data || response.data.length === 0) {
         return { data: [], totalCount: 0, totalPages: 1 };
@@ -45,6 +61,8 @@ export class VehicleSearchService {
       throw error;
     }
   }
+
+  // ... (Keep the rest of your methods exactly as they are) ...
 
   static async getVehicleById(vehicleId: string): Promise<any> {
     try {
@@ -63,11 +81,8 @@ export class VehicleSearchService {
   ): Promise<BookingCalculationResponse> {
     try {
       const response = await createData(this.BOOKING_CALCULATE, request);
-
-      if (!response || !response.data) {
+      if (!response || !response.data)
         throw new Error("Failed to calculate booking price");
-      }
-
       return response.data.data;
     } catch (error) {
       console.error("Booking calculation error:", error);
@@ -79,11 +94,8 @@ export class VehicleSearchService {
     console.log("Creating booking with data:", bookingData);
     try {
       const response = await createData(this.CREATE_BOOKING, bookingData);
-
-      if (!response || !response.data) {
+      if (!response || !response.data)
         throw new Error("Failed to create booking");
-      }
-
       console.log("Booking created successfully:", response.data);
       return response.data;
     } catch (error) {
@@ -97,11 +109,8 @@ export class VehicleSearchService {
   ): Promise<PaymentInitiationResponse> {
     try {
       const response = await createData(this.INITIATE_PAYMENT, paymentData);
-
-      if (!response || !response.data) {
+      if (!response || !response.data)
         throw new Error("Failed to initiate payment");
-      }
-
       console.log("Payment initiated successfully:", response.data);
       return response.data;
     } catch (error) {
@@ -125,6 +134,7 @@ export class VehicleSearchService {
       category,
       fromDate: fromDate.toISOString(),
       untilDate: untilDate.toISOString(),
+      radiusInKm: "100",
     });
 
     return `/Booking/search?${params.toString()}`;
@@ -192,7 +202,6 @@ export class VehicleSearchService {
     }
   }
 
-  // Legacy method for backward compatibility
   static async getVechielType() {
     return this.getVehicleTypes();
   }
