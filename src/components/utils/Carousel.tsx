@@ -40,12 +40,12 @@ const Carousel = ({ urls }: { urls: string[] }) => {
                 <div className="w-full aspect-video">
                     <img
                         // @ts-ignore
-                        src={activeImage.url}
+                        src={activeImage}
                         alt={""}
                         className="w-full h-full object-cover transition-opacity duration-500 ease-in-out"
                         // The key forces React to re-render the image element, making the transition noticeable
                         // @ts-ignore
-                        key={activeImage.id}
+                        key={activeImage}
                     />
                 </div>
 
@@ -84,7 +84,7 @@ const Carousel = ({ urls }: { urls: string[] }) => {
                     >
                         <img
                             // @ts-ignore
-                            src={img.url.replace('800x600', '150x100')} // Use smaller placeholder for thumbnail
+                            src={img.replace('800x600', '150x100')} // Use smaller placeholder for thumbnail
                             alt={`Thumbnail ${index + 1}: carousel`}
                             className="w-full h-full object-cover"
                         />

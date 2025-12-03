@@ -7,18 +7,11 @@ export interface VehicleDetailsPageProps {
 
 
 
-export interface BookingOptions {
-  status: string,
-  message: string,
-  errorCode: string,
-  data: {
-    id: string,
-    name: string,
-    durationInMinutes: number,
-    description: string,
-    defaultActive: boolean
-  }[],
-  timestamp: string
+export interface VehicleBookingOptions {
+bookingTypeId: string;
+bookingTypeName:string;
+platformFeeType: string;
+price: number;
 }
 
 
@@ -146,3 +139,48 @@ export interface  EstimatedBookingPrice {
     message: string,
     error: boolean
   }
+
+export interface VehicleDetailsPublic {
+    
+  status: string,
+  message: string,
+  errorCode: string,
+  data: {
+    id: string,
+    name: string,
+    photos: 
+      {
+        cloudinaryUrl: string,
+        cloudinaryPublicId: string,
+        isPrimary: boolean,
+        id: string
+      }[],
+    city: string,
+    allPricingOptions:   {
+        bookingTypeId: string,
+        bookingTypeName: string,
+        price: number,
+        platformFeeType: string,
+        id: string
+      },
+    extraHourlyRate: number,
+    vehicleTypeName: string,
+    willProvideDriver: boolean,
+    willProvideFuel: boolean,
+    numberOfSeats: number,
+    advanceNotice: string,
+    vehicleMakeName: string,
+    vehicleModelName: string,
+    vehicleColorName: string,
+    year: number
+    description: string,
+    vehicleFeatures: string[],
+    maxTripDuration: string,
+    discounts: {
+        durationName: string,
+        percentage: number
+      }[]
+  },
+  timestamp: string
+
+}

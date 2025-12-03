@@ -17,8 +17,8 @@ import { Navbar } from "@/components/Navbar";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { Carousel } from "@/components/utils/Carousel";
 import { TripAccordion } from "@/components/Booking/TripAccordion";
-import { useItineraryForm } from "@/components/general/forms/useItenaryForm";
-import { VehicleDetailsPageProps, BookingOptions, EstimatedBookingPrice } from "@/types/vehicleDetails";
+import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
+import { VehicleDetailsPageProps, VehicleBookingOptions, EstimatedBookingPrice } from "@/types/vehicleDetails";
 
 const IconButton = ({ children, className = '', onClick }: { children: any, className: any, onClick: any }) => (
   <button
@@ -38,6 +38,7 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
   const [error, setError] = useState<string | null>(null);
   const [bookingOptions, setBookingOptions] = useState<{ option: string, value: string }[]>([])
   const [pricing, setPricing] = useState<EstimatedBookingPrice>()
+  const [continueBooking, setContinueBooking] = useState<boolean>(false)
 
   const {
     setTrips,
@@ -51,37 +52,30 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
     isTripFormsComplete
   } = useItineraryForm()
 
-  const generateBookingOptions = useCallback(async (): Promise<{ option: string, value: string }[]> => {
-
-    const bookingTypes = await getTableData("/api/v1/booking-types")
-    const types: BookingOptions = bookingTypes?.data
+  const generateBookingOptions = () => {
+    const types: VehicleBookingOptions[] = vehicle?.allPricingOptions
 
 
-    const options = types.data.map((type) => {
-      return { option: type.name, value: type.id }
+    const options = types?.map((type) => {
+      return { option: type.bookingTypeName, value: type.bookingTypeId }
     })
 
     return options;
-  }, [])
+  }
+
+
+
+
+  useEffect(() => {
+    const options = generateBookingOptions();
+    setBookingOptions(options);
+  }, [vehicle])
 
 
 
   useEffect(() => {
-    let mounted = true;
-    generateBookingOptions().then((options) => {
-      setBookingOptions(options)
-    })
-    return () => {
-      mounted = false;
-    }
-  }, [generateBookingOptions])
-
-  useEffect(() => {
-
-
     sessionStorage.removeItem("trips")
     setTrips([{ id: "trip-0", tripDetails: {} }])
-
   }, [])
 
 
@@ -195,8 +189,12 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
     })
 
     const data = { vehicleId: vehicle.id, segments: tripSegments }
+
+
     const pricing = await createData("/api/v1/public/bookings/calculate", data) as EstimatedBookingPrice
+    sessionStorage.setItem("priceEstimateId", pricing.data.data.calculationId)
     setPricing(pricing)
+    setContinueBooking(true)
     return pricing;
   }
 
@@ -234,9 +232,8 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
 
 
               <Carousel urls={vehicle.photos.map((photo: any) => {
-                return {
-                  url: photo.cloudinaryUrl, id: photo.cloudinaryPublicId
-                }
+                return photo.cloudinaryUrl
+
               })} />
             </div>
 
@@ -327,12 +324,22 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
 
 
                 {/* Book Ride Button */}
-                <button
-                  className="w-full py-5 mt-4 text-xs cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed  text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
-                  disabled={!isTripFormsComplete}
-                  onClick={estimatePrice}>
-                  Estimate Price
-                </button>
+
+                {
+                  !continueBooking || !isTripFormsComplete ? <button
+                    className="w-full py-5 mt-4 text-xs cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed  text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                    disabled={!isTripFormsComplete}
+                    onClick={estimatePrice}>
+                    Estimate Price
+                  </button> : <button
+                    className="w-full py-5 mt-4 text-xs cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed  text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                    disabled={!isTripFormsComplete}
+                    onClick={() => router.push(`/Booking/create/${vehicle.id}`)}>
+                    Continue Booking
+                  </button>
+
+                }
+
 
                 {/* Discounts Section */}
                 <div className="space-y-3 pt-4">

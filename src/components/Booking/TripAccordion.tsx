@@ -2,17 +2,12 @@ import { useState } from "react";
 import DateInput from "../general/forms/DateInput";
 import TimeInput from "../general/forms/TimeInput";
 import Icons from "../general/forms/icons";
-
-
 import SelectInput from "../general/forms/select";
 import { ReactNode } from "react";
 import cn from "classnames";
 import { format } from 'date-fns';
 import { GoogleMapsLocationInput } from "../general/forms/GoogleMapsLocationInput";
 import { ITripPerDaySelect, TripDetails, CalendarValue } from "@/types/vehicleDetails";
-
-
-
 
 export function toTitleCase(str: string): string {
     if (!str) {
@@ -23,9 +18,7 @@ export function toTitleCase(str: string): string {
         .split(" ")
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
-
 }
-
 
 const InputSection = ({
     title,

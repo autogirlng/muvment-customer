@@ -47,7 +47,7 @@ const SelectInput = ({
     width,
 }: SelectInputProps) => {
     return (
-        <div className="w-full space-y-2 custom-radix-select">
+        <div className="w-full custom-radix-select">
             {label && (
                 <label
                     htmlFor={id}
@@ -73,7 +73,7 @@ const SelectInput = ({
             >
                 <Select.Trigger
                     className={cn(
-                        "flex items-center justify-between w-full cursor-pointer rounded-[12px] p-4 text-sm h-[32px] gap-[5px] outline-none data-[placeholder]:text-[#4A5565] disabled:bg-[#e4e7ec] disabled:text-grey-400 disabled:border-grey-300",
+                        "flex items-center justify-between w-full cursor-pointer rounded-[12px] p-4 text-sm h-[56px] gap-[5px] outline-none data-[placeholder]:text-[#4A5565] disabled:bg-[#e4e7ec] disabled:text-grey-400 disabled:border-grey-300",
                         error
                             ? "border border-error-500 focus:border-error-500"
                             : variant === "filled"
