@@ -2,9 +2,6 @@
 import { useState, useEffect } from "react";
 import { Trips, TripDetails } from "@/types/vehicleDetails";
 
-
-
-
 export const useItineraryForm = () => {
 
     const [trips, setTrips] = useState<Trips[]>([])
@@ -26,7 +23,6 @@ export const useItineraryForm = () => {
     }
 
 
-    // const http = useHttp()
     const addTrip = (id: string) => {
         setTrips(prev => [...prev, { id }])
         setIsTripFormComplete(false)
@@ -47,8 +43,6 @@ export const useItineraryForm = () => {
             return updated
         })
         const bookingTypes: string[] = [];
-
-
         updatedTrips.forEach((trip) => {
             trip.bookingType && bookingTypes.push(trip.bookingType)
 
