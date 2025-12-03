@@ -36,9 +36,6 @@ export default function SlidingBanner({
           <span className="text-sm md:text-md lg:text-md font-semibold tracking-wider">
             {message}
           </span>
-          <span className="px-2 py-0.5 text-[0.5rem] font-semibold bg-gradient-to-r from-blue-800 to-blue-700 rounded-full">
-            5% OFF
-          </span>
         </span>
       </div>
 
