@@ -209,8 +209,8 @@ const CostBreakdown = ({
               </span>
             </div>
 
-            {/* ✅ NEW: Payment Gateway Selection */}
-            <div className="mb-4">
+            {/* Payment Gateway Selection */}
+            <div className="mb-6">
               <h3 className="text-sm font-semibold mb-3 text-gray-700">
                 Select Payment Method
               </h3>
@@ -219,22 +219,30 @@ const CostBreakdown = ({
                 <div
                   onClick={() => setPaymentGateway("MONNIFY")}
                   className={cn(
-                    "flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all",
+                    "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
                     paymentGateway === "MONNIFY"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-200"
+                      ? "border-blue-500 bg-blue-50/50"
+                      : "border-gray-100 bg-white hover:border-blue-200"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <FiCreditCard className="text-gray-600" />
-                    <span className="text-sm font-medium">
-                      Pay with Monnify
-                    </span>
-                  </div>
+                  {/* Monnify Logo */}
+                  <img
+                    src="/images/paymentgateway/monnify.svg"
+                    alt="Monnify"
+                    className="h-8 w-auto object-contain" // Adjusted height for visibility
+                  />
+
+                  {/* Check Icon */}
                   {paymentGateway === "MONNIFY" ? (
-                    <FiCheckCircle className="text-blue-600" />
+                    <FiCheckCircle
+                      className="text-blue-600 min-w-[24px]"
+                      size={24}
+                    />
                   ) : (
-                    <FiCircle className="text-gray-300" />
+                    <FiCircle
+                      className="text-gray-300 min-w-[24px]"
+                      size={24}
+                    />
                   )}
                 </div>
 
@@ -242,22 +250,30 @@ const CostBreakdown = ({
                 <div
                   onClick={() => setPaymentGateway("PAYSTACK")}
                   className={cn(
-                    "flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all",
+                    "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
                     paymentGateway === "PAYSTACK"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-200"
+                      ? "border-blue-500 bg-blue-50/50"
+                      : "border-gray-100 bg-white hover:border-blue-200"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <FiCreditCard className="text-gray-600" />
-                    <span className="text-sm font-medium">
-                      Pay with Paystack
-                    </span>
-                  </div>
+                  {/* Paystack Logo */}
+                  <img
+                    src="/images/paymentgateway/paystack1.svg"
+                    alt="Paystack"
+                    className="h-8 w-auto object-contain" // Adjusted height for visibility
+                  />
+
+                  {/* Check Icon */}
                   {paymentGateway === "PAYSTACK" ? (
-                    <FiCheckCircle className="text-blue-600" />
+                    <FiCheckCircle
+                      className="text-blue-600 min-w-[24px]"
+                      size={24}
+                    />
                   ) : (
-                    <FiCircle className="text-gray-300" />
+                    <FiCircle
+                      className="text-gray-300 min-w-[24px]"
+                      size={24}
+                    />
                   )}
                 </div>
               </div>
