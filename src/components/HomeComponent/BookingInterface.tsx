@@ -185,14 +185,15 @@ export default function HeroBookingSection() {
         );
         setUserLocation(locationName);
       } catch (error: any) {
-        console.error("Error getting location:", error);
+        console.error("Error getting location:", error?.message || error);
+
         setLocationPermissionStatus("denied");
 
-        if (error.code === 1) {
+        if (error?.code === 1) {
           setUserLocation("Location access denied");
-        } else if (error.code === 2) {
+        } else if (error?.code === 2) {
           setUserLocation("Location unavailable");
-        } else if (error.code === 3) {
+        } else if (error?.code === 3) {
           setUserLocation("Location timeout");
         } else {
           setUserLocation("Unable to detect location");
