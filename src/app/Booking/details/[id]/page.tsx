@@ -290,6 +290,11 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
     )) as EstimatedBookingPrice;
 
     sessionStorage.setItem("priceEstimateId", pricing.data.data.calculationId);
+    if (couponCode.trim()) {
+      sessionStorage.setItem("couponCode", couponCode);
+    } else {
+      sessionStorage.removeItem("couponCode");
+    }
     setPricing(pricing);
     setContinueBooking(true);
     return pricing;

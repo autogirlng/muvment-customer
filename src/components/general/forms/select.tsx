@@ -25,6 +25,7 @@ type SelectInputProps = {
   tooltipDescription?: string;
   disabled?: boolean;
   width?: string;
+  profile?: boolean;
 };
 
 const SelectInput = ({
@@ -43,6 +44,7 @@ const SelectInput = ({
   tooltipDescription,
   disabled = false,
   width,
+  profile,
 }: SelectInputProps) => {
   return (
     <div className={cn("w-full flex flex-col gap-1.5", width)}>
@@ -72,7 +74,9 @@ const SelectInput = ({
       >
         <Select.Trigger
           className={cn(
-            "group flex items-center justify-between w-full cursor-pointer rounded-[12px] px-4 text-sm h-[45px] gap-2 outline-none transition-all duration-200 ease-in-out",
+            `group flex items-center justify-between w-full cursor-pointer rounded-[12px] px-4 text-sm ${
+              profile ? "h-[56px]" : "h-[45px]"
+            } gap-2 outline-none transition-all duration-200 ease-in-out`,
             "disabled:bg-[#e4e7ec] disabled:text-grey-400 disabled:cursor-not-allowed disabled:border-grey-300",
             error
               ? "border border-error-500 focus:ring-2 focus:ring-error-500/20"
