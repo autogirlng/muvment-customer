@@ -20,9 +20,7 @@ const Itinerary = ({
         steps={steps}
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
-        vehicleId={vehicle?.id ?? ""}
       />
-      {/* <VehicleInformationCard vehicle={vehicle} vehicleImages={vehicleImages} /> */}
     </div>
   );
 };

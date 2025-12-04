@@ -46,7 +46,6 @@ export default function CreateBooking() {
         return photo.cloudinaryUrl;
       });
       setVehicleImages(photos);
-      console.log(photos);
       setVehicle(vehicleData);
     }
   };
