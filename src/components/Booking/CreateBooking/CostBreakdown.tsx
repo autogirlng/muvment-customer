@@ -4,8 +4,7 @@ import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { createData, updateData } from "@/controllers/connnector/app.callers";
 import { EstimatedBookingPrice, Trips } from "@/types/vehicleDetails";
-import { FiCheckCircle, FiCircle, FiCreditCard } from "react-icons/fi";
-import { useAuth } from "@/context/AuthContext";
+import { FiCheckCircle, FiCircle } from "react-icons/fi";
 
 export type PersonalInformationMyselfValues = {
   guestEmail: string;
@@ -24,7 +23,8 @@ export type PersonalInformationMyselfValues = {
   recipientSecondaryPhoneNumber: string;
   userCountry: string;
   userCountryCode: string;
-  extraDetails: ""
+  extraDetails: string;
+  purposeOfRide: string;
 };
 
 type PaymentGateway = "MONNIFY" | "PAYSTACK";
@@ -44,7 +44,6 @@ const CostBreakdown = ({
   const router = useRouter();
 
 
-  const { isAuthenticated } = useAuth()
 
 
   const estimatePrice = async () => {
@@ -128,7 +127,7 @@ const CostBreakdown = ({
       data = {
         calculationId: estimatedPriceId,
         primaryPhoneNumber: userBookingInfo.recipientPhoneNumber || "",
-        recipientFullName: userBookingInfo.recipientFullName || "d",
+        recipientFullName: userBookingInfo.recipientFullName || "",
         recipientEmail: userBookingInfo.recipientEmail || "",
         recipientPhoneNumber: userBookingInfo.recipientPhoneNumber || "",
         extraDetails: userBookingInfo.extraDetails || "N/A",
@@ -148,7 +147,7 @@ const CostBreakdown = ({
         primaryPhoneNumber: userBookingInfo.primaryPhoneNumber || "",
         extraDetails: userBookingInfo.extraDetails || "N/A",
         isBookingForOthers: userBookingInfo.isBookingForOthers,
-        purposeOfRide: "N/A",
+        purposeOfRide: userBookingInfo.purposeOfRide || "N/A",
         channel: "WEBSITE",
         paymentMethod: "ONLINE",
         discountAmount: pricing?.data.data.discountAmount,
@@ -160,7 +159,6 @@ const CostBreakdown = ({
       }
 
     }
-    console.log(data)
 
 
     try {
@@ -310,8 +308,8 @@ const CostBreakdown = ({
             {paymentGateway === "MONNIFY" ? "Monnify" : "Paystack"})
           </button>
         ) : (
-          <div className="text-xs">
-            Get cost breakdown before payment
+          <div className="text-center text-xs">
+            Estimate booking cost
             <button
               onClick={estimatePrice}
               className="bg-[#0673ff] cursor-pointer hover:opacity-90 w-full p-3 text-white rounded-full"

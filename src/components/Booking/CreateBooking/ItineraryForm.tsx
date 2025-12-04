@@ -12,6 +12,7 @@ import { EstimatedBookingPrice } from "@/types/vehicleDetails";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { TripDetails } from "@/types/vehicleDetails";
 import TextArea from "@/components/general/forms/textarea";
+import InputField from "@/components/general/forms/inputField";
 
 
 
@@ -88,19 +89,26 @@ const ItineraryForm = ({
   }, [id]);
 
   const initialValues = {
-    extraDetails: ""
+    extraDetails: "",
+    purposeOfRide: ""
   }
   return (
     <>
       <Formik
         initialValues={initialValues}
         validationSchema={itineraryInformationSchema}
-        onSubmit={({ extraDetails }, { setSubmitting }) => {
-          if (!extraDetails) {
-            const bookingInformation = JSON.parse(sessionStorage.getItem("userBookingInformation") || "")
-            sessionStorage.setItem("userBookingInformation", { ...bookingInformation, extraDetails })
+        onSubmit={({ extraDetails, purposeOfRide }, { setSubmitting }) => {
+          let bookingInformation = JSON.parse(sessionStorage.getItem("userBookingInformation") || "")
+
+          if (extraDetails) {
+            bookingInformation["extraDetails"] = extraDetails;
+          }
+          if (purposeOfRide) {
+            bookingInformation["purposeOfRide"] = purposeOfRide
 
           }
+          sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingInformation))
+
           setCurrentStep(currentStep + 1);
         }}
         enableReinitialize={true}
@@ -119,7 +127,7 @@ const ItineraryForm = ({
           setFieldValue,
           isSubmitting,
         }) => {
-          console.log(errors)
+
           return (
             <Form className="max-w-[500px] w-full space-y-8">
               <h6 className="!font-bold text-base md:text-md ">
@@ -162,9 +170,26 @@ const ItineraryForm = ({
                 placeholder="Add extra trip details you will like to share"
                 label="Extra details(optional)"
                 onChange={handleChange}
-
                 onBlur={handleBlur}
                 value={values.extraDetails}
+              />
+
+
+              <InputField
+                name="purposeOfRide"
+                id="purposeOfRide"
+                type="text"
+                label="Ride purpose(optional)"
+                placeholder="Enter the purpose of the ride"
+                value={values.purposeOfRide}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={
+                  errors.purposeOfRide && touched.purposeOfRide
+                    ? String(errors.purposeOfRide)
+                    : ""
+
+                }
               />
 
               <StepperNavigation
@@ -173,7 +198,6 @@ const ItineraryForm = ({
                 setCurrentStep={setCurrentStep}
                 handleSaveDraft={() => { }}
                 isSaveDraftloading={false}
-                // isNextLoading={isSubmitting}
                 disableNextButton={!isValid || isSubmitting}
               />
             </Form>

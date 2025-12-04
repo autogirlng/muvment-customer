@@ -53,8 +53,10 @@ class ApiClient {
         let message =
           error.response?.data.data ||
           error.response?.data?.error ||
+          error.response?.data?.message ||
           error.message ||
           "Network error or request failed";
+
 
         if (error.response?.status === 401) {
           message = message
