@@ -81,14 +81,14 @@ export const Navbar = ({
 
           {/* Right side - Desktop */}
           <div className="hidden md:flex items-center gap-6">
-            <button
+            {/* <button
               onClick={() => router.push("/")}
               className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
             >
               Become a host
-            </button>
+            </button> */}
 
-            <div className="h-6 w-px bg-gray-300" />
+            {/* <div className="h-6 w-px bg-gray-300" /> */}
 
             <div className="relative">
               <button
@@ -184,12 +184,12 @@ export const Navbar = ({
               </div>
             )}
 
-            <button
+            {/* <button
               onClick={() => handleNavClick("/host")}
               className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium"
             >
               Become a host
-            </button>
+            </button> */}
 
             {items.map((item: any, index: number) => (
               <NavItem
