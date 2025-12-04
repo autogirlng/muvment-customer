@@ -20,7 +20,7 @@ type Props = {
   vehicle: any | null;
   vehicleImages: string[];
   perks: any[];
-  vehicleDetails: VehicleDetailsPublic | null;
+  vehicleDetails: any;
   type: "guest" | "user";
 };
 
@@ -112,34 +112,34 @@ export default function BookingSummary({
               <div className="flex flex-wrap items-center gap-4">
                 <VehicleDetailsChip
                   label="Make"
-                  value={vehicleDetails?.data.vehicleMakeName || "N/A"}
+                  value={vehicleDetails?.vehicleMakeName || "N/A"}
                 />
                 <VehicleDetailsChip
                   label="Model"
-                  value={vehicleDetails?.data.vehicleModelName || "N/A"}
+                  value={vehicleDetails?.vehicleModelName || "N/A"}
                 />
                 <VehicleDetailsChip
                   label="Year"
-                  value={`${vehicleDetails?.data.year || "N/A"}`}
+                  value={`${vehicleDetails?.year || "N/A"}`}
                 />
                 <VehicleDetailsChip
                   label="Colour"
-                  value={vehicleDetails?.data.vehicleColorName || "N/A"}
+                  value={vehicleDetails?.vehicleColorName || "N/A"}
                 />
                 <VehicleDetailsChip
                   label="City"
-                  value={vehicleDetails?.data.city || "N/A"}
+                  value={vehicleDetails?.city || "N/A"}
                 />
                 <VehicleDetailsChip
                   label="Vehicle type"
                   value={
-                    vehicleDetails?.data.vehicleTypeName.replaceAll("_", " ") ||
+                    vehicleDetails?.vehicleTypeName.replaceAll("_", " ") ||
                     "N/A"
                   }
                 />
                 <VehicleDetailsChip
                   label="Seating Capacity"
-                  value={`${vehicleDetails?.data.numberOfSeats || "N/A"}`}
+                  value={`${vehicleDetails?.numberOfSeats || "N/A"}`}
                 />
               </div>
             </div>
@@ -147,19 +147,17 @@ export default function BookingSummary({
             <div className="space-y-2">
               <h2 className="text-lg">Description</h2>
               <p className="text-gray-600 text-sm leading-relaxed">
-                {vehicleDetails?.data.description || "N/A"}
+                {vehicleDetails?.description || "N/A"}
               </p>
             </div>
 
             <div className="space-y-2">
               <h2 className="text-lg text-gray-800">Features</h2>
               <div className="flex flex-wrap gap-2">
-                {vehicleDetails?.data.vehicleFeatures &&
-                  vehicleDetails?.data.vehicleFeatures.map(
-                    (feature: string) => {
-                      return <FeatureTag key={feature}>{feature} </FeatureTag>;
-                    }
-                  )}
+                {vehicleDetails?.vehicleFeatures &&
+                  vehicleDetails?.vehicleFeatures.map((feature: string) => {
+                    return <FeatureTag key={feature}>{feature} </FeatureTag>;
+                  })}
               </div>
             </div>
           </div>
@@ -218,7 +216,7 @@ export default function BookingSummary({
           }
         </Collapse>
       </div>
-      <CostBreakdown trips={trips} vehicleId={vehicleDetails?.data.id || ""} />
+      <CostBreakdown trips={trips} vehicleId={vehicleDetails?.id || ""} />
     </div>
   );
 }

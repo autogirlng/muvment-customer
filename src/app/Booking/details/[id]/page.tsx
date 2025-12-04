@@ -283,13 +283,8 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
     if (couponCode.trim() !== "") {
       data.couponCode = couponCode;
     }
-
-    const pricing = (await createData(
-      "/api/v1/public/bookings/calculate",
-      data
-    )) as EstimatedBookingPrice;
-
-    sessionStorage.setItem("priceEstimateId", pricing.data.data.calculationId);
+    const pricing = await VehicleSearchService.calculateBooking(data);
+    sessionStorage.setItem("priceEstimateId", pricing.calculationId);
     if (couponCode.trim()) {
       sessionStorage.setItem("couponCode", couponCode);
     } else {

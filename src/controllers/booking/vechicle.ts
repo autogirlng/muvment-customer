@@ -47,8 +47,6 @@ export class VehicleSearchService {
         delete apiPayload.lng;
       }
 
-      console.log("Sending API Payload:", apiPayload);
-
       const response = await getTableData(this.SEARCH_BASE_URL, apiPayload);
 
       if (!response || !response.data || response.data.length === 0) {
@@ -76,9 +74,7 @@ export class VehicleSearchService {
     }
   }
 
-  static async calculateBooking(
-    request: BookingCalculationRequest
-  ): Promise<BookingCalculationResponse> {
+  static async calculateBooking(request: BookingCalculationRequest) {
     try {
       const response = await createData(this.BOOKING_CALCULATE, request);
       if (!response || !response.data)
@@ -91,30 +87,13 @@ export class VehicleSearchService {
   }
 
   static async createBooking(bookingData: any): Promise<CreateBookingResponse> {
-    console.log("Creating booking with data:", bookingData);
     try {
       const response = await createData(this.CREATE_BOOKING, bookingData);
       if (!response || !response.data)
         throw new Error("Failed to create booking");
-      console.log("Booking created successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error("Booking creation error:", error);
-      throw error;
-    }
-  }
-
-  static async initiatePayment(
-    paymentData: PaymentInitiationRequest
-  ): Promise<PaymentInitiationResponse> {
-    try {
-      const response = await createData(this.INITIATE_PAYMENT, paymentData);
-      if (!response || !response.data)
-        throw new Error("Failed to initiate payment");
-      console.log("Payment initiated successfully:", response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Payment initiation error:", error);
       throw error;
     }
   }
@@ -143,6 +122,16 @@ export class VehicleSearchService {
   static async getVehicleTypes(): Promise<any> {
     try {
       const response = await getSingleData(this.VEHICLES_TYPE);
+      return response?.data || [];
+    } catch (error) {
+      console.error("Error fetching vehicle types:", error);
+      return [];
+    }
+  }
+
+  static async calculatingBookingByid(id: string): Promise<any> {
+    try {
+      const response = await getSingleData(this.BOOKING_CALCULATE + `/${id}`);
       return response?.data || [];
     } catch (error) {
       console.error("Error fetching vehicle types:", error);

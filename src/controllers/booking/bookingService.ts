@@ -1,8 +1,15 @@
+import { EstimatedBookingPrice } from "@/types/vehicleDetails";
 import {
   createData,
   getSingleData,
   getTableData,
+  updateData,
 } from "../connnector/app.callers";
+import {
+  CreateBookingResponse,
+  PaymentInitiationRequest,
+  PaymentInitiationResponse,
+} from "@/types/vehicle";
 
 export interface Booking {
   id?: string;
@@ -46,6 +53,7 @@ export interface BookingFilters {
 export class BookingService {
   private static readonly BASE_URL = "/api/v1/bookings";
   private static readonly PAYMENT_URL = "/api/v1/payments";
+  private static readonly INITIATE_PAYMENT = "/api/v1/payments/initiate";
 
   static async getMyBookings(
     filters: BookingFilters = {}
@@ -66,10 +74,66 @@ export class BookingService {
     }
   }
 
+  static async createBooking(bookingData: any): Promise<CreateBookingResponse> {
+    try {
+      const response = await createData(this.BASE_URL, bookingData);
+      if (!response || !response.data)
+        throw new Error("Failed to create booking");
+      return response.data;
+    } catch (error) {
+      console.error("Booking creation error:", error);
+      throw error;
+    }
+  }
+
+  static async initiatePaymentPaystack(
+    paymentData: PaymentInitiationRequest
+  ): Promise<PaymentInitiationResponse> {
+    try {
+      const response = await createData(
+        this.INITIATE_PAYMENT + `/${paymentData.bookingId}`,
+        {}
+      );
+      if (!response || !response.data)
+        throw new Error("Failed to initiate payment");
+      return response.data;
+    } catch (error) {
+      console.error("Payment initiation error:", error);
+      throw error;
+    }
+  }
+
+  static async initiatePaymentMonify(
+    paymentData: PaymentInitiationRequest
+  ): Promise<PaymentInitiationResponse> {
+    try {
+      const response = await createData(this.INITIATE_PAYMENT, paymentData);
+      if (!response || !response.data)
+        throw new Error("Failed to initiate payment");
+      return response.data;
+    } catch (error) {
+      console.error("Payment initiation error:", error);
+      throw error;
+    }
+  }
+
   static async getBookingById(bookingId: string): Promise<any> {
     try {
       const response = await getSingleData(`${this.BASE_URL}/${bookingId}`);
       return response?.data || null;
+    } catch (error) {
+      console.error("Error fetching booking details:", error);
+      throw error;
+    }
+  }
+
+  static async updateBookingEstimation(
+    bookingId: string,
+    data: any
+  ): Promise<any> {
+    try {
+      const response = await updateData(`${this.BASE_URL}`, bookingId, data);
+      return (response as EstimatedBookingPrice) || null;
     } catch (error) {
       console.error("Error fetching booking details:", error);
       throw error;

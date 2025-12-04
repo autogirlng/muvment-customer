@@ -135,43 +135,37 @@ export interface EstimatedBookingPrice {
 }
 
 export interface VehicleDetailsPublic {
-  status: string;
-  message: string;
-  errorCode: string;
-  data: {
+  id: string;
+  name: string;
+  photos: {
+    cloudinaryUrl: string;
+    cloudinaryPublicId: string;
+    isPrimary: boolean;
     id: string;
-    name: string;
-    photos: {
-      cloudinaryUrl: string;
-      cloudinaryPublicId: string;
-      isPrimary: boolean;
-      id: string;
-    }[];
-    city: string;
-    allPricingOptions: {
-      bookingTypeId: string;
-      bookingTypeName: string;
-      price: number;
-      platformFeeType: string;
-      id: string;
-    };
-    extraHourlyRate: number;
-    vehicleTypeName: string;
-    willProvideDriver: boolean;
-    willProvideFuel: boolean;
-    numberOfSeats: number;
-    advanceNotice: string;
-    vehicleMakeName: string;
-    vehicleModelName: string;
-    vehicleColorName: string;
-    year: number;
-    description: string;
-    vehicleFeatures: string[];
-    maxTripDuration: string;
-    discounts: {
-      durationName: string;
-      percentage: number;
-    }[];
+  }[];
+  city: string;
+  allPricingOptions: {
+    bookingTypeId: string;
+    bookingTypeName: string;
+    price: number;
+    platformFeeType: string;
+    id: string;
   };
-  timestamp: string;
+  extraHourlyRate: number;
+  vehicleTypeName: string;
+  willProvideDriver: boolean;
+  willProvideFuel: boolean;
+  numberOfSeats: number;
+  advanceNotice: string;
+  vehicleMakeName: string;
+  vehicleModelName: string;
+  vehicleColorName: string;
+  year: number;
+  description: string;
+  vehicleFeatures: string[];
+  maxTripDuration: string;
+  discounts: {
+    durationName: string;
+    percentage: number;
+  };
 }
