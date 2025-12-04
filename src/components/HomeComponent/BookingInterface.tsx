@@ -11,11 +11,17 @@ import LocationDropdown from "../utils/LocationDropdown";
 import { bookingOptionsData } from "@/context/Constarain";
 import { GoogleMapsService } from "@/context/googleMapConnector";
 
+const DEFAULT_LOCATION = {
+  name: "Lagos, Nigeria",
+  lat: 6.5244,
+  lng: 3.3792,
+};
+
 export default function HeroBookingSection() {
   const router = useRouter();
 
   // Form state
-  const [bookingType, setBookingType] = useState("select Type");
+  const [bookingType, setBookingType] = useState("Select type");
   const [fromDate, setFromDate] = useState(new Date());
   const [untilDate, setUntilDate] = useState(new Date());
   const [category, setCategory] = useState("suv-electric");
@@ -151,11 +157,24 @@ export default function HeroBookingSection() {
   };
 
   // Get user's current location
+
   useEffect(() => {
+    const fallbackToDefault = () => {
+      setUserLocation("Lagos, Nigeria (Default)");
+
+      setSearchValue(DEFAULT_LOCATION.name);
+
+      setSelectedLocation({
+        name: DEFAULT_LOCATION.name,
+        lat: DEFAULT_LOCATION.lat,
+        lng: DEFAULT_LOCATION.lng,
+      });
+    };
+
     const getUserLocation = async () => {
       if (!navigator.geolocation) {
-        setUserLocation("Location not supported");
         setLocationPermissionStatus("denied");
+        fallbackToDefault();
         return;
       }
 
@@ -173,34 +192,30 @@ export default function HeroBookingSection() {
         const { latitude, longitude } = position.coords;
         setLocationPermissionStatus("granted");
 
-        // Wait for Google Maps to be initialized
         if (googleMapsServiceRef.current) {
           await googleMapsServiceRef.current.initialize();
         }
 
-        // Get location name from coordinates using Google Maps
         const locationName = await reverseGeocodeWithGoogle(
           latitude,
           longitude
         );
+
         setUserLocation(locationName);
+        setSearchValue(locationName);
+        setSelectedLocation({
+          name: locationName,
+          lat: latitude,
+          lng: longitude,
+        });
       } catch (error: any) {
-        console.error("Error getting location:", error);
+        console.error("Error getting location:", error?.message || error);
         setLocationPermissionStatus("denied");
 
-        if (error.code === 1) {
-          setUserLocation("Location access denied");
-        } else if (error.code === 2) {
-          setUserLocation("Location unavailable");
-        } else if (error.code === 3) {
-          setUserLocation("Location timeout");
-        } else {
-          setUserLocation("Unable to detect location");
-        }
+        fallbackToDefault();
       }
     };
 
-    // Small delay to ensure Google Maps service is initialized
     const timer = setTimeout(() => {
       getUserLocation();
     }, 500);
@@ -342,7 +357,7 @@ export default function HeroBookingSection() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden mt-[7rem] md:mt-0">
+    <div className="relative w-full h-screen overflow-hidden mt-[5rem] md:mt-0">
       {/* Background with overlay */}
       <div className="absolute inset-0">
         <Image
@@ -398,7 +413,7 @@ export default function HeroBookingSection() {
                     ref={searchInputRef}
                     type="text"
                     placeholder="Search by city, airport, address"
-                    className="w-full bg-transparent focus:outline-none text-sm text-gray-900 placeholder-gray-400"
+                    className="w-full bg-transparent focus:outline-none text-sm text-gray-400 placeholder-gray-400"
                     value={searchValue}
                     onChange={handleSearchInputChangeEvent}
                     onFocus={handleSearchInputFocus}

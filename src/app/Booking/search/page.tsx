@@ -161,8 +161,10 @@ export default function ExploreVehiclesPage() {
         };
 
         if (!clearAll) {
-          if (lat) params.latitude = parseFloat(lat);
-          if (lng) params.longitude = parseFloat(lng);
+          if (lat && lng) {
+            params.latitude = parseFloat(lat);
+            params.longitude = parseFloat(lng);
+          }
           if (category) params.vehicleTypeId = category;
           if (fromDate) params.fromDate = fromDate;
           if (untilDate) params.untilDate = untilDate;

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, ReactNode, useCallback } from "react";
+import React, { useState, useEffect, ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getTableData, createData } from "@/controllers/connnector/app.callers";
+import { createData } from "@/controllers/connnector/app.callers";
 import { format } from "date-fns";
 
 import {
@@ -11,15 +11,16 @@ import {
   FiArrowLeft,
   FiBell,
   FiShare2,
+  FiTag, // Added icon for coupon
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { Carousel } from "@/components/utils/Carousel";
 import { TripAccordion } from "@/components/Booking/TripAccordion";
-import { useItineraryForm } from "@/components/general/forms/useItenaryForm";
+import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
 import {
   VehicleDetailsPageProps,
-  BookingOptions,
+  VehicleBookingOptions,
   EstimatedBookingPrice,
 } from "@/types/vehicleDetails";
 
@@ -40,6 +41,61 @@ const IconButton = ({
   </button>
 );
 
+const PriceRow = ({
+  label,
+  value,
+  isDiscount = false,
+  isTotal = false,
+  subLabel = null,
+}: {
+  label: string;
+  value: number;
+  isDiscount?: boolean;
+  isTotal?: boolean;
+  subLabel?: string | null;
+}) => {
+  if (value === 0 && !isTotal) return null;
+
+  return (
+    <div
+      className={`flex justify-between items-start ${
+        isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
+      }`}
+    >
+      <div className="flex flex-col">
+        <span
+          className={`${
+            isTotal
+              ? "text-base font-bold text-gray-900"
+              : "text-sm text-gray-600"
+          }`}
+        >
+          {label}
+        </span>
+        {/* Show explanation like "Mowe, Shoprite" under the surcharge label */}
+        {subLabel && (
+          <span className="text-[10px] text-gray-400 max-w-[180px] leading-tight">
+            {subLabel}
+          </span>
+        )}
+      </div>
+
+      <span
+        className={`font-medium ${
+          isTotal
+            ? "text-lg text-blue-600 font-bold"
+            : isDiscount
+            ? "text-green-600 text-sm"
+            : "text-gray-900 text-sm"
+        }`}
+      >
+        {isDiscount ? "-" : ""} NGN
+        {value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+      </span>
+    </div>
+  );
+};
+
 const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
   const router = useRouter();
   const { id } = useParams();
@@ -49,7 +105,10 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
   const [bookingOptions, setBookingOptions] = useState<
     { option: string; value: string }[]
   >([]);
-  const [pricing, setPricing] = useState<EstimatedBookingPrice>();
+  const [pricing, setPricing] = useState<EstimatedBookingPrice | undefined>();
+  const [continueBooking, setContinueBooking] = useState<boolean>(false);
+
+  const [couponCode, setCouponCode] = useState<string>("");
 
   const {
     setTrips,
@@ -59,31 +118,34 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
     addTrip,
     toggleOpen,
     openTripIds,
-
     isTripFormsComplete,
   } = useItineraryForm();
 
-  const generateBookingOptions = useCallback(async (): Promise<
-    { option: string; value: string }[]
-  > => {
-    const bookingTypes = await VehicleSearchService.getVehicleTypes();
-    const types: BookingOptions = bookingTypes[0];
-    const options = types.data.map((type) => {
-      return { option: type.name, value: type.id };
-    });
-
-    return options;
-  }, []);
+  useEffect(() => {
+    if (continueBooking) {
+      setContinueBooking(false);
+      setPricing(undefined);
+    }
+  }, [trips]);
 
   useEffect(() => {
-    let mounted = true;
-    generateBookingOptions().then((options) => {
-      setBookingOptions(options);
+    if (continueBooking) {
+      setContinueBooking(false);
+    }
+  }, [couponCode]);
+
+  const generateBookingOptions = () => {
+    const types: VehicleBookingOptions[] = vehicle?.allPricingOptions;
+    const options = types?.map((type) => {
+      return { option: type.bookingTypeName, value: type.bookingTypeId };
     });
-    return () => {
-      mounted = false;
-    };
-  }, [generateBookingOptions]);
+    return options;
+  };
+
+  useEffect(() => {
+    const options = generateBookingOptions();
+    setBookingOptions(options);
+  }, [vehicle]);
 
   useEffect(() => {
     sessionStorage.removeItem("trips");
@@ -182,9 +244,14 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
       const dropoffCoordinates: { lat: number; lng: number } = JSON.parse(
         `${details?.dropoffCoordinates}`
       );
-      const areaOfUseCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${details?.areaOfUseCoordinates}`
-      );
+      let areaOfUseCoordinates: { lat: number; lng: number } | null = null;
+      if (details?.areaOfUseCoordinates) {
+        try {
+          areaOfUseCoordinates = JSON.parse(`${details?.areaOfUseCoordinates}`);
+        } catch (e) {
+          console.error("Error parsing area of use", e);
+        }
+      }
 
       return {
         bookingTypeId: details?.bookingType,
@@ -196,32 +263,50 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
         dropoffLongitude: dropoffCoordinates.lng,
         pickupLocationString: details?.pickupLocation,
         dropoffLocationString: details?.dropoffLocation,
-        areaOfUse: [
-          {
-            areaOfUseLatitude: areaOfUseCoordinates.lat,
-            areaOfUseLongitude: areaOfUseCoordinates.lng,
-            areaOfUseName: details?.areaOfUse,
-          },
-        ],
+        areaOfUse: areaOfUseCoordinates
+          ? [
+              {
+                areaOfUseLatitude: areaOfUseCoordinates.lat,
+                areaOfUseLongitude: areaOfUseCoordinates.lng,
+                areaOfUseName: details?.areaOfUse,
+              },
+            ]
+          : [],
       };
     });
 
-    const data = { vehicleId: vehicle.id, segments: tripSegments };
+    const data: any = {
+      vehicleId: vehicle.id,
+      segments: tripSegments,
+    };
+
+    if (couponCode.trim() !== "") {
+      data.couponCode = couponCode;
+    }
+
     const pricing = (await createData(
       "/api/v1/public/bookings/calculate",
       data
     )) as EstimatedBookingPrice;
+
+    sessionStorage.setItem("priceEstimateId", pricing.data.data.calculationId);
+    if (couponCode.trim()) {
+      sessionStorage.setItem("couponCode", couponCode);
+    } else {
+      sessionStorage.removeItem("couponCode");
+    }
     setPricing(pricing);
+    setContinueBooking(true);
     return pricing;
   };
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen w-full bg-gray-50 mt-10">
-        <div className="min-h-screen bg-gray-50 p-4 sm:p-8 flex items-center justify-center flex-col">
+      <div className="min-h-screen w-full bg-gray-50 mt-15">
+        <div className="min-h-screen bg-gray-50 p-0 sm:p-3 flex items-center justify-center flex-col">
           <div className="max-w-4xl flex flex-col w-full">
-            <div className=" rounded-xl  flex-shrink p-4 sm:p-6 space-y-4">
+            <div className=" rounded-xl flex-shrink p-4 sm:p-6 space-y-4">
               <button
                 className="cursor-pointer flex items-center space-x-1"
                 onClick={() => router.back()}
@@ -229,37 +314,36 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                 <FiArrowLeft size={24} />
                 <span>Back</span>
               </button>
-              <header className="flex flex-row  justify-between items-start sm:items-center">
-                <h1 className="text-4xl font-bold text-gray-800 mb-2 sm:mb-0">
-                  {vehicle.name || ""}{" "}
+              <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 w-full">
+                <h1 className="text-2xl xs:text-3xl sm:text-4xl font-bold text-gray-800 leading-tight break-words max-w-full">
+                  {vehicle.name || ""}
                 </h1>
-                <div className="flex items-center space-x-3">
+
+                <div className="flex flex-row items-center space-x-2 xs:space-x-3 self-end sm:self-auto">
                   <IconButton
-                    className="bg-gray-900 hover:bg-gray-800 cursor-pointer text-[white]"
+                    className="bg-gray-900 hover:bg-gray-800 cursor-pointer text-white p-2 sm:p-2.5 rounded-full"
                     onClick={() => {}}
                   >
-                    <FiShare2 size={18} />
+                    <FiShare2 size={16} className="sm:size-[18px]" />
                   </IconButton>
+
                   <IconButton
-                    className="bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer"
+                    className="bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer p-2 sm:p-2.5 rounded-full"
                     onClick={() => {}}
                   >
-                    <FiHeart size={18} />
+                    <FiHeart size={16} className="sm:size-[18px]" />
                   </IconButton>
                 </div>
               </header>
 
               <Carousel
                 urls={vehicle.photos.map((photo: any) => {
-                  return {
-                    url: photo.cloudinaryUrl,
-                    id: photo.cloudinaryPublicId,
-                  };
+                  return photo.cloudinaryUrl;
                 })}
               />
             </div>
 
-            <div className="bg-[#F7F9FC] py-3 w-full  px-3 flex items-center space-x-2 rounded-t-xl">
+            <div className="bg-[#F7F9FC] py-3 w-full px-3 flex items-center space-x-2 rounded-t-xl">
               <FiBell
                 size={40}
                 color="#F38218 "
@@ -270,7 +354,6 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
               </span>
             </div>
             <div className="p-6 md:p-8 flex flex-col md:flex-row gap-8">
-              {/* LEFT HAND SIDE */}
               <div className="w-full md:w-3/5 space-y-8 mt-5">
                 <div className="space-y-2">
                   <h2 className="text-lg text-gray-800 pb-1">
@@ -320,14 +403,15 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                   <div className="flex flex-wrap gap-2">
                     {vehicle.vehicleFeatures.length > 0 &&
                       vehicle.vehicleFeatures.map((feature: string) => {
-                        return <FeatureTag>{feature} </FeatureTag>;
+                        return (
+                          <FeatureTag key={feature}>{feature} </FeatureTag>
+                        );
                       })}
                   </div>
                 </div>
               </div>
 
-              {/* RIGHT HAND SIDE */}
-              <div className="w-full md:w-2/5 border-1 p-5 rounded-xl border-[#E4E7EC]">
+              <div className="w-full md:w-2/5 border-1 py-5 px-3 rounded-xl border-[#E4E7EC]">
                 <div>
                   <h1 className="font-bold text-[17px]">Add Booking Details</h1>
                   <p className="text-sm my-4">Trip per day</p>
@@ -350,46 +434,115 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                   })}
                   <button
                     onClick={() => addTrip(`trip-${trips.length}`)}
-                    className="text-[#0673ff] mt-3 text-sm cursor-pointer border-0 bg-white"
+                    className="text-[#0673ff] mt-3 text-sm cursor-pointer border-0"
                   >
                     + Add Trip
                   </button>
 
-                  {pricing?.data && (
-                    <div className="flex justify-between mt-4">
-                      <div className="flex flex-col">
-                        <span className="text-xs">TOTAL</span>
+                  <div className="mt-6 mb-2">
+                    <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                      Have a Coupon? (Optional)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FiTag className="text-gray-400" />
                       </div>
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        placeholder="Enter coupon code"
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"
+                      />
+                    </div>
+                  </div>
 
-                      <span className="font-bold">
-                        NGN{pricing.data.data.finalPrice}
-                      </span>
+                  {pricing?.data && (
+                    <div className="p-4 rounded-xl border border-gray-200">
+                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                        Payment Summary
+                      </h3>
+
+                      <PriceRow
+                        label="Base Price"
+                        value={pricing.data.data.basePrice}
+                      />
+
+                      <PriceRow
+                        label="Platform Fee"
+                        value={pricing.data.data.platformFeeAmount}
+                      />
+
+                      <PriceRow
+                        label="Outskirts Surcharge"
+                        value={pricing.data.data.geofenceSurcharge}
+                        subLabel={
+                          pricing.data.data.appliedGeofenceNames?.length > 0
+                            ? `Applied to: ${pricing.data.data.appliedGeofenceNames.join(
+                                ", "
+                              )}`
+                            : null
+                        }
+                      />
+
+                      <PriceRow
+                        label="Duration Discount"
+                        value={pricing.data.data.discountAmount}
+                        isDiscount
+                      />
+
+                      <PriceRow
+                        label={`Coupon (${
+                          pricing.data.data.appliedCouponCode || "Applied"
+                        })`}
+                        value={pricing.data.data.couponDiscountAmount}
+                        isDiscount
+                      />
+
+                      <PriceRow
+                        label="TOTAL"
+                        value={Number(pricing.data.data.finalPrice)}
+                        isTotal
+                      />
                     </div>
                   )}
                 </div>
 
-                {/* Book Ride Button */}
-                <button
-                  className="w-full py-5 mt-4 text-xs cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed  text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
-                  disabled={!isTripFormsComplete}
-                  onClick={estimatePrice}
-                >
-                  Estimate Price
-                </button>
+                {!continueBooking || !isTripFormsComplete ? (
+                  <button
+                    className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                    disabled={!isTripFormsComplete}
+                    onClick={estimatePrice}
+                  >
+                    Estimate Price
+                  </button>
+                ) : (
+                  <button
+                    className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                    disabled={!isTripFormsComplete}
+                    onClick={() => router.push(`/Booking/create/${vehicle.id}`)}
+                  >
+                    Continue Booking
+                  </button>
+                )}
 
                 {/* Discounts Section */}
-                <div className="space-y-3 pt-4">
-                  <h3 className="text-lg font-bold text-gray-800">Discounts</h3>
-                  {vehicle.discounts.length > 0 &&
-                    vehicle.discounts.map((discount: any, index: number) => (
-                      <DiscountRow
-                        key={index}
-                        days={discount.durationName + " trips"}
-                        discount={discount.percentage + "% off"}
-                        color={"text-[#0aaf24]"}
-                      />
-                    ))}
-                </div>
+                {vehicle.discounts.length > 0 && (
+                  <div className="space-y-3 pt-4">
+                    <h3 className="text-lg font-bold text-gray-800">
+                      Discounts
+                    </h3>
+                    {vehicle.discounts.length > 0 &&
+                      vehicle.discounts.map((discount: any, index: number) => (
+                        <DiscountRow
+                          key={index}
+                          days={discount.durationName + " trips"}
+                          discount={discount.percentage + "% off"}
+                          color={"text-[#0aaf24]"}
+                        />
+                      ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

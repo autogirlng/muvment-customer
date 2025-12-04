@@ -25,7 +25,7 @@ export default function SlidingBanner({
   // Detect mobile or tablet ( <1024px )
   useEffect(() => {
     const checkScreen = () => {
-      if (window.innerWidth < 1144) {
+      if (window.innerWidth < 1024) {
         setForceAnimate(true);
       } else {
         setForceAnimate(false);
@@ -65,7 +65,7 @@ export default function SlidingBanner({
             <div className="flex justify-center items-center">
               <div className="inline-flex items-center justify-center mx-12 flex-shrink-0 gap-3 md:gap-4">
                 <div className="flex items-center gap-3 md:gap-4">
-                  <p className="text-[1rem] xl:text-[1.3rem] font-medium tracking-normal">
+                  <p className="text-[1.3rem] font-medium tracking-normal">
                     {messages[0]}
                   </p>
                   <span className="px-3 py-1 text-base font-semibold bg-gradient-to-r from-blue-600 to-blue-700 rounded-full">
@@ -106,10 +106,10 @@ export default function SlidingBanner({
       <style jsx>{`
         @keyframes infinite-scroll {
           0% {
-            transform: translateX(0%);
+            transform: translateX(-10%);
           }
           100% {
-            transform: translateX(-10%);
+            transform: translateX(0%);
           }
         }
 

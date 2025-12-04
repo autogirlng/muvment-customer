@@ -41,9 +41,7 @@ export const Navbar = ({
 
   const items = user ? menuItems : guestMenuItems;
   const announcementMessages = [
-    "We've moved! Autogirl.ng is now Muvment.ng | Enjoy an exclusive 5% OFF all website orders.",
-    // "Limited time offer: Get 10% off your first booking!",
-    // "New electric vehicles now available for rent!",
+    "We've moved! Autogirl.ng is now Muvment.ng | use coupon code : Muvment2025 to get ₦5,000 naira off your booking on the website today",
   ];
   return (
     <nav
@@ -53,10 +51,10 @@ export const Navbar = ({
     >
       {showAnnouncementBar && (
         <SlidingBanner
-          messages={announcementMessages}
+          message={announcementMessages[0]}
           backgroundColor="bg-gradient-to-r from-violet-600 to-indigo-600"
           textColor="text-white"
-          duration={5000}
+          duration={15}
         />
       )}
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
