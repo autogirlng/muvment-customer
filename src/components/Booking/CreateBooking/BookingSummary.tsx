@@ -1,8 +1,3 @@
-// import {
-//     MappedInformation,
-//     VehicleInformation,
-//     VehiclePerksProp,
-// } from "@/utils/types";
 import Icons from "@/components/general/forms/icons";
 import { useEffect, ReactNode } from "react";
 import Collapse from "@/components/general/collapsible";
@@ -13,14 +8,13 @@ import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
 import { format } from "date-fns";
 import cn from "classnames";
 import CostBreakdown from "./CostBreakdown";
-// import Trip from "./Trip";
-// import CostBreakdown from "./CostBreakdown";
+import { TripDetails } from "@/types/vehicleDetails";
 
 type Props = {
   vehicle: any | null;
   vehicleImages: string[];
   perks: any[];
-  vehicleDetails: any;
+  vehicleDetails: VehicleDetailsPublic | null;
   type: "guest" | "user";
 };
 
@@ -59,27 +53,19 @@ const DiscountRow = ({
 );
 
 export default function BookingSummary({
-  vehicle,
   vehicleImages,
-  perks,
   vehicleDetails,
-  type,
 }: Props) {
-  const {
-    setTrips,
-    trips,
-    deleteTrip,
-    onChangeTrip,
-    addTrip,
-    toggleOpen,
-    openTripIds,
-
-    isTripFormsComplete,
-  } = useItineraryForm();
+  const { setTrips, trips } = useItineraryForm();
 
   useEffect(() => {
-    const trips = sessionStorage.getItem("trips");
-    setTrips([{ id: "trip-0", tripDetails: JSON.parse(trips || "") }]);
+    const tripsInfo = JSON.parse(
+      sessionStorage.getItem("trips") || "[]"
+    ) as TripDetails[];
+    const tripData = tripsInfo.map((trip) => {
+      return { id: trip.id || "", tripDetails: { ...trip } };
+    });
+    setTrips(tripData);
   }, []);
 
   return (

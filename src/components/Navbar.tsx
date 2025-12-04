@@ -51,7 +51,7 @@ export const Navbar = ({
     >
       {showAnnouncementBar && (
         <SlidingBanner
-          messages={announcementMessages}
+          message={announcementMessages[0]}
           backgroundColor="bg-gradient-to-r from-violet-600 to-indigo-600"
           textColor="text-white"
         />

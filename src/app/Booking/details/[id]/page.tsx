@@ -4,6 +4,11 @@ import React, { useState, useEffect, ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createData } from "@/controllers/connnector/app.callers";
 import { format } from "date-fns";
+import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
+// import { BlurredDialog } from "@/components/general/dialog";
+import Button from "@/components/general/forms/button";
+import Modal from "@/components/general/modal";
 
 import {
   FiHeart,
@@ -23,23 +28,6 @@ import {
   VehicleBookingOptions,
   EstimatedBookingPrice,
 } from "@/types/vehicleDetails";
-
-const IconButton = ({
-  children,
-  className = "",
-  onClick,
-}: {
-  children: any;
-  className: any;
-  onClick: any;
-}) => (
-  <button
-    onClick={onClick}
-    className={`p-2 rounded-full transition duration-150 ${className}`}
-  >
-    {children}
-  </button>
-);
 
 const PriceRow = ({
   label,
@@ -99,6 +87,7 @@ const PriceRow = ({
 const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
   const router = useRouter();
   const { id } = useParams();
+  const { isAuthenticated } = useAuth();
   const [vehicle, setVehicle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,9 +96,8 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
   >([]);
   const [pricing, setPricing] = useState<EstimatedBookingPrice | undefined>();
   const [continueBooking, setContinueBooking] = useState<boolean>(false);
-
+  const [bookRideModal, setBookRideModal] = useState<boolean>(false);
   const [couponCode, setCouponCode] = useState<string>("");
-
   const {
     setTrips,
     trips,
@@ -283,8 +271,13 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
     if (couponCode.trim() !== "") {
       data.couponCode = couponCode;
     }
-    const pricing = await VehicleSearchService.calculateBooking(data);
-    sessionStorage.setItem("priceEstimateId", pricing.calculationId);
+
+    const pricing = (await createData(
+      "/api/v1/public/bookings/calculate",
+      data
+    )) as EstimatedBookingPrice;
+
+    sessionStorage.setItem("priceEstimateId", pricing.data.data.calculationId);
     if (couponCode.trim()) {
       sessionStorage.setItem("couponCode", couponCode);
     } else {
@@ -511,6 +504,14 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                   >
                     Estimate Price
                   </button>
+                ) : !isAuthenticated ? (
+                  <button
+                    className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                    disabled={!isTripFormsComplete}
+                    onClick={() => setBookRideModal(true)}
+                  >
+                    Continue Booking
+                  </button>
                 ) : (
                   <button
                     className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
@@ -543,8 +544,98 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
           </div>
         </div>
       </div>
+      <Modal isOpen={bookRideModal} onClose={() => setBookRideModal(false)}>
+        <div className="flex flex-col px-[50px] py-[25px]">
+          <h2 className="text-xl font-semibold mb-4">Book Ride</h2>
+
+          <button
+            className="w-full py-4 text-sm font-medium cursor-pointer bg-[#d0d5dd] text-black rounded-2xl  hover:opacity-80 "
+            onClick={() =>
+              router.push(`/Booking/create/${vehicle.id}?user=guest`)
+            }
+          >
+            Continue as guest
+          </button>
+
+          <button
+            className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 text-white rounded-2xl hover:bg-blue-700 "
+            onClick={() => router.push(`/auth/login`)}
+          >
+            Sign In
+          </button>
+        </div>
+      </Modal>
     </>
   );
 };
+
+const IconButton = ({
+  children,
+  className = "",
+  onClick,
+}: {
+  children: any;
+  className: any;
+  onClick: any;
+}) => (
+  <button
+    onClick={onClick}
+    className={`p-2 rounded-full transition duration-150 ${className}`}
+  >
+    {children}
+  </button>
+);
+
+// const PriceRow = ({
+//   label,
+//   value,
+//   isDiscount = false,
+//   isTotal = false,
+//   subLabel = null,
+// }: {
+//   label: string;
+//   value: number;
+//   isDiscount?: boolean;
+//   isTotal?: boolean;
+//   subLabel?: string | null;
+// }) => {
+//   if (value === 0 && !isTotal) return null;
+
+//   return (
+//     <div
+//       className={`flex justify-between items-start ${isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
+//         }`}
+//     >
+//       <div className="flex flex-col">
+//         <span
+//           className={`${isTotal
+//             ? "text-base font-bold text-gray-900"
+//             : "text-sm text-gray-600"
+//             }`}
+//         >
+//           {label}
+//         </span>
+//         {/* Show explanation like "Mowe, Shoprite" under the surcharge label */}
+//         {subLabel && (
+//           <span className="text-[10px] text-gray-400 max-w-[180px] leading-tight">
+//             {subLabel}
+//           </span>
+//         )}
+//       </div>
+
+//       <span
+//         className={`font-medium ${isTotal
+//           ? "text-lg text-blue-600 font-bold"
+//           : isDiscount
+//             ? "text-green-600 text-sm"
+//             : "text-gray-900 text-sm"
+//           }`}
+//       >
+//         {isDiscount ? "-" : ""} NGN
+//         {value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+//       </span>
+//     </div>
+//   );
+// };
 
 export default VehicleDetailsPage;

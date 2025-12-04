@@ -37,6 +37,7 @@ const TextArea = ({
     tooltipDescription,
     inputClass,
     className,
+    onChange,
     toggleShowPassword,
     ...rest
 }: TextAreaProps) => (
@@ -63,6 +64,9 @@ const TextArea = ({
             <textarea
                 id={id}
                 placeholder={placeholder}
+                onChange={onChange}
+                onBlur={rest.onBlur}
+                value={rest.value}
                 className={cn(
                     "w-full rounded-[18px] resize-none p-4 text-sm h-[56px] gap-[5px] outline-none data-[placeholder]:text-grey-400 min-h-[130px] disabled:bg-grey-100 disabled:text-grey-400 disabled:border-grey-300",
                     icon ? "pr-8" : "",
@@ -71,7 +75,7 @@ const TextArea = ({
                         ? "border border-error-500 focus:border-error-500"
                         : variant === "filled"
                             ? "bg-grey-800 text-grey-400 border-none"
-                            : "bg-white text-grey-900 border border-grey-300 hover:border-primary-500 focus:border-primary-500 focus:shadow-[0_0_0_4px_#1E93FF1A]"
+                            : "bg-white text-grey-900 border border-[#E4E7EC] hover:border-primary-500 focus:border-primary-500 focus:shadow-[0_0_0_4px_#1E93FF1A]"
                 )}
                 {...rest}
             />
