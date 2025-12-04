@@ -74,15 +74,14 @@ const SelectInput = ({
       >
         <Select.Trigger
           className={cn(
-            `group flex items-center justify-between w-full cursor-pointer rounded-[12px] px-4 text-sm ${
-              profile ? "h-[56px]" : "h-[45px]"
+            `group flex items-center justify-between w-full cursor-pointer rounded-[12px] px-4 text-sm ${profile ? "h-[56px]" : "h-[45px]"
             } gap-2 outline-none transition-all duration-200 ease-in-out`,
             "disabled:bg-[#e4e7ec] disabled:text-grey-400 disabled:cursor-not-allowed disabled:border-grey-300",
             error
               ? "border border-error-500 focus:ring-2 focus:ring-error-500/20"
               : variant === "filled"
-              ? "bg-gray-800 text-gray-400 border-none hover:bg-gray-700"
-              : "bg-white text-gray-900 border border-[#e4e7ec] hover:border-primary-500",
+                ? "bg-gray-800 text-gray-400 border-none hover:bg-gray-700"
+                : "bg-white text-gray-900 border border-[#e4e7ec] hover:border-primary-500",
             className
           )}
           aria-label={id}

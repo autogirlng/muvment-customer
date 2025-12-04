@@ -5,17 +5,26 @@ import { useRouter } from "next/navigation";
 import { createData, updateData } from "@/controllers/connnector/app.callers";
 import { EstimatedBookingPrice, Trips } from "@/types/vehicleDetails";
 import { FiCheckCircle, FiCircle, FiCreditCard } from "react-icons/fi";
+import { useAuth } from "@/context/AuthContext";
 
 export type PersonalInformationMyselfValues = {
-  guestName: string;
   guestEmail: string;
-  guestPhoneNumber: string;
   country: string;
   countryCode: string;
   secondaryPhoneNumber: string;
   secondaryCountry: string;
   secondaryCountryCode: string;
   isForSelf: boolean;
+  guestFullName: string;
+  primaryPhoneNumber: string;
+  isBookingForOthers: boolean;
+  recipientFullName: string;
+  recipientEmail: string;
+  recipientPhoneNumber: string;
+  recipientSecondaryPhoneNumber: string;
+  userCountry: string;
+  userCountryCode: string;
+  extraDetails: ""
 };
 
 type PaymentGateway = "MONNIFY" | "PAYSTACK";
@@ -34,60 +43,57 @@ const CostBreakdown = ({
     useState<PaymentGateway>("MONNIFY");
   const router = useRouter();
 
-  useEffect(() => {
-    const estimatedPriceId = sessionStorage.getItem("priceEstimateId") || "";
-    setEstimatedPriceId(estimatedPriceId);
-    setPriceReEstimated(false);
-  }, []);
+
+  const { isAuthenticated } = useAuth()
+
 
   const estimatePrice = async () => {
-    // @ts-ignore
-    const tripSegments = trips[0]?.tripDetails?.map((trip, index) => {
+    const tripSegments = trips?.map((trip, index) => {
       const pickupCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${trip?.pickupCoordinates}`
+        `${trip?.tripDetails?.pickupCoordinates}`
       );
       const dropoffCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${trip?.dropoffCoordinates}`
+        `${trip?.tripDetails?.dropoffCoordinates}`
       );
 
       let areaOfUseCoordinates: { lat: number; lng: number } | null = null;
 
       if (
-        trip?.areaOfUseCoordinates &&
-        trip?.areaOfUseCoordinates !== "undefined"
+        trip?.tripDetails?.areaOfUseCoordinates
       ) {
         try {
-          areaOfUseCoordinates = JSON.parse(`${trip?.areaOfUseCoordinates}`);
+          areaOfUseCoordinates = JSON.parse(`${trip?.tripDetails.areaOfUseCoordinates}`);
         } catch (e) {
           console.error("Error parsing area of use:", e);
         }
       }
 
+
+
       return {
-        bookingTypeId: trip?.bookingType,
-        startDate: format(new Date(trip?.tripStartDate || ""), "yyyy-MM-dd"),
-        startTime: format(new Date(trip?.tripStartTime || ""), "HH:mm:ss"),
+        bookingTypeId: trip?.tripDetails?.bookingType,
+        startDate: format(new Date(trip?.tripDetails?.tripStartDate || ""), "yyyy-MM-dd"),
+        startTime: format(new Date(trip?.tripDetails?.tripStartTime || ""), "HH:mm:ss"),
         pickupLatitude: pickupCoordinates.lat,
         pickupLongitude: pickupCoordinates.lng,
         dropoffLatitude: dropoffCoordinates.lat,
         dropoffLongitude: dropoffCoordinates.lng,
-        pickupLocationString: trip?.pickupLocation,
-        dropoffLocationString: trip?.dropoffLocation,
+        pickupLocationString: trip?.tripDetails?.pickupLocation,
+        dropoffLocationString: trip?.tripDetails?.dropoffLocation,
         areaOfUse: areaOfUseCoordinates
           ? [
-              {
-                areaOfUseLatitude: areaOfUseCoordinates.lat,
-                areaOfUseLongitude: areaOfUseCoordinates.lng,
-                areaOfUseName: trip?.areaOfUse,
-              },
-            ]
+            {
+              areaOfUseLatitude: areaOfUseCoordinates.lat,
+              areaOfUseLongitude: areaOfUseCoordinates.lng,
+              areaOfUseName: trip?.tripDetails?.areaOfUse,
+            },
+          ]
           : [],
       };
     });
 
     const couponCode = sessionStorage.getItem("couponCode");
     const data: any = { vehicleId: vehicleId, segments: tripSegments };
-
     if (couponCode) {
       data.couponCode = couponCode;
     }
@@ -103,29 +109,59 @@ const CostBreakdown = ({
     setPriceReEstimated(true);
     return pricing;
   };
+  useEffect(() => {
+    const estimatedPriceId = sessionStorage.getItem("priceEstimateId") || "";
+    setEstimatedPriceId(estimatedPriceId);
+    setPriceReEstimated(false);
+    estimatePrice()
+  }, [trips]);
+
 
   const processPayment = async () => {
     const userBookingInfo: PersonalInformationMyselfValues = JSON.parse(
       sessionStorage.getItem("userBookingInformation") || ""
     );
 
-    const data = {
-      calculationId: estimatedPriceId,
-      primaryPhoneNumber: userBookingInfo.guestPhoneNumber,
-      secondaryPhoneNumber: userBookingInfo.guestPhoneNumber,
-      guestFullName: userBookingInfo.guestName,
-      guestEmail: userBookingInfo.guestEmail,
-      isBookingForOthers: true,
-      recipientFullName: userBookingInfo.guestName || "N/A",
-      recipientEmail: userBookingInfo.guestEmail,
-      recipientPhoneNumber: userBookingInfo.guestPhoneNumber,
-      recipientSecondaryPhoneNumber: userBookingInfo.guestPhoneNumber,
-      extraDetails: "N/A",
-      purposeOfRide: "N/A",
-      channel: "WEBSITE",
-      paymentMethod: "ONLINE",
-      discountAmount: pricing?.data.data.discountAmount,
-    };
+
+    let data;
+    if (userBookingInfo.isBookingForOthers) {
+      data = {
+        calculationId: estimatedPriceId,
+        primaryPhoneNumber: userBookingInfo.recipientPhoneNumber || "",
+        recipientFullName: userBookingInfo.recipientFullName || "d",
+        recipientEmail: userBookingInfo.recipientEmail || "",
+        recipientPhoneNumber: userBookingInfo.recipientPhoneNumber || "",
+        extraDetails: userBookingInfo.extraDetails || "N/A",
+        isBookingForOthers: userBookingInfo.isBookingForOthers,
+        purposeOfRide: "N/A",
+        channel: "WEBSITE",
+        paymentMethod: "ONLINE",
+        discountAmount: pricing?.data.data.discountAmount,
+      }
+      if (userBookingInfo.secondaryPhoneNumber) {
+        data = { ...data, secondaryPhoneNumber: userBookingInfo.secondaryPhoneNumber }
+      }
+    }
+    else {
+      data = {
+        calculationId: estimatedPriceId,
+        primaryPhoneNumber: userBookingInfo.primaryPhoneNumber || "",
+        extraDetails: userBookingInfo.extraDetails || "N/A",
+        isBookingForOthers: userBookingInfo.isBookingForOthers,
+        purposeOfRide: "N/A",
+        channel: "WEBSITE",
+        paymentMethod: "ONLINE",
+        discountAmount: pricing?.data.data.discountAmount,
+        guestFullName: userBookingInfo.guestFullName || "",
+        guestEmail: userBookingInfo.guestEmail || "",
+      }
+      if (userBookingInfo.recipientSecondaryPhoneNumber) {
+        data = { ...data, recipientSecondaryPhoneNumber: userBookingInfo.recipientSecondaryPhoneNumber }
+      }
+
+    }
+    console.log(data)
+
 
     try {
       const booking: any = await createData("/api/v1/bookings", data);

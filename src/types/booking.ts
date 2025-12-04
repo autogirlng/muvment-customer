@@ -13,13 +13,26 @@ export interface ItineraryInformationValues {
 }
 
 export interface PersonalInformationMyselfValues {
-  guestName: string;
+  guestFullName: string;
   guestEmail: string;
-  guestPhoneNumber: string;
+  primaryPhoneNumber: string;
   country: string;
   countryCode: string;
   secondaryPhoneNumber: string;
   secondaryCountry: string;
   secondaryCountryCode: string;
-  isForSelf: boolean;
+  isBookingForOthers: boolean;
+}
+
+
+export interface PersonalInformationOthersValues {
+  recipientFullName: string;
+  recipientEmail: string;
+  recipientPhoneNumber: string;
+  recipientSecondaryPhoneNumber:string;
+  country: string;
+  countryCode: string;
+  userCountry: string;
+  userCountryCode: string;
+  isBookingForOthers: boolean;
 }

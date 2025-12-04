@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DateInput from "../general/forms/DateInput";
 import TimeInput from "../general/forms/TimeInput";
 import Icons from "../general/forms/icons";
@@ -133,6 +133,15 @@ const TripAccordion = ({
     }
   };
 
+  useEffect(() => {
+
+    if (initialTripStartDate) {
+      const formattedDate = format(initialTripStartDate, "MMM do yyyy");
+      setDate(`Day ${day}: ${formattedDate}`);
+    }
+
+  }, [])
+
   const coordinates = (type: string, value: { lat: number; lng: number }) => {
     onChange(type, JSON.stringify(value));
   };
@@ -175,9 +184,8 @@ const TripAccordion = ({
 
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${
-                isCollapsed ? "rotate-180" : "rotate-0"
-              }`}
+              className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${isCollapsed ? "rotate-180" : "rotate-0"
+                }`}
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -265,6 +273,7 @@ const TripAccordion = ({
                   }
                   timeType="start"
                 />
+
               </InputSection>
             </div>
             <InputSection title="Area of Use">
