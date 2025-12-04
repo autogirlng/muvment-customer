@@ -40,7 +40,6 @@ export default function ExploreVehiclesPage() {
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [makes, setMakes] = useState([]);
   const [features, setFeatures] = useState([]);
-
   // Get URL params
   const lat = searchParams.get("lat");
   const lng = searchParams.get("lng");
@@ -162,7 +161,8 @@ export default function ExploreVehiclesPage() {
         };
 
         if (!clearAll) {
-          if (lat && lng) params.latitude = parseFloat(lat);
+          if (lat) params.latitude = parseFloat(lat);
+          if (lng) params.longitude = parseFloat(lng);
           if (category) params.vehicleTypeId = category;
           if (fromDate) params.fromDate = fromDate;
           if (untilDate) params.untilDate = untilDate;

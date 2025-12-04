@@ -38,6 +38,7 @@ export const getDisplayLabel = (
       SIX_HOURS: "6 Hours",
       TWELVE_HOURS: "12 Hours",
       TWENTY_FOUR_HOURS: "24 Hours",
+      AIRPORT_PICKUP: "Airport Transfers",
     };
     return labels[bookingType] || "Daily";
   }

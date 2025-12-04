@@ -128,7 +128,7 @@ export const NavbarSearchBar = () => {
         fromDate,
         untilDate
       );
-      router.push(searchUrl);
+      window.location.href = searchUrl;
     } catch (error) {
       console.error("Search failed:", error);
     } finally {
