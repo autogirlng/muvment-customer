@@ -8,7 +8,7 @@ import Calendar from "../utils/Calender";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
 import LocationDropdown from "../utils/LocationDropdown";
-import { bookingOptionsData, getBookingOption } from "@/context/Constarain";
+import { getBookingOption } from "@/context/Constarain";
 import { GoogleMapsService } from "@/context/googleMapConnector";
 
 const DEFAULT_LOCATION = {

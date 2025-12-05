@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   FiMapPin,
   FiCalendar,
@@ -10,7 +10,7 @@ import Dropdown from "../utils/DropdownCustom";
 import Calendar from "../utils/Calender";
 import LocationDropdown from "../utils/LocationDropdown";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
-import { bookingOptionsData } from "@/context/Constarain";
+import { getBookingOption } from "@/context/Constarain";
 
 interface SearchBarProps {
   onSearch: (params: SearchParams) => void;
@@ -44,7 +44,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [showAllFields, setShowAllFields] = useState(false);
-
+  const [bookingOptions, setBookingOptions] = useState<any[]>([]);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -72,6 +72,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       category,
     });
   };
+
+  const getBookingOptions = async () => {
+    const data = await getBookingOption();
+    setBookingOptions(data.dropdownOptions);
+  };
+
+  useEffect(() => {
+    getBookingOptions();
+  }, []);
 
   const isCompact = variant === "navbar";
 
@@ -120,7 +129,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             {/* Booking Type */}
             <div className="relative w-full">
               <Dropdown
-                options={bookingOptionsData}
+                options={bookingOptions}
                 selectedValue={bookingType}
                 onSelect={setBookingType}
                 placeholder="Select booking type"
@@ -211,7 +220,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           }`}
         >
           <Dropdown
-            options={bookingOptionsData}
+            options={bookingOptions}
             selectedValue={bookingType}
             onSelect={setBookingType}
             placeholder="Select booking type"
