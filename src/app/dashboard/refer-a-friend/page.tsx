@@ -54,7 +54,7 @@ export default function ReferralPage() {
       );
       const getcode = await ReferralService.getReferralCode();
       const result = getcode?.data[0].data;
-      console.log(result);
+
       setReferrals(result?.referredUsers.content);
     } catch (error) {
       console.error("Error fetching referral data:", error);
@@ -84,7 +84,7 @@ export default function ReferralPage() {
           url: referralLink,
         });
       } catch (error) {
-        console.log("Share canceled or failed");
+        // console.log("Share canceled or failed");
       }
     } else {
       handleCopyLink();

@@ -119,7 +119,7 @@ const BookingDetailsPage = () => {
 
       try {
         setLoading(true);
-        console.log("Fetching booking for ID:", bookingId);
+        // console.log("Fetching booking for ID:", bookingId);
 
         // 1. Fetch Booking Details (Public endpoint, no auth required)
         const bookingRes = await getSingleData(
@@ -127,7 +127,7 @@ const BookingDetailsPage = () => {
           {}
         );
 
-        console.log("Raw Booking Response:", bookingRes);
+        // console.log("Raw Booking Response:", bookingRes);
 
         // ✅ FIX: Access nested data correctly (response.data.data)
         const bookingData = bookingRes?.data?.data;

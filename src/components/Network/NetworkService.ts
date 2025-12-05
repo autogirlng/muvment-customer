@@ -34,7 +34,7 @@ export default class NetworkService {
     message: string;
     error: boolean;
   } {
-    console.log("API Error:", error);
+    // console.log("API Error:", error);
 
     if (axios.isAxiosError(error) && error.response) {
       const status = error.response.status;

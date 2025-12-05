@@ -24,7 +24,7 @@ export type PersonalInformationMyselfValues = {
   recipientSecondaryPhoneNumber: string;
   userCountry: string;
   userCountryCode: string;
-  extraDetails: ""
+  extraDetails: "";
 };
 
 type PaymentGateway = "MONNIFY" | "PAYSTACK";
@@ -43,9 +43,7 @@ const CostBreakdown = ({
     useState<PaymentGateway>("MONNIFY");
   const router = useRouter();
 
-
-  const { isAuthenticated } = useAuth()
-
+  const { isAuthenticated } = useAuth();
 
   const estimatePrice = async () => {
     const tripSegments = trips?.map((trip, index) => {
@@ -58,22 +56,26 @@ const CostBreakdown = ({
 
       let areaOfUseCoordinates: { lat: number; lng: number } | null = null;
 
-      if (
-        trip?.tripDetails?.areaOfUseCoordinates
-      ) {
+      if (trip?.tripDetails?.areaOfUseCoordinates) {
         try {
-          areaOfUseCoordinates = JSON.parse(`${trip?.tripDetails.areaOfUseCoordinates}`);
+          areaOfUseCoordinates = JSON.parse(
+            `${trip?.tripDetails.areaOfUseCoordinates}`
+          );
         } catch (e) {
           console.error("Error parsing area of use:", e);
         }
       }
 
-
-
       return {
         bookingTypeId: trip?.tripDetails?.bookingType,
-        startDate: format(new Date(trip?.tripDetails?.tripStartDate || ""), "yyyy-MM-dd"),
-        startTime: format(new Date(trip?.tripDetails?.tripStartTime || ""), "HH:mm:ss"),
+        startDate: format(
+          new Date(trip?.tripDetails?.tripStartDate || ""),
+          "yyyy-MM-dd"
+        ),
+        startTime: format(
+          new Date(trip?.tripDetails?.tripStartTime || ""),
+          "HH:mm:ss"
+        ),
         pickupLatitude: pickupCoordinates.lat,
         pickupLongitude: pickupCoordinates.lng,
         dropoffLatitude: dropoffCoordinates.lat,
@@ -82,12 +84,12 @@ const CostBreakdown = ({
         dropoffLocationString: trip?.tripDetails?.dropoffLocation,
         areaOfUse: areaOfUseCoordinates
           ? [
-            {
-              areaOfUseLatitude: areaOfUseCoordinates.lat,
-              areaOfUseLongitude: areaOfUseCoordinates.lng,
-              areaOfUseName: trip?.tripDetails?.areaOfUse,
-            },
-          ]
+              {
+                areaOfUseLatitude: areaOfUseCoordinates.lat,
+                areaOfUseLongitude: areaOfUseCoordinates.lng,
+                areaOfUseName: trip?.tripDetails?.areaOfUse,
+              },
+            ]
           : [],
       };
     });
@@ -113,15 +115,13 @@ const CostBreakdown = ({
     const estimatedPriceId = sessionStorage.getItem("priceEstimateId") || "";
     setEstimatedPriceId(estimatedPriceId);
     setPriceReEstimated(false);
-    estimatePrice()
+    estimatePrice();
   }, [trips]);
-
 
   const processPayment = async () => {
     const userBookingInfo: PersonalInformationMyselfValues = JSON.parse(
       sessionStorage.getItem("userBookingInformation") || ""
     );
-
 
     let data;
     if (userBookingInfo.isBookingForOthers) {
@@ -137,12 +137,14 @@ const CostBreakdown = ({
         channel: "WEBSITE",
         paymentMethod: "ONLINE",
         discountAmount: pricing?.data.data.discountAmount,
-      }
+      };
       if (userBookingInfo.secondaryPhoneNumber) {
-        data = { ...data, secondaryPhoneNumber: userBookingInfo.secondaryPhoneNumber }
+        data = {
+          ...data,
+          secondaryPhoneNumber: userBookingInfo.secondaryPhoneNumber,
+        };
       }
-    }
-    else {
+    } else {
       data = {
         calculationId: estimatedPriceId,
         primaryPhoneNumber: userBookingInfo.primaryPhoneNumber || "",
@@ -154,14 +156,15 @@ const CostBreakdown = ({
         discountAmount: pricing?.data.data.discountAmount,
         guestFullName: userBookingInfo.guestFullName || "",
         guestEmail: userBookingInfo.guestEmail || "",
-      }
+      };
       if (userBookingInfo.recipientSecondaryPhoneNumber) {
-        data = { ...data, recipientSecondaryPhoneNumber: userBookingInfo.recipientSecondaryPhoneNumber }
+        data = {
+          ...data,
+          recipientSecondaryPhoneNumber:
+            userBookingInfo.recipientSecondaryPhoneNumber,
+        };
       }
-
     }
-    console.log(data)
-
 
     try {
       const booking: any = await createData("/api/v1/bookings", data);

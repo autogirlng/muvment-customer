@@ -22,11 +22,11 @@ export default function useNewsletter() {
         }
       );
 
-      console.log(response);
+      // console.log(response);
 
       toast.success("Successful!");
     } catch (err) {
-      console.log(err);
+      // console.log(err);
     } finally {
     }
   };

@@ -13,8 +13,6 @@ import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { TripDetails } from "@/types/vehicleDetails";
 import TextArea from "@/components/general/forms/textarea";
 
-
-
 const ItineraryForm = ({
   steps,
   currentStep,
@@ -33,7 +31,6 @@ const ItineraryForm = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-
   const {
     setTrips,
     trips,
@@ -43,7 +40,6 @@ const ItineraryForm = ({
     toggleOpen,
     openTripIds,
   } = useItineraryForm();
-
 
   const generateBookingOptions = () => {
     const types: VehicleBookingOptions[] = vehicle?.allPricingOptions;
@@ -61,11 +57,13 @@ const ItineraryForm = ({
   }, [vehicle]);
 
   useEffect(() => {
-    const tripsInfo = JSON.parse(sessionStorage.getItem("trips") || "[]") as TripDetails[];
+    const tripsInfo = JSON.parse(
+      sessionStorage.getItem("trips") || "[]"
+    ) as TripDetails[];
     const tripData = tripsInfo.map((trip) => {
-      return { id: trip.id || "", tripDetails: { ...trip } }
-    })
-    setTrips(tripData)
+      return { id: trip.id || "", tripDetails: { ...trip } };
+    });
+    setTrips(tripData);
   }, []);
 
   useEffect(() => {
@@ -88,8 +86,8 @@ const ItineraryForm = ({
   }, [id]);
 
   const initialValues = {
-    extraDetails: ""
-  }
+    extraDetails: "",
+  };
   return (
     <>
       <Formik
@@ -97,9 +95,13 @@ const ItineraryForm = ({
         validationSchema={itineraryInformationSchema}
         onSubmit={({ extraDetails }, { setSubmitting }) => {
           if (!extraDetails) {
-            const bookingInformation = JSON.parse(sessionStorage.getItem("userBookingInformation") || "")
-            sessionStorage.setItem("userBookingInformation", { ...bookingInformation, extraDetails })
-
+            const bookingInformation = JSON.parse(
+              sessionStorage.getItem("userBookingInformation") || ""
+            );
+            sessionStorage.setItem("userBookingInformation", {
+              ...bookingInformation,
+              extraDetails,
+            });
           }
           setCurrentStep(currentStep + 1);
         }}
@@ -119,7 +121,7 @@ const ItineraryForm = ({
           setFieldValue,
           isSubmitting,
         }) => {
-          console.log(errors)
+          // console.log(errors)
           return (
             <Form className="max-w-[500px] w-full space-y-8">
               <h6 className="!font-bold text-base md:text-md ">
@@ -128,26 +130,23 @@ const ItineraryForm = ({
 
               <p className="text-sm my-4">Trip per day</p>
 
-              {
-                trips.map((trip, index) => {
-
-                  return (
-                    <TripAccordion
-                      key={trip.id}
-                      day={`${index + 1}`}
-                      id={trip.id || ""}
-                      vehicle={vehicle}
-                      deleteMethod={deleteTrip}
-                      disabled={false}
-                      onChangeTrip={onChangeTrip}
-                      isCollapsed={!openTripIds.has(trip.id || "")}
-                      toggleOpen={() => toggleOpen(trip.id || "")}
-                      bookingOptions={bookingOptions}
-                      initialValues={trip.tripDetails}
-                    />
-                  );
-                })
-              }
+              {trips.map((trip, index) => {
+                return (
+                  <TripAccordion
+                    key={trip.id}
+                    day={`${index + 1}`}
+                    id={trip.id || ""}
+                    vehicle={vehicle}
+                    deleteMethod={deleteTrip}
+                    disabled={false}
+                    onChangeTrip={onChangeTrip}
+                    isCollapsed={!openTripIds.has(trip.id || "")}
+                    toggleOpen={() => toggleOpen(trip.id || "")}
+                    bookingOptions={bookingOptions}
+                    initialValues={trip.tripDetails}
+                  />
+                );
+              })}
 
               <button
                 onClick={() => addTrip(`trip-${trips?.length}`)}
@@ -162,7 +161,6 @@ const ItineraryForm = ({
                 placeholder="Add extra trip details you will like to share"
                 label="Extra details(optional)"
                 onChange={handleChange}
-
                 onBlur={handleBlur}
                 value={values.extraDetails}
               />
@@ -171,15 +169,14 @@ const ItineraryForm = ({
                 steps={steps}
                 currentStep={currentStep}
                 setCurrentStep={setCurrentStep}
-                handleSaveDraft={() => { }}
+                handleSaveDraft={() => {}}
                 isSaveDraftloading={false}
                 // isNextLoading={isSubmitting}
                 disableNextButton={!isValid || isSubmitting}
               />
             </Form>
-          )
-        }
-        }
+          );
+        }}
       </Formik>
     </>
   );

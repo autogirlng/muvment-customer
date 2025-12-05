@@ -25,8 +25,6 @@ export default function ExploreVehiclesPage() {
     selectedSeats: [],
     selectedFeatures: [],
   });
-
-  const [showFullFilters, setShowFullFilters] = useState(false);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [recommendedVehicles, setRecommendedVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +34,6 @@ export default function ExploreVehiclesPage() {
   const [childCount, setChildCount] = useState<number | string>(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [makes, setMakes] = useState([]);
   const [features, setFeatures] = useState([]);
@@ -95,32 +92,20 @@ export default function ExploreVehiclesPage() {
     setFilterState(initializeFiltersFromUrl());
   }, [initializeFiltersFromUrl]);
 
-  const debouncedSearch = useCallback(
-    (page: number = 0, append: boolean = false) => {
-      if (searchTimeout.current) {
-        clearTimeout(searchTimeout.current);
-      }
-
-      searchTimeout.current = setTimeout(() => {
-        searchVehicles(page, append);
-      }, 800);
-    },
-    [filterState, lat, lng, category, fromDate, untilDate]
-  );
-
   const handleFilterChange = (filterId: string, value: any) => {
     setFilterState((prev) => ({
       ...prev,
       [filterId]: value,
     }));
-
-    setCurrentPage(0);
-    setHasMore(true);
-    debouncedSearch(0, false);
   };
 
+  useEffect(() => {
+    setCurrentPage(0);
+    setHasMore(true);
+    searchVehicles(0, false);
+  }, [filterState, lat, lng, category, fromDate, untilDate]);
+
   const handleClearAll = () => {
-    // Clear filters
     setFilterState({
       priceRange: undefined,
       selectedVehicleTypes: undefined,
@@ -130,112 +115,92 @@ export default function ExploreVehiclesPage() {
       selectedFeatures: undefined,
     });
 
-    // Clear URL params
     router.replace("/Booking/search");
-
-    // Reset states
-    setCurrentPage(0);
-    setHasMore(true);
-
-    // Cancel debounce
-    if (searchTimeout.current) {
-      clearTimeout(searchTimeout.current);
-    }
-
-    // Force call with NO PARAMS
-    searchVehicles(0, false, true);
   };
+  // REMOVE THE OLD useCallback VERSION
+  // MAKE searchVehicles A NORMAL FUNCTION SO IT ALWAYS USES LATEST STATE
+  async function searchVehicles(
+    page: number = 0,
+    append: boolean = false,
+    clearAll: boolean = false
+  ) {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+    setError("");
 
-  const searchVehicles = useCallback(
-    async (page: number = 0, append: boolean = false, clearAll = false) => {
-      if (append) {
-        setLoadingMore(true);
-      } else {
-        setLoading(true);
+    try {
+      const params: VehicleSearchParams = {
+        page,
+        size: 200,
+      };
+
+      if (!clearAll) {
+        if (lat && lng) {
+          params.latitude = parseFloat(lat);
+          params.longitude = parseFloat(lng);
+        }
+        if (category) params.vehicleTypeId = category;
+        if (fromDate) params.fromDate = fromDate;
+        if (untilDate) params.untilDate = untilDate;
+
+        if (filterState.selectedVehicleTypes !== undefined) {
+          params.vehicleTypeId = filterState.selectedVehicleTypes[0];
+        }
+        if (filterState.selectedMakes !== undefined) {
+          params.vehicleMakeId = filterState.selectedMakes[0];
+        }
+        if (filterState.selectedYears !== undefined) {
+          params.yearOfRelease = filterState.selectedYears[0];
+        }
+        if (filterState.selectedSeats !== undefined) {
+          params.numberOfSeats = filterState.selectedSeats[0];
+        }
+        if (filterState.selectedFeatures !== undefined) {
+          params.featureIds = filterState.selectedFeatures[0];
+        }
+
+        if (
+          filterState.priceRange &&
+          filterState.priceRange[0] >= 0 &&
+          filterState.priceRange[1] <= 100000
+        ) {
+          params.minPrice = filterState.priceRange[0];
+          params.maxPrice = filterState.priceRange[1];
+        }
       }
-      setError("");
 
-      try {
-        const params: VehicleSearchParams = {
-          page,
-          size: 200,
-        };
+      const response = await VehicleSearchService.searchVehicles(params);
+      const vehiclesData = response.data.data?.content || [];
 
-        if (!clearAll) {
-          if (lat && lng) {
-            params.latitude = parseFloat(lat);
-            params.longitude = parseFloat(lng);
-          }
-          if (category) params.vehicleTypeId = category;
-          if (fromDate) params.fromDate = fromDate;
-          if (untilDate) params.untilDate = untilDate;
-
-          if (filterState.selectedVehicleTypes !== undefined) {
-            params.vehicleTypeId = filterState.selectedVehicleTypes[0];
-          }
-          if (filterState.selectedMakes !== undefined) {
-            params.vehicleMakeId = filterState.selectedMakes[0];
-          }
-          if (filterState.selectedYears !== undefined) {
-            params.yearOfRelease = filterState.selectedYears[0];
-          }
-          if (filterState.selectedSeats !== undefined) {
-            params.numberOfSeats = filterState.selectedSeats[0];
-          }
-          if (filterState.selectedFeatures !== undefined) {
-            params.featureIds = filterState.selectedFeatures[0];
-          }
-
-          if (
-            filterState.priceRange !== undefined &&
-            filterState.priceRange[0] > 0 &&
-            filterState.priceRange[1] < 100000
-          ) {
-            params.minPrice = filterState.priceRange[0];
-            params.maxPrice = filterState.priceRange[1];
-          }
-        }
-
-        const response = await VehicleSearchService.searchVehicles(params);
-        const vehiclesData = response.data.data?.content || [];
-
-        if (vehiclesData.length === 0 && page === 0) {
-          setError("No vehicles found matching your criteria");
-          setVehicles([]);
-          setHasMore(false);
-          await fetchRecommendedVehicles();
-        } else {
-          if (append) {
-            setVehicles((prev) => [...prev, ...vehiclesData]);
-          } else {
-            setVehicles(vehiclesData);
-          }
-
-          setTotalCount(
-            response.data.data?.totalElements || vehiclesData.length
-          );
-          let childcount =
-            response.data.data?.totalElements !== undefined
-              ? response.data.data.totalElements
-              : vehiclesData.length;
-
-          if (childcount > 100) {
-            childcount = "100+";
-          }
-
-          setChildCount(childcount);
-          setHasMore(vehiclesData.length === 10);
-        }
-      } catch (err: any) {
-        setError(err.message || "Failed to load vehicles");
+      if (vehiclesData.length === 0 && page === 0) {
+        setError("No vehicles found matching your criteria");
+        setVehicles([]);
         setHasMore(false);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
+        await fetchRecommendedVehicles();
+      } else {
+        if (append) {
+          setVehicles((prev) => [...prev, ...vehiclesData]);
+        } else {
+          setVehicles(vehiclesData);
+        }
+
+        const total = response.data.data?.totalElements || vehiclesData.length;
+        setTotalCount(total);
+
+        setChildCount(total > 100 ? "100+" : total);
+        setHasMore(vehiclesData.length === 10);
       }
-    },
-    [lat, lng, category, fromDate, untilDate, filterState]
-  );
+    } catch (err: any) {
+      setError(err.message || "Failed to load vehicles");
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }
 
   const fetchRecommendedVehicles = async () => {
     try {

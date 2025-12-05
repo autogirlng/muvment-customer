@@ -196,7 +196,7 @@ const SaveBigRentals: React.FC<SaveBigRentalsProps> = ({
 
   const handleCardClick = (vehicleId: string) => {
     // Handle navigation to vehicle details
-    console.log("Navigate to vehicle:", vehicleId);
+    // console.log("Navigate to vehicle:", vehicleId);
   };
 
   return (
