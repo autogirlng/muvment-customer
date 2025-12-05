@@ -195,7 +195,6 @@ export default function SignupComponent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("fytuyio");
     setSuccessMessage("");
 
     if (!validateForm()) return;

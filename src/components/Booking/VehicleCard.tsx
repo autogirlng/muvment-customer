@@ -3,13 +3,14 @@ import {
   formatCurrency,
   getDisplayLabel,
   getDisplayPrice,
-} from "@/app/services/vechilePriceUtiles";
+} from "@/services/vechilePriceUtiles";
 import { VehicleCardProps } from "@/types/vehicle";
 import { useRouter } from "next/navigation";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { FiMapPin, FiUser, FiDroplet, FiHeart } from "react-icons/fi";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
 import { IoInformationCircleOutline } from "react-icons/io5";
+import { getBookingOption } from "@/context/Constarain";
 
 interface VehicleCardPropsExtended extends VehicleCardProps {
   viewMode?: "list" | "grid";
@@ -40,8 +41,15 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   }, [photos]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [bookingOptions, setBookingOptions] = useState<any[]>([]);
   const router = useRouter();
-
+  const getBookingOptions = async () => {
+    const data = await getBookingOption();
+    setBookingOptions(data.dropdownOptions);
+  };
+  useEffect(() => {
+    getBookingOptions();
+  }, []);
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (images.length > 0) {
@@ -136,13 +144,17 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             <div>
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-600">
-                  {getDisplayLabel(bookingType)}
+                  {getDisplayLabel(bookingType, bookingOptions)}
                 </span>
                 <IoInformationCircleOutline className="w-3 h-3 text-gray-400" />
               </div>
               <p className="text-base font-semibold text-gray-900">
                 {formatCurrency(
-                  getDisplayPrice(bookingType, allPricingOptions)
+                  getDisplayPrice(
+                    bookingType,
+                    allPricingOptions,
+                    bookingOptions
+                  )
                 )}
               </p>
             </div>
@@ -249,13 +261,17 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             <div>
               <div className="flex items-center gap-1 mb-1">
                 <span className="text-xs text-gray-600">
-                  {getDisplayLabel(bookingType)}
+                  {getDisplayLabel(bookingType, bookingOptions)}
                 </span>
                 <IoInformationCircleOutline className="w-3.5 h-3.5 text-gray-400" />
               </div>
               <p className="text-base font-semibold text-gray-900">
                 {formatCurrency(
-                  getDisplayPrice(bookingType, allPricingOptions)
+                  getDisplayPrice(
+                    bookingType,
+                    allPricingOptions,
+                    bookingOptions
+                  )
                 )}
               </p>
             </div>

@@ -1,9 +1,9 @@
 import NetworkService from "@/components/Network/NetworkService";
 import ApiClient from "./appClient";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const cache: Record<string, any> = {};
-
-class LoadingManager {
+export class LoadingManager {
   private static instance: LoadingManager;
   private loadingCount: number = 0;
   private loadingElement: HTMLDivElement | null = null;
@@ -262,7 +262,7 @@ class LoadingManager {
   }
 }
 
-const withLoading = async <T>(apiCall: () => Promise<T>): Promise<T> => {
+export const withLoading = async <T>(apiCall: () => Promise<T>): Promise<T> => {
   const loadingManager = LoadingManager.getInstance();
 
   try {
@@ -274,97 +274,71 @@ const withLoading = async <T>(apiCall: () => Promise<T>): Promise<T> => {
   }
 };
 
+// Query functions (without loading wrapper - TanStack will handle loading)
 export const getTableData = async (path: string, params?: any) => {
-  return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
-
-    try {
-      const [data] = await ApiClient.request(path, {
-        method: "GET",
-        requireAuth: true,
-        params,
-      });
-
-      const response = NetworkService.handleApiResponse(data);
-      return response;
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+  if (!NetworkService.checkConnection()) throw new Error("No connection");
+  const [data] = await ApiClient.request(path, {
+    method: "GET",
+    requireAuth: true,
+    params,
   });
+  return NetworkService.handleApiResponse(data);
 };
 
 export const getSingleData = async (path: string, params?: any) => {
-  return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
-
-    try {
-      const [data] = await ApiClient.request(path, {
-        method: "GET",
-        requireAuth: true,
-        params,
-      });
-      return NetworkService.handleApiResponse([data]);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+  if (!NetworkService.checkConnection()) throw new Error("No connection");
+  const [data] = await ApiClient.request(path, {
+    method: "GET",
+    requireAuth: true,
+    params,
   });
+  return NetworkService.handleApiResponse([data]);
 };
 
+// Mutation functions (with loading wrapper for standalone use)
 export const deleteData = async (path: string, id?: string) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
 
-    try {
-      const fullPath = id ? `${path}/${id}` : path;
+    const fullPath = id ? `${path}/${id}` : path;
+    const [data] = await ApiClient.request(fullPath, {
+      method: "DELETE",
+      requireAuth: true,
+    });
 
-      const [data] = await ApiClient.request(fullPath, {
-        method: "DELETE",
-        requireAuth: true,
-      });
-
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    return NetworkService.handleApiResponse(data);
   });
 };
 
 export const deleteItem = async (path: string, body?: any) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
 
-    try {
-      const [data] = await ApiClient.request(path, {
-        method: "DELETE",
-        body, // Include the request body
-        requireAuth: true,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    const [data] = await ApiClient.request(path, {
+      method: "DELETE",
+      body,
+      requireAuth: true,
+    });
+    return NetworkService.handleApiResponse(data);
   });
 };
+
 export const deleteWithParams = async (path: string, params?: any) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
 
-    try {
-      const [data] = await ApiClient.request(path, {
-        method: "DELETE",
-        params, // Include the request body
-        requireAuth: true,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    const [data] = await ApiClient.request(path, {
+      method: "DELETE",
+      params,
+      requireAuth: true,
+    });
+    return NetworkService.handleApiResponse(data);
   });
 };
 
 export const createData = async (path: string, body: any) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
     const validation = validateDataInput(body);
     if (validation.error) return validation;
 
@@ -375,12 +349,11 @@ export const createData = async (path: string, body: any) => {
         method: "POST",
         body,
         headers: isFormData
-          ? {} // Axios will auto set Content-Type with FormData
+          ? {}
           : { "Content-Type": "application/json;charset=UTF-8" },
         requireAuth: true,
       });
 
-      // console.log("createData response", data);
       return NetworkService.handleApiResponse(data);
     } catch (error) {
       console.error(error);
@@ -391,26 +364,23 @@ export const createData = async (path: string, body: any) => {
 
 export const createDataWithParams = async (path: string, params?: any) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
-    try {
-      const [data] = await ApiClient.request(path, {
-        method: "POST",
-        params,
-        requireAuth: true,
-      });
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
 
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      // console.error(error);
-      return NetworkService.handleApiError(error);
-    }
+    const [data] = await ApiClient.request(path, {
+      method: "POST",
+      params,
+      requireAuth: true,
+    });
+
+    return NetworkService.handleApiResponse(data);
   });
 };
 
 export const updateMapper = async (path: string, body: any) => {
-  try {
-    const isFormData = body instanceof FormData;
+  return withLoading(async () => {
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
 
+    const isFormData = body instanceof FormData;
     const [data] = await ApiClient.request(path, {
       method: "PUT",
       body: body,
@@ -421,10 +391,7 @@ export const updateMapper = async (path: string, body: any) => {
     });
 
     return NetworkService.handleApiResponse(data);
-  } catch (error) {
-    console.error(error);
-    return NetworkService.handleApiError(error);
-  }
+  });
 };
 
 export const patchWithoutParams = async (
@@ -432,29 +399,27 @@ export const patchWithoutParams = async (
   data: Record<string, any> = {}
 ) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
-    try {
-      const [response] = await ApiClient.request(path, {
-        method: "PATCH",
-        body: data, // <-- Attach the data to the request body
-        requireAuth: true,
-      });
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
 
-      return NetworkService.handleApiResponse(response);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    const [response] = await ApiClient.request(path, {
+      method: "PATCH",
+      body: data,
+      requireAuth: true,
+    });
+
+    return NetworkService.handleApiResponse(response);
   });
 };
+
 export const patchData = async (
   path: string,
   id: string,
   extraPath: string = "",
-  data: Record<string, any> = {}, // <-- New parameter for request body
+  data: Record<string, any> = {},
   queryParams?: Record<string, any>
 ) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
 
     const query = queryParams
       ? "?" +
@@ -468,55 +433,42 @@ export const patchData = async (
 
     const url = `${path}/${id}${extraPath}${query}`;
 
-    try {
-      const [response] = await ApiClient.request(url, {
-        method: "PATCH",
-        body: data, // <-- Attach the data to the request body
-        requireAuth: true,
-      });
+    const [response] = await ApiClient.request(url, {
+      method: "PATCH",
+      body: data,
+      requireAuth: true,
+    });
 
-      return NetworkService.handleApiResponse(response);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    return NetworkService.handleApiResponse(response);
   });
 };
+
 export const patchDataNoBody = async (path: string) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
 
     const url = `${path}`;
+    const [response] = await ApiClient.request(url, {
+      method: "PATCH",
+      requireAuth: true,
+    });
 
-    try {
-      const [response] = await ApiClient.request(url, {
-        method: "PATCH",
-        requireAuth: true,
-      });
-
-      return NetworkService.handleApiResponse(response);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    return NetworkService.handleApiResponse(response);
   });
 };
 
 export const updateData = async (path: string, id: string, body: any) => {
   return withLoading(async () => {
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
     const validation = validateDataInput(body);
     if (validation.error) return validation;
 
-    if (!NetworkService.checkConnection()) return;
-
-    try {
-      const [data] = await ApiClient.request(`${path}/${id}`, {
-        method: "PUT",
-        body,
-        requireAuth: true,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    const [data] = await ApiClient.request(`${path}/${id}`, {
+      method: "PUT",
+      body,
+      requireAuth: true,
+    });
+    return NetworkService.handleApiResponse(data);
   });
 };
 
@@ -526,20 +478,15 @@ export const updateDataNotification = async (
   read: boolean
 ) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
 
-    try {
-      const fullPath = `${path}/${id}?read=${read}`;
+    const fullPath = `${path}/${id}?read=${read}`;
+    const [data] = await ApiClient.request(fullPath, {
+      method: "PUT",
+      requireAuth: true,
+    });
 
-      const [data] = await ApiClient.request(fullPath, {
-        method: "PUT",
-        requireAuth: true,
-      });
-
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    return NetworkService.handleApiResponse(data);
   });
 };
 
@@ -549,47 +496,37 @@ export const updateDataFormWithIDParams = async (
   body: any
 ) => {
   return withLoading(async () => {
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
     const validation = validateDataInput(body);
     if (validation.error) return validation;
 
-    if (!NetworkService.checkConnection()) return;
+    const requestBody = {
+      body: {
+        ...body,
+      },
+    };
 
-    try {
-      const requestBody = {
-        body: {
-          ...body,
-        },
-      };
-
-      const [data] = await ApiClient.request(`${path}/${id}`, {
-        method: "PUT",
-        body: requestBody,
-        requireAuth: true,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    const [data] = await ApiClient.request(`${path}/${id}`, {
+      method: "PUT",
+      body: requestBody,
+      requireAuth: true,
+    });
+    return NetworkService.handleApiResponse(data);
   });
 };
 
 export const updateDataFormWithNoIDPath = async (path: string, body: any) => {
   return withLoading(async () => {
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
     const validation = validateDataInput(body);
     if (validation.error) return validation;
 
-    if (!NetworkService.checkConnection()) return;
-
-    try {
-      const [data] = await ApiClient.request(`${path}`, {
-        method: "PUT",
-        body: body,
-        requireAuth: true,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    const [data] = await ApiClient.request(`${path}`, {
+      method: "PUT",
+      body: body,
+      requireAuth: true,
+    });
+    return NetworkService.handleApiResponse(data);
   });
 };
 
@@ -598,101 +535,80 @@ export const updateDataFormWithNoIDPathNew = async (
   body: any
 ) => {
   return withLoading(async () => {
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
     const validation = validateDataInput(body);
     if (validation.error) return validation;
 
-    if (!NetworkService.checkConnection()) return;
-
-    try {
-      console.log("updateDataFormWithNoIDPathNew", body);
-      const [data] = await ApiClient.request(`${path}`, {
-        method: "PUT",
-        body,
-        requireAuth: true,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
-  });
-};
-
-export const updateDataForm = async (path: string, id: string, body: any) => {
-  return withLoading(async () => {
-    const validation = validateDataInput(body);
-    if (validation.error) return validation;
-
-    if (!NetworkService.checkConnection()) return;
-
-    try {
-      const requestBody = {
-        body: {
-          id,
-          ...body,
-        },
-      };
-
-      const [data] = await ApiClient.request(`${path}`, {
-        method: "PUT",
-        body: requestBody,
-        requireAuth: true,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
-  });
-};
-
-export const updateKycRequirementMapping = async (path: string, body: any) => {
-  const validation = validateDataInput(body);
-  if (validation.error) return validation;
-
-  if (!NetworkService.checkConnection()) return;
-
-  try {
     const [data] = await ApiClient.request(`${path}`, {
       method: "PUT",
       body,
       requireAuth: true,
     });
     return NetworkService.handleApiResponse(data);
-  } catch (error) {
-    return NetworkService.handleApiError(error);
-  }
+  });
+};
+
+export const updateDataForm = async (path: string, id: string, body: any) => {
+  return withLoading(async () => {
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
+    const validation = validateDataInput(body);
+    if (validation.error) return validation;
+
+    const requestBody = {
+      body: {
+        id,
+        ...body,
+      },
+    };
+
+    const [data] = await ApiClient.request(`${path}`, {
+      method: "PUT",
+      body: requestBody,
+      requireAuth: true,
+    });
+    return NetworkService.handleApiResponse(data);
+  });
+};
+
+export const updateKycRequirementMapping = async (path: string, body: any) => {
+  return withLoading(async () => {
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
+    const validation = validateDataInput(body);
+    if (validation.error) return validation;
+
+    const [data] = await ApiClient.request(`${path}`, {
+      method: "PUT",
+      body,
+      requireAuth: true,
+    });
+    return NetworkService.handleApiResponse(data);
+  });
 };
 
 export const updateDataFormWithNoID = async (path: string, body: any) => {
   return withLoading(async () => {
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
     const validation = validateDataInput(body);
     if (validation.error) return validation;
 
-    if (!NetworkService.checkConnection()) return;
-
-    try {
-      const [data] = await ApiClient.request(`${path}`, {
-        method: "PUT",
-        body: body,
-        requireAuth: true,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    const [data] = await ApiClient.request(`${path}`, {
+      method: "PUT",
+      body: body,
+      requireAuth: true,
+    });
+    return NetworkService.handleApiResponse(data);
   });
 };
+
 export const updateDataFormWithID = async (path: string) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
-    try {
-      const [data] = await ApiClient.request(`${path}`, {
-        method: "PUT",
-        requireAuth: true,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
+
+    const [data] = await ApiClient.request(`${path}`, {
+      method: "PUT",
+      requireAuth: true,
+    });
+    return NetworkService.handleApiResponse(data);
   });
 };
 
@@ -733,21 +649,16 @@ export const AuthController = async (
   requireAuth: boolean = false
 ) => {
   return withLoading(async () => {
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
     const validation = validateDataInput(body);
     if (validation.error) return validation;
 
-    if (!NetworkService.checkConnection()) return;
-
-    try {
-      const [data] = await ApiClient.request(path, {
-        method: "POST",
-        body,
-        requireAuth,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    const [data] = await ApiClient.request(path, {
+      method: "POST",
+      body,
+      requireAuth,
+    });
+    return NetworkService.handleApiResponse(data);
   });
 };
 
@@ -756,16 +667,12 @@ export const AuthForgotPasswordController = async (
   requireAuth: boolean = false
 ) => {
   return withLoading(async () => {
-    if (!NetworkService.checkConnection()) return;
+    if (!NetworkService.checkConnection()) throw new Error("No connection");
 
-    try {
-      const [data] = await ApiClient.request(path, {
-        method: "POST",
-        requireAuth,
-      });
-      return NetworkService.handleApiResponse(data);
-    } catch (error) {
-      return NetworkService.handleApiError(error);
-    }
+    const [data] = await ApiClient.request(path, {
+      method: "POST",
+      requireAuth,
+    });
+    return NetworkService.handleApiResponse(data);
   });
 };

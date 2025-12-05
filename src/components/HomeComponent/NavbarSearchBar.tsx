@@ -6,7 +6,7 @@ import Calendar from "../utils/Calender";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
 import LocationDropdown from "../utils/LocationDropdown";
-import { bookingOptionsData } from "@/context/Constarain";
+import { getBookingOption } from "@/context/Constarain";
 
 export const NavbarSearchBar = () => {
   const router = useRouter();
@@ -27,7 +27,7 @@ export const NavbarSearchBar = () => {
   } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [categoryOptions, setcategoryOptions] = useState([]);
-
+  const [bookingOptions, setBookingOptions] = useState<any[]>([]);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,9 +42,13 @@ export const NavbarSearchBar = () => {
     handleSearchInputChange,
   } = useLocationSearch();
 
-  const bookingOptions = bookingOptionsData;
-
+  // const bookingOptions = bookingOptionsData;
+  const getBookingOptions = async () => {
+    const data = await getBookingOption();
+    setBookingOptions(data.dropdownOptions);
+  };
   useEffect(() => {
+    getBookingOptions();
     const handleClickOutside = (event: MouseEvent) => {
       if (
         locationDropdownRef.current &&
@@ -128,7 +132,7 @@ export const NavbarSearchBar = () => {
         fromDate,
         untilDate
       );
-      router.push(searchUrl);
+      window.location.href = searchUrl;
     } catch (error) {
       console.error("Search failed:", error);
     } finally {

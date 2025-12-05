@@ -3,6 +3,7 @@ import "./globals.css";
 import ClientRoot from "@/components/utils/ClientRoot";
 
 import { Inter } from "next/font/google";
+import { QueryProvider } from "@/controllers/connnector/QueryProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className={inter.className}>
-        <ClientRoot>{children}</ClientRoot>
+        <QueryProvider>
+          <ClientRoot>{children}</ClientRoot>
+        </QueryProvider>
       </body>
     </html>
   );

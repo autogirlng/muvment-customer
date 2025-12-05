@@ -10,6 +10,7 @@ import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { NavbarSearchBar } from "./HomeComponent/NavbarSearchBar";
 import SlidingBanner from "./Dashboard/SlidingBanner";
+import { getBookingOption } from "@/context/Constarain";
 
 interface NavbarProps {
   showSearchBar?: boolean;
@@ -27,6 +28,7 @@ export const Navbar = ({
   const pathname = usePathname();
 
   useEffect(() => {
+    test();
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
@@ -37,6 +39,11 @@ export const Navbar = ({
   const handleNavClick = (link: string) => {
     router.push(link);
     setIsMenuOpen(false);
+  };
+
+  const test = async () => {
+    const data = await getBookingOption();
+    // console.log(data);
   };
 
   const items = user ? menuItems : guestMenuItems;
@@ -54,7 +61,7 @@ export const Navbar = ({
           message={announcementMessages[0]}
           backgroundColor="bg-gradient-to-r from-violet-600 to-indigo-600"
           textColor="text-white"
-          duration={15}
+          duration={30}
         />
       )}
       <div className="mx-auto px-4 sm:px-6 lg:px-8">

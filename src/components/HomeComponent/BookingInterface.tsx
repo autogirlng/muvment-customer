@@ -8,7 +8,7 @@ import Calendar from "../utils/Calender";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
 import LocationDropdown from "../utils/LocationDropdown";
-import { bookingOptionsData } from "@/context/Constarain";
+import { getBookingOption } from "@/context/Constarain";
 import { GoogleMapsService } from "@/context/googleMapConnector";
 
 const DEFAULT_LOCATION = {
@@ -26,7 +26,7 @@ export default function HeroBookingSection() {
   const [untilDate, setUntilDate] = useState(new Date());
   const [category, setCategory] = useState("suv-electric");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
+  const [bookingOptions, setBookingOptions] = useState<any[]>([]);
   // Location state
   const [searchValue, setSearchValue] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -60,11 +60,14 @@ export default function HeroBookingSection() {
     handleSearchInputFocus,
     handleSearchInputChange,
   } = useLocationSearch();
-
-  const bookingOptions = bookingOptionsData;
-
+  // const bookingOptions = bookingOptionsData;
+  const getBookingOptions = async () => {
+    const data = await getBookingOption();
+    setBookingOptions(data.dropdownOptions);
+  };
   // Initialize Google Maps Service
   useEffect(() => {
+    getBookingOptions();
     const initGoogleMaps = async () => {
       try {
         googleMapsServiceRef.current = new GoogleMapsService();

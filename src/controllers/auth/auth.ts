@@ -198,7 +198,7 @@ export class AuthService {
           handledResponse.data.user
         );
       }
-      console.log(handledResponse);
+      // console.log(handledResponse);
       return handledResponse;
     } catch (error) {
       return this.handleError(
@@ -371,8 +371,8 @@ export class AuthService {
   static async getUserInformation(): Promise<any> {
     try {
       const response = await getSingleData(this.GET_USER_INFORMATION);
-      console.log({ checkeer: response?.data });
-      console.log("User information response:", response?.data[0].data);
+      // console.log({ checkeer: response?.data });
+      // console.log("User information response:", response?.data[0].data);
       if (response && response.data) {
         return response.data[0].data;
       }
