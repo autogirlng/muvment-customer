@@ -34,7 +34,6 @@ const ItineraryForm = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-
   const {
     setTrips,
     trips,
@@ -44,7 +43,6 @@ const ItineraryForm = ({
     toggleOpen,
     openTripIds,
   } = useItineraryForm();
-
 
   const generateBookingOptions = () => {
     const types: VehicleBookingOptions[] = vehicle?.allPricingOptions;
@@ -62,11 +60,13 @@ const ItineraryForm = ({
   }, [vehicle]);
 
   useEffect(() => {
-    const tripsInfo = JSON.parse(sessionStorage.getItem("trips") || "[]") as TripDetails[];
+    const tripsInfo = JSON.parse(
+      sessionStorage.getItem("trips") || "[]"
+    ) as TripDetails[];
     const tripData = tripsInfo.map((trip) => {
-      return { id: trip.id || "", tripDetails: { ...trip } }
-    })
-    setTrips(tripData)
+      return { id: trip.id || "", tripDetails: { ...trip } };
+    });
+    setTrips(tripData);
   }, []);
 
   useEffect(() => {
@@ -136,26 +136,23 @@ const ItineraryForm = ({
 
               <p className="text-sm my-4">Trip per day</p>
 
-              {
-                trips.map((trip, index) => {
-
-                  return (
-                    <TripAccordion
-                      key={trip.id}
-                      day={`${index + 1}`}
-                      id={trip.id || ""}
-                      vehicle={vehicle}
-                      deleteMethod={deleteTrip}
-                      disabled={false}
-                      onChangeTrip={onChangeTrip}
-                      isCollapsed={!openTripIds.has(trip.id || "")}
-                      toggleOpen={() => toggleOpen(trip.id || "")}
-                      bookingOptions={bookingOptions}
-                      initialValues={trip.tripDetails}
-                    />
-                  );
-                })
-              }
+              {trips.map((trip, index) => {
+                return (
+                  <TripAccordion
+                    key={trip.id}
+                    day={`${index + 1}`}
+                    id={trip.id || ""}
+                    vehicle={vehicle}
+                    deleteMethod={deleteTrip}
+                    disabled={false}
+                    onChangeTrip={onChangeTrip}
+                    isCollapsed={!openTripIds.has(trip.id || "")}
+                    toggleOpen={() => toggleOpen(trip.id || "")}
+                    bookingOptions={bookingOptions}
+                    initialValues={trip.tripDetails}
+                  />
+                );
+              })}
 
               <button
                 onClick={() => addTrip(`trip-${trips?.length}`)}
@@ -201,9 +198,8 @@ const ItineraryForm = ({
                 disableNextButton={!isValid || isSubmitting}
               />
             </Form>
-          )
-        }
-        }
+          );
+        }}
       </Formik>
     </>
   );

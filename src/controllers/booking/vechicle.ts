@@ -21,8 +21,6 @@ export class VehicleSearchService {
   private static readonly BOOKING_CALCULATE =
     "/api/v1/public/bookings/calculate";
   private static readonly VEHICLE_DETAILS = "/api/v1/public/vehicles";
-  private static readonly CREATE_BOOKING = "/api/v1/bookings";
-  private static readonly INITIATE_PAYMENT = "/api/v1/payments/initiate";
 
   static async searchVehicles(params?: VehicleSearchParams): Promise<any> {
     try {
@@ -47,8 +45,6 @@ export class VehicleSearchService {
         delete apiPayload.lng;
       }
 
-      console.log("Sending API Payload:", apiPayload);
-
       const response = await getTableData(this.SEARCH_BASE_URL, apiPayload);
 
       if (!response || !response.data || response.data.length === 0) {
@@ -72,49 +68,6 @@ export class VehicleSearchService {
       return response?.data || null;
     } catch (error) {
       console.error("Error fetching vehicle details:", error);
-      throw error;
-    }
-  }
-
-  static async calculateBooking(
-    request: BookingCalculationRequest
-  ): Promise<BookingCalculationResponse> {
-    try {
-      const response = await createData(this.BOOKING_CALCULATE, request);
-      if (!response || !response.data)
-        throw new Error("Failed to calculate booking price");
-      return response.data.data;
-    } catch (error) {
-      console.error("Booking calculation error:", error);
-      throw error;
-    }
-  }
-
-  static async createBooking(bookingData: any): Promise<CreateBookingResponse> {
-    console.log("Creating booking with data:", bookingData);
-    try {
-      const response = await createData(this.CREATE_BOOKING, bookingData);
-      if (!response || !response.data)
-        throw new Error("Failed to create booking");
-      console.log("Booking created successfully:", response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Booking creation error:", error);
-      throw error;
-    }
-  }
-
-  static async initiatePayment(
-    paymentData: PaymentInitiationRequest
-  ): Promise<PaymentInitiationResponse> {
-    try {
-      const response = await createData(this.INITIATE_PAYMENT, paymentData);
-      if (!response || !response.data)
-        throw new Error("Failed to initiate payment");
-      console.log("Payment initiated successfully:", response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Payment initiation error:", error);
       throw error;
     }
   }

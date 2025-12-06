@@ -15,42 +15,42 @@ export const formatCurrency = (amount: number): string => {
 
 export const getDisplayPrice = (
   bookingType: string | null | undefined,
-  allPricingOptions: PricingOption[]
+  allPricingOptions: PricingOption[],
+  bookingOptions: { value: string; label: string }[]
 ): number => {
+  const bookingTypeOption = bookingOptions.find(
+    (opt) => opt.value === bookingType
+  );
   if (bookingType && allPricingOptions && allPricingOptions.length > 0) {
     const bookingTypePrice = allPricingOptions.find(
-      (bt) => bt.bookingTypeName === bookingType
+      (bt) => bt.bookingTypeName === bookingTypeOption?.label
     );
+
     return bookingTypePrice
       ? bookingTypePrice.price
       : allPricingOptions[0]?.price || 0;
   }
+
   return allPricingOptions?.[0]?.price || 0;
 };
 
 export const getDisplayLabel = (
-  bookingType: string | null | undefined
+  bookingType: string | null | undefined,
+  bookingOptions: { value: string; label: string }[]
 ): string => {
-  if (bookingType) {
-    const labels: { [key: string]: string } = {
-      AN_HOUR: "1 Hour",
-      THREE_HOURS: "3 Hours",
-      SIX_HOURS: "6 Hours",
-      TWELVE_HOURS: "12 Hours",
-      TWENTY_FOUR_HOURS: "24 Hours",
-    };
-    return labels[bookingType] || "Daily";
-  }
-  return "Daily";
+  if (!bookingType || !bookingOptions?.length) return "Daily";
+  const matched = bookingOptions.find((opt) => opt.value === bookingType);
+  return matched?.label || "Daily";
 };
 
 export const getPriceDisplay = (
   bookingType: string | null | undefined,
-  allPricingOptions: PricingOption[]
+  allPricingOptions: PricingOption[],
+  bookingOptions: { value: string; label: string }[]
 ): { price: number; formattedPrice: string; label: string } => {
-  const price = getDisplayPrice(bookingType, allPricingOptions);
+  const price = getDisplayPrice(bookingType, allPricingOptions, bookingOptions);
   const formattedPrice = formatCurrency(price);
-  const label = getDisplayLabel(bookingType);
+  const label = getDisplayLabel(bookingType, bookingOptions);
 
   return { price, formattedPrice, label };
 };

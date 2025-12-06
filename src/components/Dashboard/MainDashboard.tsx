@@ -11,12 +11,13 @@ import {
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
 import LocationDropdown from "../utils/LocationDropdown";
-import { bookingOptionsData } from "@/context/Constarain";
+
 import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
 import { BookingService } from "@/controllers/booking/bookingService";
 import { useRouter } from "next/navigation";
 import DashboardDropdown from "../utils/DasboardDropdown";
 import DashboardCalendar from "../utils/DashboardCalender";
+import { getBookingOption } from "@/context/Constarain";
 
 interface StatCardProps {
   title: string;
@@ -71,6 +72,7 @@ export default function Dashboard(): React.ReactElement {
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [categoryOptions, setcategoryOptions] = useState([]);
+  const [bookingOptions, setBookingOptions] = useState<any[]>([]);
   const [statictis, setStatictis] = useState<{
     bookings: number;
     payments: number;
@@ -92,9 +94,11 @@ export default function Dashboard(): React.ReactElement {
     handleSearchInputChange,
   } = useLocationSearch();
 
-  const bookingOptions = bookingOptionsData;
+  const getBookingOptions = async () => {
+    const data = await getBookingOption();
+    setBookingOptions(data.dropdownOptions);
+  };
 
-  // Get vehicle types
   const getvechileType = async () => {
     const result = await VehicleSearchService.getVechielType();
     const data = result[0].data;
@@ -108,6 +112,7 @@ export default function Dashboard(): React.ReactElement {
 
   useEffect(() => {
     getvechileType();
+    getBookingOptions();
   }, []);
 
   // Handle clicks outside location dropdown

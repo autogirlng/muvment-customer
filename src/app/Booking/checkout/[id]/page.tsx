@@ -22,6 +22,7 @@ import {
 import { MdAirlineSeatReclineNormal, MdPayment } from "react-icons/md";
 import { Navbar } from "@/components/Navbar";
 import { useBookingStore } from "@/hooks/bookingStore";
+import { BookingService } from "@/controllers/booking/bookingService";
 
 interface PersonalInfo {
   fullName: string;
@@ -260,7 +261,7 @@ const CheckoutPage = () => {
         channel: "WEBSITE",
         paymentMethod: "ONLINE",
       };
-      const bookingResponse = await VehicleSearchService.createBooking(
+      const bookingResponse = await BookingService.createBooking(
         bookingPayload
       );
       if (!isAuthenticated) {
@@ -269,7 +270,7 @@ const CheckoutPage = () => {
         });
       }
       const paymentPayload = { bookingId: bookingResponse.data.bookingId };
-      const paymentResponse = await VehicleSearchService.initiatePayment(
+      const paymentResponse = await BookingService.initiatePayment(
         paymentPayload
       );
       if (paymentResponse.data.authorizationUrl) {

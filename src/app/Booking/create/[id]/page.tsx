@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { getSingleData } from "@/controllers/connnector/app.callers";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
 import { useParams } from "next/navigation";
-
+import { VehicleSearchService } from "@/controllers/booking/vechicle";
 
 const steps = ["Personal Information", "Itinerary", "Booking Summary"];
 
@@ -28,26 +28,27 @@ export default function CreateBooking() {
     }, [params.id]);
 
     const fetchVehicleDetails = async () => {
-        const data = await getSingleData(`/api/v1/public/vehicles/${params.id}`)
-        const vehicleData = data?.data as VehicleDetailsPublic[]
+        const data = await VehicleSearchService.getVehicleById(
+            params?.id as string
+        );
+        const vehicleData = data as VehicleDetailsPublic[];
+
         if (vehicleData.length > 0) {
-            const data = vehicleData[0].data
+            const data = vehicleData[0].data;
             const photos = data.photos.map((photo) => {
-                return photo.cloudinaryUrl
-            })
-            setVehicleImages(photos)
-            console.log(photos)
-            setVehicle(vehicleData[0])
+                return photo.cloudinaryUrl;
+            });
+            setVehicleImages(photos);
+
+            setVehicle(vehicleData[0]);
         }
-    }
+    };
 
     useEffect(() => {
-        fetchVehicleDetails()
-    }, [])
-
+        fetchVehicleDetails();
+    }, []);
 
     const [currentStep, setCurrentStep] = useState<number>(0);
-
 
     const handleCurrentStep = (step: number) => {
         setCurrentStep(step);
@@ -105,6 +106,5 @@ export default function CreateBooking() {
                 </div>
             </main>
         </>
-
     );
 }

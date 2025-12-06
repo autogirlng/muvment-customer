@@ -4,6 +4,7 @@ import ClientRoot from "@/components/utils/ClientRoot";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Inter } from "next/font/google";
+import { QueryProvider } from "@/controllers/connnector/QueryProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,8 +25,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className={inter.className}>
-        <ClientRoot>{children}</ClientRoot>
-        <ToastContainer position="top-right" autoClose={3000} />
+        <QueryProvider>
+          <ClientRoot>{children}</ClientRoot>
+          <ToastContainer position="top-right" autoClose={3000} />
+        </QueryProvider>
       </body>
     </html>
   );

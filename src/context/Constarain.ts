@@ -1,15 +1,35 @@
+import { BookingService } from "@/controllers/booking/bookingService";
 import { PlacePrediction } from "@/types/BookingSearch";
 import { DropdownOption } from "@/types/HeroSectionTypes";
 
-export const bookingOptionsData: DropdownOption[] = [
-  { value: "AN_HOUR", label: "1 Hour" },
-  { value: "THREE_HOURS", label: "3 Hours" },
-  { value: "SIX_HOURS", label: "6 Hours" },
-  { value: "TWELVE_HOURS", label: "12 Hours" },
-  { value: "TWENTY_FOUR_HOURS", label: "24 Hours" },
-  { value: "AIRPORT_PICKUP", label: "Airport Transfers" },
-];
+// export const bookingOptionsData: DropdownOption[] = [
+//   { value: "AN_HOUR", label: "1 Hour" },
+//   { value: "THREE_HOURS", label: "3 Hours" },
+//   { value: "SIX_HOURS", label: "6 Hours" },
+//   { value: "TWELVE_HOURS", label: "12 Hours" },
+//   { value: "TWENTY_FOUR_HOURS", label: "24 Hours" },
+//   { value: "AIRPORT_PICKUP", label: "Airport Transfers" },
+// ];
 
+export const getBookingOption = async (): Promise<{
+  rawBookingOptions: any[];
+  dropdownOptions: DropdownOption[];
+}> => {
+  const response = await BookingService.getBookingType();
+  const rawBookingOptions = response?.data || [];
+
+  const dropdownOptions: DropdownOption[] = rawBookingOptions.map(
+    (item: { id: string; name: string }) => ({
+      value: item.id,
+      label: item.name,
+    })
+  );
+
+  return {
+    rawBookingOptions,
+    dropdownOptions,
+  };
+};
 export const DEFAULT_LOCATION_SUGGESTIONS: PlacePrediction[] = [
   {
     id: "anywhere",

@@ -5,11 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createData } from "@/controllers/connnector/app.callers";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
-import Link from "next/link";
-// import { BlurredDialog } from "@/components/general/dialog";
-import Button from "@/components/general/forms/button";
 import Modal from "@/components/general/modal";
-
 
 import {
   FiHeart,
@@ -29,7 +25,7 @@ import {
   VehicleBookingOptions,
   EstimatedBookingPrice,
 } from "@/types/vehicleDetails";
-
+import { BookingService } from "@/controllers/booking/bookingService";
 
 const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
   const router = useRouter();
@@ -200,12 +196,12 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
         dropoffLocationString: details?.dropoffLocation,
         areaOfUse: areaOfUseCoordinates
           ? [
-            {
-              areaOfUseLatitude: areaOfUseCoordinates.lat,
-              areaOfUseLongitude: areaOfUseCoordinates.lng,
-              areaOfUseName: details?.areaOfUse,
-            },
-          ]
+              {
+                areaOfUseLatitude: areaOfUseCoordinates.lat,
+                areaOfUseLongitude: areaOfUseCoordinates.lng,
+                areaOfUseName: details?.areaOfUse,
+              },
+            ]
           : [],
       };
     });
@@ -219,11 +215,7 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
       data.couponCode = couponCode;
     }
 
-    const pricing = (await createData(
-      "/api/v1/public/bookings/calculate",
-      data
-    )) as EstimatedBookingPrice;
-
+    const pricing = await BookingService.calculateBooking(data);
     sessionStorage.setItem("priceEstimateId", pricing.data.data.calculationId);
     if (couponCode.trim()) {
       sessionStorage.setItem("couponCode", couponCode);
@@ -257,14 +249,14 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                 <div className="flex flex-row items-center space-x-2 xs:space-x-3 self-end sm:self-auto">
                   <IconButton
                     className="bg-gray-900 hover:bg-gray-800 cursor-pointer text-white p-2 sm:p-2.5 rounded-full"
-                    onClick={() => { }}
+                    onClick={() => {}}
                   >
                     <FiShare2 size={16} className="sm:size-[18px]" />
                   </IconButton>
 
                   <IconButton
                     className="bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer p-2 sm:p-2.5 rounded-full"
-                    onClick={() => { }}
+                    onClick={() => {}}
                   >
                     <FiHeart size={16} className="sm:size-[18px]" />
                   </IconButton>
@@ -414,8 +406,8 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                         subLabel={
                           pricing.data.data.appliedGeofenceNames?.length > 0
                             ? `Applied to: ${pricing.data.data.appliedGeofenceNames.join(
-                              ", "
-                            )}`
+                                ", "
+                              )}`
                             : null
                         }
                       />
@@ -427,8 +419,9 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                       />
 
                       <PriceRow
-                        label={`Coupon (${pricing.data.data.appliedCouponCode || "Applied"
-                          })`}
+                        label={`Coupon (${
+                          pricing.data.data.appliedCouponCode || "Applied"
+                        })`}
                         value={pricing.data.data.couponDiscountAmount}
                         isDiscount
                       />
@@ -450,7 +443,7 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                   >
                     Estimate Price
                   </button>
-                ) : !isAuthenticated ?
+                ) : !isAuthenticated ? (
                   <button
                     className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
                     disabled={!isTripFormsComplete}
@@ -458,17 +451,15 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                   >
                     Continue Booking
                   </button>
-
-
-                  : (
-                    <button
-                      className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
-                      disabled={!isTripFormsComplete}
-                      onClick={() => router.push(`/Booking/create/${vehicle.id}`)}
-                    >
-                      Continue Booking
-                    </button>
-                  )}
+                ) : (
+                  <button
+                    className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                    disabled={!isTripFormsComplete}
+                    onClick={() => router.push(`/Booking/create/${vehicle.id}`)}
+                  >
+                    Continue Booking
+                  </button>
+                )}
 
                 {/* Discounts Section */}
                 {vehicle.discounts.length > 0 && (
@@ -498,7 +489,9 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
 
           <button
             className="w-full py-4 text-sm font-medium cursor-pointer bg-[#d0d5dd] text-black rounded-2xl  hover:opacity-80 "
-            onClick={() => router.push(`/Booking/create/${vehicle.id}?user=guest`)}
+            onClick={() =>
+              router.push(`/Booking/create/${vehicle.id}?user=guest`)
+            }
           >
             Continue as guest
           </button>
@@ -514,9 +507,6 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
     </>
   );
 };
-
-
-
 
 const IconButton = ({
   children,
@@ -552,15 +542,17 @@ const PriceRow = ({
 
   return (
     <div
-      className={`flex justify-between items-start ${isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
-        }`}
+      className={`flex justify-between items-start ${
+        isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
+      }`}
     >
       <div className="flex flex-col">
         <span
-          className={`${isTotal
-            ? "text-base font-bold text-gray-900"
-            : "text-sm text-gray-600"
-            }`}
+          className={`${
+            isTotal
+              ? "text-base font-bold text-gray-900"
+              : "text-sm text-gray-600"
+          }`}
         >
           {label}
         </span>
@@ -573,12 +565,13 @@ const PriceRow = ({
       </div>
 
       <span
-        className={`font-medium ${isTotal
-          ? "text-lg text-blue-600 font-bold"
-          : isDiscount
+        className={`font-medium ${
+          isTotal
+            ? "text-lg text-blue-600 font-bold"
+            : isDiscount
             ? "text-green-600 text-sm"
             : "text-gray-900 text-sm"
-          }`}
+        }`}
       >
         {isDiscount ? "-" : ""} NGN
         {value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
