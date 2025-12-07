@@ -173,7 +173,6 @@ export default function ExploreVehiclesPage() {
           params.maxPrice = filterState.priceRange[1];
         }
       }
-
       const response = await VehicleSearchService.searchVehicles(params);
       const vehiclesData = response.data.data?.content || [];
 

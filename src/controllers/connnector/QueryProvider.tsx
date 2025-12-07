@@ -7,10 +7,12 @@ import { ReactNode } from "react";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
-      refetchOnWindowFocus: false,
-      retry: 1,
+      staleTime: Infinity, // Never becomes stale
+      gcTime: Infinity, // Never garbage collected
+      refetchOnWindowFocus: false, // No refetch on tab focus
+      refetchOnReconnect: false, // No refetch on internet reconnect
+      refetchOnMount: false, // No refetch when component remounts
+      retry: false, // No retry = no extra "pings"
     },
   },
 });

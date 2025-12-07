@@ -72,23 +72,58 @@ export class VehicleSearchService {
     }
   }
 
+  // static async buildSearchUrl(
+  //   location: { name: string; lat: number; lng: number },
+  //   bookingType: string,
+  //   category: string,
+  //   fromDate: Date,
+  //   untilDate: Date
+  // ) {
+  //   const params = new URLSearchParams({
+  //     lat: location.lat.toString(),
+  //     lng: location.lng.toString(),
+  //     location: location.name,
+  //     bookingType,
+  //     category,
+  //     fromDate: fromDate.toISOString(),
+  //     untilDate: untilDate.toISOString(),
+  //     radiusInKm: "100",
+  //   });
+
+  //   return `/Booking/search?${params.toString()}`;
+  // }
+
   static async buildSearchUrl(
     location: { name: string; lat: number; lng: number },
-    bookingType: string,
-    category: string,
-    fromDate: Date,
-    untilDate: Date
+    bookingType?: string,
+    category?: string,
+    fromDate?: Date,
+    untilDate?: Date
   ) {
-    const params = new URLSearchParams({
-      lat: location.lat.toString(),
-      lng: location.lng.toString(),
-      location: location.name,
-      bookingType,
-      category,
-      fromDate: fromDate.toISOString(),
-      untilDate: untilDate.toISOString(),
-      radiusInKm: "100",
-    });
+    const params = new URLSearchParams();
+
+    // ✅ Always required
+    params.append("lat", location.lat.toString());
+    params.append("lng", location.lng.toString());
+    params.append("location", location.name);
+    params.append("radiusInKm", "100");
+
+    // ✅ Optional params (ONLY added if they exist)
+    if (bookingType) {
+      params.append("bookingType", bookingType);
+    }
+
+    if (category) {
+      params.append("vehicleTypeId", category);
+    }
+
+    if (fromDate) {
+      params.append("fromDate", fromDate.toISOString());
+    }
+
+    if (untilDate) {
+      params.append("untilDate", untilDate.toISOString());
+    }
 
     return `/Booking/search?${params.toString()}`;
   }

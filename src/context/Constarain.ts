@@ -11,10 +11,19 @@ import { DropdownOption } from "@/types/HeroSectionTypes";
 //   { value: "AIRPORT_PICKUP", label: "Airport Transfers" },
 // ];
 
+let cachedBookingOptions: {
+  rawBookingOptions: any[];
+  dropdownOptions: DropdownOption[];
+} | null = null;
+
 export const getBookingOption = async (): Promise<{
   rawBookingOptions: any[];
   dropdownOptions: DropdownOption[];
 }> => {
+  if (cachedBookingOptions) {
+    return cachedBookingOptions; // ✅ Prevents multiple API calls
+  }
+
   const response = await BookingService.getBookingType();
   const rawBookingOptions = response?.data || [];
 
@@ -25,11 +34,14 @@ export const getBookingOption = async (): Promise<{
     })
   );
 
-  return {
+  cachedBookingOptions = {
     rawBookingOptions,
     dropdownOptions,
   };
+
+  return cachedBookingOptions;
 };
+
 export const DEFAULT_LOCATION_SUGGESTIONS: PlacePrediction[] = [
   {
     id: "anywhere",
