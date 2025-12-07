@@ -20,7 +20,7 @@
     "formik": "^2.4.9",
     "framer-motion": "^12.23.25",
     "js-cookie": "^3.0.5",
-    "next": "15.5.4",
+    "next": "15.5.7",
     "react": "19.1.0",
     "react-calendar": "^6.0.0",
     "react-dom": "19.1.0",

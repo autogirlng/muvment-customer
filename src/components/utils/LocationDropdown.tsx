@@ -26,7 +26,7 @@ const LocationDropdown: React.FC<LocationDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
+      className=" top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
     >
       <div className="h-full overflow-y-auto py-1">
         {/* Loading State */}
