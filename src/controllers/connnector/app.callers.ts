@@ -1,6 +1,7 @@
 import NetworkService from "@/components/Network/NetworkService";
 import ApiClient from "./appClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {toast} from "react-toastify"
 
 const cache: Record<string, any> = {};
 export class LoadingManager {
@@ -353,10 +354,13 @@ export const createData = async (path: string, body: any) => {
           : { "Content-Type": "application/json;charset=UTF-8" },
         requireAuth: true,
       });
+ 
+      if(data.err){
+        toast.error(data.err)
+      }
 
       return NetworkService.handleApiResponse(data);
     } catch (error) {
-      console.error(error);
       return NetworkService.handleApiError(error);
     }
   });

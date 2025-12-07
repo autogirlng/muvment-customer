@@ -147,14 +147,13 @@ export const StepperNavigation = ({
                             </StepperButton> : (
                                 // Button clicked if formik is handling next step
                                 <StepperButton
-                                    onClick={handleNext}
                                     disabled={
                                         currentStep === steps.length ||
                                         disableNextButton ||
                                         isNextLoading
                                     }
                                     className="px-6 3xl:!px-8 cursor-pointer  bg-[#0673ff] text-white"
-                                // type="submit"
+                                    type="submit"
                                 >
                                     <span>Next</span>{" "}
                                     {isNextLoading ? <Spinner /> : Icons.ic_chevron_right}

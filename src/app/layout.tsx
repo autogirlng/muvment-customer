@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ClientRoot from "@/components/utils/ClientRoot";
-
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { Inter } from "next/font/google";
 import { QueryProvider } from "@/controllers/connnector/QueryProvider";
 
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <QueryProvider>
           <ClientRoot>{children}</ClientRoot>
+          <ToastContainer position="top-right" autoClose={3000} />
         </QueryProvider>
       </body>
     </html>

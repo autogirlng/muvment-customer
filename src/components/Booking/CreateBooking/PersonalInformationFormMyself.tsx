@@ -10,7 +10,6 @@ import { useAuth } from "@/context/AuthContext";
 
 
 
-
 export const replaceCharactersWithString = (str: string): string => {
     return str.replace(/\D/g, "");
 };
@@ -64,6 +63,7 @@ const PersonalInformationFormMyself = ({
                 sessionStorage.setItem("userBookingInformation", JSON.stringify(values))
                 setCurrentStep(currentStep + 1);
                 setSubmitting(false);
+
             }}
             enableReinitialize={true}
             validateOnChange={true}

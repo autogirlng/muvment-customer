@@ -14,14 +14,10 @@ export const validatePhoneNumber = (phoneNumber: string, country: string) => {
 };
 
 export const itineraryInformationSchema = object().shape({
-  // pickupLocation: string().required("Please enter the pickup location"),
-  // startDate: string().required("Please select the start date"),
-  // startTime: string().required("Please select the start time"),
-  // dropoffLocation: string().required("Please enter the dropoff location"),
-  // endDate: string().required("Please select the end date"),
-  // endTime: string().required("Please select the end time"),
-  // areaOfUse: string().required("Please enter the area of use"),
-  extraDetails:string().optional()
+ 
+  extraDetails:string().optional(),
+  purposeOfRide:string().optional()
+
 });
 
 export const personalInformationMyselfSchema = object().shape({
