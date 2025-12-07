@@ -160,7 +160,7 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
 
       {/* Price display */}
       <p className="text-center text-sm font-medium text-gray-700 mb-3">
-        ₹{formatPrice(min)} – ₹{formatPrice(max)} / day
+        {formatPrice(min)} – {formatPrice(max)} / day
       </p>
 
       {/* Slider */}
@@ -173,7 +173,6 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
           }}
         />
 
-        {/* Min thumb */}
         <div
           onMouseDown={handleMouseDown("min")}
           className="absolute w-4 h-4 bg-white border-2 border-blue-500 rounded-full shadow cursor-grab active:cursor-grabbing transform -translate-y-1/2"

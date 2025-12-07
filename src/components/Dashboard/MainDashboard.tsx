@@ -10,14 +10,14 @@ import {
 } from "react-icons/fi";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
-import LocationDropdown from "../utils/LocationDropdown";
-
 import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
 import { BookingService } from "@/controllers/booking/bookingService";
 import { useRouter } from "next/navigation";
-import DashboardDropdown from "../utils/DasboardDropdown";
-import DashboardCalendar from "../utils/DashboardCalender";
 import { getBookingOption } from "@/context/Constarain";
+import {
+  ProfileService,
+  UserProfile,
+} from "@/controllers/user/profile.service";
 
 interface StatCardProps {
   title: string;
@@ -61,7 +61,7 @@ export default function Dashboard(): React.ReactElement {
   const [untilDate, setUntilDate] = useState<Date>(new Date());
   const [category, setCategory] = useState<string>("suv-electric");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
+  const [userData, setProfile] = useState<UserProfile | null>(null);
   // Location state
   const [searchValue, setSearchValue] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -110,9 +110,34 @@ export default function Dashboard(): React.ReactElement {
     setcategoryOptions(transformedOptions);
   };
 
+  const getUserData = async () => {
+    const response = await ProfileService.getMyProfile();
+    let profileData: UserProfile | null = null;
+    const respData = response?.data;
+    if (Array.isArray(respData)) {
+      const first = respData[0];
+      profileData = (first && (first.data ?? first)) as UserProfile | null;
+    } else {
+      profileData = respData as UserProfile | null;
+    }
+
+    setProfile(profileData as UserProfile);
+  };
+
   useEffect(() => {
-    getvechileType();
-    getBookingOptions();
+    const fetchData = async () => {
+      try {
+        await Promise.all([
+          getvechileType(),
+          getBookingOptions(),
+          getUserData(),
+        ]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   // Handle clicks outside location dropdown
@@ -220,8 +245,6 @@ export default function Dashboard(): React.ReactElement {
     handleDashboardLoad();
   }, []);
 
-  // Get current user name - you can replace this with actual user data
-  const userName = "Liam Michael";
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -236,8 +259,8 @@ export default function Dashboard(): React.ReactElement {
         <div className="max-w-8xl mx-auto px-4 md:px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                Good Morning, {userName}
+              <h1 className="text-sm md:text-2xl font-bold mb-2">
+                Good Morning, {userData?.firstName}
               </h1>
               <p className="text-blue-100 text-sm">Book your next rental car</p>
               <p className="text-blue-100 text-xs mt-1">{currentDate}</p>

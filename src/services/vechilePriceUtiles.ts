@@ -18,29 +18,34 @@ export const getDisplayPrice = (
   allPricingOptions: PricingOption[],
   bookingOptions: { value: string; label: string }[]
 ): number => {
+  if (!allPricingOptions?.length) return 0;
+
+  if (!bookingType) {
+    return allPricingOptions[0].price;
+  }
+
   const bookingTypeOption = bookingOptions.find(
     (opt) => opt.value === bookingType
   );
-  if (bookingType && allPricingOptions && allPricingOptions.length > 0) {
-    const bookingTypePrice = allPricingOptions.find(
-      (bt) => bt.bookingTypeName === bookingTypeOption?.label
-    );
+  const bookingTypePrice = allPricingOptions.find(
+    (bt) => bt.bookingTypeName === bookingTypeOption?.label
+  );
 
-    return bookingTypePrice
-      ? bookingTypePrice.price
-      : allPricingOptions[0]?.price || 0;
-  }
-
-  return allPricingOptions?.[0]?.price || 0;
+  return bookingTypePrice ? bookingTypePrice.price : allPricingOptions[0].price;
 };
 
 export const getDisplayLabel = (
   bookingType: string | null | undefined,
   bookingOptions: { value: string; label: string }[]
 ): string => {
-  if (!bookingType || !bookingOptions?.length) return "Daily";
+  if (!bookingOptions?.length) return "";
+
+  if (!bookingType) {
+    return bookingOptions[0].label;
+  }
+
   const matched = bookingOptions.find((opt) => opt.value === bookingType);
-  return matched?.label || "Daily";
+  return matched?.label || bookingOptions[0].label;
 };
 
 export const getPriceDisplay = (
