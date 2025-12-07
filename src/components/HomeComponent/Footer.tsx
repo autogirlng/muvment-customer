@@ -212,13 +212,13 @@ function Footer() {
             <div className="w-full md:w-fit flex flex-col md:flex-row items-center gap-5 md:gap-8">
               <div className="w-full md:w-fit flex flex-col md:flex-row md:items-center gap-5 md:gap-8 text-sm">
                 <Link
-                  href="/terms-of-service"
+                  href="/policy/terms-conditions"
                   className="font-normal text-grey-600 hover:text-primary-500"
                 >
                   Terms of Service
                 </Link>
                 <Link
-                  href="/privacy-policy"
+                  href="/policy/privacy-policy"
                   className="font-normal text-grey-600 hover:text-primary-500"
                 >
                   Privacy Policy

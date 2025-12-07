@@ -302,11 +302,17 @@ export default function LoginComponent() {
             {/* Footer */}
             <p className="text-center text-sm text-gray-600 mt-12">
               By signing in you agree to Muvment's{" "}
-              <a href="#" className="text-black hover:underline font-medium">
+              <a
+                href="/policy/privacy-policy"
+                className="text-black hover:underline font-medium"
+              >
                 Privacy Policy
               </a>{" "}
               and{" "}
-              <a href="#" className="text-black hover:underline font-medium">
+              <a
+                href="/policy/terms-conditions"
+                className="text-black hover:underline font-medium"
+              >
                 Terms of Service
               </a>
             </p>
