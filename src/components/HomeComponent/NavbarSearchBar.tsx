@@ -15,7 +15,7 @@ export const NavbarSearchBar = () => {
   const [bookingType, setBookingType] = useState("select Type");
   const [fromDate, setFromDate] = useState(new Date());
   const [untilDate, setUntilDate] = useState(new Date());
-  const [category, setCategory] = useState("suv-electric");
+  const [category, setCategory] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   // Location state
