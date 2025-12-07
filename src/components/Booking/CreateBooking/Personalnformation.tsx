@@ -29,7 +29,6 @@ const PersonalInformation = ({
                 vehicleId={vehicle?.data.id ?? ""}
                 type={type}
             />
-            {/* <VehicleInformationCard  /> */}
         </div>
     );
 };

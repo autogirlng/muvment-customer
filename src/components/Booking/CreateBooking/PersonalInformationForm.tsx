@@ -25,7 +25,6 @@ const PersonalInformationForm = ({
     const [isOthers, setIsOthers] = useState<boolean>(whoBookedRide === "others");
     const { isAuthenticated } = useAuth()
 
-    // Use useEffect to update isOthers whenever whoBookedRide changes
     useEffect(() => {
         setIsOthers(whoBookedRide === "others");
     }, [whoBookedRide]);

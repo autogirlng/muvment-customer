@@ -1,3 +1,4 @@
+import { useEffect, useState, useMemo } from "react";
 import { Formik, Form, useFormikContext } from "formik";
 import InputField from "@/components/general/forms/inputField";
 import { StepperNavigation } from "./stepper";
@@ -14,17 +15,7 @@ type Props = {
     isOthers: boolean;
 };
 
-const initialValues: PersonalInformationOthersValues = {
-    recipientFullName: "",
-    recipientEmail: "",
-    recipientPhoneNumber: "",
-    recipientSecondaryPhoneNumber: "",
-    country: "NG",
-    countryCode: "+234",
-    userCountry: "NG",
-    userCountryCode: "+234",
-    isBookingForOthers: true,
-};
+
 
 
 
@@ -39,6 +30,36 @@ const PersonalInformationFormOthers = ({
     isOthers
 }: Props) => {
 
+    const [bookingInformationValues, setBookingInformationValues] = useState<PersonalInformationOthersValues | null>(null)
+
+    const initialValues: PersonalInformationOthersValues = useMemo(() => ({
+        recipientFullName: bookingInformationValues?.recipientFullName || "",
+        recipientEmail: bookingInformationValues?.recipientEmail || "",
+        recipientPhoneNumber: bookingInformationValues?.recipientPhoneNumber || "",
+        recipientSecondaryPhoneNumber: bookingInformationValues?.recipientSecondaryPhoneNumber || "",
+        country: "NG",
+        countryCode: "+234",
+        userCountry: "NG",
+        userCountryCode: "+234",
+        isBookingForOthers: true,
+    }), [bookingInformationValues]);
+
+
+
+    useEffect(() => {
+        const stored = sessionStorage.getItem("userBookingInformation");
+        if (stored) {
+            try {
+                const userBookingValues = JSON.parse(stored) as PersonalInformationOthersValues;
+                if (userBookingValues?.isBookingForOthers) {
+                    setBookingInformationValues(userBookingValues);
+                }
+            } catch (error) {
+                console.error("Failed to parse booking information for others:", error);
+            }
+        }
+    }, []);
+
     return (
         <Formik
             initialValues={
@@ -46,7 +67,12 @@ const PersonalInformationFormOthers = ({
             }
             validationSchema={personalInformationOthersSchema}
             onSubmit={(values, { setSubmitting }) => {
-                sessionStorage.setItem("userBookingInformation", JSON.stringify(values))
+                const bookingInfomation = JSON.parse(sessionStorage.getItem("userBookingInformation") || "")
+                let bookingData = values
+                if (bookingInfomation) {
+                    bookingData = { ...bookingInfomation, ...values }
+                }
+                sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingData))
                 setCurrentStep(currentStep + 1);
                 setSubmitting(false);
             }}

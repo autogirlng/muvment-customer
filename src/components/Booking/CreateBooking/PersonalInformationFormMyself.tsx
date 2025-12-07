@@ -5,7 +5,7 @@ import { personalInformationMyselfSchema } from "@/utils/validationSchema";
 import { PersonalInformationMyselfValues } from "@/types/booking";
 import PhoneNumberAndCountryField from "@/components/general/forms/phoneNumberAndCountryField";
 import { getCountryCallingCode } from "react-phone-number-input";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 
@@ -13,8 +13,6 @@ import { useAuth } from "@/context/AuthContext";
 export const replaceCharactersWithString = (str: string): string => {
     return str.replace(/\D/g, "");
 };
-
-
 
 type Props = {
     steps: string[];
@@ -24,9 +22,6 @@ type Props = {
     type: "user" | "guest";
 };
 
-
-
-
 const PersonalInformationFormMyself = ({
     steps,
     currentStep,
@@ -35,32 +30,51 @@ const PersonalInformationFormMyself = ({
     type,
 }: Props) => {
     const [showSecondaryPhoneNumber, setShowSecondaryPhoneNumber] = useState<boolean>(false);
+    const [bookingInformationValues, setBookingInformationValues] = useState<PersonalInformationMyselfValues | null>(null)
+
     const { user } = useAuth();
 
 
-    const initialValues: PersonalInformationMyselfValues = {
-        guestFullName: user?.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : "",
-        guestEmail: user?.email || "",
-        primaryPhoneNumber: user?.phoneNumber || '',
+    const initialValues = useMemo(() => ({
+        guestFullName: bookingInformationValues?.guestFullName || (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : ""),
+        guestEmail: bookingInformationValues?.guestEmail || user?.email || "",
+        primaryPhoneNumber: bookingInformationValues?.primaryPhoneNumber || user?.phoneNumber || '',
         country: "NG",
         countryCode: "+234",
-        secondaryPhoneNumber: "",
+        secondaryPhoneNumber: bookingInformationValues?.secondaryPhoneNumber || "",
         secondaryCountry: "NG",
         secondaryCountryCode: "+234",
         isBookingForOthers: false,
-    };
+    }), [bookingInformationValues, user]);
 
 
 
     useEffect(() => {
-        sessionStorage.removeItem("userBookingInformation")
-    }, [])
+        const stored = sessionStorage.getItem("userBookingInformation");
+        if (stored) {
+            try {
+                const userBookingValues = JSON.parse(stored) as PersonalInformationMyselfValues;
+                if (!userBookingValues?.isBookingForOthers) {
+                    setBookingInformationValues(userBookingValues);
+                }
+            } catch (error) {
+                console.error("Failed to parse booking information from sessionStorage:", error);
+            }
+        }
+    }, []);
     return (
         <Formik
             initialValues={initialValues}
             validationSchema={personalInformationMyselfSchema}
             onSubmit={(values, { setSubmitting }) => {
-                sessionStorage.setItem("userBookingInformation", JSON.stringify(values))
+
+
+                const bookingInfomation = JSON.parse(sessionStorage.getItem("userBookingInformation") || "")
+                let bookingData = values
+                if (bookingInfomation) {
+                    bookingData = { ...bookingInfomation, ...values }
+                }
+                sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingData))
                 setCurrentStep(currentStep + 1);
                 setSubmitting(false);
 

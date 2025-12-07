@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import cn from "classnames";
 import CostBreakdown from "./CostBreakdown";
 import { TripDetails } from "@/types/vehicleDetails";
+import { StepperNavigation } from "./stepper";
 
 
 type Props = {
@@ -17,6 +18,9 @@ type Props = {
   perks: any[];
   vehicleDetails: VehicleDetailsPublic | null;
   type: "guest" | "user";
+  steps: string[];
+  currentStep: number;
+  setCurrentStep: (step: number) => void;
 };
 
 const VehicleDetailsChip = ({
@@ -56,6 +60,9 @@ const DiscountRow = ({
 export default function BookingSummary({
   vehicleImages,
   vehicleDetails,
+  steps,
+  currentStep,
+  setCurrentStep
 }: Props) {
   const {
     setTrips,
@@ -205,7 +212,14 @@ export default function BookingSummary({
       </div>
       <CostBreakdown trips={trips} vehicleId={vehicleDetails?.data.id || ""} />
 
-
+      <StepperNavigation
+        steps={steps}
+        currentStep={currentStep}
+        setCurrentStep={setCurrentStep}
+        handleSaveDraft={() => { }}
+        isSaveDraftloading={false}
+        disableNextButton={true}
+      />
     </div>
   );
 }

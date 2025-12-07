@@ -139,7 +139,7 @@ export const StepperNavigation = ({
                                     disableNextButton ||
                                     isNextLoading
                                 }
-                                className="px-6 3xl:!px-8 bg-transparent cursor-pointer sm:bg-[#0673ff] text-primary-500 sm:text-white disabled:sm:bg-grey-300"
+                                className="px-6 3xl:!px-8 cursor-pointer bg-[#0673ff] text-white sm:text-white disabled:sm:bg-grey-300"
                                 type="submit"
                             >
                                 <span>Next</span>{" "}
@@ -152,7 +152,7 @@ export const StepperNavigation = ({
                                         disableNextButton ||
                                         isNextLoading
                                     }
-                                    className="px-6 3xl:!px-8 cursor-pointer  bg-[#0673ff] text-white"
+                                    className="px-6 3xl:!px-8 cursor-pointer disabled:bg-[#80b9ff] bg-[#0673ff] text-white"
                                     type="submit"
                                 >
                                     <span>Next</span>{" "}

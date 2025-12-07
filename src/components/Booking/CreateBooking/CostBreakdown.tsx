@@ -209,12 +209,12 @@ const CostBreakdown = ({
             <div className="border-b border-grey-200 pb-4">
               <div className="w-full text-sm flex text-black justify-between mt-3">
                 <span>Base Price</span>
-                <span>NGN {pricing?.data.data.basePrice}</span>
+                <span>NGN {(pricing?.data.data.basePrice || 0) + (pricing?.data.data.platformFeeAmount || 0)}</span>
               </div>
-              <div className="w-full text-sm flex justify-between mt-4">
+              {/* <div className="w-full text-sm flex justify-between mt-4">
                 <span>Platform Fee</span>
                 <span>NGN {pricing?.data.data.platformFeeAmount}</span>
-              </div>
+              </div> */}
 
               {pricing?.data.data.discountAmount ? (
                 <div className="w-full text-sm flex justify-between mt-4 text-green-600">

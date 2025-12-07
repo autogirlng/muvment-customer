@@ -13,7 +13,7 @@ import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { TripDetails } from "@/types/vehicleDetails";
 import TextArea from "@/components/general/forms/textarea";
 import InputField from "@/components/general/forms/inputField";
-
+import { PersonalInformationMyselfValues } from "@/types/booking";
 
 
 const ItineraryForm = ({
@@ -33,6 +33,7 @@ const ItineraryForm = ({
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bookingInformationValues, setBookingInformationValues] = useState<{ extraDetails: string, purposeOfRide: string } | null>(null)
 
   const {
     setTrips,
@@ -89,9 +90,22 @@ const ItineraryForm = ({
   }, [id]);
 
   const initialValues = {
-    extraDetails: "",
-    purposeOfRide: ""
+    extraDetails: bookingInformationValues?.extraDetails || "",
+    purposeOfRide: bookingInformationValues?.purposeOfRide || ""
   }
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("userBookingInformation");
+    if (stored) {
+      try {
+        const { extraDetails, purposeOfRide } = JSON.parse(stored);
+        setBookingInformationValues({ extraDetails, purposeOfRide })
+
+      } catch (error) {
+        console.error("Failed to parse booking information from sessionStorage:", error);
+      }
+    }
+  }, []);
   return (
     <>
       <Formik

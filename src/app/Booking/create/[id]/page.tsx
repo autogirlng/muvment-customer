@@ -8,7 +8,6 @@ import { Navbar } from "@/components/Navbar";
 import BackLink from "@/components/general/backlink";
 import { Stepper } from "@/components/Booking/CreateBooking/stepper";
 import { useRouter } from "next/navigation";
-import { getSingleData } from "@/controllers/connnector/app.callers";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
 import { useParams } from "next/navigation";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
@@ -100,6 +99,9 @@ export default function CreateBooking() {
                                 perks={[]}
                                 vehicleDetails={vehicle}
                                 type="user"
+                                steps={steps}
+                                currentStep={currentStep}
+                                setCurrentStep={handleCurrentStep}
                             />
                         )}
                     </Stepper>

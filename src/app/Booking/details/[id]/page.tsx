@@ -13,9 +13,11 @@ import {
   FiArrowLeft,
   FiBell,
   FiShare2,
-  FiTag, // Added icon for coupon
+  FiTag,
+
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
+import { SocialShareButton } from "@/components/general/share";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { Carousel } from "@/components/utils/Carousel";
 import { TripAccordion } from "@/components/Booking/TripAccordion";
@@ -196,12 +198,12 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
         dropoffLocationString: details?.dropoffLocation,
         areaOfUse: areaOfUseCoordinates
           ? [
-              {
-                areaOfUseLatitude: areaOfUseCoordinates.lat,
-                areaOfUseLongitude: areaOfUseCoordinates.lng,
-                areaOfUseName: details?.areaOfUse,
-              },
-            ]
+            {
+              areaOfUseLatitude: areaOfUseCoordinates.lat,
+              areaOfUseLongitude: areaOfUseCoordinates.lng,
+              areaOfUseName: details?.areaOfUse,
+            },
+          ]
           : [],
       };
     });
@@ -247,16 +249,12 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                 </h1>
 
                 <div className="flex flex-row items-center space-x-2 xs:space-x-3 self-end sm:self-auto">
-                  <IconButton
-                    className="bg-gray-900 hover:bg-gray-800 cursor-pointer text-white p-2 sm:p-2.5 rounded-full"
-                    onClick={() => {}}
-                  >
-                    <FiShare2 size={16} className="sm:size-[18px]" />
-                  </IconButton>
+
+                  <SocialShareButton />
 
                   <IconButton
                     className="bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer p-2 sm:p-2.5 rounded-full"
-                    onClick={() => {}}
+                    onClick={() => { }}
                   >
                     <FiHeart size={16} className="sm:size-[18px]" />
                   </IconButton>
@@ -392,13 +390,10 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
 
                       <PriceRow
                         label="Base Price"
-                        value={pricing.data.data.basePrice}
+                        value={pricing.data.data.basePrice + pricing.data.data.platformFeeAmount}
                       />
 
-                      <PriceRow
-                        label="Platform Fee"
-                        value={pricing.data.data.platformFeeAmount}
-                      />
+
 
                       <PriceRow
                         label="Outskirts Surcharge"
@@ -406,8 +401,8 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                         subLabel={
                           pricing.data.data.appliedGeofenceNames?.length > 0
                             ? `Applied to: ${pricing.data.data.appliedGeofenceNames.join(
-                                ", "
-                              )}`
+                              ", "
+                            )}`
                             : null
                         }
                       />
@@ -419,9 +414,8 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                       />
 
                       <PriceRow
-                        label={`Coupon (${
-                          pricing.data.data.appliedCouponCode || "Applied"
-                        })`}
+                        label={`Coupon (${pricing.data.data.appliedCouponCode || "Applied"
+                          })`}
                         value={pricing.data.data.couponDiscountAmount}
                         isDiscount
                       />
@@ -542,17 +536,15 @@ const PriceRow = ({
 
   return (
     <div
-      className={`flex justify-between items-start ${
-        isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
-      }`}
+      className={`flex justify-between items-start ${isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
+        }`}
     >
       <div className="flex flex-col">
         <span
-          className={`${
-            isTotal
-              ? "text-base font-bold text-gray-900"
-              : "text-sm text-gray-600"
-          }`}
+          className={`${isTotal
+            ? "text-base font-bold text-gray-900"
+            : "text-sm text-gray-600"
+            }`}
         >
           {label}
         </span>
@@ -565,13 +557,12 @@ const PriceRow = ({
       </div>
 
       <span
-        className={`font-medium ${
-          isTotal
-            ? "text-lg text-blue-600 font-bold"
-            : isDiscount
+        className={`font-medium ${isTotal
+          ? "text-lg text-blue-600 font-bold"
+          : isDiscount
             ? "text-green-600 text-sm"
             : "text-gray-900 text-sm"
-        }`}
+          }`}
       >
         {isDiscount ? "-" : ""} NGN
         {value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
