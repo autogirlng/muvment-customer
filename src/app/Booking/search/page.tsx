@@ -70,6 +70,7 @@ export default function ExploreVehiclesPage() {
   }, [searchParams]);
 
   // Fetch filter options
+
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
@@ -134,7 +135,7 @@ export default function ExploreVehiclesPage() {
     try {
       const params: VehicleSearchParams = {
         page,
-        size: 200,
+        size: 10,
       };
 
       if (!clearAll) {
@@ -145,6 +146,7 @@ export default function ExploreVehiclesPage() {
         if (category) params.vehicleTypeId = category;
         if (fromDate) params.fromDate = fromDate;
         if (untilDate) params.untilDate = untilDate;
+        if (bookingType) params.bookingTypeId = bookingType;
 
         if (filterState.selectedVehicleTypes !== undefined) {
           params.vehicleTypeId = filterState.selectedVehicleTypes[0];

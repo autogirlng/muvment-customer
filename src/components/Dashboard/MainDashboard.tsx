@@ -276,16 +276,16 @@ export default function Dashboard(): React.ReactElement {
         </div>
 
         {/* Booking Form */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
+        {/* <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
           <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">
             Book a car
           </h2>
           <div className="space-y-4">
-            {/* First Row */}
+       
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
                 <label className="block text-sm text-gray-600 mb-2">
-                  Booking Type
+                  Booking Location
                 </label>
                 <div className="flex items-center px-3 md:px-4 py-3 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
                   <FiMapPin className="w-4 h-4 text-gray-500 mr-2 md:mr-3 flex-shrink-0" />
@@ -327,7 +327,6 @@ export default function Dashboard(): React.ReactElement {
               </div>
             </div>
 
-            {/* Second Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-600 mb-2">
@@ -360,7 +359,7 @@ export default function Dashboard(): React.ReactElement {
               </div>
             </div>
 
-            {/* Search Button - Centered */}
+    
             <div className="flex justify-center pt-2">
               <button
                 onClick={handleSearch}
@@ -372,7 +371,7 @@ export default function Dashboard(): React.ReactElement {
             </div>
           </div>
 
-          {/* Error Message */}
+      
           {errorMessage && (
             <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
               <div className="flex items-center gap-2">
@@ -391,7 +390,7 @@ export default function Dashboard(): React.ReactElement {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Booking Log */}
         <BookingHistoryComponent showHeader={false} limit={4} />

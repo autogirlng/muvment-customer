@@ -185,10 +185,10 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
                   Driver available: {willProvideDriver ? "Yes" : "No"}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-gray-700">
+              {/* <div className="flex items-center gap-2 text-gray-700">
                 <FiUser className="w-4 h-4" />
                 <span>Transmission: Manual</span>
-              </div>
+              </div> */}
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-gray-700">
@@ -307,12 +307,12 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
                 <strong>{willProvideDriver ? "Yes" : "No"}</strong>
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <FiUser className="w-4 h-4" />
               <span>
                 Transmission: <strong>Manual</strong>
               </span>
-            </div>
+            </div> */}
           </div>
           <div className="flex items-center gap-8 text-sm text-gray-700">
             <div className="flex items-center gap-2">
