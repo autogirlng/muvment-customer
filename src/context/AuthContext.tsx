@@ -93,14 +93,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       sameSite: "strict",
     });
 
-    const getUser = await AuthService.getUserInformation();
-    // console.log("Fetched user information on login:", getUser);
-    if (getUser) {
-      setUser(getUser);
-    } else {
-      setUser(userData);
-    }
-    Cookies.set("muvment_user", JSON.stringify(getUser), {
+    setUser(userData);
+
+    Cookies.set("muvment_user", JSON.stringify(userData), {
       expires: 7,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
