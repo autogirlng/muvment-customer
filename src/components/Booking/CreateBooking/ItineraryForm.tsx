@@ -112,16 +112,24 @@ const ItineraryForm = ({
         initialValues={initialValues}
         validationSchema={itineraryInformationSchema}
         onSubmit={({ extraDetails, purposeOfRide }, { setSubmitting }) => {
-          let bookingInformation = JSON.parse(sessionStorage.getItem("userBookingInformation") || "")
+          let bookingInformation: any = {};
+
+          try {
+            bookingInformation = JSON.parse(sessionStorage.getItem("userBookingInformation") || "{}");
+          } catch (e) {
+            console.error("Invalid bookingInformation JSON", e);
+            bookingInformation = {};
+          }
 
           if (extraDetails) {
-            bookingInformation["extraDetails"] = extraDetails;
+            bookingInformation.extraDetails = extraDetails;
           }
-          if (purposeOfRide) {
-            bookingInformation["purposeOfRide"] = purposeOfRide
 
+          if (purposeOfRide) {
+            bookingInformation.purposeOfRide = purposeOfRide;
           }
-          sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingInformation))
+
+          sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingInformation));
 
           setCurrentStep(currentStep + 1);
         }}

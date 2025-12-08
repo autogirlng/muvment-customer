@@ -67,12 +67,27 @@ const PersonalInformationFormOthers = ({
             }
             validationSchema={personalInformationOthersSchema}
             onSubmit={(values, { setSubmitting }) => {
-                const bookingInfomation = JSON.parse(sessionStorage.getItem("userBookingInformation") || "")
-                let bookingData = values
-                if (bookingInfomation) {
-                    bookingData = { ...bookingInfomation, ...values }
+
+                const stored = sessionStorage.getItem("userBookingInformation");
+
+                let bookingInfomation = null;
+
+                if (stored) {
+                    try {
+                        bookingInfomation = JSON.parse(stored);
+                    } catch (err) {
+                        console.error("Invalid sessionStorage JSON:", err);
+                    }
                 }
-                sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingData))
+
+                let bookingData = values;
+
+                if (bookingInfomation && typeof bookingInfomation === "object") {
+                    bookingData = { ...bookingInfomation, ...values };
+                }
+
+                sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingData));
+
                 setCurrentStep(currentStep + 1);
                 setSubmitting(false);
             }}
