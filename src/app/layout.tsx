@@ -13,35 +13,56 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.muvment.ng"),
+
   title: {
-    default: "Muvment by Autogirl",
+    default: "Muvment by Autogirl | Rent Cars Anywhere in Nigeria",
     template: "%s | Muvment by Autogirl",
   },
 
   description:
-    "Unlock your next adventure with Muvment by Autogirl. Rent cars for business, travel, and daily mobility with flexible pricing, fast booking, and trusted support across Nigeria.",
+    "Muvment by Autogirl helps you rent cars easily for business, trips, events, and daily mobility across Nigeria. Flexible pricing. Verified cars. Fast booking.",
 
   keywords: [
     "Car rental Nigeria",
+    "Rent a car Lagos",
     "Vehicle hire",
+    "Chauffeur service Nigeria",
+    "Luxury car hire",
+    "Self drive car rental",
+    "Daily car rental",
     "Autogirl",
     "Muvment",
-    "Rent a car Lagos",
-    "Short term car rental",
-    "Luxury car hire",
-    "Ride services",
   ],
 
   authors: [{ name: "Autogirl" }],
   creator: "Autogirl",
+  publisher: "Autogirl Mobility",
 
-  metadataBase: new URL("https://www.muvment.ng"),
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+
+  alternates: {
+    canonical: "https://www.muvment.ng",
+  },
 
   openGraph: {
-    title: "Muvment by Autogirl ",
+    type: "website",
+    siteName: "Muvment by Autogirl",
+    title: "Muvment by Autogirl | Smart Car Booking in Nigeria",
     description:
-      "Book reliable vehicles for business, travel, and daily trips. Fast booking. Affordable pricing. Powered by Autogirl.",
+      "Book verified vehicles for business, travel and everyday movement across Nigeria.",
     url: "https://www.muvment.ng",
+    locale: "en_NG",
     images: [
       {
         url: "/images/image1.png",
@@ -50,27 +71,24 @@ export const metadata: Metadata = {
         alt: "Muvment by Autogirl",
       },
     ],
-    locale: "en_NG",
-    type: "website",
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Muvment by Autogirl ",
+    site: "@autogirl_ng",
+    creator: "@autogirl_ng",
+    title: "Muvment by Autogirl",
     description:
-      "Book reliable vehicles for business, travel, and daily trips with Muvment by Autogirl.",
+      "Book reliable vehicles instantly for trips, business, events and everyday rides.",
     images: ["/images/image1.png"],
-  },
-
-  robots: {
-    index: true,
-    follow: true,
   },
 
   icons: {
     icon: "/images/image1.png",
     apple: "/apple-touch-icon.png",
   },
+
+  category: "Transportation",
 };
 
 export default function RootLayout({
@@ -79,7 +97,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className={inter.className}>
         <QueryProvider>
           <ClientRoot>{children}</ClientRoot>
