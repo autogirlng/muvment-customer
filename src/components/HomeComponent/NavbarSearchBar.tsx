@@ -12,10 +12,10 @@ export const NavbarSearchBar = () => {
   const router = useRouter();
 
   // Form state
-  const [bookingType, setBookingType] = useState("select Type");
+  const [bookingType, setBookingType] = useState(undefined);
   const [fromDate, setFromDate] = useState(new Date());
   const [untilDate, setUntilDate] = useState(new Date());
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(undefined);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   // Location state

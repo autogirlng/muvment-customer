@@ -18,12 +18,12 @@ export default function ExploreVehiclesPage() {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [filterState, setFilterState] = useState<FilterState>({
-    priceRange: [0, 100000],
-    selectedVehicleTypes: [],
-    selectedMakes: [],
-    selectedYears: [],
-    selectedSeats: [],
-    selectedFeatures: [],
+    priceRange: undefined,
+    selectedVehicleTypes: undefined,
+    selectedMakes: undefined,
+    selectedYears: undefined,
+    selectedSeats: undefined,
+    selectedFeatures: undefined,
   });
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [recommendedVehicles, setRecommendedVehicles] = useState<any[]>([]);
@@ -173,7 +173,6 @@ export default function ExploreVehiclesPage() {
           params.maxPrice = filterState.priceRange[1];
         }
       }
-
       const response = await VehicleSearchService.searchVehicles(params);
       const vehiclesData = response.data.data?.content || [];
 

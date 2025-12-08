@@ -21,10 +21,10 @@ export default function HeroBookingSection() {
   const router = useRouter();
 
   // Form state
-  const [bookingType, setBookingType] = useState("Select type");
+  const [bookingType, setBookingType] = useState(undefined);
   const [fromDate, setFromDate] = useState(new Date());
   const [untilDate, setUntilDate] = useState(new Date());
-  const [category, setCategory] = useState("suv-electric");
+  const [category, setCategory] = useState(undefined);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [bookingOptions, setBookingOptions] = useState<any[]>([]);
   // Location state
@@ -295,8 +295,53 @@ export default function HeroBookingSection() {
     setSearchValue(selected.name);
   };
 
+  // const handleSearch = async () => {
+  //   setErrorMessage("");
+  //   if (!searchValue.trim()) {
+  //     setErrorMessage("Please enter a location");
+  //     return;
+  //   }
+
+  //   if (!selectedLocation || !selectedLocation.lat || !selectedLocation.lng) {
+  //     setErrorMessage("Please select a valid location from the suggestions");
+  //     return;
+  //   }
+
+  //   // if (!bookingType) {
+  //   //   setErrorMessage("Please select a booking type");
+  //   //   return;
+  //   // }
+
+  //   // if (!category) {
+  //   //   setErrorMessage("Please select a category");
+  //   //   return;
+  //   // }
+
+  //   setIsSearching(true);
+
+  //   try {
+  //     const searchUrl = await VehicleSearchService.buildSearchUrl(
+  //       {
+  //         name: selectedLocation.name,
+  //         lat: selectedLocation.lat,
+  //         lng: selectedLocation.lng,
+  //       },
+  //       bookingType,
+  //       category,
+  //       fromDate,
+  //       untilDate
+  //     );
+  //     router.push(searchUrl);
+  //   } catch (error) {
+  //     setErrorMessage("Failed to search vehicles. Please try again.");
+  //   } finally {
+  //     setIsSearching(false);
+  //   }
+  // };
+
   const handleSearch = async () => {
     setErrorMessage("");
+
     if (!searchValue.trim()) {
       setErrorMessage("Please enter a location");
       return;
@@ -316,11 +361,12 @@ export default function HeroBookingSection() {
           lat: selectedLocation.lat,
           lng: selectedLocation.lng,
         },
-        bookingType,
-        category,
+        bookingType, // now optional
+        category, // now optional
         fromDate,
         untilDate
       );
+
       router.push(searchUrl);
     } catch (error) {
       setErrorMessage("Failed to search vehicles. Please try again.");
