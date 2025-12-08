@@ -5,6 +5,8 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Inter } from "next/font/google";
 import { QueryProvider } from "@/controllers/connnector/QueryProvider";
+import { GA_MEASUREMENT_ID } from "@/services/analytics";
+import GoogleAnalytics from "@/components/general/GoogleAnalytics";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -99,6 +101,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className={inter.className}>
+        {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
         <QueryProvider>
           <ClientRoot>{children}</ClientRoot>
           <ToastContainer position="top-right" autoClose={3000} />

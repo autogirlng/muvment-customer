@@ -11,6 +11,7 @@ import { FiMapPin, FiUser, FiDroplet, FiHeart } from "react-icons/fi";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
 import { IoInformationCircleOutline } from "react-icons/io5";
 import { getBookingOption } from "@/context/Constarain";
+import { trackVehicleView } from "@/services/analytics";
 
 interface VehicleCardPropsExtended extends VehicleCardProps {
   viewMode?: "list" | "grid";
@@ -74,6 +75,12 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   };
 
   const handleCardClick = () => {
+    trackVehicleView({
+      vehicleId: id,
+      vehicleName: vehicleTypeName,
+      vehicleCategory: bookingType || "",
+      price: getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
+    });
     router.push(
       `/Booking/details/${id}?vehicleType=${encodeURIComponent(
         vehicleTypeName

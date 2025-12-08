@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
 import ScreenLoader from "@/components/utils/ScreenLoader";
 import { AuthProvider } from "@/context/AuthContext";
+import RouteTracker from "../general/RouteTracker";
 
 export default function ClientRoot({
   children,
@@ -29,7 +30,10 @@ export default function ClientRoot({
         <ScreenLoader />
       ) : (
         <>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <RouteTracker />
+            {children}
+          </AuthProvider>
         </>
       )}
     </>
