@@ -69,12 +69,26 @@ const PersonalInformationFormMyself = ({
             onSubmit={(values, { setSubmitting }) => {
 
 
-                const bookingInfomation = JSON.parse(sessionStorage.getItem("userBookingInformation") || "")
-                let bookingData = values
-                if (bookingInfomation) {
-                    bookingData = { ...bookingInfomation, ...values }
+                const stored = sessionStorage.getItem("userBookingInformation");
+
+                let bookingInfomation = null;
+
+                if (stored) {
+                    try {
+                        bookingInfomation = JSON.parse(stored);
+                    } catch (err) {
+                        console.error("Invalid sessionStorage JSON:", err);
+                    }
                 }
-                sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingData))
+
+                let bookingData = values;
+
+                if (bookingInfomation && typeof bookingInfomation === "object") {
+                    bookingData = { ...bookingInfomation, ...values };
+                }
+
+                sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingData));
+
                 setCurrentStep(currentStep + 1);
                 setSubmitting(false);
 
@@ -94,97 +108,60 @@ const PersonalInformationFormMyself = ({
                 setFieldTouched,
                 setFieldValue,
                 isSubmitting,
-            }) => (
-                <Form className="max-w-[700px] w-full space-y-5">
-                    <InputField
-                        name="guestFullName"
-                        id="guestFullName"
-                        type="text"
-                        label="Full name"
-                        placeholder="Enter your full name"
-                        value={values.guestFullName}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={
-                            errors.guestFullName && touched.guestFullName
-                                ? String(errors.guestFullName)
-                                : ""
-                        }
-                    />
+            }) => {
+                return (
+                    <Form className="max-w-[700px] w-full space-y-5">
+                        <InputField
+                            name="guestFullName"
+                            id="guestFullName"
+                            type="text"
+                            label="Full name"
+                            placeholder="Enter your full name"
+                            value={values.guestFullName}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={
+                                errors.guestFullName && touched.guestFullName
+                                    ? String(errors.guestFullName)
+                                    : ""
+                            }
+                        />
 
-                    <InputField
-                        name="guestEmail"
-                        id="guestEmail"
-                        type="text"
-                        label="Email Address"
-                        placeholder="Enter your email address"
-                        value={values.guestEmail}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={
-                            errors.guestEmail && touched.guestEmail
-                                ? String(errors.guestEmail)
-                                : ""
-                        }
-                    />
+                        <InputField
+                            name="guestEmail"
+                            id="guestEmail"
+                            type="text"
+                            label="Email Address"
+                            placeholder="Enter your email address"
+                            value={values.guestEmail}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            error={
+                                errors.guestEmail && touched.guestEmail
+                                    ? String(errors.guestEmail)
+                                    : ""
+                            }
+                        />
 
-                    <PhoneNumberAndCountryField
-                        inputName="guestPhoneNumber"
-                        selectName="country"
-                        inputId="guestPhoneNumber"
-                        selectId="country"
-                        label="Phone number - Primary"
-                        inputPlaceholder="Enter phone number"
-                        selectPlaceholder="+234"
-                        inputValue={values.primaryPhoneNumber}
-                        selectValue={values.country}
-                        inputOnChange={(event) => {
-                            const number = replaceCharactersWithString(event.target.value);
-                            setFieldTouched("primaryPhoneNumber", true);
-                            setFieldValue("primaryPhoneNumber", number);
-                        }}
-                        selectOnChange={(value: string) => {
-                            const countryCode = `+${getCountryCallingCode(value as any)}`;
-                            setFieldValue("country", value);
-                            setFieldValue("countryCode", countryCode);
-                            setFieldValue("secondaryCountry", value);
-                            setFieldValue("secondaryCountryCode", countryCode);
-                        }}
-                        inputOnBlur={handleBlur}
-                        selectOnBlur={handleBlur}
-                        // inputClassname
-                        selectClassname="!w-[130px]"
-                        inputError={
-                            errors.primaryPhoneNumber && touched.primaryPhoneNumber
-                                ? String(errors.primaryPhoneNumber)
-                                : ""
-                        }
-                        selectError={
-                            errors.country && touched.country ? String(errors.country) : ""
-                        }
-                    />
-
-
-                    {showSecondaryPhoneNumber && (
                         <PhoneNumberAndCountryField
-                            inputName="secondaryPhoneNumber"
-                            selectName="secondaryCountry"
-                            inputId="secondaryPhoneNumber"
-                            selectId="secondaryCountry"
-                            label="Phone number - Secondary (optional)"
+                            inputName="guestPhoneNumber"
+                            selectName="country"
+                            inputId="guestPhoneNumber"
+                            selectId="country"
+                            label="Phone number - Primary"
                             inputPlaceholder="Enter phone number"
                             selectPlaceholder="+234"
-                            selectDisabled
-                            inputValue={values.secondaryPhoneNumber}
-                            selectValue={values.secondaryCountry}
+                            inputValue={values.primaryPhoneNumber}
+                            selectValue={values.country}
                             inputOnChange={(event) => {
                                 const number = replaceCharactersWithString(event.target.value);
-
-                                setFieldTouched("secondaryPhoneNumber", true);
-                                setFieldValue("secondaryPhoneNumber", number);
+                                setFieldTouched("primaryPhoneNumber", true);
+                                setFieldValue("primaryPhoneNumber", number);
                             }}
                             selectOnChange={(value: string) => {
                                 const countryCode = `+${getCountryCallingCode(value as any)}`;
+                                setFieldValue("country", value);
+                                setFieldValue("countryCode", countryCode);
                                 setFieldValue("secondaryCountry", value);
                                 setFieldValue("secondaryCountryCode", countryCode);
                             }}
@@ -193,40 +170,80 @@ const PersonalInformationFormMyself = ({
                             // inputClassname
                             selectClassname="!w-[130px]"
                             inputError={
-                                errors.secondaryPhoneNumber && touched.secondaryPhoneNumber
-                                    ? String(errors.secondaryPhoneNumber)
+                                errors.primaryPhoneNumber && touched.primaryPhoneNumber
+                                    ? String(errors.primaryPhoneNumber)
                                     : ""
                             }
                             selectError={
-                                errors.secondaryCountry && touched.secondaryCountry
-                                    ? String(errors.secondaryCountry)
-                                    : ""
+                                errors.country && touched.country ? String(errors.country) : ""
                             }
-                            info
-                            tooltipTitle=""
-                            tooltipDescription="Add an extra phone number we can reach you on if your primary line isn’t available. This helps us contact you faster in case of urgent updates or booking issues"
                         />
-                    )}
-                    <button
-                        type="button"
-                        className="text-sm md:text-base 3xl:text-xl text-[#0673ff] cursor-pointer"
-                        onClick={() => setShowSecondaryPhoneNumber(!showSecondaryPhoneNumber)}>
-                        {showSecondaryPhoneNumber
-                            ? "Hide secondary phone number"
-                            : "Add secondary phone number"}
-                    </button>
 
-                    <StepperNavigation
-                        steps={steps}
-                        currentStep={currentStep}
-                        setCurrentStep={setCurrentStep}
-                        handleSaveDraft={() => { }}
-                        isSaveDraftloading={false}
-                        isNextLoading={isSubmitting}
-                        disableNextButton={!isValid || isSubmitting}
-                    />
-                </Form>
-            )}
+
+                        {showSecondaryPhoneNumber && (
+                            <PhoneNumberAndCountryField
+                                inputName="secondaryPhoneNumber"
+                                selectName="secondaryCountry"
+                                inputId="secondaryPhoneNumber"
+                                selectId="secondaryCountry"
+                                label="Phone number - Secondary (optional)"
+                                inputPlaceholder="Enter phone number"
+                                selectPlaceholder="+234"
+                                selectDisabled
+                                inputValue={values.secondaryPhoneNumber}
+                                selectValue={values.secondaryCountry}
+                                inputOnChange={(event) => {
+                                    const number = replaceCharactersWithString(event.target.value);
+
+                                    setFieldTouched("secondaryPhoneNumber", true);
+                                    setFieldValue("secondaryPhoneNumber", number);
+                                }}
+                                selectOnChange={(value: string) => {
+                                    const countryCode = `+${getCountryCallingCode(value as any)}`;
+                                    setFieldValue("secondaryCountry", value);
+                                    setFieldValue("secondaryCountryCode", countryCode);
+                                }}
+                                inputOnBlur={handleBlur}
+                                selectOnBlur={handleBlur}
+                                // inputClassname
+                                selectClassname="!w-[130px]"
+                                inputError={
+                                    errors.secondaryPhoneNumber && touched.secondaryPhoneNumber
+                                        ? String(errors.secondaryPhoneNumber)
+                                        : ""
+                                }
+                                selectError={
+                                    errors.secondaryCountry && touched.secondaryCountry
+                                        ? String(errors.secondaryCountry)
+                                        : ""
+                                }
+                                info
+                                tooltipTitle=""
+                                tooltipDescription="Add an extra phone number we can reach you on if your primary line isn’t available. This helps us contact you faster in case of urgent updates or booking issues"
+                            />
+                        )}
+                        <button
+                            type="button"
+                            className="text-sm md:text-base 3xl:text-xl text-[#0673ff] cursor-pointer"
+                            onClick={() => setShowSecondaryPhoneNumber(!showSecondaryPhoneNumber)}>
+                            {showSecondaryPhoneNumber
+                                ? "Hide secondary phone number"
+                                : "Add secondary phone number"}
+                        </button>
+
+                        <StepperNavigation
+                            steps={steps}
+                            currentStep={currentStep}
+                            setCurrentStep={setCurrentStep}
+                            handleSaveDraft={() => { }}
+                            isSaveDraftloading={false}
+                            isNextLoading={isSubmitting}
+                            disableNextButton={!isValid || isSubmitting}
+                        />
+                    </Form>
+                )
+            }
+            }
         </Formik>
     );
 };
