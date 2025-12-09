@@ -28,6 +28,10 @@ function TermsOfService() {
     { id: "self-drive", label: "Self Drive" },
     { id: "conclusion", label: "Conclusion" },
     { id: "contact-information", label: "Contact Information" },
+    {
+      id: "Version-Representation",
+      label: "Version & Representation of Prior Terms",
+    },
   ];
 
   const scrollToSection = (id: any) => {
@@ -326,6 +330,19 @@ function TermsOfService() {
     },
   ];
 
+  const VersionRepresentation = [
+    {
+      title: "",
+      content:
+        "These Terms and Conditions serve as the current and complete representation of all AutoGirl policies, rules, and user obligations. This version supersedes and replaces all previously published Terms and Conditions formerly hosted at https://autogirl.ng/terms-conditions/, which is currently not accessible.",
+    },
+    {
+      title: "",
+      content:
+        "By continuing to use our services or platforms, all customers acknowledge and agree that these updated Terms and Conditions are the official and governing terms of AutoGirl Limited.",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Section */}
@@ -620,6 +637,22 @@ function TermsOfService() {
                   </li>
                 ))}
               </ul>
+            </section>
+
+            <section id="Version-Representation" className="mb-8 sm:mb-10">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                Version & Representation of Prior Terms
+              </h2>
+              <div className="space-y-4">
+                {VersionRepresentation.map((item, index) => (
+                  <p
+                    key={index}
+                    className="text-sm text-gray-700 leading-relaxed"
+                  >
+                    {item.content}
+                  </p>
+                ))}
+              </div>
             </section>
           </div>
         </div>
