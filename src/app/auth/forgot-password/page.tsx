@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 import { AuthService } from "@/controllers/auth/auth";
+import Link from "next/link";
 
 export default function ForgotPasswordComponent() {
   const router = useRouter();
@@ -186,19 +187,19 @@ export default function ForgotPasswordComponent() {
 
               <p className="text-sm text-gray-600 text-center">
                 Remember your password?{" "}
-                <a
+                <Link
                   href="/auth/login"
                   className="text-blue-500 hover:underline font-medium"
                 >
                   Sign In
-                </a>
+                </Link>
               </p>
             </div>
 
             <p className="text-center text-sm text-gray-600 mt-12">
               Need help?{" "}
               <a
-                href="/support"
+                href="/contact-us"
                 className="text-blue-500 hover:underline font-medium"
               >
                 Contact Support

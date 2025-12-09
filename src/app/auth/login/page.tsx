@@ -290,31 +290,31 @@ export default function LoginComponent() {
               {/* Sign Up Link */}
               <p className="text-sm text-gray-600 text-center">
                 Not a user?{" "}
-                <a
-                  href="/signup"
+                <Link
+                  href="/auth/register"
                   className="text-blue-500 hover:underline font-medium"
                 >
                   Sign Up
-                </a>
+                </Link>
               </p>
             </div>
 
             {/* Footer */}
             <p className="text-center text-sm text-gray-600 mt-12">
               By signing in you agree to Muvment's{" "}
-              <a
+              <Link
                 href="/policy/privacy-policy"
                 className="text-black hover:underline font-medium"
               >
                 Privacy Policy
-              </a>{" "}
+              </Link>{" "}
               and{" "}
-              <a
+              <Link
                 href="/policy/terms-conditions"
                 className="text-black hover:underline font-medium"
               >
                 Terms of Service
-              </a>
+              </Link>
             </p>
           </div>
         </div>

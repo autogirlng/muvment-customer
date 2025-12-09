@@ -2,7 +2,7 @@
 import Image from "next/image";
 import React, { useState } from "react";
 import { BsBuildings } from "react-icons/bs";
-import { FiMapPin } from "react-icons/fi";
+import { useRouter } from "next/navigation";
 
 interface City {
   name: string;
@@ -31,23 +31,29 @@ const cities: City[] = [
     image: "/images/landing/5.jpg",
   },
   {
-    name: "Benin",
+    name: "Enugu",
     image: "/images/landing/6.jpg",
   },
 ];
 
 const ExploreCities: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const router = useRouter();
+
+  const handleCityClick = (cityName: string) => {
+    const formattedCity = cityName.toLowerCase().replace(/\s+/g, "-");
+    router.push(`/Booking/search?city=${formattedCity}`);
+  };
 
   return (
     <section className="w-full text-center py-12">
       {/* Header */}
-      <div className="flex flex-col items-start  justify-center  md:justify-start mb-6  max-w-[95%] ml-auto  px-4">
+      <div className="flex flex-col items-start justify-center md:justify-start mb-6 max-w-[95%] ml-auto px-4">
         <BsBuildings className="text-blue-600 text-4xl mb-2" />
         <h2 className="text-2xl font-bold text-gray-900">
           Explore Popular Cities
         </h2>
-        <p className="text-gray-500 mt-2 ">
+        <p className="text-gray-500 mt-2">
           Find the ideal vehicle in these bustling cities and start your
           adventure in style
         </p>
@@ -58,14 +64,15 @@ const ExploreCities: React.FC = () => {
         {cities.map((city, index) => (
           <div
             key={index}
-            className="relative flex-shrink-0 w-60 h-64 rounded-3xl overflow-hidden shadow-md hover:shadow-lg transition"
+            onClick={() => handleCityClick(city.name)}
+            className="relative flex-shrink-0 w-60 h-64 rounded-3xl overflow-hidden shadow-md hover:shadow-lg transition cursor-pointer group"
           >
             {/* Image */}
             <Image
               src={city.image}
               alt={city.name}
               fill
-              className="object-cover"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
               sizes="(max-width: 768px) 100vw, 400px"
             />
 
@@ -73,7 +80,7 @@ const ExploreCities: React.FC = () => {
             <div className="absolute inset-0 bg-black/40" />
 
             {/* City Name */}
-            <div className="absolute bottom-3 left-3 text-white text-sm font-semibold drop-shadow-lg">
+            <div className="absolute bottom-3 left-3 text-white text-sm font-semibold drop-shadow-lg flex items-center gap-1">
               {city.name}
             </div>
           </div>

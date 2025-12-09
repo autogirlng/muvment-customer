@@ -11,6 +11,7 @@ import { FiMapPin, FiUser, FiDroplet, FiHeart } from "react-icons/fi";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
 import { IoInformationCircleOutline } from "react-icons/io5";
 import { getBookingOption } from "@/context/Constarain";
+import { clarityEvent } from "@/services/clarity";
 
 interface VehicleCardPropsExtended extends VehicleCardProps {
   viewMode?: "list" | "grid";
@@ -70,10 +71,24 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
+    clarityEvent("vehicle_favorited", {
+      vehicleId: id,
+      name,
+      city,
+      vehicleType: vehicleTypeName,
+    });
     // Add like functionality here
   };
 
   const handleCardClick = () => {
+    clarityEvent("vehicle_view", {
+      vehicleId: id,
+      name,
+      city,
+      vehicleType: vehicleTypeName,
+      bookingType,
+      price: getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
+    });
     router.push(
       `/Booking/details/${id}?vehicleType=${encodeURIComponent(
         vehicleTypeName
