@@ -154,7 +154,7 @@ export const NavbarSearchBar = () => {
 
   return (
     <div className="w-full max-w-4xl mx-4">
-      <div className="bg-white  px-6 py-2">
+      <div className="  px-6 py-2">
         <div className="flex items-center gap-0 divide-x divide-gray-200">
           {/* Booking Type */}
           <div className="flex-shrink-0 pr-3">
