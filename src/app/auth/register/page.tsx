@@ -1,6 +1,7 @@
 "use client";
 import Button from "@/components/utils/Button";
 import { AuthService } from "@/controllers/auth/auth";
+import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { JSX, useState } from "react";
 import { toast } from "react-toastify";
@@ -580,12 +581,12 @@ export default function SignupComponent() {
 
               <p className="text-sm text-gray-600">
                 Already a user?{" "}
-                <a
+                <Link
                   href="/auth/login"
                   className="text-blue-500 hover:underline font-medium"
                 >
                   Sign In
-                </a>
+                </Link>
               </p>
 
               {/* Change button type to "submit" */}
@@ -605,19 +606,19 @@ export default function SignupComponent() {
 
             <p className="text-center text-sm text-gray-600 mt-8">
               By signing up you agree to Muvment's{" "}
-              <a
+              <Link
                 href="/policy/privacy-policy"
                 className="text-black hover:underline font-medium"
               >
                 Privacy Policy
-              </a>{" "}
+              </Link>{" "}
               and{" "}
-              <a
+              <Link
                 href="/policy/terms-conditions"
                 className="text-black hover:underline font-medium"
               >
                 Terms of Service
-              </a>
+              </Link>
             </p>
           </div>
         </div>
