@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FiX } from "react-icons/fi";
 import { FilterState } from "@/types/filters";
 import PriceRangeFilter from "../NewFilterComponent/PriceRangeFilter";
@@ -40,6 +40,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const toggleDropdown = (dropdown: string) => {
     setOpenDropdown(openDropdown === dropdown ? null : dropdown);
@@ -48,6 +49,26 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   const closeAllDropdowns = () => {
     setOpenDropdown(null);
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        closeAllDropdowns();
+      }
+    };
+
+    if (openDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openDropdown]);
 
   const isPriceActive = filterState.priceRange !== undefined;
   const isTypeActive = filterState.selectedVehicleTypes !== undefined;
@@ -136,10 +157,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   return (
     <>
       {/* Desktop & Tablet View */}
-      {/* <div className="px-4 font-bold text-gray-700  text-[1.7rem] ">
-        {totalCount}+ vehicles available
-      </div> */}
-      <div className="hidden md:block space-y-4">
+      <div className="hidden md:block space-y-4" ref={dropdownRef}>
         <div className="flex flex-wrap gap-3 items-center bg-white ">
           <FilterButton
             id="price"
@@ -156,7 +174,10 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
               <PriceRangeFilter
                 range={filterState.priceRange || [0, 100000]}
                 onChange={(range) => onFilterChange("priceRange", range)}
-                onClear={() => onFilterChange("priceRange", undefined)}
+                onClear={() => {
+                  onFilterChange("priceRange", undefined);
+                  closeAllDropdowns();
+                }}
               />
             )}
           </FilterButton>
@@ -303,7 +324,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   );
 };
 
-// Mobile Filter Drawer Component - UPDATED DESIGN
+// Mobile Filter Drawer Component - UPDATED WITH SEARCH BUTTON
 const MobileFilterDrawer: React.FC<
   SimplifiedFilterBarProps & { onClose: () => void }
 > = ({
@@ -316,14 +337,16 @@ const MobileFilterDrawer: React.FC<
   features,
   totalCount,
 }) => {
-  const [expandedFilter, setExpandedFilter] = useState<string | null>(null);
+  // Local state to track temporary filter changes before applying
+  const [tempFilterState, setTempFilterState] =
+    useState<FilterState>(filterState);
 
-  const isPriceActive = filterState.priceRange !== undefined;
-  const isTypeActive = filterState.selectedVehicleTypes !== undefined;
-  const isMakeActive = filterState.selectedMakes !== undefined;
-  const isYearsActive = filterState.selectedYears !== undefined;
-  const isSeatsActive = filterState.selectedSeats !== undefined;
-  const isFeaturesActive = filterState.selectedFeatures !== undefined;
+  const isPriceActive = tempFilterState.priceRange !== undefined;
+  const isTypeActive = tempFilterState.selectedVehicleTypes !== undefined;
+  const isMakeActive = tempFilterState.selectedMakes !== undefined;
+  const isYearsActive = tempFilterState.selectedYears !== undefined;
+  const isSeatsActive = tempFilterState.selectedSeats !== undefined;
+  const isFeaturesActive = tempFilterState.selectedFeatures !== undefined;
 
   const hasActiveFilters =
     isPriceActive ||
@@ -333,10 +356,46 @@ const MobileFilterDrawer: React.FC<
     isSeatsActive ||
     isFeaturesActive;
 
+  // Handle temporary filter changes
+  const handleTempFilterChange = (filterId: string, value: any) => {
+    setTempFilterState((prev) => ({
+      ...prev,
+      [filterId]: value,
+    }));
+  };
+
+  // Apply filters and close drawer
+  const handleApplyFilters = () => {
+    // Apply all temp filters to actual filter state
+    Object.keys(tempFilterState).forEach((key) => {
+      onFilterChange(key, tempFilterState[key as keyof FilterState]);
+    });
+    onClose();
+  };
+
+  // Clear individual filter
+  const handleClearFilter = (filterId: string) => {
+    handleTempFilterChange(filterId, undefined);
+  };
+
+  // Clear all and reset
+  const handleClearAll = () => {
+    const emptyState: FilterState = {
+      priceRange: undefined,
+      selectedVehicleTypes: undefined,
+      selectedMakes: undefined,
+      selectedYears: undefined,
+      selectedSeats: undefined,
+      selectedFeatures: undefined,
+    };
+    setTempFilterState(emptyState);
+    onClearAll();
+  };
+
   return (
     <div className="fixed inset-0 z-50 md:hidden">
-      <div className="absolute inset-0 " onClick={onClose} />
-      <div className="absolute top-0 right-0 left-0 bg-white rounded-t-2xl max-h-[100vh] overflow-y-auto animate-in slide-in-from-bottom">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="absolute top-0 right-0 left-0 bg-white rounded-t-2xl max-h-[100vh] flex flex-col animate-in slide-in-from-bottom">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between rounded-t-2xl z-10">
           <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
@@ -348,28 +407,50 @@ const MobileFilterDrawer: React.FC<
           </button>
         </div>
 
-        {/* Filter Content - ALL FILTERS VISIBLE AT ONCE */}
-        <div className="p-4 space-y-6 max-h-[100vh] overflow-y-auto">
+        {/* Filter Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
           {/* Price Range */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">Price Range</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Price Range
+              </h3>
+              {isPriceActive && (
+                <button
+                  onClick={() => handleClearFilter("priceRange")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <PriceRangeFilter
-              range={filterState.priceRange || [0, 100000]}
-              onChange={(range) => onFilterChange("priceRange", range)}
-              onClear={() => onFilterChange("priceRange", undefined)}
+              range={tempFilterState.priceRange || [0, 100000]}
+              onChange={(range) => handleTempFilterChange("priceRange", range)}
+              onClear={() => handleClearFilter("priceRange")}
               compact={true}
             />
           </div>
 
           {/* Vehicle Type */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">
-              Vehicle Type
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Vehicle Type
+              </h3>
+              {isTypeActive && (
+                <button
+                  onClick={() => handleClearFilter("selectedVehicleTypes")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <VehicleTypeFilter
-              value={filterState.selectedVehicleTypes}
+              value={tempFilterState.selectedVehicleTypes}
               onChange={(value) =>
-                onFilterChange("selectedVehicleTypes", value)
+                handleTempFilterChange("selectedVehicleTypes", value)
               }
               vehicleTypes={vehicleTypes}
               onClose={onClose}
@@ -379,10 +460,22 @@ const MobileFilterDrawer: React.FC<
 
           {/* Make */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">Make</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">Make</h3>
+              {isMakeActive && (
+                <button
+                  onClick={() => handleClearFilter("selectedMakes")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <MakeFilter
-              value={filterState.selectedMakes}
-              onChange={(value) => onFilterChange("selectedMakes", value)}
+              value={tempFilterState.selectedMakes}
+              onChange={(value) =>
+                handleTempFilterChange("selectedMakes", value)
+              }
               makes={makes}
               onClose={onClose}
               compact={true}
@@ -391,10 +484,22 @@ const MobileFilterDrawer: React.FC<
 
           {/* Years */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">Years</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">Years</h3>
+              {isYearsActive && (
+                <button
+                  onClick={() => handleClearFilter("selectedYears")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <YearsFilter
-              value={filterState.selectedYears}
-              onChange={(value) => onFilterChange("selectedYears", value)}
+              value={tempFilterState.selectedYears}
+              onChange={(value) =>
+                handleTempFilterChange("selectedYears", value)
+              }
               onClose={onClose}
               compact={true}
             />
@@ -402,10 +507,22 @@ const MobileFilterDrawer: React.FC<
 
           {/* Seats */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">Seats</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">Seats</h3>
+              {isSeatsActive && (
+                <button
+                  onClick={() => handleClearFilter("selectedSeats")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <SeatsFilter
-              value={filterState.selectedSeats}
-              onChange={(value) => onFilterChange("selectedSeats", value)}
+              value={tempFilterState.selectedSeats}
+              onChange={(value) =>
+                handleTempFilterChange("selectedSeats", value)
+              }
               onClose={onClose}
               compact={true}
             />
@@ -413,18 +530,49 @@ const MobileFilterDrawer: React.FC<
 
           {/* Features */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">Features</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">Features</h3>
+              {isFeaturesActive && (
+                <button
+                  onClick={() => handleClearFilter("selectedFeatures")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <FeaturesFilter
-              value={filterState.selectedFeatures}
-              onChange={(value) => onFilterChange("selectedFeatures", value)}
+              value={tempFilterState.selectedFeatures}
+              onChange={(value) =>
+                handleTempFilterChange("selectedFeatures", value)
+              }
               features={features}
               onClose={onClose}
               compact={true}
             />
           </div>
+
+          {/* Add spacing for footer */}
+          <div className="h-24" />
         </div>
 
-        {/* Footer */}
+        {/* Footer - Sticky at bottom */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 space-y-3">
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearAll}
+              className="w-full py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Clear all filters
+            </button>
+          )}
+          <button
+            onClick={handleApplyFilters}
+            className="w-full py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Show results
+          </button>
+        </div>
       </div>
     </div>
   );

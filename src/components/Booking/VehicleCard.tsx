@@ -12,6 +12,7 @@ import { MdAirlineSeatReclineNormal } from "react-icons/md";
 import { IoInformationCircleOutline } from "react-icons/io5";
 import { getBookingOption } from "@/context/Constarain";
 import { clarityEvent } from "@/services/clarity";
+import { trackVehicleView } from "@/services/analytics";
 
 interface VehicleCardPropsExtended extends VehicleCardProps {
   viewMode?: "list" | "grid";
@@ -87,6 +88,11 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       city,
       vehicleType: vehicleTypeName,
       bookingType,
+    });
+    trackVehicleView({
+      vehicleId: id,
+      vehicleName: vehicleTypeName,
+      vehicleCategory: bookingType || "",
       price: getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
     });
     router.push(

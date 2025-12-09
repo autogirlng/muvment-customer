@@ -23,6 +23,7 @@ import { MdAirlineSeatReclineNormal, MdPayment } from "react-icons/md";
 import { Navbar } from "@/components/Navbar";
 import { useBookingStore } from "@/hooks/bookingStore";
 import { BookingService } from "@/controllers/booking/bookingService";
+import { trackBooking, trackPaymentClick } from "@/services/analytics";
 
 interface PersonalInfo {
   fullName: string;
@@ -60,6 +61,7 @@ const CheckoutPage = () => {
     extraDetails: "",
     phone: "",
   });
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isCreatingBooking, setIsCreatingBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -273,15 +275,27 @@ const CheckoutPage = () => {
       const paymentResponse = await BookingService.initiatePayment(
         paymentPayload
       );
+      trackPaymentClick({
+        vehicleId: vehicle?.id as string,
+        vehicleName: vehicle?.name as string,
+        amount: calculatedPrice.finalPrice as number,
+        step: "proceed",
+      });
       if (paymentResponse.data.authorizationUrl) {
         window.location.href = paymentResponse.data.authorizationUrl;
       } else {
+        trackPaymentClick({
+          vehicleId: vehicle?.id as string,
+          vehicleName: vehicle?.name as string,
+          amount: calculatedPrice.finalPrice as number,
+          step: "complete",
+        });
         toast.success("Booking created successfully!");
         clearBooking();
         router.push("/Booking/search");
       }
     } catch (error: any) {
-      console.error("Error creating booking:", error);
+      // console.error("Error creating booking:", error);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
