@@ -38,6 +38,7 @@ const CostBreakdown = ({
 }) => {
   const [estimatedPriceId, setEstimatedPriceId] = useState<string>("");
   const [priceReEstimated, setPriceReEstimated] = useState<boolean>(false);
+  const [bookId, setBookId] = useState<string>("")
   const [pricing, setPricing] = useState<EstimatedBookingPrice>();
   const [paymentGateway, setPaymentGateway] =
     useState<PaymentGateway>("MONNIFY");
@@ -112,10 +113,17 @@ const CostBreakdown = ({
   };
   useEffect(() => {
     const estimatedPriceId = sessionStorage.getItem("priceEstimateId") || "";
+    const bookingId = sessionStorage.getItem("bookingId") || "";
+
     setEstimatedPriceId(estimatedPriceId);
+    setBookId(bookingId)
     setPriceReEstimated(false);
     estimatePrice();
   }, [trips]);
+
+
+
+
 
   const processPayment = async () => {
     const userBookingInfo: PersonalInformationMyselfValues = JSON.parse(
@@ -168,9 +176,17 @@ const CostBreakdown = ({
 
     try {
       const booking: any = await createData("/api/v1/bookings", data);
-      const bookingId = booking?.data?.data?.bookingId;
+      let bookingId = booking?.data?.data?.bookingId;
 
-      if (!bookingId) {
+      if (bookingId) {
+        setBookId(bookingId)
+        sessionStorage.setItem("bookingId", bookingId)
+
+      }
+
+
+
+      if (!bookingId && booking.data !== 409) {
         throw new Error("Booking ID not returned from API");
       }
 
@@ -179,12 +195,12 @@ const CostBreakdown = ({
       if (paymentGateway === "MONNIFY") {
         // --- MONNIFY FLOW ---
         const payment = await createData("/api/v1/payments/initiate", {
-          bookingId: bookingId,
+          bookingId: bookingId || bookId,
         });
         authUrl = payment?.data?.data?.authorizationUrl;
       } else if (paymentGateway === "PAYSTACK") {
         const payment = await createData(
-          `/api/v1/payments/initialize/${bookingId}`,
+          `/api/v1/payments/initialize/${bookingId || bookId}`,
           {}
         );
         authUrl = payment?.data?.data;
@@ -196,6 +212,7 @@ const CostBreakdown = ({
 
       router.push(authUrl);
     } catch (err) {
+
       console.error("Booking or payment failed:", err);
     }
   };

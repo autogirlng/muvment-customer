@@ -30,7 +30,7 @@ export default class NetworkService {
   }
 
   static handleApiError(error: any): {
-    data: null;
+    data: null | {status:number};
     message: string;
     error: boolean;
   } {
@@ -46,6 +46,7 @@ export default class NetworkService {
           error: true,
         };
       }
+
 
       if (status >= 500) {
         return {
