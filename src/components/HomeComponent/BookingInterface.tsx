@@ -10,6 +10,7 @@ import { useLocationSearch } from "@/hooks/useLocationSearch";
 import LocationDropdown from "../utils/LocationDropdown";
 import { getBookingOption } from "@/context/Constarain";
 import { GoogleMapsService } from "@/context/googleMapConnector";
+import { trackCategoryClick, trackVehicleSearch } from "@/services/analytics";
 
 const DEFAULT_LOCATION = {
   name: "Lagos, Nigeria",
@@ -350,6 +351,17 @@ export default function HeroBookingSection() {
     if (!selectedLocation || !selectedLocation.lat || !selectedLocation.lng) {
       setErrorMessage("Please select a valid location from the suggestions");
       return;
+    }
+
+    trackVehicleSearch({
+      searchTerm: `${selectedLocation.name} ${bookingType || ""} ${
+        fromDate || ""
+      }   ${untilDate || ""}`.trim(),
+      category,
+      location: selectedLocation.name,
+    });
+    if (category) {
+      trackCategoryClick(category);
     }
 
     setIsSearching(true);

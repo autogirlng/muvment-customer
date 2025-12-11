@@ -10,6 +10,7 @@ import { SimplifiedFilterBar } from "@/components/Booking/SimplifiedFilterBarPro
 import { HiViewList } from "react-icons/hi";
 import { BsFillGridFill } from "react-icons/bs";
 import { CiLocationOn } from "react-icons/ci";
+import { clarityEvent } from "@/services/clarity";
 
 export default function ExploreVehiclesPage() {
   const searchParams = useSearchParams();
@@ -46,6 +47,7 @@ export default function ExploreVehiclesPage() {
   const category = searchParams.get("category");
   const fromDate = searchParams.get("fromDate");
   const untilDate = searchParams.get("untilDate");
+  const city = searchParams.get("city");
 
   const initializeFiltersFromUrl = useCallback((): FilterState => {
     const minPriceParam = searchParams.get("minPrice");
@@ -104,7 +106,7 @@ export default function ExploreVehiclesPage() {
     setCurrentPage(0);
     setHasMore(true);
     searchVehicles(0, false);
-  }, [filterState, lat, lng, category, fromDate, untilDate]);
+  }, [filterState, lat, lng, category, fromDate, untilDate, city]);
 
   const handleClearAll = () => {
     setFilterState({
@@ -143,6 +145,7 @@ export default function ExploreVehiclesPage() {
           params.latitude = parseFloat(lat);
           params.longitude = parseFloat(lng);
         }
+        if (city) params.city = city;
         if (category) params.vehicleTypeId = category;
         if (fromDate) params.fromDate = fromDate;
         if (untilDate) params.untilDate = untilDate;
@@ -173,6 +176,23 @@ export default function ExploreVehiclesPage() {
           params.maxPrice = filterState.priceRange[1];
         }
       }
+
+      clarityEvent("vehicle_search", {
+        location,
+        lat,
+        lng,
+        bookingType,
+        category,
+        fromDate,
+        untilDate,
+        city,
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
+        vehicleTypeFilter: params.vehicleTypeId,
+        makeFilter: params.vehicleMakeId,
+        seatsFilter: params.numberOfSeats,
+        page,
+      });
       const response = await VehicleSearchService.searchVehicles(params);
       const vehiclesData = response.data.data?.content || [];
 
@@ -268,7 +288,13 @@ export default function ExploreVehiclesPage() {
                   size={24}
                   className="hidden lg:block"
                 />{" "}
-                {location ? `Vehicles in ${location}` : "Vehicles In Lagos"}
+                {city
+                  ? `Vehicles in ${
+                      city.charAt(0).toUpperCase() + city.slice(1)
+                    }`
+                  : location
+                  ? `Vehicles in ${location}`
+                  : "Vehicles in Lagos"}
               </h1>
               <p className="text-[1.2rem] md:text-2xl font-bold text-gray-900 mb-2">
                 {loading && vehicles.length === 0

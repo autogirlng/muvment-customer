@@ -7,6 +7,7 @@ import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
 import LocationDropdown from "../utils/LocationDropdown";
 import { getBookingOption } from "@/context/Constarain";
+import { trackCategoryClick, trackVehicleSearch } from "@/services/analytics";
 
 export const NavbarSearchBar = () => {
   const router = useRouter();
@@ -118,6 +119,17 @@ export const NavbarSearchBar = () => {
       return;
     }
 
+    trackVehicleSearch({
+      searchTerm: `${selectedLocation.name} ${bookingType || ""} ${
+        fromDate || ""
+      }   ${untilDate || ""}`.trim(),
+      category,
+      location: selectedLocation.name,
+    });
+    if (category) {
+      trackCategoryClick(category);
+    }
+
     setIsSearching(true);
 
     try {
@@ -142,7 +154,7 @@ export const NavbarSearchBar = () => {
 
   return (
     <div className="w-full max-w-4xl mx-4">
-      <div className="bg-white  px-6 py-2">
+      <div className="  px-6 py-2">
         <div className="flex items-center gap-0 divide-x divide-gray-200">
           {/* Booking Type */}
           <div className="flex-shrink-0 pr-3">

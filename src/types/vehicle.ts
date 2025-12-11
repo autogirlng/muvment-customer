@@ -19,6 +19,7 @@ export interface VehicleSearchParams {
   untilDate?: string;
   yearOfRelease?: string;
   numberOfSeats?: string;
+  city?: string;
 }
 
 export interface Vehicle {
@@ -237,6 +238,3 @@ export interface TopVehicle {
   numberOfSeats: number;
   rating?: number;
 }
-
-
-

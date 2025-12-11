@@ -23,25 +23,25 @@ const footerNav: FooterNavProps[] = [
     title: "Company",
     links: [
       { name: "About us", link: "/" },
-      { name: "Contact us", link: "/" },
+      { name: "Contact us", link: "/contact-us" },
       { name: "FAQs", scrollTo: "faq" },
     ],
   },
   {
     title: "Locations",
     links: [
-      { name: "Lagos", link: "/explore/cities/lagos" },
-      { name: "Abuja", link: "/explore/cities/abuja" },
-      { name: "Benin City", link: "/explore/cities/benin" },
-      { name: "Enugu", link: "/explore/cities/enugu" },
-      { name: "Port Harcourt", link: "/explore/cities/port-harcourt" },
-      { name: "Accra", link: "/explore/cities/accra" },
+      { name: "Lagos", link: "/Booking/search?city=lagos" },
+      { name: "Abuja", link: "/Booking/search?city=abuja" },
+      { name: "Benin City", link: "/Booking/search?city=benin" },
+      { name: "Enugu", link: "/Booking/search?city=enugu" },
+      { name: "Port Harcourt", link: "/Booking/search?city=port-harcourt" },
+      { name: "Accra", link: "/Booking/search?city=accra" },
     ],
   },
   {
     title: "Explore",
     links: [
-      { name: "Get paid", link: "https://host.muvment.ng/" },
+      { name: "Get paid", link: "/" },
       { name: "Book a vehicle", link: "/explore/results" },
       { name: "Vehicle types", scrollTo: "vehicle-categories" },
       { name: "Find your location", scrollTo: "popular-cities" },
