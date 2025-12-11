@@ -20,7 +20,20 @@ export const useItineraryForm = () => {
   };
 
   const addTrip = (id: string) => {
-    setTrips((prev) => [...prev, { id }]);
+    const sessionTrips = JSON.parse(sessionStorage.getItem("trips") || "[]")
+    if (sessionTrips.length > 0 && sessionTrips.length == trips.length) {
+      const updatedTrips = sessionTrips.map((trip: any) => {
+        return { id: trip.id, tripDetails: trip }
+      })
+      const newTrip = { id, tripDetails: sessionTrips[0] }
+      sessionStorage.setItem("trips", JSON.stringify([...sessionTrips, { ...newTrip.tripDetails, id: newTrip.id }]))
+      updatedTrips.push(newTrip)
+
+      setTrips(updatedTrips)
+    } else {
+      setTrips((prev) => [...prev, { id }]);
+
+    }
     setIsTripFormComplete(false);
     setOpenTripIds(new Set([id]));
   };
@@ -67,12 +80,11 @@ export const useItineraryForm = () => {
       "tripStartTime",
       "pickupLocation",
       "dropoffLocation",
-      // 'areaOfUse',
-      // 'areaOfUseCoordinates',
       "dropoffCoordinates",
       "pickupCoordinates",
     ];
     const missingFields: { id: string; fields: string[] }[] = [];
+
     for (const trip of trips) {
       const tripId = trip.id;
       const details = trip.tripDetails;

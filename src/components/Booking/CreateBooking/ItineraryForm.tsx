@@ -25,7 +25,6 @@ const ItineraryForm = ({
   currentStep: number;
   setCurrentStep: (step: number) => void;
 }) => {
-  // const searchParams = useSearchParams();
   const [vehicle, setVehicle] = useState<any>(null);
   const [bookingOptions, setBookingOptions] = useState<
     { option: string; value: string }[]
@@ -43,6 +42,7 @@ const ItineraryForm = ({
     addTrip,
     toggleOpen,
     openTripIds,
+    isTripFormsComplete
   } = useItineraryForm();
 
   const generateBookingOptions = () => {
@@ -120,7 +120,6 @@ const ItineraryForm = ({
             console.error("Invalid bookingInformation JSON", e);
             bookingInformation = {};
           }
-
           if (extraDetails) {
             bookingInformation.extraDetails = extraDetails;
           }
@@ -130,8 +129,8 @@ const ItineraryForm = ({
           }
 
           sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingInformation));
+          setCurrentStep(currentStep + 1)
 
-          setCurrentStep(currentStep + 1);
         }}
         enableReinitialize={true}
         validateOnChange={true}
@@ -149,7 +148,6 @@ const ItineraryForm = ({
           setFieldValue,
           isSubmitting,
         }) => {
-
           return (
             <Form className="max-w-[500px] w-full space-y-8">
               <h6 className="!font-bold text-base md:text-md ">
@@ -177,6 +175,7 @@ const ItineraryForm = ({
               })}
 
               <button
+                type="button"
                 onClick={() => addTrip(`trip-${trips?.length}`)}
                 className="text-[#0673ff] mt-1 text-sm cursor-pointer border-0"
               >
@@ -217,7 +216,7 @@ const ItineraryForm = ({
                 setCurrentStep={setCurrentStep}
                 handleSaveDraft={() => { }}
                 isSaveDraftloading={false}
-                disableNextButton={!isValid || isSubmitting}
+                disableNextButton={!isTripFormsComplete}
               />
             </Form>
           );
