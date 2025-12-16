@@ -14,6 +14,7 @@ import {
   FiBell,
   FiShare2,
   FiTag,
+  FiInfo,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import { SocialShareButton } from "@/components/general/share";
@@ -82,7 +83,7 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
 
   useEffect(() => {
     sessionStorage.removeItem("trips");
-    sessionStorage.removeItem("bookingId")
+    sessionStorage.removeItem("bookingId");
     setTrips([{ id: "trip-0", tripDetails: {} }]);
   }, []);
 
@@ -348,13 +349,15 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                   <p className="text-sm my-4">Trip per day</p>
 
                   {trips.map((key, index) => {
-                    const initialValues = JSON.parse(sessionStorage.getItem("trips") || "[]")
+                    const initialValues = JSON.parse(
+                      sessionStorage.getItem("trips") || "[]"
+                    );
                     let tripInitialValues;
 
                     if (initialValues.length > 0) {
-                      tripInitialValues = initialValues[0]
+                      tripInitialValues = initialValues[0];
                     } else {
-                      tripInitialValues = null
+                      tripInitialValues = null;
                     }
 
                     return (
@@ -447,9 +450,26 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                   )}
                 </div>
 
+                {/* Added Important Disclaimer */}
+                <div className="mt-6 mb-4 rounded-xl bg-orange-50 border border-orange-100 p-4 flex items-start gap-3 transition-all hover:bg-orange-100/50">
+                  <FiInfo
+                    className="text-orange-500 shrink-0 mt-0.5"
+                    size={20}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-bold text-orange-700 uppercase tracking-wider mb-1">
+                      Important Note
+                    </span>
+                    <p className="text-sm text-orange-900 leading-snug font-medium">
+                      Kindly note that all prices on this website are within
+                      city and does not cover interstate travels.
+                    </p>
+                  </div>
+                </div>
+
                 {!continueBooking || !isTripFormsComplete ? (
                   <button
-                    className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                    className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
                     disabled={!isTripFormsComplete}
                     onClick={estimatePrice}
                   >
@@ -457,7 +477,7 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                   </button>
                 ) : !isAuthenticated ? (
                   <button
-                    className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                    className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
                     disabled={!isTripFormsComplete}
                     onClick={() => setBookRideModal(true)}
                   >
@@ -465,7 +485,7 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                   </button>
                 ) : (
                   <button
-                    className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                    className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
                     disabled={!isTripFormsComplete}
                     onClick={() => router.push(`/Booking/create/${vehicle.id}`)}
                   >
@@ -568,7 +588,6 @@ const PriceRow = ({
         >
           {label}
         </span>
-        {/* Show explanation like "Mowe, Shoprite" under the surcharge label */}
         {subLabel && (
           <span className="text-[10px] text-gray-400 max-w-[180px] leading-tight">
             {subLabel}

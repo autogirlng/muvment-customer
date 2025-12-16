@@ -42,7 +42,6 @@ const ContactForm: React.FC = () => {
   };
 
   const handleSubmit = () => {
-  =
     alert("Form submitted! Check console for data.");
   };
 
