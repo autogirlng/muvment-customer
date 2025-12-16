@@ -67,14 +67,13 @@ export class PaymentService {
       const apiResponse = await getSingleData(
         `${this.BASE_URL}/${paymentId}/receipt`
       );
-      // Use response.data if available otherwise use the response itself
+
       const payload = apiResponse?.data ?? apiResponse;
 
       if (!payload) {
         throw new Error("No receipt data received from server");
       }
 
-      // Handle payload which may be a base64 string or binary-compatible BlobPart
       let blob: Blob;
       if (typeof payload === "string") {
         // Assume base64-encoded PDF string and decode it
