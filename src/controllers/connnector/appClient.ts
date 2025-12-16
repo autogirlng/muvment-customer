@@ -48,8 +48,12 @@ class ApiClient {
       });
       return [response.data as any, "Request successful"];
     } catch (error: unknown) {
+      
       console.error("API request error:", error);
       if (axios.isAxiosError(error)) {
+          if (error.response?.status === 409) {
+            return [409, "A conflict occured"]
+          }
         let message =
           error.response?.data.data ||
           error.response?.data?.error ||
@@ -63,6 +67,8 @@ class ApiClient {
             ? message
             : "Unauthorized: Token expired or invalid";
         }
+       
+
         return [{ err: message }, message];
       }
       return [null, "An unknown error occurred"];

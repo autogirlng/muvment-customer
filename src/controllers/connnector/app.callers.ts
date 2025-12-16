@@ -355,6 +355,7 @@ export const createData = async (path: string, body: any) => {
         requireAuth: true,
       });
  
+      
       if(data.err){
         toast.error(data.err)
       }

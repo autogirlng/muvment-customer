@@ -82,6 +82,7 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
 
   useEffect(() => {
     sessionStorage.removeItem("trips");
+    sessionStorage.removeItem("bookingId")
     setTrips([{ id: "trip-0", tripDetails: {} }]);
   }, []);
 
@@ -347,12 +348,22 @@ const VehicleDetailsPage: React.FC<VehicleDetailsPageProps> = () => {
                   <p className="text-sm my-4">Trip per day</p>
 
                   {trips.map((key, index) => {
+                    const initialValues = JSON.parse(sessionStorage.getItem("trips") || "[]")
+                    let tripInitialValues;
+
+                    if (initialValues.length > 0) {
+                      tripInitialValues = initialValues[0]
+                    } else {
+                      tripInitialValues = null
+                    }
+
                     return (
                       <TripAccordion
                         key={key.id}
                         day={`${index + 1}`}
                         id={key.id}
                         vehicle={vehicle}
+                        initialValues={tripInitialValues}
                         deleteMethod={deleteTrip}
                         disabled={false}
                         onChangeTrip={onChangeTrip}

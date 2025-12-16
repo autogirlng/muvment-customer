@@ -153,7 +153,7 @@ export const StepperNavigation = ({
                                         isNextLoading
                                     }
                                     className="px-6 3xl:!px-8 cursor-pointer disabled:bg-[#80b9ff] bg-[#0673ff] text-white"
-                                    type="submit"
+                                // type="submit"
                                 >
                                     <span>Next</span>{" "}
                                     {isNextLoading ? <Spinner /> : Icons.ic_chevron_right}
