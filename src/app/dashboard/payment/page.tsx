@@ -7,6 +7,7 @@ import {
   Payment,
   PaymentFilters,
   PaymentService,
+  ReceiptGenerator,
 } from "@/controllers/booking/paymentService";
 import DataTable, {
   SeeMoreData,
@@ -50,7 +51,7 @@ const PaymentHistoryPage = () => {
 
   const handleDownloadReceipt = async (payment: Payment) => {
     try {
-      await PaymentService.downloadReceipt(payment.id);
+      await ReceiptGenerator.downloadReceipt(payment);
     } catch (error) {
       console.error("Error downloading receipt:", error);
       alert("Failed to download receipt. Please try again.");

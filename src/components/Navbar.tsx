@@ -28,7 +28,6 @@ export const Navbar = ({
   const pathname = usePathname();
 
   useEffect(() => {
-    test();
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
@@ -41,14 +40,14 @@ export const Navbar = ({
     setIsMenuOpen(false);
   };
 
-  const test = async () => {
-    const data = await getBookingOption();
-    // console.log(data);
-  };
+  // const test = async () => {
+  //   const data = await getBookingOption();
+  //   // console.log(data);
+  // };
 
   const items = user ? menuItems : guestMenuItems;
   const announcementMessages = [
-    "We've moved! Autogirl.ng is now Muvment.ng | use coupon code : Muvment2025 to get ₦5,000 naira off your booking on the website today",
+    "We've moved! Autogirl.ng is now Muvment.ng | Hurry! Use MINT5OFF (5% off) or MUVMENT2025 (₦5,000 off) — all coupons expire Dec 31, 2025 at 11:45pm",
   ];
   return (
     <nav
