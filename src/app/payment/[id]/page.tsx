@@ -142,7 +142,6 @@ const BookingDetailsPage = () => {
         const vehicleId = bookingData.vehicle?.id;
 
         if (vehicleId) {
-          console.log("Fetching vehicle for ID:", vehicleId);
           const vehicleRes = await getSingleData(
             `/api/v1/public/vehicles/${vehicleId}`,
             {}

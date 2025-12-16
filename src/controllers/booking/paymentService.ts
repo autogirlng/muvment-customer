@@ -69,7 +69,7 @@ export class PaymentService {
       );
       // Use response.data if available otherwise use the response itself
       const payload = apiResponse?.data ?? apiResponse;
-      console.log(payload);
+
       if (!payload) {
         throw new Error("No receipt data received from server");
       }

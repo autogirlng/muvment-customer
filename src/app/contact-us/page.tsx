@@ -42,7 +42,7 @@ const ContactForm: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    console.log("Form submitted:", formData);
+  =
     alert("Form submitted! Check console for data.");
   };
 

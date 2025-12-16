@@ -94,7 +94,7 @@ export default function LoginComponent() {
         const user = response.data.data;
         const accessToken = response.data.data.accessToken;
         const refreshToken = response.data.data.refreshToken;
-        console.log();
+
         login(user, {
           accessToken,
           refreshToken,
