@@ -131,7 +131,7 @@ export default function EditProfilePage() {
     setUpdating(true);
     try {
       await ProfileService.updateProfile(formData);
-      router.push("/profile");
+      router.push("/dashboard/account/profile");
     } catch (error) {
       console.error("Failed to update profile:", error);
     } finally {
