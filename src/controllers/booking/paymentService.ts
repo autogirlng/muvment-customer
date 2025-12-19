@@ -2,7 +2,9 @@ import {
   createData,
   getSingleData,
   getTableData,
+  getTableDataBlob,
 } from "../connnector/app.callers";
+import ApiClient from "../connnector/appClient";
 
 export interface Payment {
   id: string;
@@ -103,8 +105,14 @@ export class PaymentService {
       throw error;
     }
   }
-}
 
+  static async getPDFFile(bookingId: string) {
+    await ApiClient.downloadFile(
+      `/api/v1/admin/invoices/${bookingId}/download-receipt`,
+      `receipt-${bookingId}.pdf`
+    );
+  }
+}
 // Add this to your PaymentService or create a new ReceiptService
 
 export class ReceiptGenerator {

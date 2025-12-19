@@ -14,6 +14,7 @@ import DataTable, {
   TableColumn,
 } from "@/components/utils/TableComponent";
 import Dropdown from "@/components/utils/DropdownCustom";
+import { toast } from "react-toastify";
 
 const PaymentHistoryPage = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -50,8 +51,12 @@ const PaymentHistoryPage = () => {
   }, [filters.searchTerm]);
 
   const handleDownloadReceipt = async (payment: Payment) => {
+    if (payment.paymentStatus !== "SUCCESSFUL") {
+      return toast.warn("Payment still pending, try again later");
+    }
+    // console.log(payment);
     try {
-      await ReceiptGenerator.downloadReceipt(payment);
+      await PaymentService.getPDFFile(payment.bookingId);
     } catch (error) {
       console.error("Error downloading receipt:", error);
       alert("Failed to download receipt. Please try again.");

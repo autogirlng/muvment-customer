@@ -1,7 +1,7 @@
 import NetworkService from "@/components/Network/NetworkService";
 import ApiClient from "./appClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {toast} from "react-toastify"
+import { toast } from "react-toastify";
 
 const cache: Record<string, any> = {};
 export class LoadingManager {
@@ -286,6 +286,16 @@ export const getTableData = async (path: string, params?: any) => {
   return NetworkService.handleApiResponse(data);
 };
 
+export const getTableDataBlob = async (path: string, params?: any) => {
+  if (!NetworkService.checkConnection()) throw new Error("No connection");
+  const [data] = await ApiClient.request(path, {
+    method: "GET",
+    requireAuth: true,
+    params,
+  });
+  return data;
+};
+
 export const getSingleData = async (path: string, params?: any) => {
   if (!NetworkService.checkConnection()) throw new Error("No connection");
   const [data] = await ApiClient.request(path, {
@@ -354,10 +364,9 @@ export const createData = async (path: string, body: any) => {
           : { "Content-Type": "application/json;charset=UTF-8" },
         requireAuth: true,
       });
- 
-      
-      if(data.err){
-        toast.error(data.err)
+
+      if (data.err) {
+        toast.error(data.err);
       }
 
       return NetworkService.handleApiResponse(data);
@@ -639,7 +648,7 @@ export const validateDataInput = (data: Record<string, any>) => {
 
     const valueStr = String(value);
     if (sqlInjectionPatterns.some((regex) => regex.test(valueStr))) {
-      result.message = `Potential SQL injection detected in field "${key}".`;
+      result.message = `Character validation error: Field "${key}" contains metacharacters that are restricted due to security policies.`;
       result.error = true;
       return result;
     }
