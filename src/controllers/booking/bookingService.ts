@@ -56,6 +56,8 @@ export class BookingService {
   private static readonly PAYMENT_URL = "/api/v1/payments";
   private static readonly BOOKING_TYPE = "/api/v1/booking-types";
   private static readonly INITIATE_PAYMENT = "/api/v1/payments/initiate";
+  private static readonly INITIATE_PAYMENT_PAYSTACK = "/api/v1/payments/initialize";
+
 
   static async getMyBookings(
     filters: BookingFilters = {}
@@ -151,10 +153,15 @@ export class BookingService {
     paymentData: PaymentInitiationRequest
   ): Promise<PaymentInitiationResponse> {
     try {
-      const response = await createData(this.INITIATE_PAYMENT, paymentData);
+      let paymentURL;
+      if(paymentData.paymentProvider === "PAYSTACK" ){
+        paymentURL = `${this.INITIATE_PAYMENT_PAYSTACK}/${paymentData.bookingId}`
+      }  else {
+        paymentURL = this.INITIATE_PAYMENT
+      }
+      const response = await createData(paymentURL, paymentData);
       if (!response || !response.data)
         throw new Error("Failed to initiate payment");
-      // console.log("Payment initiated successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error("Payment initiation error:", error);

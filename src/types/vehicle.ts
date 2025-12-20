@@ -171,8 +171,11 @@ export interface CreateBookingResponse {
   timestamp: string;
 }
 
+
+
 export interface PaymentInitiationRequest {
   bookingId: string;
+  paymentProvider?:string;
 }
 
 export interface PaymentInitiationResponse {

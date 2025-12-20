@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { FiSearch, FiDownload, FiShare2 } from "react-icons/fi";
+import { CiCreditCard1 } from "react-icons/ci"
 import { Navbar } from "@/components/Navbar";
 import {
   Payment,
@@ -15,6 +17,32 @@ import DataTable, {
 } from "@/components/utils/TableComponent";
 import Dropdown from "@/components/utils/DropdownCustom";
 import { toast } from "react-toastify";
+import { FaCreditCard } from "react-icons/fa6";
+import { BookingService } from "@/controllers/booking/bookingService";
+
+
+
+interface Booking {
+
+  id: string,
+  bookingId: string,
+  paymentStatus: string,
+  paymentProvider: string,
+  transactionReference: string,
+  totalPayable: number,
+  createdAt: string,
+  paymentRef: string,
+  bookingRef: string,
+  userEmail: string,
+  userPhone: string,
+  userName: string,
+  invoiceNumber: string,
+  vehicleName: string,
+  vehicleIdentifier: string,
+  vehicleId: string,
+  userId: string
+
+}
 
 const PaymentHistoryPage = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -22,6 +50,7 @@ const PaymentHistoryPage = () => {
   const [filters, setFilters] = useState<PaymentFilters>({ page: 0, size: 10 });
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter()
 
   useEffect(() => {
     loadPayments();
@@ -50,18 +79,6 @@ const PaymentHistoryPage = () => {
     };
   }, [filters.searchTerm]);
 
-  const handleDownloadReceipt = async (payment: Payment) => {
-    if (payment.paymentStatus !== "SUCCESSFUL") {
-      return toast.warn("Payment still pending, try again later");
-    }
-    // console.log(payment);
-    try {
-      await PaymentService.getPDFFile(payment.bookingId);
-    } catch (error) {
-      console.error("Error downloading receipt:", error);
-      alert("Failed to download receipt. Please try again.");
-    }
-  };
 
   const handleSharePayment = (payment: Payment) => {
     const shareText = `Payment for ${payment.vehicleName} - ${formatCurrency(
@@ -146,11 +163,25 @@ const PaymentHistoryPage = () => {
     },
   ];
 
+
+  const makePayment = async (x: Booking) => {
+    const booking = await BookingService.initiatePayment({ bookingId: x.bookingId, paymentProvider: x.paymentProvider })
+    if (x.paymentProvider === "PAYSTACK" && booking.data) {
+      // @ts-ignore
+      router.push(booking.data);
+
+    }
+    else {
+      if (booking.data.authorizationUrl) router.push(booking.data.authorizationUrl);
+
+    }
+
+  }
   const seeMoreData: SeeMoreData[] = [
     {
-      name: "Download Receipt",
-      handleAction: handleDownloadReceipt,
-      icon: FiDownload,
+      name: "Make Payment",
+      handleAction: makePayment,
+      icon: FaCreditCard,
     },
     { name: "Share Payment", handleAction: handleSharePayment, icon: FiShare2 },
   ];
