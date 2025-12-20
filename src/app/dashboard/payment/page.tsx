@@ -68,7 +68,7 @@ const PaymentHistoryPage = () => {
     }
   };
 
-  // 🔹 Debounced search effect
+  //  Debounced search effect
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
@@ -162,6 +162,16 @@ const PaymentHistoryPage = () => {
       render: (val) => formatCurrency(val),
     },
   ];
+  const handleDownloadReceipt = async (payment: Payment) => {
+    if (payment.paymentStatus !== "SUCCESSFUL") {
+      return toast.warn("Payment still pending, try again later");
+    } try {
+      await PaymentService.getPDFFile(payment.bookingId);
+    }
+    catch (error) {
+      console.error("Error downloading receipt:", error); alert("Failed to download receipt. Please try again.");
+    }
+  };
 
 
   const makePayment = async (x: Booking) => {
@@ -175,12 +185,19 @@ const PaymentHistoryPage = () => {
       if (booking.data.authorizationUrl) router.push(booking.data.authorizationUrl);
 
     }
-
+  }
+  const handleAction = (payment: any) => {
+    if (payment.paymentStatus === "SUCCESSFUL") {
+      return handleDownloadReceipt(payment)
+    }
+    if (payment.paymentStatus === "PENDING") {
+      return makePayment(payment)
+    }
   }
   const seeMoreData: SeeMoreData[] = [
     {
-      name: "Make Payment",
-      handleAction: makePayment,
+      name: "payment",
+      handleAction,
       icon: FaCreditCard,
     },
     { name: "Share Payment", handleAction: handleSharePayment, icon: FiShare2 },
