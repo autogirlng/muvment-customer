@@ -38,6 +38,7 @@ export default function ExploreVehiclesPage() {
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [makes, setMakes] = useState([]);
   const [features, setFeatures] = useState([]);
+  const [models, setModels] = useState([]);
 
   // Get URL params
   const lat = searchParams.get("lat");
@@ -48,12 +49,12 @@ export default function ExploreVehiclesPage() {
   const fromDate = searchParams.get("fromDate");
   const untilDate = searchParams.get("untilDate");
   const city = searchParams.get("city");
-
   const initializeFiltersFromUrl = useCallback((): FilterState => {
     const minPriceParam = searchParams.get("minPrice");
     const maxPriceParam = searchParams.get("maxPrice");
     const type = searchParams.getAll("type");
     const make = searchParams.getAll("make");
+    const model = searchParams.getAll("model"); // ADD THIS
     const yearOfRelease = searchParams.getAll("yearOfRelease");
     const numberOfSeats = searchParams.getAll("numberOfSeats");
     const featuresList = searchParams.getAll("features");
@@ -65,6 +66,7 @@ export default function ExploreVehiclesPage() {
           : undefined,
       selectedVehicleTypes: type.length > 0 ? type : undefined,
       selectedMakes: make.length > 0 ? make : undefined,
+      selectedModels: model.length > 0 ? model : undefined, // ADD THIS
       selectedYears: yearOfRelease.length > 0 ? yearOfRelease : undefined,
       selectedSeats: numberOfSeats.length > 0 ? numberOfSeats : undefined,
       selectedFeatures: featuresList.length > 0 ? featuresList : undefined,
@@ -76,13 +78,16 @@ export default function ExploreVehiclesPage() {
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
-        const [typesData, makesData, featuresData] = await Promise.all([
-          VehicleSearchService.getVehicleTypes(),
-          VehicleSearchService.getVehicleMakes(),
-          VehicleSearchService.getVehicleFeatures(),
-        ]);
+        const [typesData, makesData, modelsData, featuresData] =
+          await Promise.all([
+            VehicleSearchService.getVehicleTypes(),
+            VehicleSearchService.getVehicleMakes(),
+            VehicleSearchService.getVehicleModels(), // ADD THIS
+            VehicleSearchService.getVehicleFeatures(),
+          ]);
         setVehicleTypes(typesData[0].data);
         setMakes(makesData[0].data);
+        setModels(modelsData[0].data); // ADD THIS
         setFeatures(featuresData[0].data);
       } catch (err) {
         console.error("Error fetching filter options:", err);
@@ -165,6 +170,10 @@ export default function ExploreVehiclesPage() {
         }
         if (filterState.selectedFeatures !== undefined) {
           params.featureIds = filterState.selectedFeatures[0];
+        }
+
+        if (filterState.selectedModels !== undefined) {
+          params.vehicleModelId = filterState.selectedModels[0];
         }
 
         if (
@@ -337,6 +346,7 @@ export default function ExploreVehiclesPage() {
               onClearAll={handleClearAll}
               vehicleTypes={vehicleTypes}
               makes={makes}
+              models={models} // ADD THIS
               features={features}
               totalCount={childCount as number}
             />
