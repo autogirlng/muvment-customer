@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { FaDownload } from "react-icons/fa";
 import { TbDots } from "react-icons/tb";
 
 export interface TableColumn<T> {
@@ -89,7 +88,7 @@ export default function DataTable<T extends { id: string | number }>({
   }, []);
 
   return (
-    <div className="bg-white overflow-hidden w-full">
+    <div className="bg-white rounded-lg shadow overflow-hidden w-full">
       {title && (
         <div className=" py-3 border-b border-gray-200">
           <h2 className="text-base md:text-lg font-semibold text-gray-900">
@@ -215,7 +214,6 @@ export default function DataTable<T extends { id: string | number }>({
                 </td>
               </tr>
             ) : (
-<<<<<<< HEAD
               displayedData.map((row, index) => (
                 <tr
                   key={row.id}
@@ -248,70 +246,28 @@ export default function DataTable<T extends { id: string | number }>({
                         <div
                           ref={popupRef}
                           className="absolute right-2 mt-2 w-40 bg-white shadow-lg border rounded-lg p-2 z-20"
-=======
-              displayedData.map((row, index) => {
-                return (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-gray-50 transition-colors text-xs md:text-sm"
-                  >
-                    {columns.map((column) => (
-                      <td
-                        key={String(column.key)}
-                        className="px-3 md:px-4 py-3 text-gray-700 whitespace-nowrap"
-                      >
-                        {column.render
-                          ? column.render(row[column.key], row)
-                          : (row[column.key] as React.ReactNode)}
-                      </td>
-                    ))}
-
-                    {seeMoreData && (
-                      <td className="relative px-3 md:px-4 py-3 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedRow(expandedRow === index ? null : index);
-                          }}
-                          className="p-2 hover:bg-gray-100 rounded-md text-gray-700"
->>>>>>> 49f1e345fc01bdc789fe3de55e34362cf26a979c
                         >
-                          <TbDots className="text-lg md:text-xl" />
-                        </button>
-
-                        {expandedRow === index && (
-                          <div
-                            ref={popupRef}
-                            className="absolute right-2 mt-2 w-36 md:w-45 md:h-23 bg-white shadow-lg border rounded-lg p-2 z-20"
-                          >
-                            {seeMoreData.map((action, i) => (
-                              <div
-                                key={i}
-                                onClick={() => {
-                                  action.handleAction?.(row);
-                                  setExpandedRow(null);
-                                }}
-                                className="flex items-center gap-2  px-2 py-2 cursor-pointer hover:bg-gray-100 rounded-md"
-                              >
-                                {
-                                  // @ts-ignore
-                                  action.name === "payment" && row.paymentStatus === "SUCCESSFUL" ? <FaDownload className="text-base text-gray-600" /> : <action.icon className="text-base text-gray-600" />
-                                }
-
-                                <span className="text-sm text-gray-600">
-                                  {/* @ts-ignore */}
-                                  {action.name === "payment" ? row.paymentStatus === "PENDING" ? "Make Payment" : "Download Receipt"
-                                    : action.name}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                )
-              })
+                          {seeMoreData.map((action, i) => (
+                            <div
+                              key={i}
+                              onClick={() => {
+                                action.handleAction?.(row);
+                                setExpandedRow(null);
+                              }}
+                              className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-gray-100 rounded-md"
+                            >
+                              <action.icon className="text-base text-gray-600" />
+                              <span className="text-sm text-gray-700">
+                                {action.name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              ))
             )}
           </tbody>
         </table>
