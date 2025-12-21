@@ -22,6 +22,17 @@ export class VehicleSearchService {
     "/api/v1/public/bookings/calculate";
   private static readonly VEHICLE_DETAILS = "/api/v1/public/vehicles";
 
+  private static readonly VEHICLES_MODELS = "/api/v1/public/vehicle-models";
+
+  static async getVehicleModels(): Promise<any> {
+    try {
+      const response = await getSingleData(this.VEHICLES_MODELS);
+      return response?.data || [];
+    } catch (error) {
+      console.error("Error fetching vehicle models:", error);
+      return [];
+    }
+  }
   static async searchVehicles(params?: VehicleSearchParams): Promise<any> {
     try {
       const filteredParams = Object.fromEntries(

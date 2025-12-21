@@ -15,6 +15,7 @@ export interface FilterConfig {
 export interface FilterState {
   priceRange?: [number, number];
   selectedVehicleTypes?: string[];
+  selectedModels?: string[];
   selectedMakes?: string[];
   selectedYears?: string[];
   selectedSeats?: string[];
