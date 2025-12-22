@@ -35,7 +35,6 @@ const BookingHistoryPage = () => {
     loadBookings();
   }, [filters.page, filters.size, filters.bookingStatus]);
 
-  // 🔹 Watch for search term with debounce
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
@@ -212,31 +211,29 @@ const BookingHistoryPage = () => {
   const handleNewBooking = () => router.push("/Booking/search");
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       <Navbar />
 
-      <div className="mx-auto px-4 py-8 mt-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="mb-8">
+      <div className="mx-auto  py-8 mt-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Booking History
             </h1>
             <p className="text-gray-600">View and manage your past bookings</p>
           </div>
 
-          <div>
-            <button
-              onClick={handleNewBooking}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md"
-            >
-              New Booking
-            </button>
-          </div>
+          <button
+            onClick={handleNewBooking}
+            className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            New Booking
+          </button>
         </div>
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
             {/* View Toggle */}
             <div className="flex bg-white rounded-lg border border-gray-200 p-1">
               <button
@@ -264,12 +261,12 @@ const BookingHistoryPage = () => {
             </div>
 
             {/* Search */}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <FiSearch className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search bookings..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full sm:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 onChange={(e) =>
                   setFilters((prev) => ({
                     ...prev,
@@ -281,17 +278,19 @@ const BookingHistoryPage = () => {
           </div>
 
           {/* Filter Dropdown */}
-          <Dropdown
-            options={statusOptions}
-            selectedValue={filters.bookingStatus}
-            onSelect={(value) =>
-              setFilters((prev) => ({ ...prev, bookingStatus: value }))
-            }
-            placeholder="All Status"
-            className="w-48"
-            isOpen={statusDropdownOpen}
-            onToggle={() => setStatusDropdownOpen(!statusDropdownOpen)}
-          />
+          <div className="w-full sm:w-48">
+            <Dropdown
+              options={statusOptions}
+              selectedValue={filters.bookingStatus}
+              onSelect={(value) =>
+                setFilters((prev) => ({ ...prev, bookingStatus: value }))
+              }
+              placeholder="All Status"
+              className="w-full"
+              isOpen={statusDropdownOpen}
+              onToggle={() => setStatusDropdownOpen(!statusDropdownOpen)}
+            />
+          </div>
         </div>
 
         {/* Content */}
@@ -300,15 +299,19 @@ const BookingHistoryPage = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           </div>
         ) : viewMode === "list" ? (
-          <DataTable<Booking & { id: number }>
-            columns={tableColumns}
-            data={tableData as any}
-            height="max-h-[600px]"
-            seeMoreData={seeMoreActions}
-            pageSize={10}
-          />
+          <div className="overflow-x-auto">
+            <DataTable<Booking & { id: number }>
+              columns={tableColumns}
+              data={tableData as any}
+              height="max-h-[600px]"
+              seeMoreData={seeMoreActions}
+              pageSize={10}
+            />
+          </div>
         ) : (
-          <CalendarView bookings={bookings} onDateClick={handleDateClick} />
+          <div className="overflow-x-auto">
+            <CalendarView bookings={bookings} onDateClick={handleDateClick} />
+          </div>
         )}
 
         <BookingModal
