@@ -59,3 +59,12 @@ export const getPriceDisplay = (
 
   return { price, formattedPrice, label };
 };
+
+export const getSelectedModelName = (
+  selectedModels: string[] | undefined,
+  models: any[]
+): string | undefined => {
+  if (!selectedModels || selectedModels.length === 0) return undefined;
+  const model = models.find((m) => m.id === selectedModels[0]);
+  return model?.name;
+};

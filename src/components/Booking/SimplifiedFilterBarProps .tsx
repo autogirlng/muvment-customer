@@ -7,6 +7,7 @@ import MakeFilter from "../NewFilterComponent/MakeFilter";
 import YearsFilter from "../NewFilterComponent/YearsFilter";
 import SeatsFilter from "../NewFilterComponent/SeatFilter";
 import FeaturesFilter from "../NewFilterComponent/FeaturesFilter";
+
 import {
   getSelectedFeatureName,
   getSelectedMakeName,
@@ -15,9 +16,10 @@ import {
   getSelectedYearName,
 } from "@/helpers/explorPageHelpers";
 import { CiSettings } from "react-icons/ci";
-import { BiChevronDown, BiLeftArrow } from "react-icons/bi";
-import { BsChevronDown, BsX } from "react-icons/bs";
+import { BiChevronDown } from "react-icons/bi";
 import { MdChevronLeft } from "react-icons/md";
+import { getSelectedModelName } from "@/services/vechilePriceUtiles";
+import ModelFilter from "./ModelFilter";
 
 interface SimplifiedFilterBarProps {
   filterState: FilterState;
@@ -25,6 +27,7 @@ interface SimplifiedFilterBarProps {
   onClearAll: () => void;
   vehicleTypes: any[];
   makes: any[];
+  models: any[];
   features: any[];
   totalCount: number;
 }
@@ -35,6 +38,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   onClearAll,
   vehicleTypes,
   makes,
+  models,
   features,
   totalCount,
 }) => {
@@ -73,6 +77,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   const isPriceActive = filterState.priceRange !== undefined;
   const isTypeActive = filterState.selectedVehicleTypes !== undefined;
   const isMakeActive = filterState.selectedMakes !== undefined;
+  const isModelActive = filterState.selectedModels !== undefined;
   const isYearsActive = filterState.selectedYears !== undefined;
   const isSeatsActive = filterState.selectedSeats !== undefined;
   const isFeaturesActive = filterState.selectedFeatures !== undefined;
@@ -81,6 +86,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
     isPriceActive ||
     isTypeActive ||
     isMakeActive ||
+    isModelActive ||
     isYearsActive ||
     isSeatsActive ||
     isFeaturesActive;
@@ -95,6 +101,10 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
     vehicleTypes
   );
   const selectedMake = getSelectedMakeName(filterState.selectedMakes, makes);
+  const selectedModel = getSelectedModelName(
+    filterState.selectedModels,
+    models
+  );
   const selectedYear = getSelectedYearName(filterState.selectedYears);
   const selectedSeat = getSelectedSeatName(filterState.selectedSeats);
   const selectedFeature = getSelectedFeatureName(
@@ -219,6 +229,25 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
           </FilterButton>
 
           <FilterButton
+            id="model"
+            label="Model"
+            selectedLabel={selectedModel}
+            count={isModelActive ? 1 : 0}
+            isActive={isModelActive}
+          >
+            {openDropdown === "model" && (
+              <ModelFilter
+                value={filterState.selectedModels}
+                onChange={(value: any) =>
+                  onFilterChange("selectedModels", value)
+                }
+                models={models}
+                onClose={closeAllDropdowns}
+              />
+            )}
+          </FilterButton>
+
+          <FilterButton
             id="years"
             label="Years"
             selectedLabel={selectedYear}
@@ -295,6 +324,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
                     isPriceActive,
                     isTypeActive,
                     isMakeActive,
+                    isModelActive,
                     isYearsActive,
                     isSeatsActive,
                     isFeaturesActive,
@@ -316,6 +346,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
           onClose={() => setIsMobileFilterOpen(false)}
           vehicleTypes={vehicleTypes}
           makes={makes}
+          models={models}
           features={features}
           totalCount={totalCount}
         />
@@ -324,7 +355,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   );
 };
 
-// Mobile Filter Drawer Component - UPDATED WITH SEARCH BUTTON
+// Mobile Filter Drawer Component
 const MobileFilterDrawer: React.FC<
   SimplifiedFilterBarProps & { onClose: () => void }
 > = ({
@@ -334,6 +365,7 @@ const MobileFilterDrawer: React.FC<
   onClose,
   vehicleTypes,
   makes,
+  models,
   features,
   totalCount,
 }) => {
@@ -344,6 +376,7 @@ const MobileFilterDrawer: React.FC<
   const isPriceActive = tempFilterState.priceRange !== undefined;
   const isTypeActive = tempFilterState.selectedVehicleTypes !== undefined;
   const isMakeActive = tempFilterState.selectedMakes !== undefined;
+  const isModelActive = tempFilterState.selectedModels !== undefined;
   const isYearsActive = tempFilterState.selectedYears !== undefined;
   const isSeatsActive = tempFilterState.selectedSeats !== undefined;
   const isFeaturesActive = tempFilterState.selectedFeatures !== undefined;
@@ -352,6 +385,7 @@ const MobileFilterDrawer: React.FC<
     isPriceActive ||
     isTypeActive ||
     isMakeActive ||
+    isModelActive ||
     isYearsActive ||
     isSeatsActive ||
     isFeaturesActive;
@@ -384,6 +418,7 @@ const MobileFilterDrawer: React.FC<
       priceRange: undefined,
       selectedVehicleTypes: undefined,
       selectedMakes: undefined,
+      selectedModels: undefined,
       selectedYears: undefined,
       selectedSeats: undefined,
       selectedFeatures: undefined,
@@ -477,6 +512,30 @@ const MobileFilterDrawer: React.FC<
                 handleTempFilterChange("selectedMakes", value)
               }
               makes={makes}
+              onClose={onClose}
+              compact={true}
+            />
+          </div>
+
+          {/* Model */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">Model</h3>
+              {isModelActive && (
+                <button
+                  onClick={() => handleClearFilter("selectedModels")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <ModelFilter
+              value={tempFilterState.selectedModels}
+              onChange={(value) =>
+                handleTempFilterChange("selectedModels", value)
+              }
+              models={models}
               onClose={onClose}
               compact={true}
             />

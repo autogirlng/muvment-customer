@@ -17,7 +17,7 @@ import {
   FiInfo,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
-import { getSingleData } from "./getSingleData";
+import { getSingleData } from "@/controllers/connnector/app.callers";
 
 interface BookingSegment {
   segmentId: string;
@@ -119,17 +119,11 @@ const BookingDetailsPage = () => {
 
       try {
         setLoading(true);
-        // console.log("Fetching booking for ID:", bookingId);
 
-        // 1. Fetch Booking Details (Public endpoint, no auth required)
         const bookingRes = await getSingleData(
           `/api/v1/public/bookings/${bookingId}`,
           {}
         );
-
-        // console.log("Raw Booking Response:", bookingRes);
-
-        // ✅ FIX: Access nested data correctly (response.data.data)
         const bookingData = bookingRes?.data?.data;
 
         if (!bookingData) {

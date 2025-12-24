@@ -17,7 +17,7 @@ import DataTable, {
 } from "@/components/utils/TableComponent";
 import Dropdown from "@/components/utils/DropdownCustom";
 import { toast } from "react-toastify";
-import { FaCreditCard } from "react-icons/fa6";
+import { FaCreditCard, FaReceipt } from "react-icons/fa6";
 import { BookingService } from "@/controllers/booking/bookingService";
 
 
@@ -196,9 +196,9 @@ const PaymentHistoryPage = () => {
   }
   const seeMoreData: SeeMoreData[] = [
     {
-      name: "payment",
+      name: "Download",
       handleAction,
-      icon: FaCreditCard,
+      icon: FaReceipt,
     },
     { name: "Share Payment", handleAction: handleSharePayment, icon: FiShare2 },
   ];
@@ -252,7 +252,7 @@ const PaymentHistoryPage = () => {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8  mx-auto"></div>
           </div>
         ) : (
           <DataTable<Payment>

@@ -297,7 +297,9 @@ export const getTableDataBlob = async (path: string, params?: any) => {
 };
 
 export const getSingleData = async (path: string, params?: any) => {
-  if (!NetworkService.checkConnection()) throw new Error("No connection");
+  if (typeof window !== "undefined" && !NetworkService.checkConnection()) {
+    throw new Error("No connection");
+  }
   const [data] = await ApiClient.request(path, {
     method: "GET",
     requireAuth: true,
