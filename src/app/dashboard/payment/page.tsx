@@ -17,7 +17,7 @@ import DataTable, {
 } from "@/components/utils/TableComponent";
 import Dropdown from "@/components/utils/DropdownCustom";
 import { toast } from "react-toastify";
-import { FaCreditCard } from "react-icons/fa6";
+import { FaCreditCard, FaReceipt } from "react-icons/fa6";
 import { BookingService } from "@/controllers/booking/bookingService";
 
 
@@ -196,9 +196,9 @@ const PaymentHistoryPage = () => {
   }
   const seeMoreData: SeeMoreData[] = [
     {
-      name: "payment",
+      name: "Download",
       handleAction,
-      icon: FaCreditCard,
+      icon: FaReceipt,
     },
     { name: "Share Payment", handleAction: handleSharePayment, icon: FiShare2 },
   ];
