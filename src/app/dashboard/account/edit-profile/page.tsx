@@ -9,6 +9,7 @@ import {
 } from "@/controllers/user/profile.service";
 import Button from "@/components/utils/Button";
 import { Navbar } from "@/components/Navbar";
+import { Metadata } from "next";
 
 interface ImageUploadState {
   file: File | null;
