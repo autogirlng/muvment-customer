@@ -41,7 +41,7 @@ const CostBreakdown = ({
   const [bookId, setBookId] = useState<string>("")
   const [pricing, setPricing] = useState<EstimatedBookingPrice>();
   const [paymentGateway, setPaymentGateway] =
-    useState<PaymentGateway>("MONNIFY");
+    useState<PaymentGateway>("PAYSTACK");
   const router = useRouter();
 
 
