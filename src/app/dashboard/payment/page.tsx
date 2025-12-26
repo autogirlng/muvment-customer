@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FiSearch, FiDownload, FiShare2 } from "react-icons/fi";
-import { CiCreditCard1 } from "react-icons/ci"
+import { CiCreditCard1 } from "react-icons/ci";
 import { Navbar } from "@/components/Navbar";
 import {
   Payment,
@@ -20,28 +20,24 @@ import { toast } from "react-toastify";
 import { FaCreditCard, FaReceipt } from "react-icons/fa6";
 import { BookingService } from "@/controllers/booking/bookingService";
 
-
-
 interface Booking {
-
-  id: string,
-  bookingId: string,
-  paymentStatus: string,
-  paymentProvider: string,
-  transactionReference: string,
-  totalPayable: number,
-  createdAt: string,
-  paymentRef: string,
-  bookingRef: string,
-  userEmail: string,
-  userPhone: string,
-  userName: string,
-  invoiceNumber: string,
-  vehicleName: string,
-  vehicleIdentifier: string,
-  vehicleId: string,
-  userId: string
-
+  id: string;
+  bookingId: string;
+  paymentStatus: string;
+  paymentProvider: string;
+  transactionReference: string;
+  totalPayable: number;
+  createdAt: string;
+  paymentRef: string;
+  bookingRef: string;
+  userEmail: string;
+  userPhone: string;
+  userName: string;
+  invoiceNumber: string;
+  vehicleName: string;
+  vehicleIdentifier: string;
+  vehicleId: string;
+  userId: string;
 }
 
 const PaymentHistoryPage = () => {
@@ -50,7 +46,7 @@ const PaymentHistoryPage = () => {
   const [filters, setFilters] = useState<PaymentFilters>({ page: 0, size: 10 });
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const router = useRouter()
+  const router = useRouter();
 
   useEffect(() => {
     loadPayments();
@@ -78,7 +74,6 @@ const PaymentHistoryPage = () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
   }, [filters.searchTerm]);
-
 
   const handleSharePayment = (payment: Payment) => {
     const shareText = `Payment for ${payment.vehicleName} - ${formatCurrency(
@@ -165,38 +160,39 @@ const PaymentHistoryPage = () => {
   const handleDownloadReceipt = async (payment: Payment) => {
     if (payment.paymentStatus !== "SUCCESSFUL") {
       return toast.warn("Payment still pending, try again later");
-    } try {
-      await PaymentService.getPDFFile(payment.bookingId);
     }
-    catch (error) {
-      console.error("Error downloading receipt:", error); alert("Failed to download receipt. Please try again.");
+    try {
+      await PaymentService.getPDFFile(payment.bookingId);
+    } catch (error) {
+      console.error("Error downloading receipt:", error);
+      alert("Failed to download receipt. Please try again.");
     }
   };
 
-
   const makePayment = async (x: Booking) => {
-    const booking = await BookingService.initiatePayment({ bookingId: x.bookingId, paymentProvider: x.paymentProvider })
+    const booking = await BookingService.initiatePayment({
+      bookingId: x.bookingId,
+      paymentProvider: x.paymentProvider,
+    });
     if (x.paymentProvider === "PAYSTACK" && booking.data) {
       // @ts-ignore
       router.push(booking.data);
-
+    } else {
+      if (booking.data.authorizationUrl)
+        router.push(booking.data.authorizationUrl);
     }
-    else {
-      if (booking.data.authorizationUrl) router.push(booking.data.authorizationUrl);
-
-    }
-  }
+  };
   const handleAction = (payment: any) => {
     if (payment.paymentStatus === "SUCCESSFUL") {
-      return handleDownloadReceipt(payment)
+      return handleDownloadReceipt(payment);
     }
     if (payment.paymentStatus === "PENDING") {
-      return makePayment(payment)
+      return makePayment(payment);
     }
-  }
+  };
   const seeMoreData: SeeMoreData[] = [
     {
-      name: "Download",
+      name: "Download Receipt",
       handleAction,
       icon: FaReceipt,
     },
@@ -246,7 +242,7 @@ const PaymentHistoryPage = () => {
             isOpen={isStatusOpen}
             onToggle={() => setIsStatusOpen(!isStatusOpen)}
             placeholder="Filter by status"
-            className="w-full sm:w-64"
+            className="w-full sm:w-64 border border-gray-300 rounded-lg p-3"
           />
         </div>
 
