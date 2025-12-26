@@ -125,7 +125,7 @@ export default function DataTable<T extends { id: string | number }>({
                     {expandedRow === index && (
                       <div
                         ref={popupRef}
-                        className="absolute right-0 mt-2 w-40 bg-white shadow-lg border rounded-lg p-2 z-20"
+                        className="absolute right-0 mt-2 min-w-40 bg-white shadow-lg border rounded-lg p-2 z-20"
                       >
                         {seeMoreData.map((action, i) => (
                           <div
@@ -137,7 +137,7 @@ export default function DataTable<T extends { id: string | number }>({
                             className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-gray-100 rounded-md"
                           >
                             <action.icon className="text-base text-gray-600" />
-                            <span className="text-sm text-gray-700">
+                            <span className="text-sm text-gray-700 truncate whitespace-nowrap max-w-[120px]">
                               {action.name}
                             </span>
                           </div>
@@ -245,7 +245,7 @@ export default function DataTable<T extends { id: string | number }>({
                       {expandedRow === index && (
                         <div
                           ref={popupRef}
-                          className="absolute right-2 mt-2 w-40 bg-white shadow-lg border rounded-lg p-2 z-20"
+                          className="absolute right-2 mt-2 min-w-40 bg-white shadow-lg border rounded-lg p-2 z-20"
                         >
                           {seeMoreData.map((action, i) => (
                             <div
@@ -257,7 +257,7 @@ export default function DataTable<T extends { id: string | number }>({
                               className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-gray-100 rounded-md"
                             >
                               <action.icon className="text-base text-gray-600" />
-                              <span className="text-sm text-gray-700">
+                              <span className="text-sm text-gray-700 truncate whitespace-nowrap max-w-[120px]">
                                 {action.name}
                               </span>
                             </div>
