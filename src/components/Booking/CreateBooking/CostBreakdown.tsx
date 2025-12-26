@@ -41,7 +41,7 @@ const CostBreakdown = ({
   const [bookId, setBookId] = useState<string>("")
   const [pricing, setPricing] = useState<EstimatedBookingPrice>();
   const [paymentGateway, setPaymentGateway] =
-    useState<PaymentGateway>("MONNIFY");
+    useState<PaymentGateway>("PAYSTACK");
   const router = useRouter();
 
 
@@ -228,11 +228,6 @@ const CostBreakdown = ({
                 <span>Base Price</span>
                 <span>NGN {(pricing?.data.data.basePrice || 0) + (pricing?.data.data.platformFeeAmount || 0)}</span>
               </div>
-              {/* <div className="w-full text-sm flex justify-between mt-4">
-                <span>Platform Fee</span>
-                <span>NGN {pricing?.data.data.platformFeeAmount}</span>
-              </div> */}
-
               {pricing?.data.data.discountAmount ? (
                 <div className="w-full text-sm flex justify-between mt-4 text-green-600">
                   <span>Duration Discount</span>
@@ -262,6 +257,33 @@ const CostBreakdown = ({
               </h3>
               <div className="flex flex-col gap-3">
                 <div
+                  onClick={() => setPaymentGateway("PAYSTACK")}
+                  className={cn(
+                    "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
+                    paymentGateway === "PAYSTACK"
+                      ? "border-blue-500 bg-blue-50/50"
+                      : "border-gray-100 bg-white hover:border-blue-200"
+                  )}
+                >
+                  <img
+                    src="/images/paymentgateway/paystack1.svg"
+                    alt="Paystack"
+                    className="h-8 w-auto object-contain"
+                  />
+
+                  {paymentGateway === "PAYSTACK" ? (
+                    <FiCheckCircle
+                      className="text-blue-600 min-w-[24px]"
+                      size={24}
+                    />
+                  ) : (
+                    <FiCircle
+                      className="text-gray-300 min-w-[24px]"
+                      size={24}
+                    />
+                  )}
+                </div>
+                <div
                   onClick={() => setPaymentGateway("MONNIFY")}
                   className={cn(
                     "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
@@ -289,33 +311,7 @@ const CostBreakdown = ({
                   )}
                 </div>
 
-                <div
-                  onClick={() => setPaymentGateway("PAYSTACK")}
-                  className={cn(
-                    "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
-                    paymentGateway === "PAYSTACK"
-                      ? "border-blue-500 bg-blue-50/50"
-                      : "border-gray-100 bg-white hover:border-blue-200"
-                  )}
-                >
-                  <img
-                    src="/images/paymentgateway/paystack1.svg"
-                    alt="Paystack"
-                    className="h-8 w-auto object-contain"
-                  />
 
-                  {paymentGateway === "PAYSTACK" ? (
-                    <FiCheckCircle
-                      className="text-blue-600 min-w-[24px]"
-                      size={24}
-                    />
-                  ) : (
-                    <FiCircle
-                      className="text-gray-300 min-w-[24px]"
-                      size={24}
-                    />
-                  )}
-                </div>
               </div>
             </div>
           </section>

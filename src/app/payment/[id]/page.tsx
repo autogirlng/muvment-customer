@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import {
+  usePathname, useRouter, useParams
+
+} from "next/navigation";
 import { format, isValid } from "date-fns";
 import {
   FiMapPin,
@@ -88,11 +91,10 @@ const StatusBadge = ({ status }: { status: string }) => {
   const isConfirmed = status === "CONFIRMED" || status === "SUCCESSFUL";
   return (
     <span
-      className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${
-        isConfirmed
-          ? "bg-green-100 text-green-700 border border-green-200"
-          : "bg-yellow-100 text-yellow-700 border border-yellow-200"
-      }`}
+      className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${isConfirmed
+        ? "bg-green-100 text-green-700 border border-green-200"
+        : "bg-yellow-100 text-yellow-700 border border-yellow-200"
+        }`}
     >
       {isConfirmed && <FiCheckCircle />}
       {status}
@@ -102,15 +104,18 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const BookingDetailsPage = () => {
   const path = usePathname();
+  const params = useParams()
   const router = useRouter();
-  const bookingId = path.split("/").pop() as string;
+  const bookingId = params.id || ""
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [vehicle, setVehicle] = useState<VehicleDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+
   useEffect(() => {
+
     const fetchData = async () => {
       if (!bookingId) {
         setLoading(false);
@@ -121,10 +126,9 @@ const BookingDetailsPage = () => {
         setLoading(true);
 
         const bookingRes = await getSingleData(
-          `/api/v1/public/bookings/${bookingId}`,
-          {}
+          `/api/v1/public/bookings/${bookingId}`
         );
-        const bookingData = bookingRes?.data?.data;
+        const bookingData = bookingRes?.data[0]?.data;
 
         if (!bookingData) {
           throw new Error("Booking data is missing or invalid.");
@@ -142,7 +146,7 @@ const BookingDetailsPage = () => {
           );
 
           // ✅ FIX: Access nested data correctly for vehicle too
-          setVehicle(vehicleRes?.data?.data || null);
+          setVehicle(vehicleRes?.data[0]?.data || null);
         }
       } catch (err: any) {
         console.error("Error fetching data:", err);
