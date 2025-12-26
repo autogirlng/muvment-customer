@@ -95,16 +95,16 @@ export const StepperNavigation = ({
         <div className="fixed bottom-0 left-0 w-full py-4 3xl:py-6 px-4 sm:px-8 lg:px-[52px]">
 
             <div className="flex justify-between">
-                {currentStep >= 0 && (
+                {!(currentStep === 0) && (currentStep >= 0 && (
                     <StepperButton
                         onClick={handleBack}
-                        disabled={currentStep === 0}
-                        className="sm:border-2 sm:border-grey-600"
+                        // disabled={currentStep === 0}
+                        className="sm:border-2 sm:border-grey-600 cursor-pointer"
                         type="button"
                     >
                         {Icons.ic_chevron_left} <span>Previous</span>
                     </StepperButton>
-                )}
+                ))}
 
                 <div className="flex items-center gap-3 justify-end w-full">
 
@@ -144,14 +144,14 @@ export const StepperNavigation = ({
                             >
                                 <span>Next</span>{" "}
                                 {isNextLoading ? <Spinner /> : Icons.ic_chevron_right}
-                            </StepperButton> : (
+                            </StepperButton> : !(currentStep === steps.length || disableNextButton || isNextLoading) && (
                                 // Button clicked if formik is handling next step
                                 <StepperButton
-                                    disabled={
-                                        currentStep === steps.length ||
-                                        disableNextButton ||
-                                        isNextLoading
-                                    }
+                                    // disabled={
+                                    //     currentStep === steps.length ||
+                                    //     disableNextButton ||
+                                    //     isNextLoading
+                                    // }
                                     className="px-6 3xl:!px-8 cursor-pointer disabled:bg-[#80b9ff] bg-[#0673ff] text-white"
                                 // type="submit"
                                 >
