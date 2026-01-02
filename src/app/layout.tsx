@@ -8,6 +8,7 @@ import { QueryProvider } from "@/controllers/connnector/QueryProvider";
 import Script from "next/script";
 import { GA_MEASUREMENT_ID } from "@/services/analytics";
 import GoogleAnalytics from "@/components/general/GoogleAnalytics";
+import LiveChat from "@/components/LiveChat/LiveChat";
 
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
 
@@ -134,6 +135,7 @@ export default function RootLayout({
             `}
           </Script>
         )}
+        <LiveChat />
       </body>
     </html>
   );
