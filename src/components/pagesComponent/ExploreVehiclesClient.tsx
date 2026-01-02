@@ -125,8 +125,7 @@ export default function ExploreVehiclesClient() {
 
     router.replace("/Booking/search");
   };
-  // REMOVE THE OLD useCallback VERSION
-  // MAKE searchVehicles A NORMAL FUNCTION SO IT ALWAYS USES LATEST STATE
+
   async function searchVehicles(
     page: number = 0,
     append: boolean = false,

@@ -22,7 +22,7 @@ export default function HeroBookingSection() {
   const router = useRouter();
 
   // Form state
-  const [bookingType, setBookingType] = useState(undefined);
+  const [bookingType, setBookingType] = useState<string | undefined>(undefined);
   const [fromDate, setFromDate] = useState(new Date());
   const [untilDate, setUntilDate] = useState(new Date());
   const [category, setCategory] = useState(undefined);
@@ -65,6 +65,9 @@ export default function HeroBookingSection() {
   const getBookingOptions = async () => {
     const data = await getBookingOption();
     setBookingOptions(data.dropdownOptions);
+    if (data.dropdownOptions?.length > 0) {
+      setBookingType(data.dropdownOptions[0].value);
+    }
   };
   // Initialize Google Maps Service
   useEffect(() => {
@@ -97,9 +100,7 @@ export default function HeroBookingSection() {
       return new Promise((resolve) => {
         geocoder.geocode({ location: latlng }, (results, status) => {
           if (status === "OK" && results && results[0]) {
-            // Extract location information from address components
             const addressComponents = results[0].address_components;
-
             let route = "";
             let locality = "";
             let political = "";
@@ -159,8 +160,6 @@ export default function HeroBookingSection() {
       return "Your Location";
     }
   };
-
-  // Get user's current location
 
   useEffect(() => {
     const fallbackToDefault = () => {
