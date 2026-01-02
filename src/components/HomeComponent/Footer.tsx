@@ -24,7 +24,7 @@ const footerNav: FooterNavProps[] = [
     links: [
       { name: "About us", link: "/" },
       { name: "Contact us", link: "/contact-us" },
-      { name: "FAQs", scrollTo: "faq" },
+      { name: "FAQs", link: "/faq" },
     ],
   },
   {
