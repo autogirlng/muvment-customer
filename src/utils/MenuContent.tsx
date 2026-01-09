@@ -38,6 +38,11 @@ export const menuItems = [
     link: "/dashboard/refer-a-friend",
     icon: MdGroupAdd,
   },
+  {
+    name: "FAQ",
+    link: "/faq",
+    icon: MdGroupAdd,
+  },
 ];
 
 export const guestMenuItems = [
