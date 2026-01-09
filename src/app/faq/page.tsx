@@ -1,12 +1,13 @@
 "use client";
 import Footer from "@/components/HomeComponent/Footer";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { BiChevronDown } from "react-icons/bi";
 
 function FAQPageClient() {
   const [activeSection, setActiveSection] = useState("booking-account");
   const [openFAQ, setOpenFAQ] = useState<string | null>(null);
-
+  const router = useRouter();
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -164,7 +165,9 @@ function FAQPageClient() {
           </div>
         </div>
       </div>
-
+      <div className="flex justify-start  items-center px-6 pt-6">
+        <button onClick={() => router.push("/")}> BACK HOME</button>
+      </div>
       {/* Mobile Navigation */}
       <div className="lg:hidden sticky top-0 z-30 bg-white shadow-sm">
         <div className="overflow-x-auto py-3 scrollbar-hide">
