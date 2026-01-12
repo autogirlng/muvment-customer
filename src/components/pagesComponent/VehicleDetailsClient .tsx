@@ -22,6 +22,7 @@ import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { Carousel } from "@/components/utils/Carousel";
 import { TripAccordion } from "@/components/Booking/TripAccordion";
 import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
+import { Reviews } from "@/components/Reviews";
 import {
   VehicleDetailsPageProps,
   VehicleBookingOptions,
@@ -200,12 +201,12 @@ const VehicleDetailsClient: React.FC = () => {
         dropoffLocationString: details?.dropoffLocation,
         areaOfUse: areaOfUseCoordinates
           ? [
-              {
-                areaOfUseLatitude: areaOfUseCoordinates.lat,
-                areaOfUseLongitude: areaOfUseCoordinates.lng,
-                areaOfUseName: details?.areaOfUse,
-              },
-            ]
+            {
+              areaOfUseLatitude: areaOfUseCoordinates.lat,
+              areaOfUseLongitude: areaOfUseCoordinates.lng,
+              areaOfUseName: details?.areaOfUse,
+            },
+          ]
           : [],
       };
     });
@@ -261,7 +262,7 @@ const VehicleDetailsClient: React.FC = () => {
 
                   <IconButton
                     className="bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer p-2 sm:p-2.5 rounded-full"
-                    onClick={() => {}}
+                    onClick={() => { }}
                   >
                     <FiHeart size={16} className="sm:size-[18px]" />
                   </IconButton>
@@ -341,6 +342,8 @@ const VehicleDetailsClient: React.FC = () => {
                       })}
                   </div>
                 </div>
+
+                <Reviews vehicleId={id as string} />
               </div>
 
               <div className="w-full md:w-2/5 border-1 py-5 px-3 rounded-xl border-[#E4E7EC]">
@@ -421,8 +424,8 @@ const VehicleDetailsClient: React.FC = () => {
                         subLabel={
                           pricing.data.data.appliedGeofenceNames?.length > 0
                             ? `Applied to: ${pricing.data.data.appliedGeofenceNames.join(
-                                ", "
-                              )}`
+                              ", "
+                            )}`
                             : null
                         }
                       />
@@ -434,9 +437,8 @@ const VehicleDetailsClient: React.FC = () => {
                       />
 
                       <PriceRow
-                        label={`Coupon (${
-                          pricing.data.data.appliedCouponCode || "Applied"
-                        })`}
+                        label={`Coupon (${pricing.data.data.appliedCouponCode || "Applied"
+                          })`}
                         value={pricing.data.data.couponDiscountAmount}
                         isDiscount
                       />
@@ -574,17 +576,15 @@ const PriceRow = ({
 
   return (
     <div
-      className={`flex justify-between items-start ${
-        isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
-      }`}
+      className={`flex justify-between items-start ${isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
+        }`}
     >
       <div className="flex flex-col">
         <span
-          className={`${
-            isTotal
-              ? "text-base font-bold text-gray-900"
-              : "text-sm text-gray-600"
-          }`}
+          className={`${isTotal
+            ? "text-base font-bold text-gray-900"
+            : "text-sm text-gray-600"
+            }`}
         >
           {label}
         </span>
@@ -596,13 +596,12 @@ const PriceRow = ({
       </div>
 
       <span
-        className={`font-medium ${
-          isTotal
-            ? "text-lg text-blue-600 font-bold"
-            : isDiscount
+        className={`font-medium ${isTotal
+          ? "text-lg text-blue-600 font-bold"
+          : isDiscount
             ? "text-green-600 text-sm"
             : "text-gray-900 text-sm"
-        }`}
+          }`}
       >
         {isDiscount ? "-" : ""} NGN
         {value.toLocaleString(undefined, { minimumFractionDigits: 2 })}

@@ -175,7 +175,7 @@ export interface CreateBookingResponse {
 
 export interface PaymentInitiationRequest {
   bookingId: string;
-  paymentProvider?:string;
+  paymentProvider?: string;
 }
 
 export interface PaymentInitiationResponse {
@@ -241,3 +241,4 @@ export interface TopVehicle {
   numberOfSeats: number;
   rating?: number;
 }
+
