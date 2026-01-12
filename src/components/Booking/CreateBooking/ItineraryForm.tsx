@@ -1,3 +1,4 @@
+"use client";
 import { useMemo, useEffect, useState } from "react";
 import { Formik, Form } from "formik";
 import { StepperNavigation } from "./stepper";
@@ -15,7 +16,6 @@ import TextArea from "@/components/general/forms/textarea";
 import InputField from "@/components/general/forms/inputField";
 import { PersonalInformationMyselfValues } from "@/types/booking";
 
-
 const ItineraryForm = ({
   steps,
   currentStep,
@@ -32,7 +32,10 @@ const ItineraryForm = ({
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [bookingInformationValues, setBookingInformationValues] = useState<{ extraDetails: string, purposeOfRide: string } | null>(null)
+  const [bookingInformationValues, setBookingInformationValues] = useState<{
+    extraDetails: string;
+    purposeOfRide: string;
+  } | null>(null);
 
   const {
     setTrips,
@@ -42,7 +45,7 @@ const ItineraryForm = ({
     addTrip,
     toggleOpen,
     openTripIds,
-    isTripFormsComplete
+    isTripFormsComplete,
   } = useItineraryForm();
 
   const generateBookingOptions = () => {
@@ -91,18 +94,20 @@ const ItineraryForm = ({
 
   const initialValues = {
     extraDetails: bookingInformationValues?.extraDetails || "",
-    purposeOfRide: bookingInformationValues?.purposeOfRide || ""
-  }
+    purposeOfRide: bookingInformationValues?.purposeOfRide || "",
+  };
 
   useEffect(() => {
     const stored = sessionStorage.getItem("userBookingInformation");
     if (stored) {
       try {
         const { extraDetails, purposeOfRide } = JSON.parse(stored);
-        setBookingInformationValues({ extraDetails, purposeOfRide })
-
+        setBookingInformationValues({ extraDetails, purposeOfRide });
       } catch (error) {
-        console.error("Failed to parse booking information from sessionStorage:", error);
+        console.error(
+          "Failed to parse booking information from sessionStorage:",
+          error
+        );
       }
     }
   }, []);
@@ -115,7 +120,9 @@ const ItineraryForm = ({
           let bookingInformation: any = {};
 
           try {
-            bookingInformation = JSON.parse(sessionStorage.getItem("userBookingInformation") || "{}");
+            bookingInformation = JSON.parse(
+              sessionStorage.getItem("userBookingInformation") || "{}"
+            );
           } catch (e) {
             console.error("Invalid bookingInformation JSON", e);
             bookingInformation = {};
@@ -128,9 +135,11 @@ const ItineraryForm = ({
             bookingInformation.purposeOfRide = purposeOfRide;
           }
 
-          sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingInformation));
-          setCurrentStep(currentStep + 1)
-
+          sessionStorage.setItem(
+            "userBookingInformation",
+            JSON.stringify(bookingInformation)
+          );
+          setCurrentStep(currentStep + 1);
         }}
         enableReinitialize={true}
         validateOnChange={true}
@@ -192,7 +201,6 @@ const ItineraryForm = ({
                 value={values.extraDetails}
               />
 
-
               <InputField
                 name="purposeOfRide"
                 id="purposeOfRide"
@@ -206,7 +214,6 @@ const ItineraryForm = ({
                   errors.purposeOfRide && touched.purposeOfRide
                     ? String(errors.purposeOfRide)
                     : ""
-
                 }
               />
 
@@ -214,7 +221,7 @@ const ItineraryForm = ({
                 steps={steps}
                 currentStep={currentStep}
                 setCurrentStep={setCurrentStep}
-                handleSaveDraft={() => { }}
+                handleSaveDraft={() => {}}
                 isSaveDraftloading={false}
                 disableNextButton={!isTripFormsComplete}
               />

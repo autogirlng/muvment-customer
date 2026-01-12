@@ -54,10 +54,11 @@ export class BookingService {
   private static readonly BASE_URL = "/api/v1/bookings";
   private static readonly BOOKINGS_URL = "/api/v1/public/bookings";
   private static readonly PAYMENT_URL = "/api/v1/payments";
-  private static readonly BOOKING_TYPE = "/api/v1/booking-types";
+  private static readonly BOOKING_TYPE =
+    "/api/v1/booking-types?isDefaultActive=true";
   private static readonly INITIATE_PAYMENT = "/api/v1/payments/initiate";
-  private static readonly INITIATE_PAYMENT_PAYSTACK = "/api/v1/payments/initialize";
-
+  private static readonly INITIATE_PAYMENT_PAYSTACK =
+    "/api/v1/payments/initialize";
 
   static async getMyBookings(
     filters: BookingFilters = {}
@@ -154,10 +155,10 @@ export class BookingService {
   ): Promise<PaymentInitiationResponse> {
     try {
       let paymentURL;
-      if(paymentData.paymentProvider === "PAYSTACK" ){
-        paymentURL = `${this.INITIATE_PAYMENT_PAYSTACK}/${paymentData.bookingId}`
-      }  else {
-        paymentURL = this.INITIATE_PAYMENT
+      if (paymentData.paymentProvider === "PAYSTACK") {
+        paymentURL = `${this.INITIATE_PAYMENT_PAYSTACK}/${paymentData.bookingId}`;
+      } else {
+        paymentURL = this.INITIATE_PAYMENT;
       }
       const response = await createData(paymentURL, paymentData);
       if (!response || !response.data)
