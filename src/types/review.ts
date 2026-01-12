@@ -43,6 +43,4 @@ export interface ReviewResponse extends BaseResponse {
 
 }
 
-export interface SingleReviewResponse extends BaseResponse {
-    data: ReviewContent,
-}[]
+

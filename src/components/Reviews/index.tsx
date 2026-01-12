@@ -1,5 +1,5 @@
 import { getSingleData } from "@/controllers/connnector/app.callers"
-import { ReviewContent, ReviewResponse, SingleReviewResponse } from "@/types/review"
+import { ReviewContent, ReviewResponsez } from "@/types/review"
 import { useEffect, useState } from "react"
 import { FiStar } from "react-icons/fi"
 import { parseISO, format } from "date-fns"
