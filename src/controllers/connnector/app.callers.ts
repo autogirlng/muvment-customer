@@ -352,8 +352,8 @@ export const deleteWithParams = async (path: string, params?: any) => {
 export const createData = async (path: string, body: any) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
-    const validation = validateDataInput(body);
-    if (validation.error) return validation;
+    // const validation = validateDataInput(body);
+    // if (validation.error) return validation;
 
     try {
       const isFormData = body instanceof FormData;
