@@ -169,4 +169,30 @@ export class BookingService {
       throw error;
     }
   }
+
+  static async createAnonymousReview(reviewData: {
+    rating: number;
+    review: string;
+    recommend: string;
+    entityId: string;
+    entityType: string;
+    source: string;
+    anonymouseEmail: string;
+    anonymouseFullName: string;
+    anonymousePhoneNumber: string;
+  }): Promise<any> {
+    try {
+      const response = await createData(
+        "/api/v1/rating-review/anonymouse-user",
+        reviewData
+      );
+      console.log(response);
+      if (!response || !response.data)
+        throw new Error("Failed to create review");
+      return response.data;
+    } catch (error) {
+      console.error("Review creation error:", error);
+      throw error;
+    }
+  }
 }

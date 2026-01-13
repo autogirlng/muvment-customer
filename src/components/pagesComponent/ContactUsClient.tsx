@@ -113,7 +113,7 @@ const ContactUsClient: React.FC = () => {
               </div>
               <h3 className="text-gray-900 font-semibold mb-2">Address</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
-                17a Ozumba Mbadiwe Avenue, Victoria Island, Lagos, Nigeria
+                16 Bankole Street, Oregun, Ikeja, Lagos State, Nigeria
               </p>
             </div>
 
@@ -123,13 +123,21 @@ const ContactUsClient: React.FC = () => {
                 <FaEnvelope className="text-blue-600" />
               </div>
               <h3 className="text-gray-900 font-semibold mb-2">Mail</h3>
+              <div className="text-gray-600 text-sm space-y-1">
+                <a
+                  href="mailto:support@autogirl.ng"
+                  className="block text-gray-600 text-sm hover:text-blue-600 transition"
+                >
+                  support@autogirl.ng
+                </a>
 
-              <a
-                href="mailto:support@truveunit.com"
-                className="text-gray-600 text-sm hover:text-blue-600 transition"
-              >
-                support@truveunit.com
-              </a>
+                <a
+                  href="mailto:support@muvment.ng "
+                  className="block text-gray-600 text-sm hover:text-blue-600 transition"
+                >
+                  support@muvment.ng
+                </a>
+              </div>
             </div>
 
             {/* Phone */}
@@ -141,17 +149,17 @@ const ContactUsClient: React.FC = () => {
 
               <div className="text-gray-600 text-sm space-y-1">
                 <a
-                  href="tel:+2349030235285"
+                  href="tel:+ 2348167474165"
                   className="block hover:text-blue-600 transition"
                 >
-                  +234 (0)903 023 5285
+                  +234 (0)816 747 4165
                 </a>
 
                 <a
-                  href="tel:+234017367007"
+                  href="tel:+237049818047"
                   className="block hover:text-blue-600 transition"
                 >
-                  +234 (0)017 367 007
+                  +234 (0)704 981 8047
                 </a>
               </div>
             </div>
