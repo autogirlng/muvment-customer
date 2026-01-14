@@ -53,7 +53,7 @@ interface NewsletterForm {
   email: string;
 }
 
-function Footer() {
+function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
   const { addSubscriber } = useNewsletter();
   const [formData, setFormData] = useState<NewsletterForm>({ email: "" });
   const [errors, setErrors] = useState<Partial<NewsletterForm>>({});
@@ -188,7 +188,7 @@ function Footer() {
                         </button>
                       ) : navLink.link ? (
                         <Link
-                          href={navLink.link}
+                          href={`${navLink.link}${bookingTypeID && `&bookingType=${bookingTypeID}`}`}
                           className="hover:text-primary-500"
                         >
                           {navLink.name}

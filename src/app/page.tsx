@@ -44,7 +44,7 @@ function page() {
       {/* <SaveBigRentals /> */}
       {/* <RideSection /> */}
       {/* <TopVehiclesSection />*/}
-      <Footer />
+      <Footer bookingTypeID={bookingTypeID} />
     </div>
   );
 }
