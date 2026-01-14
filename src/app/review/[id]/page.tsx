@@ -40,6 +40,7 @@ const ReviewPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
   const [error, setError] = useState("");
 
   const [rating, setRating] = useState(0);
@@ -47,7 +48,7 @@ const ReviewPage = () => {
   const [comment, setComment] = useState("");
 
   useEffect(() => {
-    const fetchBooking = async () => {
+    const fetchBookingAndCheckReview = async () => {
       if (!bookingId) {
         setLoading(false);
         return;
@@ -56,6 +57,18 @@ const ReviewPage = () => {
       try {
         setLoading(true);
 
+        // Check if user has already reviewed this booking
+        const hasReviewed = await BookingService.checkIfUserHasReviewed(
+          bookingId as string
+        );
+
+        if (hasReviewed) {
+          setAlreadyReviewed(true);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch booking details if no review exists
         const bookingRes = await getSingleData(
           `/api/v1/public/bookings/${bookingId}`
         );
@@ -74,9 +87,9 @@ const ReviewPage = () => {
       }
     };
 
-    fetchBooking();
+    fetchBookingAndCheckReview();
   }, [bookingId]);
-  console.log(booking);
+
   const handleSubmitReview = async () => {
     if (rating === 0) {
       setError("Please select a rating before submitting.");
@@ -111,6 +124,7 @@ const ReviewPage = () => {
     }
   };
 
+  // Loading State
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
@@ -128,6 +142,69 @@ const ReviewPage = () => {
     );
   }
 
+  // Already Reviewed State
+  if (alreadyReviewed) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+        <Navbar />
+        <div className="flex items-center justify-center max-h-[90vh] overflow-y-auto p-4">
+          <div className="max-w-xl w-full text-center py-6">
+            {/* Friendly Icon */}
+            <div className="mb-6 relative inline-block">
+              <div className="absolute inset-0 bg-green-400 rounded-full blur-2xl opacity-20 animate-pulse"></div>
+              <div className="relative bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-full shadow-lg border-4 border-white">
+                <FiCheckCircle className="text-green-600 w-16 h-16" />
+              </div>
+            </div>
+
+            {/* Thank You Message */}
+            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
+              You've Already Shared Your Feedback!
+            </h1>
+            <p className="text-base text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+              Thank you for taking the time to review this ride. Your feedback
+              helps us continuously improve our service.
+            </p>
+
+            {/* Appreciation Card */}
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-8 max-w-md mx-auto border border-gray-100">
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <FiHeart className="text-red-500 w-6 h-6 fill-red-500" />
+                <span className="text-gray-700 font-semibold">
+                  We appreciate you!
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Your honest feedback makes a real difference in helping other
+                riders and improving our fleet.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <button
+                onClick={() => router.push("/Booking/search")}
+                className="group px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
+              >
+                <BiCar className="w-5 h-5" />
+                Book Another Ride
+                <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => router.back()}
+                className="px-8 py-3.5 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-300 font-semibold shadow-md hover:shadow-lg border border-gray-200"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error State
   if (error && !booking) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
@@ -154,7 +231,7 @@ const ReviewPage = () => {
     );
   }
 
-  // Success State
+  // Success State (After Submitting Review)
   if (submitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
@@ -162,30 +239,33 @@ const ReviewPage = () => {
         <div className="flex items-center justify-center max-h-[90vh] overflow-y-auto p-4">
           <div className="max-w-xl w-full text-center py-6">
             {/* Success Animation */}
-            <div className="mb-4 relative inline-block">
-              <div className="h-[25vh]"></div>
+            <div className="mb-6 relative inline-block">
+              <div className="absolute inset-0 bg-blue-400 rounded-full blur-2xl opacity-20 animate-pulse"></div>
+              <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-full shadow-lg border-4 border-white">
+                <FiCheckCircle className="text-blue-600 w-16 h-16" />
+              </div>
             </div>
 
             {/* Thank You Message */}
-            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
               Thank You!
             </h1>
-            <p className="text-sm text-gray-600 mb-5 max-w-lg mx-auto leading-relaxed">
+            <p className="text-base text-gray-600 mb-8 max-w-lg mx-auto leading-relaxed">
               Your feedback helps us improve our service. We truly appreciate
               you taking the time!
             </p>
 
             {/* Rating Display Card */}
-            <div className="bg-white rounded-xl shadow-lg p-5 mb-5 max-w-md mx-auto border border-gray-100">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="text-gray-700 font-semibold text-sm">
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-8 max-w-md mx-auto border border-gray-100">
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <span className="text-gray-700 font-semibold">
                   Your Rating:
                 </span>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <FiStar
                       key={star}
-                      className={`w-5 h-5 ${
+                      className={`w-6 h-6 ${
                         star <= rating
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-gray-300"
@@ -195,8 +275,8 @@ const ReviewPage = () => {
                 </div>
               </div>
               {comment && (
-                <div className="mt-3 pt-3 border-t border-gray-100 max-h-20 overflow-y-auto">
-                  <p className="text-xs text-gray-600 leading-relaxed text-left bg-slate-50 rounded-lg p-2 italic">
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-sm text-gray-600 leading-relaxed text-left bg-slate-50 rounded-lg p-3 italic">
                     "{comment}"
                   </p>
                 </div>
@@ -204,19 +284,19 @@ const ReviewPage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
                 onClick={() => router.push("/Booking/search")}
-                className="group px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center gap-2 text-sm"
+                className="group px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
               >
-                <BiCar className="w-4 h-4" />
+                <BiCar className="w-5 h-5" />
                 Book Another Ride
-                <FiArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button
                 onClick={() => router.push("/")}
-                className="px-6 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-300 font-semibold shadow-md hover:shadow-lg border border-gray-200 text-sm"
+                className="px-8 py-3.5 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-300 font-semibold shadow-md hover:shadow-lg border border-gray-200"
               >
                 Return to Home
               </button>
