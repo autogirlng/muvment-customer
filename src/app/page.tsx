@@ -15,7 +15,7 @@ import { useState } from "react";
 import { BookingOption } from "@/types/booking";
 function page() {
   const [bookingTypeID, setBookingTypeID] = useState<string | undefined>(undefined);
-  const [bookingOptions, setBookingOptions] = useState<BookingOption[]>([]);
+  const [_, setBookingOptions] = useState<BookingOption[]>([]);
 
 
   const getBookingOptions = async () => {

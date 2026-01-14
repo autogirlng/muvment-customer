@@ -143,7 +143,7 @@ export const Navbar = ({
                       </div>
                     </div>
                   )}
-                  d
+
                   <div className="py-2">
                     {items.map((item: any, index: number) => {
                       if (item.name === "Explore") {
