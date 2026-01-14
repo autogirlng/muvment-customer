@@ -11,6 +11,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { NavbarSearchBar } from "./HomeComponent/NavbarSearchBar";
 import SlidingBanner from "./Dashboard/SlidingBanner";
 import { getBookingOption } from "@/context/Constarain";
+import { BookingOption } from "@/types/booking";
 
 interface NavbarProps {
   showSearchBar?: boolean;
@@ -26,6 +27,22 @@ export const Navbar = ({
   const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  const [bookingTypeID, setBookingTypeID] = useState<string>();
+  const [bookingOptions, setBookingOptions] = useState<BookingOption[]>([]);
+
+
+  const getBookingOptions = async () => {
+    const data = await getBookingOption();
+    setBookingOptions(data.dropdownOptions);
+    if (data.dropdownOptions?.length > 0) {
+      setBookingTypeID(data.dropdownOptions[0].value);
+    }
+  };
+
+  useEffect(() => {
+    getBookingOptions();
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -126,16 +143,20 @@ export const Navbar = ({
                       </div>
                     </div>
                   )}
-
+                  d
                   <div className="py-2">
-                    {items.map((item: any, index: number) => (
-                      <NavItem
+                    {items.map((item: any, index: number) => {
+                      if (item.name === "Explore") {
+                        item.link = `/Booking/search${bookingTypeID && `?bookingType=${bookingTypeID}`}`
+                      }
+                      return (<NavItem
                         key={index}
                         item={item}
                         onClick={() => handleNavClick(item.link)}
                         isActive={pathname === item.link}
                       />
-                    ))}
+                      )
+                    })}
                   </div>
 
                   {user && (
@@ -196,14 +217,18 @@ export const Navbar = ({
               Become a host
             </button> */}
 
-            {items.map((item: any, index: number) => (
-              <NavItem
+            {items.map((item: any, index: number) => {
+              if (item.name === "Explore") {
+                item.link = `/Booking/search${bookingTypeID && `?bookingType=${bookingTypeID}`}`
+              }
+              return (<NavItem
                 key={index}
                 item={item}
                 onClick={() => handleNavClick(item.link)}
                 isActive={pathname === item.link}
               />
-            ))}
+              )
+            })}
 
             {user && (
               <button
