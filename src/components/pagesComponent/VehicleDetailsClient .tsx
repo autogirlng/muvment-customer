@@ -342,8 +342,14 @@ const VehicleDetailsClient: React.FC = () => {
                       })}
                   </div>
                 </div>
+                <section>
+                  <h2 className="text-lg text-gray-800 pb-1"> Reviews </h2>
+                  <div className="max-h-96 overflow-y-auto">
 
-                <Reviews vehicleId={id as string} />
+                    <Reviews vehicleId={id as string} />
+                  </div>
+                </section>
+
               </div>
 
               <div className="w-full md:w-2/5 border-1 py-5 px-3 rounded-xl border-[#E4E7EC]">
@@ -351,7 +357,7 @@ const VehicleDetailsClient: React.FC = () => {
                   <h1 className="font-bold text-[17px]">Add Booking Details</h1>
                   <p className="text-sm my-4">Trip per day</p>
 
-                  {trips.map((key, index) => {
+                  {trips?.map((key, index) => {
                     const initialValues = JSON.parse(
                       sessionStorage.getItem("trips") || "[]"
                     );
@@ -496,7 +502,7 @@ const VehicleDetailsClient: React.FC = () => {
                 )}
 
                 {/* Discounts Section */}
-                {vehicle.discounts.length > 0 && (
+                {vehicle?.discounts.length > 0 && (
                   <div className="space-y-3 pt-4">
                     <h3 className="text-lg font-bold text-gray-800">
                       Discounts

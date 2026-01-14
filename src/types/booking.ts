@@ -29,10 +29,18 @@ export interface PersonalInformationOthersValues {
   recipientFullName: string;
   recipientEmail: string;
   recipientPhoneNumber: string;
-  recipientSecondaryPhoneNumber:string;
+  recipientSecondaryPhoneNumber: string;
   country: string;
   countryCode: string;
   userCountry: string;
   userCountryCode: string;
   isBookingForOthers: boolean;
+}
+
+
+
+
+export interface BookingOption {
+  value: string,
+  label: string
 }

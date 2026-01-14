@@ -18,14 +18,17 @@ const cities: City[] = [
   { name: "Enugu", image: "/images/landing/6.jpg" },
 ];
 
-const ExploreCities: React.FC = () => {
+const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({ bookingTypeId }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleCityClick = (cityName: string) => {
     const formattedCity = cityName.toLowerCase().replace(/\s+/g, "-");
-    router.push(`/Booking/search?city=${formattedCity}`);
+
+    router.push(`/Booking/search?city=${formattedCity}${bookingTypeId && `&bookingType=${bookingTypeId}`}`);
+
+
   };
 
   // Optional: Function to make dots scroll the container
@@ -95,11 +98,10 @@ const ExploreCities: React.FC = () => {
           <button
             key={i}
             onClick={() => scrollToSlide(i)}
-            className={`transition-all duration-300 rounded-full ${
-              activeIndex === i
-                ? "w-8 h-2.5 bg-blue-600" // Stretch the active dot for better UI
-                : "w-2.5 h-2.5 bg-gray-300 hover:bg-gray-400"
-            }`}
+            className={`transition-all duration-300 rounded-full ${activeIndex === i
+              ? "w-8 h-2.5 bg-blue-600" // Stretch the active dot for better UI
+              : "w-2.5 h-2.5 bg-gray-300 hover:bg-gray-400"
+              }`}
             aria-label={`Go to slide ${i + 1}`}
           />
         ))}

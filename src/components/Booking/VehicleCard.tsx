@@ -177,7 +177,12 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
                     bookingOptions
                   )
                 )}
+
+
+
               </p>
+
+
             </div>
             {extraHourlyRate > 0 && (
               <div>
