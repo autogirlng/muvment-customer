@@ -15,6 +15,7 @@ type FooterNavProps = {
     link?: string;
     badgeTitle?: string;
     scrollTo?: string;
+    type?: string;
   }[];
 };
 
@@ -30,19 +31,19 @@ const footerNav: FooterNavProps[] = [
   {
     title: "Locations",
     links: [
-      { name: "Lagos", link: "/Booking/search?city=lagos" },
-      { name: "Abuja", link: "/Booking/search?city=abuja" },
-      { name: "Benin City", link: "/Booking/search?city=benin" },
-      { name: "Enugu", link: "/Booking/search?city=enugu" },
-      { name: "Port Harcourt", link: "/Booking/search?city=port-harcourt" },
-      { name: "Accra", link: "/Booking/search?city=accra" },
+      { name: "Lagos", link: "/Booking/search?city=lagos&", type: "link" },
+      { name: "Abuja", link: "/Booking/search?city=abuja&", type: "link" },
+      { name: "Benin City", link: "/Booking/search?city=benin&", type: "link" },
+      { name: "Enugu", link: "/Booking/search?city=enugu&", type: "link" },
+      { name: "Port Harcourt", link: "/Booking/search?city=port-harcourt&", type: "link" },
+      { name: "Accra", link: "/Booking/search?city=accra&", type: "link" },
     ],
   },
   {
     title: "Explore",
     links: [
       { name: "Get paid", link: "/" },
-      { name: "Book a vehicle", link: "/explore/results" },
+      { name: "Book a vehicle", link: "/Booking/search?", type: "link" },
       { name: "Vehicle types", scrollTo: "vehicle-categories" },
       { name: "Find your location", scrollTo: "popular-cities" },
     ],
@@ -186,9 +187,14 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                         >
                           {navLink.name}
                         </button>
-                      ) : navLink.link ? (
+                      ) : navLink.type === "link" ? <Link
+                        href={`${navLink.link}${bookingTypeID && `bookingType=${bookingTypeID}`}`}
+                        className="hover:text-primary-500"
+                      >
+                        {navLink.name}
+                      </Link> : navLink.link ? (
                         <Link
-                          href={`${navLink.link}${bookingTypeID && `&bookingType=${bookingTypeID}`}`}
+                          href={`${navLink.link}`}
                           className="hover:text-primary-500"
                         >
                           {navLink.name}
