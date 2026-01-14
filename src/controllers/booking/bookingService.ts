@@ -195,4 +195,21 @@ export class BookingService {
       throw error;
     }
   }
+
+  static async checkIfUserHasReviewed(booking_id: string): Promise<boolean> {
+    try {
+      const response = await getSingleData(
+        `/api/v1/rating-review/booking/${booking_id}`
+      );
+
+      if (!response || !response.data) {
+        return false; // No review exists
+      }
+
+      const data = response.data.data;
+      return data.length > 0;
+    } catch (error) {
+      return false;
+    }
+  }
 }

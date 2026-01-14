@@ -58,7 +58,12 @@ const BookingHistoryPage = () => {
     }
   };
 
-  const handleBookingClick = (booking: Booking) => {
+  const handleBookingClick = async (booking: Booking) => {
+    console.log(booking);
+    const bookings = await BookingService.getBookingById(
+      booking?.bookingId as string
+    );
+    console.log(bookings);
     setSelectedBookings([booking]);
     setIsModalOpen(true);
   };

@@ -29,21 +29,24 @@ const NotificationsPage = () => {
   >(null);
 
   useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        const response = await NotificationService.getUserNotifications(
+          page,
+          10
+        );
+        setNotifications(response.data.content || []);
+        setTotalCount(response.data.totalElements || 0);
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchNotifications();
   }, [page]);
-
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const response = await NotificationService.getUserNotifications(page, 10);
-      setNotifications(response.data.content || []);
-      setTotalCount(response.data.totalElements || 0);
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteNotification = async (id: string) => {
     try {
