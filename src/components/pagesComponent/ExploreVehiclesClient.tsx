@@ -11,6 +11,8 @@ import { HiViewList } from "react-icons/hi";
 import { BsFillGridFill } from "react-icons/bs";
 import { CiLocationOn } from "react-icons/ci";
 import { clarityEvent } from "@/services/clarity";
+import { useLocationDetection } from "@/hooks/useLocationDetection";
+import LocationPrompt from "../Booking/LocationPrompt";
 
 export default function ExploreVehiclesClient() {
   const searchParams = useSearchParams();
@@ -49,6 +51,34 @@ export default function ExploreVehiclesClient() {
   const fromDate = searchParams.get("fromDate");
   const untilDate = searchParams.get("untilDate");
   const city = searchParams.get("city");
+  const {
+    status: locationStatus,
+    location: detectedLocation,
+    isDefault,
+    requestLocation,
+    isDetecting,
+  } = useLocationDetection();
+
+  // Check if URL has location params
+  const hasLocationParams = lat && lng;
+
+  // Update search when location is detected and no params in URL
+  useEffect(() => {
+    if (
+      locationStatus === "granted" &&
+      !hasLocationParams &&
+      detectedLocation
+    ) {
+      // Update URL with detected location
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("lat", detectedLocation.lat.toString());
+      params.set("lng", detectedLocation.lng.toString());
+      params.set("location", detectedLocation.name);
+
+      router.replace(`/Booking/search?${params.toString()}`);
+    }
+  }, [locationStatus, detectedLocation, hasLocationParams]);
+
   const initializeFiltersFromUrl = useCallback((): FilterState => {
     const minPriceParam = searchParams.get("minPrice");
     const maxPriceParam = searchParams.get("maxPrice");
@@ -284,6 +314,14 @@ export default function ExploreVehiclesClient() {
   return (
     <div>
       <Navbar showSearchBar={true} />
+      {!hasLocationParams && (
+        <LocationPrompt
+          isDefault={isDefault}
+          status={locationStatus}
+          onRequestLocation={requestLocation}
+          isDetecting={isDetecting}
+        />
+      )}
       <div className="mt-22"></div>
       <div className="min-h-screen ">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">

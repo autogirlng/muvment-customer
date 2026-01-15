@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FiMapPin } from "react-icons/fi";
+import { FiMapPin, FiX } from "react-icons/fi";
 import Image from "next/image";
 import Dropdown from "../utils/DropdownCustom";
 import Calendar from "../utils/Calender";
@@ -28,6 +28,7 @@ export default function HeroBookingSection() {
   const [category, setCategory] = useState(undefined);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [bookingOptions, setBookingOptions] = useState<any[]>([]);
+
   // Location state
   const [searchValue, setSearchValue] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -47,6 +48,11 @@ export default function HeroBookingSection() {
     "pending" | "granted" | "denied"
   >("pending");
 
+  // New state for tracking if user actually got real location
+  const [isUsingDefaultLocation, setIsUsingDefaultLocation] = useState(true);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const googleMapsServiceRef = useRef<GoogleMapsService | null>(null);
@@ -61,7 +67,7 @@ export default function HeroBookingSection() {
     handleSearchInputFocus,
     handleSearchInputChange,
   } = useLocationSearch();
-  // const bookingOptions = bookingOptionsData;
+
   const getBookingOptions = async () => {
     const data = await getBookingOption();
     setBookingOptions(data.dropdownOptions);
@@ -69,6 +75,7 @@ export default function HeroBookingSection() {
       setBookingType(data.dropdownOptions[0].value);
     }
   };
+
   // Initialize Google Maps Service
   useEffect(() => {
     getBookingOptions();
@@ -83,13 +90,11 @@ export default function HeroBookingSection() {
     initGoogleMaps();
   }, []);
 
-  // Reverse geocode coordinates to get location name using Google Maps
   const reverseGeocodeWithGoogle = async (
     lat: number,
     lng: number
   ): Promise<string> => {
     try {
-      // Ensure Google Maps is loaded
       if (!window.google || !window.google.maps) {
         throw new Error("Google Maps not loaded");
       }
@@ -108,36 +113,25 @@ export default function HeroBookingSection() {
             let country = "";
 
             for (const component of addressComponents) {
-              // Get route (street name)
               if (component.types.includes("route")) {
                 route = component.long_name;
-              }
-              // Get locality (city)
-              else if (component.types.includes("locality")) {
+              } else if (component.types.includes("locality")) {
                 locality = component.long_name;
-              }
-              // Get political area (neighborhood/district)
-              else if (
+              } else if (
                 component.types.includes("administrative_area_level_3") &&
                 component.types.includes("political")
               ) {
                 political = component.long_name;
-              }
-              // Get state/region
-              else if (
+              } else if (
                 component.types.includes("administrative_area_level_1")
               ) {
                 adminLevel1 = component.long_name;
-              }
-              // Get country
-              else if (component.types.includes("country")) {
+              } else if (component.types.includes("country")) {
                 country = component.long_name;
               }
             }
 
-            // Build location string with available information
             let locationParts = [];
-
             if (route) locationParts.push(route);
             if (political) locationParts.push(political);
             if (locality) locationParts.push(locality);
@@ -161,20 +155,52 @@ export default function HeroBookingSection() {
     }
   };
 
+  // Check if we have a stored location from previous session
+  const checkStoredLocation = () => {
+    try {
+      const stored = sessionStorage.getItem("userLocation");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const age = Date.now() - parsed.timestamp;
+
+        if (age < 30 * 60 * 1000) {
+          setUserLocation(parsed.name);
+          setSearchValue(parsed.name);
+          setSelectedLocation({
+            name: parsed.name,
+            lat: parsed.lat,
+            lng: parsed.lng,
+          });
+          setLocationPermissionStatus("granted");
+          setIsUsingDefaultLocation(false);
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error("Error reading stored location:", error);
+    }
+    return false;
+  };
+
   useEffect(() => {
     const fallbackToDefault = () => {
-      setUserLocation("Lagos, Nigeria (Default)");
-
+      setUserLocation("Lagos, Nigeria");
       setSearchValue(DEFAULT_LOCATION.name);
-
       setSelectedLocation({
         name: DEFAULT_LOCATION.name,
         lat: DEFAULT_LOCATION.lat,
         lng: DEFAULT_LOCATION.lng,
       });
+      setIsUsingDefaultLocation(true);
+      setTimeout(() => {
+        setShowLocationPrompt(true);
+      }, 2000);
     };
 
     const getUserLocation = async () => {
+      const hasStored = checkStoredLocation();
+      if (hasStored) return;
+
       if (!navigator.geolocation) {
         setLocationPermissionStatus("denied");
         fallbackToDefault();
@@ -194,6 +220,7 @@ export default function HeroBookingSection() {
 
         const { latitude, longitude } = position.coords;
         setLocationPermissionStatus("granted");
+        setIsUsingDefaultLocation(false);
 
         if (googleMapsServiceRef.current) {
           await googleMapsServiceRef.current.initialize();
@@ -211,10 +238,18 @@ export default function HeroBookingSection() {
           lat: latitude,
           lng: longitude,
         });
+        sessionStorage.setItem(
+          "userLocation",
+          JSON.stringify({
+            name: locationName,
+            lat: latitude,
+            lng: longitude,
+            timestamp: Date.now(),
+          })
+        );
       } catch (error: any) {
         console.error("Error getting location:", error?.message || error);
         setLocationPermissionStatus("denied");
-
         fallbackToDefault();
       }
     };
@@ -225,6 +260,59 @@ export default function HeroBookingSection() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  const handleRequestLocation = async () => {
+    setIsRequestingLocation(true);
+    setUserLocation("Detecting location...");
+    setLocationPermissionStatus("pending");
+
+    try {
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          });
+        }
+      );
+
+      const { latitude, longitude } = position.coords;
+      setLocationPermissionStatus("granted");
+      setIsUsingDefaultLocation(false);
+      setShowLocationPrompt(false);
+
+      if (googleMapsServiceRef.current) {
+        await googleMapsServiceRef.current.initialize();
+      }
+
+      const locationName = await reverseGeocodeWithGoogle(latitude, longitude);
+
+      setUserLocation(locationName);
+      setSearchValue(locationName);
+      setSelectedLocation({
+        name: locationName,
+        lat: latitude,
+        lng: longitude,
+      });
+
+      sessionStorage.setItem(
+        "userLocation",
+        JSON.stringify({
+          name: locationName,
+          lat: latitude,
+          lng: longitude,
+          timestamp: Date.now(),
+        })
+      );
+    } catch (error) {
+      setLocationPermissionStatus("denied");
+      setUserLocation("Lagos, Nigeria");
+      setShowLocationPrompt(false);
+    } finally {
+      setIsRequestingLocation(false);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -241,14 +329,6 @@ export default function HeroBookingSection() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [setShowLocationDropdown]);
-
-  const formatDateForDisplay = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-    });
-  };
 
   const handleDateSelect = (date: Date, type: "from" | "until") => {
     if (type === "from") {
@@ -268,7 +348,6 @@ export default function HeroBookingSection() {
       value: item.id,
       label: item.name.replace("_", " "),
     }));
-
     setcategoryOptions(transformedOptions);
   };
 
@@ -294,50 +373,6 @@ export default function HeroBookingSection() {
     setSelectedLocation(selected);
     setSearchValue(selected.name);
   };
-
-  // const handleSearch = async () => {
-  //   setErrorMessage("");
-  //   if (!searchValue.trim()) {
-  //     setErrorMessage("Please enter a location");
-  //     return;
-  //   }
-
-  //   if (!selectedLocation || !selectedLocation.lat || !selectedLocation.lng) {
-  //     setErrorMessage("Please select a valid location from the suggestions");
-  //     return;
-  //   }
-
-  //   // if (!bookingType) {
-  //   //   setErrorMessage("Please select a booking type");
-  //   //   return;
-  //   // }
-
-  //   // if (!category) {
-  //   //   setErrorMessage("Please select a category");
-  //   //   return;
-  //   // }
-
-  //   setIsSearching(true);
-
-  //   try {
-  //     const searchUrl = await VehicleSearchService.buildSearchUrl(
-  //       {
-  //         name: selectedLocation.name,
-  //         lat: selectedLocation.lat,
-  //         lng: selectedLocation.lng,
-  //       },
-  //       bookingType,
-  //       category,
-  //       fromDate,
-  //       untilDate
-  //     );
-  //     router.push(searchUrl);
-  //   } catch (error) {
-  //     setErrorMessage("Failed to search vehicles. Please try again.");
-  //   } finally {
-  //     setIsSearching(false);
-  //   }
-  // };
 
   const handleSearch = async () => {
     setErrorMessage("");
@@ -372,8 +407,8 @@ export default function HeroBookingSection() {
           lat: selectedLocation.lat,
           lng: selectedLocation.lng,
         },
-        bookingType, // now optional
-        category, // now optional
+        bookingType,
+        category,
         fromDate,
         untilDate
       );
@@ -403,6 +438,7 @@ export default function HeroBookingSection() {
 
       const { latitude, longitude } = position.coords;
       setLocationPermissionStatus("granted");
+      setIsUsingDefaultLocation(false);
 
       if (googleMapsServiceRef.current) {
         await googleMapsServiceRef.current.initialize();
@@ -410,6 +446,23 @@ export default function HeroBookingSection() {
 
       const locationName = await reverseGeocodeWithGoogle(latitude, longitude);
       setUserLocation(locationName);
+      setSearchValue(locationName);
+      setSelectedLocation({
+        name: locationName,
+        lat: latitude,
+        lng: longitude,
+      });
+
+      // Store location
+      sessionStorage.setItem(
+        "userLocation",
+        JSON.stringify({
+          name: locationName,
+          lat: latitude,
+          lng: longitude,
+          timestamp: Date.now(),
+        })
+      );
     } catch (error) {
       setLocationPermissionStatus("denied");
       setUserLocation("Location access denied");
@@ -430,11 +483,67 @@ export default function HeroBookingSection() {
         <div className="absolute inset-0 bg-gradient-to-r from-gray-900/70 via-gray-800/50 to-gray-900/30"></div>
       </div>
 
+      {/* Location Permission Prompt */}
+      {showLocationPrompt && isUsingDefaultLocation && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 relative animate-slide-up">
+            {/* Close button */}
+            <button
+              onClick={() => setShowLocationPrompt(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Dismiss"
+            >
+              <FiX className="w-5 h-5" />
+            </button>
+
+            {/* Icon */}
+            <div className="flex items-center justify-center w-14 h-14 bg-blue-100 rounded-full mb-4">
+              <FiMapPin className="w-7 h-7 text-blue-600" />
+            </div>
+
+            {/* Content */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Enable Location Services
+              </h3>
+              <p className="text-sm text-gray-600">
+                Get better search results and find vehicles near you. We'll show
+                you cars available in your area.
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLocationPrompt(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              >
+                Not now
+              </button>
+              <button
+                onClick={handleRequestLocation}
+                disabled={isRequestingLocation}
+                className="flex-1 px-4 py-2.5 bg-blue-600 rounded-lg text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isRequestingLocation ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Detecting...
+                  </>
+                ) : (
+                  "Enable Location"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-12 lg:px-20 xl:px-32">
         {/* Header */}
         <div className="mb-8 max-w-2xl">
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-3  leading-tight">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 leading-tight">
             Find your perfect ride
           </h1>
           <p className="text-base md:text-lg text-gray-200">
@@ -442,7 +551,7 @@ export default function HeroBookingSection() {
           </p>
         </div>
 
-        {/* Booking Form - Simplified Layout like inspiration */}
+        {/* Booking Form */}
         <div className="w-full max-w-4xl">
           <div className="bg-white rounded-2xl shadow-2xl px-4 py-3 md:px-6 md:py-4">
             <div className="flex flex-col md:flex-row items-stretch gap-0">
@@ -463,7 +572,7 @@ export default function HeroBookingSection() {
                 </div>
               </div>
 
-              {/* Location Input - Takes most space */}
+              {/* Location Input */}
               <div className="flex-1 min-w-0 py-2 md:py-0 md:px-4 border-b md:border-b-0 md:border-r border-gray-200 relative">
                 <label className="block text-xs font-medium text-gray-400 mb-1">
                   Where
@@ -480,7 +589,6 @@ export default function HeroBookingSection() {
                   />
                 </div>
 
-                {/* Make sure this sits absolutely inside a relative container */}
                 <div className="absolute top-full left-0 w-full z-50">
                   <LocationDropdown
                     isOpen={showLocationDropdown}
