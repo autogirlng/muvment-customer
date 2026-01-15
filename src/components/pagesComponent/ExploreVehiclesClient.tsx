@@ -236,6 +236,7 @@ export default function ExploreVehiclesClient() {
       const response = await VehicleSearchService.searchVehicles({
         page: 0,
         size: 6,
+        bookingTypeId: bookingType ?? ""
       });
       setRecommendedVehicles(response.data.data.content || []);
     } catch (err) {
@@ -305,7 +306,7 @@ export default function ExploreVehiclesClient() {
               <p className="text-[1.2rem] md:text-2xl font-bold text-gray-900 mb-2">
                 {loading && vehicles.length === 0
                   ? "Loading..."
-                  : `${totalCount || 0}+ vehicles available`}
+                  : totalCount < 10 ? `${totalCount || 0} vehicles available` : `${totalCount || 0}+ vehicles available`}
               </p>
             </div>
 
