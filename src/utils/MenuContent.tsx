@@ -15,7 +15,7 @@ import { FiLogIn, FiUserPlus } from "react-icons/fi";
 
 export const menuItems = [
   { name: "Dashboard", link: "/dashboard", icon: MdDashboard },
-  { name: "Explore", link: "/Booking/search", icon: MdExplore },
+  { name: "Explore", link: "/booking/search", icon: MdExplore },
   { name: "Payment", link: "/dashboard/payment", icon: MdPayment },
   {
     name: "My Bookings",

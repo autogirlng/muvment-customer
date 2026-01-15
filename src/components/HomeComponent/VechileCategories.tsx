@@ -1,18 +1,28 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface VehicleCategory {
   name: string;
   image: string;
+  id: string;
 }
 
 const VehicleCategories: React.FC = () => {
+  const router = useRouter();
+
   const categories: VehicleCategory[] = [
-    { name: "Sedan", image: "/images/vehicles/sedan.png" },
-    { name: "Truck", image: "/images/vehicles/truck.png" },
-    { name: "SUV", image: "/images/vehicles/suv.png" },
-    { name: "Bus", image: "/images/vehicles/bus.png" },
+    { name: "Sedan", image: "/images/vehicles/sedan.png", id: "sedan-id" },
+    { name: "Truck", image: "/images/vehicles/truck.png", id: "truck-id" },
+    { name: "SUV", image: "/images/vehicles/suv.png", id: "suv-id" },
+    { name: "Bus", image: "/images/vehicles/bus.png", id: "bus-id" },
   ];
+
+  const handleCategoryClick = (categoryId: string) => {
+    router.push(`/booking/search?category=${categoryId}`);
+  };
+
+  useEffect(() => {});
 
   return (
     <div className="bg-white min-h-[60vh] w-full flex flex-col items-center justify-center py-10">
@@ -25,7 +35,8 @@ const VehicleCategories: React.FC = () => {
           {categories.map((category, index) => (
             <div
               key={index}
-              className="flex flex-col items-center text-center space-y-2"
+              onClick={() => handleCategoryClick(category.id)}
+              className="flex flex-col items-center text-center space-y-2 cursor-pointer hover:opacity-80 transition-opacity"
             >
               <img
                 src={category.image}

@@ -183,7 +183,7 @@ const ReviewPage = () => {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
-                onClick={() => router.push("/Booking/search")}
+                onClick={() => router.push("/booking/search")}
                 className="group px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
               >
                 <BiCar className="w-5 h-5" />
@@ -286,7 +286,7 @@ const ReviewPage = () => {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
-                onClick={() => router.push("/Booking/search")}
+                onClick={() => router.push("/booking/search")}
                 className="group px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
               >
                 <BiCar className="w-5 h-5" />

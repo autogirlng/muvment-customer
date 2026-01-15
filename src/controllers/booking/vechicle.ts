@@ -101,7 +101,7 @@ export class VehicleSearchService {
   //     radiusInKm: "100",
   //   });
 
-  //   return `/Booking/search?${params.toString()}`;
+  //   return `/booking/search?${params.toString()}`;
   // }
 
   static async buildSearchUrl(
@@ -136,7 +136,7 @@ export class VehicleSearchService {
       params.append("untilDate", untilDate.toISOString());
     }
 
-    return `/Booking/search?${params.toString()}`;
+    return `/booking/search?${params.toString()}`;
   }
 
   static async getVehicleTypes(): Promise<any> {
