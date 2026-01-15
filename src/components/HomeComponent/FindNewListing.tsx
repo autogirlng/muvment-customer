@@ -69,7 +69,7 @@ const FindNewListings: React.FC = () => {
   };
 
   const handleCardClick = (id: string) => {
-    router.push(`/Booking/details/${id}`);
+    router.push(`/booking/details/${id}`);
   };
 
   const priceOf = (v: TopVehicle) => v.allPricingOptions[0]?.price || 0;

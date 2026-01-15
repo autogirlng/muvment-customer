@@ -66,7 +66,7 @@ const TopRating: React.FC<TopRatingProps> = ({
   // console.log(vehicle);
 
   const handleRouteToDetails = () => {
-    router.push(`/Booking/details/${vehicle.id}`);
+    router.push(`/booking/details/${vehicle.id}`);
   };
 
   return (

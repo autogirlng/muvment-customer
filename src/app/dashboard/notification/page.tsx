@@ -5,7 +5,7 @@ import {
   NotificationService,
   Notification,
 } from "@/controllers/notification/notificationService";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   IoNotificationsOutline,
   IoTrashOutline,
@@ -28,32 +28,38 @@ const NotificationsPage = () => {
     string | null
   >(null);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        setLoading(true);
-        const response = await NotificationService.getUserNotifications(
-          page,
-          10
-        );
-        setNotifications(response.data.content || []);
-        setTotalCount(response.data.totalElements || 0);
-      } catch (error) {
-        console.error("Failed to fetch notifications:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchNotifications();
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await NotificationService.getUserNotifications(page, 10);
+      setNotifications(response.data.content || []);
+      setTotalCount(response.data.totalElements || 0);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setLoading(false);
+    }
   }, [page]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   const handleDeleteNotification = async (id: string) => {
     try {
       setDeleting(id);
       await NotificationService.deleteNotification(id);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
+
+      // Update local state
+      const newNotifications = notifications.filter((n) => n.id !== id);
+      setNotifications(newNotifications);
       setTotalCount((prev) => prev - 1);
+
+      // If current page is now empty and it's not the first page, go back one page
+      if (newNotifications.length === 0 && page > 0) {
+        setPage((prev) => prev - 1);
+      }
+
       setShowDeleteModal(false);
       setNotificationToDelete(null);
     } catch (error) {
@@ -70,6 +76,7 @@ const NotificationsPage = () => {
       await NotificationService.deleteAllNotifications(allIds);
       setNotifications([]);
       setTotalCount(0);
+      setPage(0); // Reset to first page
     } catch (error) {
       console.error("Failed to delete all notifications:", error);
     } finally {

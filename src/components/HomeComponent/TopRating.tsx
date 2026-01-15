@@ -157,7 +157,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
   };
 
   const handeleRoute = () => {
-    router.push(`/Booking/search`);
+    router.push(`/booking/search`);
   };
 
   return (

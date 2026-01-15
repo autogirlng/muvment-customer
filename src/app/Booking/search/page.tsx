@@ -42,7 +42,7 @@ export async function generateMetadata({ searchParams }: PageProps) {
       "vehicle hire",
       "car booking",
     ],
-    url: `/Booking/search?city=${city}`,
+    url: `/booking/search?city=${city}`,
   });
 }
 

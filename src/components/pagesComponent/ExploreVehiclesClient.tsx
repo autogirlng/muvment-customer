@@ -153,7 +153,7 @@ export default function ExploreVehiclesClient() {
       selectedFeatures: undefined,
     });
 
-    router.replace("/Booking/search");
+    router.replace("/booking/search");
   };
 
   async function searchVehicles(
@@ -266,7 +266,7 @@ export default function ExploreVehiclesClient() {
       const response = await VehicleSearchService.searchVehicles({
         page: 0,
         size: 6,
-        bookingTypeId: bookingType ?? ""
+        bookingTypeId: bookingType ?? "",
       });
       setRecommendedVehicles(response.data.data.content || []);
     } catch (err) {
@@ -335,16 +335,19 @@ export default function ExploreVehiclesClient() {
                   className="hidden lg:block"
                 />{" "}
                 {city
-                  ? `Vehicles in ${city.charAt(0).toUpperCase() + city.slice(1)
-                  }`
+                  ? `Vehicles in ${
+                      city.charAt(0).toUpperCase() + city.slice(1)
+                    }`
                   : location
-                    ? `Vehicles in ${location}`
-                    : "Vehicles in Lagos"}
+                  ? `Vehicles in ${location}`
+                  : "Vehicles in Lagos"}
               </h1>
               <p className="text-[1.2rem] md:text-2xl font-bold text-gray-900 mb-2">
                 {loading && vehicles.length === 0
                   ? "Loading..."
-                  : totalCount < 10 ? `${totalCount || 0} vehicles available` : `${totalCount || 0}+ vehicles available`}
+                  : totalCount < 10
+                  ? `${totalCount || 0} vehicles available`
+                  : `${totalCount || 0}+ vehicles available`}
               </p>
             </div>
 
@@ -352,20 +355,22 @@ export default function ExploreVehiclesClient() {
             <div className="flex hidden lg:block items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition-colors ${viewMode === "list"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === "list"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
                 aria-label="List view"
               >
                 <HiViewList className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-md transition-colors ${viewMode === "grid"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
                 aria-label="Grid view"
               >
                 <BsFillGridFill className="w-5 h-5" />

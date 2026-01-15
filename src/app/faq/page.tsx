@@ -394,7 +394,7 @@ function FAQPageClient() {
             </section>
 
             {/* Still Have Questions? */}
-            <div className="bg-white rounded-xl p-6 md:p-8 text-center  mt-8">
+            {/* <div className="bg-white rounded-xl p-6 md:p-8 text-center  mt-8">
               <h3 className="text-xl md:text-2xl font-bold text-[#0B2253] mb-3">
                 Still have questions?
               </h3>
@@ -408,7 +408,7 @@ function FAQPageClient() {
               >
                 Send an Email
               </a>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

@@ -96,7 +96,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       price: getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
     });
     router.push(
-      `/Booking/details/${id}?vehicleType=${encodeURIComponent(
+      `/booking/details/${id}?vehicleType=${encodeURIComponent(
         vehicleTypeName
       )}&bookingType=${bookingType}`
     );
