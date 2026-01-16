@@ -238,6 +238,7 @@ const VehicleDetailsClient: React.FC = () => {
     return pricing;
   };
 
+  console.log(pricing)
   return (
     <>
       <Navbar />
@@ -435,6 +436,13 @@ const VehicleDetailsClient: React.FC = () => {
                             : null
                         }
                       />
+
+                      {pricing.data.data.vatPercentage && <PriceRow
+                        label="VAT Amount"
+                        value={pricing.data.data.vatAmount}
+                        subLabel={`${pricing.data.data.vatPercentage}%`}
+                      />}
+
 
                       <PriceRow
                         label="Duration Discount"

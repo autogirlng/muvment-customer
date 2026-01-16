@@ -581,7 +581,7 @@ export default function HeroBookingSection() {
                     ref={searchInputRef}
                     type="text"
                     placeholder="Search by city, airport, address"
-                    className="w-full bg-transparent focus:outline-none text-sm text-gray-400 placeholder-gray-400"
+                    className="w-full bg-transparent focus:outline-none text-sm text-gray-800 placeholder-gray-400"
                     value={searchValue}
                     onChange={handleSearchInputChangeEvent}
                     onFocus={handleSearchInputFocus}
@@ -652,7 +652,7 @@ export default function HeroBookingSection() {
                 <button
                   onClick={handleSearch}
                   disabled={isSearching}
-                  className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 md:p-3.5 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-full p-3 md:p-3.5 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   title="Search"
                 >
                   {isSearching ? (
@@ -702,10 +702,10 @@ export default function HeroBookingSection() {
         <div className="absolute bottom-8 left-4 md:left-12 lg:left-20 xl:left-32 flex items-center gap-2 text-white text-xl md:text-2xl font-semibold">
           <FiMapPin
             className={`w-6 h-6 ${locationPermissionStatus === "granted"
-                ? "text-blue-400"
-                : locationPermissionStatus === "denied"
-                  ? "text-red-400"
-                  : "text-yellow-400"
+              ? "text-blue-400"
+              : locationPermissionStatus === "denied"
+                ? "text-red-400"
+                : "text-yellow-400"
               }`}
           />
           <span>{userLocation}</span>
