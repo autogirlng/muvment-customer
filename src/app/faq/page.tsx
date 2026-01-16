@@ -3,6 +3,7 @@ import Footer from "@/components/HomeComponent/Footer";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { BiChevronDown } from "react-icons/bi";
+import { Navbar } from "@/components/Navbar";
 
 function FAQPageClient() {
   const [activeSection, setActiveSection] = useState("booking-account");
@@ -180,8 +181,8 @@ function FAQPageClient() {
                   key={section.id}
                   onClick={() => scrollToSection(section.id)}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeSection === section.id
-                      ? "text-[#0673FF] bg-blue-50"
-                      : "text-gray-700 hover:bg-gray-200"
+                    ? "text-[#0673FF] bg-blue-50"
+                    : "text-gray-700 hover:bg-gray-200"
                     }`}
                 >
                   {section.label}
@@ -405,7 +406,8 @@ function FAQPageClient() {
         </div>
         <Footer />
       </div>
-      );
+    </>
+  );
 }
 
-      export default FAQPageClient;
+export default FAQPageClient;
