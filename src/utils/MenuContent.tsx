@@ -9,12 +9,13 @@ import {
   MdGroupAdd,
   MdBookOnline,
   MdEventAvailable,
+  MdQuestionMark,
 } from "react-icons/md";
 import { FiLogIn, FiUserPlus } from "react-icons/fi";
 
 export const menuItems = [
   { name: "Dashboard", link: "/dashboard", icon: MdDashboard },
-  { name: "Explore", link: "/Booking/search", icon: MdExplore },
+  { name: "Explore", link: "/booking/search", icon: MdExplore },
   { name: "Payment", link: "/dashboard/payment", icon: MdPayment },
   {
     name: "My Bookings",
@@ -37,6 +38,11 @@ export const menuItems = [
     name: "Refer A Friend",
     link: "/dashboard/refer-a-friend",
     icon: MdGroupAdd,
+  },
+  {
+    name: "FAQ",
+    link: "/faq",
+    icon: MdQuestionMark,
   },
 ];
 

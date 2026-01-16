@@ -11,6 +11,8 @@ import { HiViewList } from "react-icons/hi";
 import { BsFillGridFill } from "react-icons/bs";
 import { CiLocationOn } from "react-icons/ci";
 import { clarityEvent } from "@/services/clarity";
+import { useLocationDetection } from "@/hooks/useLocationDetection";
+import LocationPrompt from "../Booking/LocationPrompt";
 
 export default function ExploreVehiclesClient() {
   const searchParams = useSearchParams();
@@ -49,6 +51,34 @@ export default function ExploreVehiclesClient() {
   const fromDate = searchParams.get("fromDate");
   const untilDate = searchParams.get("untilDate");
   const city = searchParams.get("city");
+  const {
+    status: locationStatus,
+    location: detectedLocation,
+    isDefault,
+    requestLocation,
+    isDetecting,
+  } = useLocationDetection();
+
+  // Check if URL has location params
+  const hasLocationParams = lat && lng;
+
+  // Update search when location is detected and no params in URL
+  useEffect(() => {
+    if (
+      locationStatus === "granted" &&
+      !hasLocationParams &&
+      detectedLocation
+    ) {
+      // Update URL with detected location
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("lat", detectedLocation.lat.toString());
+      params.set("lng", detectedLocation.lng.toString());
+      params.set("location", detectedLocation.name);
+
+      router.replace(`/Booking/search?${params.toString()}`);
+    }
+  }, [locationStatus, detectedLocation, hasLocationParams]);
+
   const initializeFiltersFromUrl = useCallback((): FilterState => {
     const minPriceParam = searchParams.get("minPrice");
     const maxPriceParam = searchParams.get("maxPrice");
@@ -123,7 +153,7 @@ export default function ExploreVehiclesClient() {
       selectedFeatures: undefined,
     });
 
-    router.replace("/Booking/search");
+    router.replace("/booking/search");
   };
 
   async function searchVehicles(
@@ -236,7 +266,7 @@ export default function ExploreVehiclesClient() {
       const response = await VehicleSearchService.searchVehicles({
         page: 0,
         size: 6,
-        bookingTypeId: bookingType ?? ""
+        bookingTypeId: bookingType ?? "",
       });
       setRecommendedVehicles(response.data.data.content || []);
     } catch (err) {
@@ -284,6 +314,14 @@ export default function ExploreVehiclesClient() {
   return (
     <div>
       <Navbar showSearchBar={true} />
+      {!hasLocationParams && (
+        <LocationPrompt
+          isDefault={isDefault}
+          status={locationStatus}
+          onRequestLocation={requestLocation}
+          isDetecting={isDetecting}
+        />
+      )}
       <div className="mt-22"></div>
       <div className="min-h-screen ">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
@@ -297,16 +335,19 @@ export default function ExploreVehiclesClient() {
                   className="hidden lg:block"
                 />{" "}
                 {city
-                  ? `Vehicles in ${city.charAt(0).toUpperCase() + city.slice(1)
-                  }`
+                  ? `Vehicles in ${
+                      city.charAt(0).toUpperCase() + city.slice(1)
+                    }`
                   : location
-                    ? `Vehicles in ${location}`
-                    : "Vehicles in Lagos"}
+                  ? `Vehicles in ${location}`
+                  : "Vehicles in Lagos"}
               </h1>
               <p className="text-[1.2rem] md:text-2xl font-bold text-gray-900 mb-2">
                 {loading && vehicles.length === 0
                   ? "Loading..."
-                  : totalCount < 10 ? `${totalCount || 0} vehicles available` : `${totalCount || 0}+ vehicles available`}
+                  : totalCount < 10
+                  ? `${totalCount || 0} vehicles available`
+                  : `${totalCount || 0}+ vehicles available`}
               </p>
             </div>
 
@@ -314,20 +355,22 @@ export default function ExploreVehiclesClient() {
             <div className="flex hidden lg:block items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition-colors ${viewMode === "list"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === "list"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
                 aria-label="List view"
               >
                 <HiViewList className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-md transition-colors ${viewMode === "grid"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
                 aria-label="Grid view"
               >
                 <BsFillGridFill className="w-5 h-5" />

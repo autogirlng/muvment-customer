@@ -1,13 +1,13 @@
 "use client";
 import Footer from "@/components/HomeComponent/Footer";
-import { Navbar } from "@/components/Navbar";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { BiChevronDown } from "react-icons/bi";
 
 function FAQPageClient() {
   const [activeSection, setActiveSection] = useState("booking-account");
   const [openFAQ, setOpenFAQ] = useState<string | null>(null);
-
+  const router = useRouter();
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -168,7 +168,9 @@ function FAQPageClient() {
             </div>
           </div>
         </div>
-
+        <div className="flex justify-start  items-center px-6 pt-6">
+          <button onClick={() => router.push("/")}> BACK HOME</button>
+        </div>
         {/* Mobile Navigation */}
         <div className="lg:hidden sticky top-0 z-30 bg-white shadow-sm">
           <div className="overflow-x-auto py-3 scrollbar-hide">
@@ -178,8 +180,8 @@ function FAQPageClient() {
                   key={section.id}
                   onClick={() => scrollToSection(section.id)}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeSection === section.id
-                    ? "text-[#0673FF] bg-blue-50"
-                    : "text-gray-700 hover:bg-gray-200"
+                      ? "text-[#0673FF] bg-blue-50"
+                      : "text-gray-700 hover:bg-gray-200"
                     }`}
                 >
                   {section.label}
@@ -383,28 +385,27 @@ function FAQPageClient() {
               </section>
 
               {/* Still Have Questions? */}
-              <div className="bg-white rounded-xl p-6 md:p-8 text-center  mt-8">
-                {/* <h3 className="text-xl md:text-2xl font-bold text-[#0B2253] mb-3">
+              {/* <div className="bg-white rounded-xl p-6 md:p-8 text-center  mt-8">
+              <h3 className="text-xl md:text-2xl font-bold text-[#0B2253] mb-3">
                 Still have questions?
-              </h3> */}
-                <p className="text-sm md:text-base text-gray-700 mb-6">
-                  Have more questions? Send us a message and we'll get back to you
-                  quickly
-                </p>
-                <a
-                  href="mailto:info@muvment.ng"
-                  className="inline-block bg-[#0673FF] text-white px-8 py-3 rounded-full font-medium hover:bg-[#0558CC] transition-colors"
-                >
-                  Send an Email
-                </a>
-              </div>
+              </h3>
+              <p className="text-sm md:text-base text-gray-700 mb-6">
+                Have more questions? Send us a message and we'll get back to you
+                quickly
+              </p>
+              <a
+                href="mailto:info@muvment.ng"
+                className="inline-block bg-[#0673FF] text-white px-8 py-3 rounded-full font-medium hover:bg-[#0558CC] transition-colors"
+              >
+                Send an Email
+              </a>
+            </div> */}
             </div>
           </div>
         </div>
         <Footer />
       </div>
-    </>
-  );
+      );
 }
 
-export default FAQPageClient;
+      export default FAQPageClient;

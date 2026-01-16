@@ -352,8 +352,8 @@ export const deleteWithParams = async (path: string, params?: any) => {
 export const createData = async (path: string, body: any) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
-    const validation = validateDataInput(body);
-    if (validation.error) return validation;
+    // const validation = validateDataInput(body);
+    // if (validation.error) return validation;
 
     try {
       const isFormData = body instanceof FormData;
@@ -637,8 +637,14 @@ export const validateDataInput = (data: Record<string, any>) => {
 
   const sqlInjectionPatterns = [
     /(\b(SELECT|UPDATE|DELETE|INSERT|DROP|ALTER|EXEC|UNION|CREATE|TRUNCATE)\b)/i,
-    /('|--|;|\/\*|\*\/|#)/,
+    /('|--|;|\/\*|\*\/)/,
     /(\bOR\b.+\=.+)/i,
+    // Detect # preceded by quote (SQL comment injection attempt)
+    /['"].*#/,
+    // Detect # at end of string after quote (classic comment-out technique)
+    /['"]#\s*$/,
+    // Detect multiple dashes which could be SQL comments
+    /--+/,
   ];
 
   for (const [key, value] of Object.entries(data)) {

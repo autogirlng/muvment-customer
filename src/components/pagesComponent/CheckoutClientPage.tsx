@@ -73,8 +73,9 @@ const CheckoutClientPage = () => {
   // Populate user data if authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
-      const userFullName = `${user.firstName || ""} ${user.lastName || ""
-        }`.trim();
+      const userFullName = `${user.firstName || ""} ${
+        user.lastName || ""
+      }`.trim();
       const userEmail = user.email || "";
       const userPhone = user.phoneNumber || user.phone || "";
       setPersonalInfo((prev) => ({
@@ -132,7 +133,7 @@ const CheckoutClientPage = () => {
 
   useEffect(() => {
     if (!calculatedPrice || !vehicle) {
-      router.push(`/Booking/search`);
+      router.push(`/booking/search`);
     }
   }, [calculatedPrice, vehicle, id, router]);
 
@@ -290,7 +291,7 @@ const CheckoutClientPage = () => {
         });
         toast.success("Booking created successfully!");
         clearBooking();
-        router.push("/Booking/search");
+        router.push("/booking/search");
       }
     } catch (error: any) {
       // console.error("Error creating booking:", error);
@@ -530,10 +531,11 @@ const CheckoutClientPage = () => {
                     <button
                       type="button"
                       onClick={() => handleRideForChange("myself")}
-                      className={`flex-1 py-3 px-4 border-2 rounded-lg text-center transition ${personalInfo.rideFor === "myself"
+                      className={`flex-1 py-3 px-4 border-2 rounded-lg text-center transition ${
+                        personalInfo.rideFor === "myself"
                           ? "border-blue-500 bg-blue-50 text-blue-700"
                           : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-                        }`}
+                      }`}
                     >
                       <FiUser className="w-5 h-5 mx-auto mb-1" />
                       <span className="font-medium">Myself</span>
@@ -541,10 +543,11 @@ const CheckoutClientPage = () => {
                     <button
                       type="button"
                       onClick={() => handleRideForChange("others")}
-                      className={`flex-1 py-3 px-4 border-2 rounded-lg text-center transition ${personalInfo.rideFor === "others"
+                      className={`flex-1 py-3 px-4 border-2 rounded-lg text-center transition ${
+                        personalInfo.rideFor === "others"
                           ? "border-blue-500 bg-blue-50 text-blue-700"
                           : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-                        }`}
+                      }`}
                     >
                       <FiUser className="w-5 h-5 mx-auto mb-1" />
                       <span className="font-medium">Others</span>
@@ -565,8 +568,9 @@ const CheckoutClientPage = () => {
                         handleInputChange("fullName", e.target.value)
                       }
                       disabled={isUserDataLocked}
-                      className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isUserDataLocked ? "bg-gray-100 cursor-not-allowed" : ""
-                        }`}
+                      className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        isUserDataLocked ? "bg-gray-100 cursor-not-allowed" : ""
+                      }`}
                       placeholder="Enter your full name"
                       required
                     />
@@ -582,8 +586,9 @@ const CheckoutClientPage = () => {
                         handleInputChange("email", e.target.value)
                       }
                       disabled={isUserDataLocked}
-                      className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isUserDataLocked ? "bg-gray-100 cursor-not-allowed" : ""
-                        }`}
+                      className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        isUserDataLocked ? "bg-gray-100 cursor-not-allowed" : ""
+                      }`}
                       placeholder="Enter your email"
                       required
                     />
@@ -599,8 +604,9 @@ const CheckoutClientPage = () => {
                         handleInputChange("phoneNumber", e.target.value)
                       }
                       disabled={isUserDataLocked}
-                      className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isUserDataLocked ? "bg-gray-100 cursor-not-allowed" : ""
-                        }`}
+                      className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        isUserDataLocked ? "bg-gray-100 cursor-not-allowed" : ""
+                      }`}
                       placeholder="Enter your phone number"
                       required
                     />

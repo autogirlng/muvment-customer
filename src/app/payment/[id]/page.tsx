@@ -1,10 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  usePathname, useRouter, useParams
-
-} from "next/navigation";
+import { usePathname, useRouter, useParams } from "next/navigation";
 import { format, isValid } from "date-fns";
 import {
   FiMapPin,
@@ -91,10 +88,11 @@ const StatusBadge = ({ status }: { status: string }) => {
   const isConfirmed = status === "CONFIRMED" || status === "SUCCESSFUL";
   return (
     <span
-      className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${isConfirmed
-        ? "bg-green-100 text-green-700 border border-green-200"
-        : "bg-yellow-100 text-yellow-700 border border-yellow-200"
-        }`}
+      className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${
+        isConfirmed
+          ? "bg-green-100 text-green-700 border border-green-200"
+          : "bg-yellow-100 text-yellow-700 border border-yellow-200"
+      }`}
     >
       {isConfirmed && <FiCheckCircle />}
       {status}
@@ -104,18 +102,17 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const BookingDetailsPage = () => {
   const path = usePathname();
-  const params = useParams()
+  const params = useParams();
   const router = useRouter();
-  const bookingId = params.id || ""
+  const bookingId = params.id || "";
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [vehicle, setVehicle] = useState<VehicleDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-
+  console.log(booking);
+  console.log(vehicle);
   useEffect(() => {
-
     const fetchData = async () => {
       if (!bookingId) {
         setLoading(false);

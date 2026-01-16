@@ -64,7 +64,7 @@ export const Navbar = ({
 
   const items = user ? menuItems : guestMenuItems;
   const announcementMessages = [
-    "We've moved! Autogirl.ng is now Muvment.ng | Hurry! Use MUVMENT2025 (₦5,000 off) — all coupons expire Dec 31, 2025 at 11:45pm",
+    "We've moved! Autogirl.ng is now Muvment.ng | Hurry! Use MUVMENT2026 (₦5,000 off) — all coupons expire Jan 31, 2026 at 11:45pm",
   ];
   return (
     <nav

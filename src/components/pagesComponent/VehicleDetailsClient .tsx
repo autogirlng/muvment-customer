@@ -495,7 +495,7 @@ const VehicleDetailsClient: React.FC = () => {
                   <button
                     className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
                     disabled={!isTripFormsComplete}
-                    onClick={() => router.push(`/Booking/create/${vehicle.id}`)}
+                    onClick={() => router.push(`/booking/create/${vehicle.id}`)}
                   >
                     Continue Booking
                   </button>
@@ -530,7 +530,7 @@ const VehicleDetailsClient: React.FC = () => {
           <button
             className="w-full py-4 text-sm font-medium cursor-pointer bg-[#d0d5dd] text-black rounded-2xl  hover:opacity-80 "
             onClick={() =>
-              router.push(`/Booking/create/${vehicle.id}?user=guest`)
+              router.push(`/booking/create/${vehicle.id}?user=guest`)
             }
           >
             Continue as guest
