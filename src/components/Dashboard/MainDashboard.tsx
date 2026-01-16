@@ -260,7 +260,7 @@ export default function Dashboard(): React.ReactElement {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-sm md:text-2xl font-bold mb-2">
-                Good Morning, {userData?.firstName}
+                Hi, {userData?.firstName}
               </h1>
               <p className="text-blue-100 text-sm">Book your next rental car</p>
               <p className="text-blue-100 text-xs mt-1">{currentDate}</p>

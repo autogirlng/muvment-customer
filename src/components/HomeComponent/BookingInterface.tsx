@@ -295,50 +295,6 @@ export default function HeroBookingSection() {
     setSearchValue(selected.name);
   };
 
-  // const handleSearch = async () => {
-  //   setErrorMessage("");
-  //   if (!searchValue.trim()) {
-  //     setErrorMessage("Please enter a location");
-  //     return;
-  //   }
-
-  //   if (!selectedLocation || !selectedLocation.lat || !selectedLocation.lng) {
-  //     setErrorMessage("Please select a valid location from the suggestions");
-  //     return;
-  //   }
-
-  //   // if (!bookingType) {
-  //   //   setErrorMessage("Please select a booking type");
-  //   //   return;
-  //   // }
-
-  //   // if (!category) {
-  //   //   setErrorMessage("Please select a category");
-  //   //   return;
-  //   // }
-
-  //   setIsSearching(true);
-
-  //   try {
-  //     const searchUrl = await VehicleSearchService.buildSearchUrl(
-  //       {
-  //         name: selectedLocation.name,
-  //         lat: selectedLocation.lat,
-  //         lng: selectedLocation.lng,
-  //       },
-  //       bookingType,
-  //       category,
-  //       fromDate,
-  //       untilDate
-  //     );
-  //     router.push(searchUrl);
-  //   } catch (error) {
-  //     setErrorMessage("Failed to search vehicles. Please try again.");
-  //   } finally {
-  //     setIsSearching(false);
-  //   }
-  // };
-
   const handleSearch = async () => {
     setErrorMessage("");
 
@@ -353,9 +309,8 @@ export default function HeroBookingSection() {
     }
 
     trackVehicleSearch({
-      searchTerm: `${selectedLocation.name} ${bookingType || ""} ${
-        fromDate || ""
-      }   ${untilDate || ""}`.trim(),
+      searchTerm: `${selectedLocation.name} ${bookingType || ""} ${fromDate || ""
+        }   ${untilDate || ""}`.trim(),
       category,
       location: selectedLocation.name,
     });
@@ -594,13 +549,12 @@ export default function HeroBookingSection() {
         {/* Bottom Location Badge */}
         <div className="absolute bottom-8 left-4 md:left-12 lg:left-20 xl:left-32 flex items-center gap-2 text-white text-xl md:text-2xl font-semibold">
           <FiMapPin
-            className={`w-6 h-6 ${
-              locationPermissionStatus === "granted"
+            className={`w-6 h-6 ${locationPermissionStatus === "granted"
                 ? "text-blue-400"
                 : locationPermissionStatus === "denied"
-                ? "text-red-400"
-                : "text-yellow-400"
-            }`}
+                  ? "text-red-400"
+                  : "text-yellow-400"
+              }`}
           />
           <span>{userLocation}</span>
 
