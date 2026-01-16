@@ -52,20 +52,20 @@ const LocationDropdown: React.FC<LocationDropdownProps> = ({
         {/* Location Results */}
         {!isLoading && suggestions.length > 0
           ? suggestions.map((location) => (
-              <LocationItem
-                key={location.id}
-                location={location}
-                onSelect={onLocationSelect}
-              />
-            ))
+            <LocationItem
+              key={location.id}
+              location={location}
+              onSelect={onLocationSelect}
+            />
+          ))
           : !isLoading && (
-              <div className="px-3 py-4 text-center">
-                <p className="text-sm text-gray-500">No locations found</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Try adjusting your search terms
-                </p>
-              </div>
-            )}
+            <div className="px-3 py-4 text-center">
+              <p className="text-sm text-gray-500">No locations found</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Try adjusting your search terms
+              </p>
+            </div>
+          )}
       </div>
     </div>
   );
@@ -82,11 +82,11 @@ const LocationItem: React.FC<LocationItemProps> = ({ location, onSelect }) => {
       onClick={() => onSelect(location)}
       className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors duration-150"
     >
-      <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-gray-500">
+      <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-gray-800">
         {getLocationIcon(location.icon, location.type)}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">
+        <p className="text-sm font-medium text-gray-800 truncate">
           {location.name}
         </p>
         {location.description !== location.name && (

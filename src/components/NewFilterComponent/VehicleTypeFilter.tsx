@@ -37,11 +37,10 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
             {vehicleTypes.map((type) => (
               <label
                 key={type.id}
-                className={`flex items-center cursor-pointer p-3 rounded-lg border transition-all ${
-                  value && value.includes(type.id)
-                    ? "bg-blue-50 border-blue-500"
-                    : "bg-gray-50 border-gray-200 hover:border-gray-300"
-                }`}
+                className={`flex items-center cursor-pointer p-3 rounded-lg border transition-all ${value && value.includes(type.id)
+                  ? "bg-blue-50 border-blue-500"
+                  : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                  }`}
               >
                 <div className="relative flex items-center w-full">
                   <input
@@ -52,7 +51,7 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
                     className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
                   />
                   <span className="ml-2 text-sm font-medium text-gray-900 truncate">
-                    {type.name}
+                    {type.name.split("_").join(" ")}
                   </span>
                 </div>
               </label>
@@ -90,11 +89,10 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
           {vehicleTypes.map((type) => (
             <label
               key={type.id}
-              className={`flex items-center cursor-pointer px-4 py-2.5 rounded-full border transition-all ${
-                value && value.includes(type.id)
-                  ? "bg-blue-50 border-blue-500"
-                  : "bg-gray-50 border-gray-200 hover:border-gray-300"
-              }`}
+              className={`flex items-center cursor-pointer px-4 py-2.5 rounded-full border transition-all ${value && value.includes(type.id)
+                ? "bg-blue-50 border-blue-500"
+                : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                }`}
             >
               <div className="relative flex items-center">
                 <input
@@ -106,7 +104,7 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
                 />
               </div>
               <span className="ml-2.5 text-sm font-medium text-gray-900">
-                {type.name}
+                {type.name.split("_").join(" ")}
               </span>
             </label>
           ))}

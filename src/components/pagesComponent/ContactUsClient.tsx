@@ -130,13 +130,6 @@ const ContactUsClient: React.FC = () => {
                 >
                   support@autogirl.ng
                 </a>
-
-                <a
-                  href="mailto:support@muvment.ng "
-                  className="block text-gray-600 text-sm hover:text-blue-600 transition"
-                >
-                  support@muvment.ng
-                </a>
               </div>
             </div>
 

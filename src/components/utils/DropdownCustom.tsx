@@ -55,16 +55,14 @@ const Dropdown: React.FC<DropdownProps> = ({
       className="w-full flex justify-between items-center focus:outline-none group"
     >
       <span
-        className={`text-sm ${
-          selectedValue ? "font-medium text-gray-400" : "text-gray-400"
-        }`}
+        className={`text-sm ${selectedValue ? "font-medium text-gray-800" : "text-gray-800"
+          }`}
       >
         {selectedOption?.label || placeholder}
       </span>
       <FiChevronDown
-        className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-          isOpen ? "rotate-180" : ""
-        } group-hover:text-gray-600`}
+        className={`w-4 h-4 text-gray-800 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+          } group-hover:text-gray-600`}
       />
     </button>
   );
@@ -90,15 +88,13 @@ const Dropdown: React.FC<DropdownProps> = ({
                   type="button"
                   onClick={() => handleSelect(option.value)}
                   disabled={option.disabled}
-                  className={`w-full text-left px-3 py-2 text-sm transition-colors duration-150 ${
-                    option.value === selectedValue
-                      ? "bg-blue-50 text-blue-600 font-medium"
-                      : "hover:bg-gray-50 text-gray-800"
-                  } ${
-                    option.disabled
+                  className={`w-full text-left px-3 py-2 text-sm transition-colors duration-150 ${option.value === selectedValue
+                    ? "bg-blue-50 text-blue-600 font-medium"
+                    : "hover:bg-gray-50 text-gray-800"
+                    } ${option.disabled
                       ? "opacity-50 cursor-not-allowed"
                       : "cursor-pointer"
-                  }`}
+                    }`}
                 >
                   {option.label}
                 </button>

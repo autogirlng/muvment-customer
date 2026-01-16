@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Dropdown from "../utils/DropdownCustom";
 import Calendar from "../utils/Calender";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
@@ -12,12 +12,17 @@ import { trackCategoryClick, trackVehicleSearch } from "@/services/analytics";
 export const NavbarSearchBar = () => {
   const router = useRouter();
 
+
   // Form state
-  const [bookingType, setBookingType] = useState(undefined);
+  const [bookingType, setBookingType] = useState<string>();
   const [fromDate, setFromDate] = useState(new Date());
   const [untilDate, setUntilDate] = useState(new Date());
-  const [category, setCategory] = useState(undefined);
+  const [category, setCategory] = useState<string>();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+
+  const params = useSearchParams();
+
 
   // Location state
   const [searchValue, setSearchValue] = useState("");
@@ -89,7 +94,33 @@ export const NavbarSearchBar = () => {
 
   useEffect(() => {
     getvechileType();
-  }, []);
+
+    const locationParam = params.get("location") ?? "";
+
+    const lngParam = params.get("lng");
+    const latParam = params.get("lat");
+
+    const lng =
+      lngParam !== null && !isNaN(Number(lngParam)) ? Number(lngParam) : null;
+    const lat =
+      latParam !== null && !isNaN(Number(latParam)) ? Number(latParam) : null;
+
+    const bookingTypeParam = params.get("bookingType");
+    const fromDateParam = params.get("fromDate");
+    const untilDateParam = params.get("untilDate");
+    const vehicleTypeIdParam = params.get("vehicleTypeId");
+
+    if (bookingTypeParam) setBookingType(bookingTypeParam);
+    if (fromDateParam) setFromDate(new Date(fromDateParam));
+    if (untilDateParam) setUntilDate(new Date(untilDateParam));
+    if (vehicleTypeIdParam) setCategory(vehicleTypeIdParam);
+
+    if (locationParam) {
+      setSearchValue(locationParam);
+      setSelectedLocation({ name: locationParam, lng, lat });
+    }
+
+  }, [params]);
 
   const handleDropdownToggle = (dropdownId: string) => {
     setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
@@ -120,9 +151,8 @@ export const NavbarSearchBar = () => {
     }
 
     trackVehicleSearch({
-      searchTerm: `${selectedLocation.name} ${bookingType || ""} ${
-        fromDate || ""
-      }   ${untilDate || ""}`.trim(),
+      searchTerm: `${selectedLocation.name} ${bookingType || ""} ${fromDate || ""
+        }   ${untilDate || ""}`.trim(),
       category,
       location: selectedLocation.name,
     });
@@ -151,6 +181,7 @@ export const NavbarSearchBar = () => {
       setIsSearching(false);
     }
   };
+
 
   return (
     <div className="w-full max-w-4xl mx-4">
