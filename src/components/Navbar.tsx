@@ -147,7 +147,7 @@ export const Navbar = ({
                   <div className="py-2">
                     {items.map((item: any, index: number) => {
                       if (item.name === "Explore") {
-                        item.link = `/Booking/search${bookingTypeID && `?bookingType=${bookingTypeID}`}`
+                        item.link = `/booking/search${bookingTypeID && `?bookingType=${bookingTypeID}`}`
                       }
                       return (<NavItem
                         key={index}
@@ -219,7 +219,7 @@ export const Navbar = ({
 
             {items.map((item: any, index: number) => {
               if (item.name === "Explore") {
-                item.link = `/Booking/search${bookingTypeID && `?bookingType=${bookingTypeID}`}`
+                item.link = `/booking/search${bookingTypeID && `?bookingType=${bookingTypeID}`}`
               }
               return (<NavItem
                 key={index}

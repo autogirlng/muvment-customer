@@ -62,10 +62,10 @@ const Calendar: React.FC<CalendarProps> = ({
       onClick={() => setIsOpen(!isOpen)}
       className="flex items-center gap-2 focus:outline-none group w-full"
     >
-      <span className="text-sm font-medium text-gray-400">
+      <span className="text-sm font-medium text-gray-800">
         {formatDateForDisplay(selectedDate)}
       </span>
-      <FiChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+      <FiChevronDown className="w-4 h-4 text-gray-800 group-hover:text-gray-800" />
     </button>
   );
 
@@ -199,15 +199,13 @@ const Calendar: React.FC<CalendarProps> = ({
                     className={`
                       w-8 h-8 text-xs rounded transition-colors
                       ${isSelected ? "bg-blue-600 text-white" : ""}
-                      ${
-                        !isSelected && isCurrentMonth && !isDisabled
-                          ? "hover:bg-gray-100 text-gray-900"
-                          : ""
+                      ${!isSelected && isCurrentMonth && !isDisabled
+                        ? "hover:bg-gray-100 text-gray-900"
+                        : ""
                       }
-                      ${
-                        !isCurrentMonth || isDisabled
-                          ? "text-gray-400 cursor-not-allowed"
-                          : ""
+                      ${!isCurrentMonth || isDisabled
+                        ? "text-gray-400 cursor-not-allowed"
+                        : ""
                       }
                     `}
                   >
