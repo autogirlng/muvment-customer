@@ -75,7 +75,7 @@ export default function ExploreVehiclesClient() {
       params.set("lng", detectedLocation.lng.toString());
       params.set("location", detectedLocation.name);
 
-      router.replace(`/Booking/search?${params.toString()}`);
+      router.replace(`/booking/search?${params.toString()}`);
     }
   }, [locationStatus, detectedLocation, hasLocationParams]);
 

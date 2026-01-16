@@ -2,21 +2,19 @@ import ExploreVehiclesClient from "@/components/pagesComponent/ExploreVehiclesCl
 import { generatePageMetadata } from "@/helpers/metadata";
 
 interface PageProps {
-  searchParams: Promise<{
+  searchParams: {
     city?: string;
     location?: string;
     category?: string;
     fromDate?: string;
     untilDate?: string;
     [key: string]: string | undefined;
-  }>;
+  };
 }
 
-export async function generateMetadata({ searchParams }: PageProps) {
-  const params = await searchParams;
-
-  const city = params.city || params.location || "Lagos";
-  const categoryName = params.category;
+export function generateMetadata({ searchParams }: PageProps) {
+  const city = searchParams.city || searchParams.location || "Lagos";
+  const categoryName = searchParams.category;
 
   let title = `Rent Cars in ${city}`;
   if (categoryName) {
@@ -25,8 +23,8 @@ export async function generateMetadata({ searchParams }: PageProps) {
 
   let description = `Browse verified rental vehicles in ${city}.`;
 
-  if (params.fromDate && params.untilDate) {
-    description = `Rent cars in ${city} from ${params.fromDate} to ${params.untilDate}. ${description}`;
+  if (searchParams.fromDate && searchParams.untilDate) {
+    description = `Rent cars in ${city} from ${searchParams.fromDate} to ${searchParams.untilDate}. ${description}`;
   }
 
   return generatePageMetadata({

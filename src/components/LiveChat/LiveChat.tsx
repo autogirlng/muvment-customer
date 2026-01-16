@@ -19,7 +19,11 @@ export default function LiveChat() {
   return (
     <>
       {showWidget && (
-        <LiveChatWidget license="19431832" visibility="minimized" />
+        <LiveChatWidget
+          license="19431832"
+          visibility="minimized"
+          customerEmail="support@autogirl.ng"
+        />
       )}
     </>
   );

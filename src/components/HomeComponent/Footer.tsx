@@ -39,13 +39,14 @@ const footerNav: FooterNavProps[] = [
       { name: "Accra", link: "/booking/search?city=accra" },
     ],
   },
+
   {
     title: "Explore",
     links: [
       { name: "Get paid", link: "/" },
-      { name: "Book a vehicle", link: "/explore/results" },
+      { name: "Book a vehicle", link: "/booking/search" },
       { name: "Vehicle types", scrollTo: "/" },
-      { name: "Find your location", scrollTo: "/explore/results" },
+      { name: "Find your location", scrollTo: "/booking/search" },
     ],
   },
 ];

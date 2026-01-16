@@ -31,7 +31,6 @@ export const Navbar = ({
   const [bookingTypeID, setBookingTypeID] = useState<string>();
   const [bookingOptions, setBookingOptions] = useState<BookingOption[]>([]);
 
-
   const getBookingOptions = async () => {
     const data = await getBookingOption();
     setBookingOptions(data.dropdownOptions);
@@ -42,7 +41,7 @@ export const Navbar = ({
 
   useEffect(() => {
     getBookingOptions();
-  }, [])
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,8 +67,9 @@ export const Navbar = ({
   ];
   return (
     <nav
-      className={`fixed top-0 left-0 right-0  z-50 transition-all duration-300 ${isScrolled ? "bg-white shadow-md" : "bg-white/90 backdrop-blur-md"
-        }  `}
+      className={`fixed top-0 left-0 right-0  z-50 transition-all duration-300 ${
+        isScrolled ? "bg-white shadow-md" : "bg-white/90 backdrop-blur-md"
+      }  `}
     >
       {showAnnouncementBar && (
         <SlidingBanner
@@ -147,15 +147,24 @@ export const Navbar = ({
                   <div className="py-2">
                     {items.map((item: any, index: number) => {
                       if (item.name === "Explore") {
-                        item.link = `/Booking/search${bookingTypeID && `?bookingType=${bookingTypeID}`}`
+                        const params = new URLSearchParams();
+
+                        if (bookingTypeID) {
+                          params.set("bookingType", bookingTypeID);
+                        }
+
+                        item.link = `/booking/search${
+                          params.toString() ? `?${params}` : ""
+                        }`;
                       }
-                      return (<NavItem
-                        key={index}
-                        item={item}
-                        onClick={() => handleNavClick(item.link)}
-                        isActive={pathname === item.link}
-                      />
-                      )
+                      return (
+                        <NavItem
+                          key={index}
+                          item={item}
+                          onClick={() => handleNavClick(item.link)}
+                          isActive={pathname === item.link}
+                        />
+                      );
                     })}
                   </div>
 
@@ -219,15 +228,18 @@ export const Navbar = ({
 
             {items.map((item: any, index: number) => {
               if (item.name === "Explore") {
-                item.link = `/Booking/search${bookingTypeID && `?bookingType=${bookingTypeID}`}`
+                item.link = `/booking/search${
+                  bookingTypeID && `?bookingType=${bookingTypeID}`
+                }`;
               }
-              return (<NavItem
-                key={index}
-                item={item}
-                onClick={() => handleNavClick(item.link)}
-                isActive={pathname === item.link}
-              />
-              )
+              return (
+                <NavItem
+                  key={index}
+                  item={item}
+                  onClick={() => handleNavClick(item.link)}
+                  isActive={pathname === item.link}
+                />
+              );
             })}
 
             {user && (
