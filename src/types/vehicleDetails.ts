@@ -125,6 +125,8 @@ export interface EstimatedBookingPrice {
       platformFeeAmount: number;
       discountAmount: number;
       couponDiscountAmount: number;
+      vatAmount: number;
+      vatPercentage: number;
       appliedCouponCode?: string;
       finalPrice: number;
     };

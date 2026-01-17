@@ -238,6 +238,7 @@ const VehicleDetailsClient: React.FC = () => {
     return pricing;
   };
 
+  console.log(pricing)
   return (
     <>
       <Navbar />
@@ -355,7 +356,7 @@ const VehicleDetailsClient: React.FC = () => {
               <div className="w-full md:w-2/5 border-1 py-5 px-3 rounded-xl border-[#E4E7EC]">
                 <div>
                   <h1 className="font-bold text-[17px]">Add Booking Details</h1>
-                  <p className="text-sm my-4">Trip per day</p>
+                  <p className="text-sm my-4">Daily Itinerary</p>
 
                   {trips?.map((key, index) => {
                     const initialValues = JSON.parse(
@@ -435,6 +436,13 @@ const VehicleDetailsClient: React.FC = () => {
                             : null
                         }
                       />
+
+                      {pricing.data.data.vatPercentage && <PriceRow
+                        label="VAT Amount"
+                        value={pricing.data.data.vatAmount}
+                        subLabel={`${pricing.data.data.vatPercentage}%`}
+                      />}
+
 
                       <PriceRow
                         label="Duration Discount"
