@@ -119,7 +119,7 @@ function FAQPageClient() {
         id: "faq-8",
         question: "Do I need to fuel the car during my rental?",
         answer:
-          "Yes, if you're responsible for refueling, there's a minimum fuel purchase requirement: ₦5,000 minimum for Sedans and ₦10,000 minimum for SUVs.",
+          "So basically what happens is that if you are on a daily rental there is a dedicated amount of fuel that is provided which in half tank and if the fuel finished due to the number miles traveled within the 24 hours duration you are obligated to fill up the car with added fuel and the minimum for Sedan is 8k and the max for SUV is 14k. Then for self driver you would be handling the fuel completely and the minimum and max remains the same. ",
       },
     ],
     policies: [
