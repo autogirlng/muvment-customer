@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { usePathname, useRouter, useParams } from "next/navigation";
+import { usePathname, useRouter, useParams, useSearchParams } from "next/navigation";
 import {
   FiStar,
   FiCheckCircle,
@@ -15,6 +15,7 @@ import { Navbar } from "@/components/Navbar";
 import { getSingleData } from "@/controllers/connnector/app.callers";
 import { BookingService } from "@/controllers/booking/bookingService";
 import { BiCar } from "react-icons/bi";
+import { useAuth } from "@/context/AuthContext";
 
 interface BookingDetails {
   bookingId: string;
@@ -31,10 +32,12 @@ interface BookingDetails {
 }
 
 const ReviewPage = () => {
-  const path = usePathname();
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
   const bookingId = params.id || "";
+  const entityType = searchParams.get("entityType") || "Booking"
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,46 +50,47 @@ const ReviewPage = () => {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState("");
 
-  useEffect(() => {
-    const fetchBookingAndCheckReview = async () => {
-      if (!bookingId) {
+  const fetchBookingAndCheckReview = async () => {
+    if (!bookingId) {
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+
+      // Check if user has already reviewed this booking
+      const hasReviewed = await BookingService.checkIfUserHasReviewed(
+        bookingId as string
+      );
+
+      if (hasReviewed) {
+        setAlreadyReviewed(true);
         setLoading(false);
         return;
       }
 
-      try {
-        setLoading(true);
 
-        // Check if user has already reviewed this booking
-        const hasReviewed = await BookingService.checkIfUserHasReviewed(
-          bookingId as string
-        );
+      // Fetch booking details if no review exists
+      const bookingRes = await getSingleData(
+        `/api/v1/public/bookings/${bookingId}`
+      );
+      const bookingData = bookingRes?.data[0]?.data;
 
-        if (hasReviewed) {
-          setAlreadyReviewed(true);
-          setLoading(false);
-          return;
-        }
 
-        // Fetch booking details if no review exists
-        const bookingRes = await getSingleData(
-          `/api/v1/public/bookings/${bookingId}`
-        );
-        const bookingData = bookingRes?.data[0]?.data;
-
-        if (!bookingData) {
-          throw new Error("Booking data is missing or invalid.");
-        }
-
-        setBooking(bookingData);
-      } catch (err: any) {
-        console.error("Error fetching booking:", err);
-        setError(err.message || "Failed to load booking details.");
-      } finally {
-        setLoading(false);
+      if (!bookingData) {
+        throw new Error("Booking data is missing or invalid.");
       }
-    };
 
+      setBooking(bookingData);
+    } catch (err: any) {
+      console.error("Error fetching booking:", err);
+      setError(err.message || "Failed to load booking details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchBookingAndCheckReview();
   }, [bookingId]);
 
@@ -101,19 +105,17 @@ const ReviewPage = () => {
       setError("");
 
       const reviewPayload = {
-        rating: rating,
-        review: "Review",
+        rating,
+        review: comment,
+        isAnonymous: !!user?.userId,
         recommend: comment || "No additional comments",
-        entityId: booking?.vehicle?.id as string,
-        entityType: "Vehicle",
+        entityId: bookingId as string,
+        entityType,
         source: "WEB",
-        anonymouseEmail: booking?.booker?.email || "anonymous@example.com",
-        anonymouseFullName: booking?.booker?.fullName || "Anonymous User",
-        anonymousePhoneNumber: booking?.booker?.customerPhone || "0000000000",
       };
 
-      const response = await BookingService.createAnonymousReview(
-        reviewPayload
+      await BookingService.createReview(
+        reviewPayload,
       );
       setSubmitted(true);
     } catch (error: any) {
@@ -148,9 +150,9 @@ const ReviewPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
         <Navbar />
         <div className="flex items-center justify-center max-h-[90vh] overflow-y-auto p-4">
-          <div className="max-w-xl w-full text-center py-6">
+          <div className="max-w-xl w-full mt-[150px] mt-md-[100px] text-center py-6">
             {/* Friendly Icon */}
-            <div className="mb-6 relative inline-block">
+            <div className="mb-6  relative inline-block">
               <div className="absolute inset-0 bg-green-400 rounded-full blur-2xl opacity-20 animate-pulse"></div>
               <div className="relative bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-full shadow-lg border-4 border-white">
                 <FiCheckCircle className="text-green-600 w-16 h-16" />
@@ -184,7 +186,7 @@ const ReviewPage = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
                 onClick={() => router.push("/booking/search")}
-                className="group px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
+                className="group px-8 py-3.5 bg-gradient-to-r cursor-pointer from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
               >
                 <BiCar className="w-5 h-5" />
                 Book Another Ride
@@ -193,7 +195,7 @@ const ReviewPage = () => {
 
               <button
                 onClick={() => router.back()}
-                className="px-8 py-3.5 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-300 font-semibold shadow-md hover:shadow-lg border border-gray-200"
+                className="px-8 py-3.5 bg-white cursor-pointer text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-300 font-semibold shadow-md hover:shadow-lg border border-gray-200"
               >
                 Go Back
               </button>
@@ -221,7 +223,7 @@ const ReviewPage = () => {
           </p>
           <button
             onClick={() => router.push("/")}
-            className="group px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
+            className="group px-8 py-3.5 cursor-pointer bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
           >
             Go Back Home
             <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -237,9 +239,9 @@ const ReviewPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
         <Navbar />
         <div className="flex items-center justify-center max-h-[90vh] overflow-y-auto p-4">
-          <div className="max-w-xl w-full text-center py-6">
+          <div className="max-w-xl w-full mt-[100px]  text-center py-6">
             {/* Success Animation */}
-            <div className="mb-6 relative inline-block">
+            <div className="mb-4  relative inline-block">
               <div className="absolute inset-0 bg-blue-400 rounded-full blur-2xl opacity-20 animate-pulse"></div>
               <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-full shadow-lg border-4 border-white">
                 <FiCheckCircle className="text-blue-600 w-16 h-16" />
@@ -265,11 +267,10 @@ const ReviewPage = () => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <FiStar
                       key={star}
-                      className={`w-6 h-6 ${
-                        star <= rating
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
+                      className={`w-6 h-6 ${star <= rating
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                        }`}
                     />
                   ))}
                 </div>
@@ -364,11 +365,10 @@ const ReviewPage = () => {
                     className="transition-all duration-200 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-lg p-1"
                   >
                     <FiStar
-                      className={`w-8 h-8 transition-all ${
-                        star <= (hoveredRating || rating)
-                          ? "fill-yellow-400 text-yellow-400 drop-shadow-sm"
-                          : "text-gray-300 hover:text-gray-400"
-                      }`}
+                      className={`w-8 h-8 transition-all ${star <= (hoveredRating || rating)
+                        ? "fill-yellow-400 text-yellow-400 drop-shadow-sm"
+                        : "text-gray-300 hover:text-gray-400"
+                        }`}
                     />
                   </button>
                 ))}
@@ -421,7 +421,7 @@ const ReviewPage = () => {
             <button
               onClick={handleSubmitReview}
               disabled={submitting || rating === 0}
-              className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-bold text-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-3"
+              className="w-full py-3 bg-gradient-to-r cursor-pointer from-blue-600 to-blue-700 text-white rounded-lg font-bold text-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-3"
             >
               {submitting ? (
                 <>
@@ -446,7 +446,7 @@ const ReviewPage = () => {
 
           {/* Trust Badge */}
           <div className="text-center mt-4 text-xs text-gray-500">
-            <p>🔒 Your feedback is secure and confidential</p>
+            <p> Your feedback is secure and confidential</p>
           </div>
         </div>
       </div>

@@ -355,8 +355,8 @@ export default function ExploreVehiclesClient() {
               <button
                 onClick={() => setViewMode("list")}
                 className={`p-2 rounded-md transition-colors ${viewMode === "list"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
                   }`}
                 aria-label="List view"
               >
@@ -365,8 +365,8 @@ export default function ExploreVehiclesClient() {
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-2 rounded-md transition-colors ${viewMode === "grid"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
                   }`}
                 aria-label="Grid view"
               >
@@ -376,6 +376,7 @@ export default function ExploreVehiclesClient() {
           </div>
 
           <div className="mb-6">
+
             <SimplifiedFilterBar
               filterState={filterState}
               onFilterChange={handleFilterChange}

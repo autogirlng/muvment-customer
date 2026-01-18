@@ -100,6 +100,8 @@ export const NavbarSearchBar = () => {
     const untilDateParam = params.get("untilDate") ?? "";
     const vehicleTypeIdParam = params.get("vehicleTypeId") ?? "";
 
+
+
     if (bookingTypeParam) {
       setBookingType(bookingTypeParam);
     }

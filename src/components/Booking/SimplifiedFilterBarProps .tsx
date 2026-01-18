@@ -172,7 +172,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
             label="Daily price"
             selectedLabel={
               isPriceActive
-                ? `₹${filterState.priceRange?.[0]}-${filterState.priceRange?.[1]}`
+                ? `₦${filterState.priceRange?.[0]}-${filterState.priceRange?.[1]}`
                 : undefined
             }
             count={isPriceActive ? 1 : 0}

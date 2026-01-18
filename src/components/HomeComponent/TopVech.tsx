@@ -46,6 +46,7 @@ const TopRating: React.FC<TopRatingProps> = ({
   const [showTooltip, setShowTooltip] = useState<string | null>(null);
   const router = useRouter();
   const price = vehicle.allPricingOptions[0]?.price || 0;
+  const bookingType = vehicle.allPricingOptions[0]?.bookingTypeName || "";
 
   const nextImage = () => {
     setCurrentImageIndex((prev) =>
@@ -107,11 +108,10 @@ const TopRating: React.FC<TopRatingProps> = ({
                   <button
                     key={index}
                     onClick={() => goToImage(index)}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${
-                      index === currentImageIndex
-                        ? "bg-white w-4"
-                        : "bg-white/50"
-                    }`}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentImageIndex
+                      ? "bg-white w-4"
+                      : "bg-white/50"
+                      }`}
                   />
                 ))}
               </div>
@@ -158,7 +158,7 @@ const TopRating: React.FC<TopRatingProps> = ({
                 {vehicle.name}
               </h3>
               <p className="text-sm text-gray-500 mb-2">
-                NGN {price.toLocaleString()}/day
+                NGN {price.toLocaleString()}/{price}
               </p>
               <p className="text-sm text-gray-600">{vehicle.vehicleTypeName}</p>
             </div>
@@ -212,11 +212,10 @@ const TopRating: React.FC<TopRatingProps> = ({
                   <button
                     key={index}
                     onClick={() => goToImage(index)}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${
-                      index === currentImageIndex
-                        ? "bg-white w-4"
-                        : "bg-white/50"
-                    }`}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentImageIndex
+                      ? "bg-white w-4"
+                      : "bg-white/50"
+                      }`}
                   />
                 ))}
               </div>
@@ -263,7 +262,7 @@ const TopRating: React.FC<TopRatingProps> = ({
               {vehicle.name}
             </h3>
             <p className="text-sm font-semibold text-gray-900 mb-2">
-              NGN {price.toLocaleString()}/day
+              NGN {price.toLocaleString()}/{bookingType}
             </p>
             <p className="text-xs text-gray-600">{vehicle.vehicleTypeName}</p>
           </div>

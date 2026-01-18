@@ -170,23 +170,26 @@ export class BookingService {
     }
   }
 
-  static async createAnonymousReview(reviewData: {
+  static async createReview(reviewData: {
     rating: number;
     review: string;
     recommend: string;
     entityId: string;
     entityType: string;
     source: string;
-    anonymouseEmail: string;
-    anonymouseFullName: string;
-    anonymousePhoneNumber: string;
+    isAnonymous: boolean,
   }): Promise<any> {
+    let END_POINT;
+    if (!reviewData.isAnonymous) {
+      END_POINT = "/api/v1/rating-review"
+    } else {
+      END_POINT = "/api/v1/rating-review/anonymouse-user"
+    }
     try {
       const response = await createData(
-        "/api/v1/rating-review/anonymouse-user",
+        END_POINT,
         reviewData
       );
-      console.log(response);
       if (!response || !response.data)
         throw new Error("Failed to create review");
       return response.data;
@@ -196,17 +199,18 @@ export class BookingService {
     }
   }
 
-  static async checkIfUserHasReviewed(booking_id: string): Promise<boolean> {
+
+  static async checkIfUserHasReviewed(bookingId: string): Promise<boolean> {
     try {
       const response = await getSingleData(
-        `/api/v1/rating-review/booking/${booking_id}`
+        `/api/v1/rating-review/entity/${bookingId}`
       );
 
       if (!response || !response.data) {
         return false; // No review exists
       }
 
-      const data = response.data.data;
+      const data = response.data[0].data.content
       return data.length > 0;
     } catch (error) {
       return false;
