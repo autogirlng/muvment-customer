@@ -76,17 +76,17 @@ export const useLocationDetection = () => {
             const locationName =
               locationParts.length > 0
                 ? locationParts.join(", ")
-                : country || "Your Location";
+                : country || "lagos";
 
             resolve(locationName);
           } else {
-            resolve("Your Location");
+            resolve("lagos");
           }
         });
       });
     } catch (error) {
       console.error("Reverse geocoding error:", error);
-      return "Your Location";
+      return "lagos";
     }
   };
 

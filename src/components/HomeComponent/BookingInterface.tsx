@@ -44,6 +44,8 @@ export default function HeroBookingSection() {
   const [userLocation, setUserLocation] = useState<string>(
     "Detecting location..."
   );
+
+  console.log(userLocation);
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<
     "pending" | "granted" | "denied"
   >("pending");
@@ -140,30 +142,28 @@ export default function HeroBookingSection() {
             const locationName =
               locationParts.length > 0
                 ? locationParts.join(", ")
-                : country || "Your Location";
+                : country || "lagos";
 
             resolve(locationName);
           } else {
             console.error("Geocoder failed:", status);
-            resolve("Your Location");
+            resolve("lagos");
           }
         });
       });
     } catch (error) {
       console.error("Error reverse geocoding:", error);
-      return "Your Location";
+      return "lagos";
     }
   };
 
-  // Check if we have a stored location from previous session
   const checkStoredLocation = () => {
     try {
       const stored = sessionStorage.getItem("userLocation");
       if (stored) {
         const parsed = JSON.parse(stored);
         const age = Date.now() - parsed.timestamp;
-
-        if (age < 30 * 60 * 1000) {
+        if (age < 10 * 60 * 1000) {
           setUserLocation(parsed.name);
           setSearchValue(parsed.name);
           setSelectedLocation({
@@ -287,7 +287,7 @@ export default function HeroBookingSection() {
       }
 
       const locationName = await reverseGeocodeWithGoogle(latitude, longitude);
-
+      console.log(locationName);
       setUserLocation(locationName);
       setSearchValue(locationName);
       setSelectedLocation({
@@ -308,6 +308,12 @@ export default function HeroBookingSection() {
     } catch (error) {
       setLocationPermissionStatus("denied");
       setUserLocation("Lagos, Nigeria");
+      setSearchValue(DEFAULT_LOCATION.name);
+      setSelectedLocation({
+        name: DEFAULT_LOCATION.name,
+        lat: DEFAULT_LOCATION.lat,
+        lng: DEFAULT_LOCATION.lng,
+      });
       setShowLocationPrompt(false);
     } finally {
       setIsRequestingLocation(false);
@@ -453,7 +459,6 @@ export default function HeroBookingSection() {
         lng: longitude,
       });
 
-      // Store location
       sessionStorage.setItem(
         "userLocation",
         JSON.stringify({
@@ -465,7 +470,13 @@ export default function HeroBookingSection() {
       );
     } catch (error) {
       setLocationPermissionStatus("denied");
-      setUserLocation("Location access denied");
+      setUserLocation("Lagos, Nigeria");
+      setSearchValue(DEFAULT_LOCATION.name);
+      setSelectedLocation({
+        name: DEFAULT_LOCATION.name,
+        lat: DEFAULT_LOCATION.lat,
+        lng: DEFAULT_LOCATION.lng,
+      });
     }
   };
 

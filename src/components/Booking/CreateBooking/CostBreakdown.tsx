@@ -228,6 +228,14 @@ const CostBreakdown = ({
                 <span>Base Price</span>
                 <span>NGN {(pricing?.data.data.basePrice || 0) + (pricing?.data.data.platformFeeAmount || 0)}</span>
               </div>
+
+              {pricing?.data.data.vatAmount ? (
+                <div className="w-full text-sm flex justify-between mt-4">
+                  <span>VAT Charge</span>
+                  <span>NGN {pricing?.data.data.vatAmount}</span>
+                </div>
+              ) : null}
+
               {pricing?.data.data.discountAmount ? (
                 <div className="w-full text-sm flex justify-between mt-4 text-green-600">
                   <span>Duration Discount</span>

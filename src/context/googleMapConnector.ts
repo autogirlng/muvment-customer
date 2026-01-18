@@ -174,6 +174,7 @@ export class GoogleMapsService {
 
       this.placesService!.getDetails(request, (place, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+          console.log(status);
           resolve(place);
         } else {
           reject(new Error(`Failed to get place details. Status: ${status}`));
@@ -232,7 +233,7 @@ export class GoogleMapsService {
           const locationName =
             locationParts.length > 0
               ? locationParts.join(", ")
-              : country || "Your Location";
+              : country || "lagos";
 
           resolve(locationName);
         } else {

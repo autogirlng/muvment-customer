@@ -94,7 +94,17 @@ export const NavbarSearchBar = () => {
 
   useEffect(() => {
     getvechileType();
+
     const locationParam = params.get("location") ?? "";
+
+    const lngParam = params.get("lng");
+    const latParam = params.get("lat");
+
+    const lng =
+      lngParam !== null && !isNaN(Number(lngParam)) ? Number(lngParam) : null;
+    const lat =
+      latParam !== null && !isNaN(Number(latParam)) ? Number(latParam) : null;
+
     const bookingTypeParam = params.get("bookingType");
     const fromDateParam = params.get("fromDate") ?? "";
     const untilDateParam = params.get("untilDate") ?? "";
@@ -102,25 +112,17 @@ export const NavbarSearchBar = () => {
 
 
 
-    if (bookingTypeParam) {
-      setBookingType(bookingTypeParam);
-    }
-    if (fromDateParam) {
-      setFromDate(new Date(fromDateParam))
-    }
+    if (bookingTypeParam) setBookingType(bookingTypeParam);
+    if (fromDateParam) setFromDate(new Date(fromDateParam));
+    if (untilDateParam) setUntilDate(new Date(untilDateParam));
+    if (vehicleTypeIdParam) setCategory(vehicleTypeIdParam);
 
-    if (untilDateParam) {
-      setUntilDate(new Date(untilDateParam))
-    }
-
-    if (vehicleTypeIdParam) {
-      setCategory(vehicleTypeIdParam)
+    if (locationParam) {
+      setSearchValue(locationParam);
+      setSelectedLocation({ name: locationParam, lng, lat });
     }
 
-
-
-
-  }, []);
+  }, [params]);
 
   const handleDropdownToggle = (dropdownId: string) => {
     setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
