@@ -107,7 +107,7 @@ const ContactUsClient: React.FC = () => {
           {/* Contact Info Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
             {/* Address */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
+            {/* <div className="bg-white rounded-2xl p-6 shadow-sm">
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                 <FaMapMarkerAlt className="text-blue-600" />
               </div>
@@ -115,7 +115,7 @@ const ContactUsClient: React.FC = () => {
               <p className="text-gray-600 text-sm leading-relaxed">
                 16 Bankole Street, Oregun, Ikeja, Lagos State, Nigeria
               </p>
-            </div>
+            </div> */}
 
             {/* Email */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -134,7 +134,7 @@ const ContactUsClient: React.FC = () => {
             </div>
 
             {/* Phone */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
+            {/* <div className="bg-white rounded-2xl p-6 shadow-sm">
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                 <FaPhoneAlt className="text-blue-600" />
               </div>
@@ -155,7 +155,7 @@ const ContactUsClient: React.FC = () => {
                   +234 (0)704 981 8047
                 </a>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Contact Form */}
