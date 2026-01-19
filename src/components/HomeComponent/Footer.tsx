@@ -31,12 +31,12 @@ const footerNav: FooterNavProps[] = [
   {
     title: "Locations",
     links: [
-      { name: "Lagos", link: "/booking/search?city=lagos" },
-      { name: "Abuja", link: "/booking/search?city=abuja" },
-      { name: "Benin City", link: "/booking/search?city=benin" },
-      { name: "Enugu", link: "/booking/search?city=enugu" },
-      { name: "Port Harcourt", link: "/booking/search?city=port-harcourt" },
-      { name: "Accra", link: "/booking/search?city=accra" },
+      { name: "Lagos", link: "/booking/search?city=lagos", type: "link" },
+      { name: "Abuja", link: "/booking/search?city=abuja", type: "link" },
+      { name: "Benin City", link: "/booking/search?city=benin", type: "link" },
+      { name: "Enugu", link: "/booking/search?city=enugu", type: "link" },
+      { name: "Port Harcourt", link: "/booking/search?city=port-harcourt", type: "link" },
+      { name: "Accra", link: "/booking/search?city=accra", type: "link" },
     ],
   },
 
@@ -125,6 +125,9 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
   const isFormValid =
     formData.email.trim() !== "" && Object.keys(errors).length === 0;
 
+  console.log(bookingTypeID)
+
+
   return (
     <footer className="px-4 md:px-6 lg:px-8 mb-24 bg-white text-black">
       <div className="py-8 md:py-12 lg:py-16 px-6 md:px-10 lg:px-16 bg-[#F8F9FA] rounded-[32px] md:rounded-[48px] mx-2 md:mx-4 lg:mx-6">
@@ -190,9 +193,8 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                         </button>
                       ) : navLink.type === "link" ? (
                         <Link
-                          href={`${navLink.link}${
-                            bookingTypeID && `bookingType=${bookingTypeID}`
-                          }`}
+                          href={`${navLink.link}${bookingTypeID && `&bookingType=${bookingTypeID}`
+                            }`}
                           className="hover:text-primary-500"
                         >
                           {navLink.name}
