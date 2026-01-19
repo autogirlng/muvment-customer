@@ -88,11 +88,10 @@ const StatusBadge = ({ status }: { status: string }) => {
   const isConfirmed = status === "CONFIRMED" || status === "SUCCESSFUL";
   return (
     <span
-      className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${
-        isConfirmed
+      className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${isConfirmed
           ? "bg-green-100 text-green-700 border border-green-200"
           : "bg-yellow-100 text-yellow-700 border border-yellow-200"
-      }`}
+        }`}
     >
       {isConfirmed && <FiCheckCircle />}
       {status}
@@ -110,8 +109,10 @@ const BookingDetailsPage = () => {
   const [vehicle, setVehicle] = useState<VehicleDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  console.log(booking);
-  console.log(vehicle);
+
+
+
+
   useEffect(() => {
     const fetchData = async () => {
       if (!bookingId) {
@@ -142,7 +143,6 @@ const BookingDetailsPage = () => {
             {}
           );
 
-          // ✅ FIX: Access nested data correctly for vehicle too
           setVehicle(vehicleRes?.data[0]?.data || null);
         }
       } catch (err: any) {

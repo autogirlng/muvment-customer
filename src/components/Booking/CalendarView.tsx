@@ -72,17 +72,17 @@ export const CalendarView: React.FC<CalendarProps> = ({
       const dominantStatus =
         dateBookings.length > 0
           ? dateBookings.reduce((acc, booking) => {
-              acc[booking.bookingStatus] =
-                (acc[booking.bookingStatus] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>)
+            acc[booking.bookingStatus] =
+              (acc[booking.bookingStatus] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>)
           : {};
 
       const mainStatus =
         Object.keys(dominantStatus).length > 0
           ? Object.keys(dominantStatus).reduce((a, b) =>
-              dominantStatus[a] > dominantStatus[b] ? a : b
-            )
+            dominantStatus[a] > dominantStatus[b] ? a : b
+          )
           : null;
 
       days.push({
@@ -99,6 +99,7 @@ export const CalendarView: React.FC<CalendarProps> = ({
 
     return days;
   }, [currentDate, bookings]);
+
 
   const navigateMonth = (direction: "prev" | "next") => {
     setCurrentDate((prev) => {
@@ -119,7 +120,7 @@ export const CalendarView: React.FC<CalendarProps> = ({
   const getStatusBgColor = (status: string | null) =>
     status
       ? STATUS_BG_COLORS[status] ||
-        "bg-gray-50 border-gray-200 hover:bg-gray-100"
+      "bg-gray-50 border-gray-200 hover:bg-gray-100"
       : "bg-white";
 
   const getStatusTextColor = (status: string | null) => {
@@ -141,7 +142,7 @@ export const CalendarView: React.FC<CalendarProps> = ({
   const formatMonthYear = (date: Date) =>
     date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-  const getDayNames = () => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const getDayNames = () => ["Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"];
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
@@ -244,7 +245,7 @@ export const CalendarView: React.FC<CalendarProps> = ({
         {getDayNames().map((day) => (
           <div
             key={day}
-            className="text-center text-sm font-medium text-gray-300 py-2"
+            className="text-start text-sm font-sm text-gray-400 py-2"
           >
             {day}
           </div>
@@ -253,23 +254,22 @@ export const CalendarView: React.FC<CalendarProps> = ({
 
       {/* Days */}
       <div className="grid grid-cols-7 gap-1">
-        {calendarDays.map((day, index) => (
+        {/* {calendarDays.map((day, index) => (
           <div
             key={index}
             onClick={() =>
               day.bookingCount > 0 && onDateClick(day.date, day.bookings)
             }
             className={`
-              min-h-[80px] p-2 border-2 rounded-lg transition
+              min-h-[72px] sm:min-h-[100px] md:min-h-[120px] py-2 border border-[#d0d5dd] transition
               ${getStatusBgColor(day.mainStatus)}
               ${!day.isCurrentMonth ? "opacity-60" : ""}
               ${day.bookingCount > 0 ? "cursor-pointer" : "cursor-default"}
             `}
           >
             <div
-              className={`text-sm font-semibold mb-1 ${
-                day.mainStatus ? getStatusTextColor(day.mainStatus) : ""
-              }`}
+              className={`text-sm text-end m-2 me-2 ${day.mainStatus ? getStatusTextColor(day.mainStatus) : ""
+                }`}
             >
               {day.date.getDate()}
             </div>
@@ -303,7 +303,71 @@ export const CalendarView: React.FC<CalendarProps> = ({
               </div>
             )}
           </div>
+        ))} */}
+        {calendarDays.map((day, index) => (
+          <div
+            key={index}
+            onClick={() =>
+              day.bookingCount > 0 && onDateClick(day.date, day.bookings)
+            }
+            className={`
+      min-h-[72px] sm:min-h-[100px] md:min-h-[120px]
+      p-1 sm:p-2
+      border border-[#d0d5dd]
+      transition
+      active:scale-[0.98]
+      ${getStatusBgColor(day.mainStatus)}
+      ${!day.isCurrentMonth ? "opacity-60" : ""}
+      ${day.bookingCount > 0 ? "cursor-pointer" : "cursor-default"}
+    `}
+          >
+            {/* Date */}
+            <div
+              className={`text-xs sm:text-sm text-end mb-0.5 sm:mb-1 ${day.mainStatus ? getStatusTextColor(day.mainStatus) : ""
+                }`}
+            >
+              {day.date.getDate()}
+            </div>
+
+            {day.bookingCount > 0 && (
+              <div className="space-y-0.5 sm:space-y-1">
+                {/* Status bars */}
+                {day.statuses.slice(0, 3).map((status, i) => (
+                  <div
+                    key={i}
+                    className={`
+              h-1 sm:h-2
+              rounded-full
+              ${getStatusColor(status)}
+              ${i > 0 ? "hidden sm:block" : ""}
+            `}
+                    title={status.replace(/_/g, " ")}
+                  />
+                ))}
+
+                {/* + more (hidden on mobile) */}
+                {day.statuses.length > 3 && (
+                  <div
+                    className={`hidden sm:block text-xs text-center ${getStatusTextColor(day.mainStatus)
+                      }`}
+                  >
+                    +{day.statuses.length - 3} more
+                  </div>
+                )}
+
+                {/* Booking count (hidden on mobile) */}
+                <div
+                  className={`hidden sm:block text-xs text-center font-medium ${getStatusTextColor(day.mainStatus)
+                    }`}
+                >
+                  {day.bookingCount} booking
+                  {day.bookingCount > 1 ? "s" : ""}
+                </div>
+              </div>
+            )}
+          </div>
         ))}
+
       </div>
 
       {/* Legend */}

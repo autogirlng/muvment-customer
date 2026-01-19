@@ -138,7 +138,7 @@ const FindNewListings: React.FC = () => {
                             {vehicle.name}
                           </h3>
                           <p className="text-gray-300 text-xs md:text-sm mt-1">
-                            NGN {priceOf(vehicle).toLocaleString()}/day
+                            NGN {priceOf(vehicle).toLocaleString()}/{vehicle.allPricingOptions[0].bookingTypeName}
                           </p>
                           <p className="text-gray-400 text-xs mt-1">
                             {vehicle.vehicleTypeName}
@@ -173,9 +173,8 @@ const FindNewListings: React.FC = () => {
               <button
                 key={i}
                 onClick={() => handleDotClick(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentIndex ? "bg-white w-3" : "bg-gray-400"
-                }`}
+                className={`w-2 h-2 rounded-full transition-all ${i === currentIndex ? "bg-white w-3" : "bg-gray-400"
+                  }`}
               />
             ))}
           </div>

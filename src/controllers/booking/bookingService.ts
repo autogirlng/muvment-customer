@@ -177,14 +177,15 @@ export class BookingService {
     entityId: string;
     entityType: string;
     source: string;
-    isAnonymous: boolean,
-  }): Promise<any> {
+    // isAnonymous: boolean,
+  }, isAnonymous: boolean): Promise<any> {
     let END_POINT;
-    if (!reviewData.isAnonymous) {
+    if (!isAnonymous) {
       END_POINT = "/api/v1/rating-review"
     } else {
       END_POINT = "/api/v1/rating-review/anonymouse-user"
     }
+
     try {
       const response = await createData(
         END_POINT,

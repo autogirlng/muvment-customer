@@ -152,11 +152,10 @@ export default function DataTable<T extends { id: string | number }>({
                   {columns.map((column, colIndex) => (
                     <div
                       key={String(column.key)}
-                      className={`flex justify-between items-center pb-3 ${
-                        colIndex < columns.length - 1
+                      className={`flex justify-between items-center pb-3 ${colIndex < columns.length - 1
                           ? "border-b border-gray-200"
                           : ""
-                      }`}
+                        }`}
                     >
                       <span className="text-xs font-semibold text-gray-600 uppercase">
                         {column.label}

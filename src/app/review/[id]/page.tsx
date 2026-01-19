@@ -37,7 +37,7 @@ const ReviewPage = () => {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const bookingId = params.id || "";
-  const entityType = searchParams.get("entityType") || "Booking"
+  const entityType = searchParams.get("entityType") || ""
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,19 +103,19 @@ const ReviewPage = () => {
     try {
       setSubmitting(true);
       setError("");
-
       const reviewPayload = {
         rating,
         review: comment,
-        isAnonymous: !!user?.userId,
         recommend: comment || "No additional comments",
         entityId: bookingId as string,
         entityType,
         source: "WEB",
       };
 
+
       await BookingService.createReview(
         reviewPayload,
+        !user?.firstName
       );
       setSubmitted(true);
     } catch (error: any) {
@@ -125,6 +125,10 @@ const ReviewPage = () => {
       setSubmitting(false);
     }
   };
+
+  if (!!user?.id) {
+    router.push("/auth/login")
+  }
 
   // Loading State
   if (loading) {
@@ -205,9 +209,8 @@ const ReviewPage = () => {
       </div>
     );
   }
-
   // Error State
-  if (error && !booking) {
+  if (error && !booking || !entityType) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
         <Navbar />
@@ -216,7 +219,7 @@ const ReviewPage = () => {
             <FiAlertCircle className="text-red-500 w-12 h-12" />
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-3">
-            Unable to Load Booking
+            Unable to Load {entityType}
           </h3>
           <p className="text-gray-600 mb-8 text-base max-w-md leading-relaxed">
             {error}
@@ -320,7 +323,10 @@ const ReviewPage = () => {
             <div className="h-[25vh]"></div>
 
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
-              How Was Your Ride?
+              {
+                entityType === "Booking" ? "How Was The Booking?" : "How Was Your Ride and Vehicle?"
+              }
+
             </h1>
             <p className="text-sm text-gray-600 leading-relaxed max-w-lg mx-auto">
               We'd love to hear about your experience! Your honest feedback

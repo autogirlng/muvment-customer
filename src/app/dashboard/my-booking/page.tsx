@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { FiList, FiCalendar, FiSearch, FiShare2 } from "react-icons/fi";
+import { FiList, FiCalendar, FiSearch, FiShare2, FiPlus } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import {
   Booking,
@@ -58,8 +58,9 @@ const BookingHistoryPage = () => {
     }
   };
 
+
+
   const handleBookingClick = async (booking: Booking) => {
-    console.log(booking);
     const bookings = await BookingService.getBookingById(
       booking?.bookingId as string
     );
@@ -69,9 +70,8 @@ const BookingHistoryPage = () => {
   };
 
   const handleShareBooking = (booking: Booking) => {
-    const shareText = `Check out my booking for ${
-      booking.vehicleName
-    } on ${new Date(booking.createdAt).toLocaleDateString()}`;
+    const shareText = `Check out my booking for ${booking.vehicleName
+      } on ${new Date(booking.createdAt).toLocaleDateString()}`;
     const shareUrl = `${window.location.origin}/booking-tracking?bookingId=${booking.bookingId}`;
 
     if (navigator.share) {
@@ -213,7 +213,7 @@ const BookingHistoryPage = () => {
     [bookings]
   );
 
-  const handleNewBooking = () => router.push("/Booking/search");
+  const handleNewBooking = () => router.push("/booking/search");
 
   return (
     <div className="min-h-screen ">
@@ -223,16 +223,20 @@ const BookingHistoryPage = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Booking History
+              My Bookings
             </h1>
-            <p className="text-gray-600">View and manage your past bookings</p>
           </div>
 
           <button
             onClick={handleNewBooking}
-            className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="w-full sm:w-auto cursor-pointer
+             px-3 py-2
+             bg-blue-600 text-white rounded-md
+             hover:bg-blue-700 transition-colors
+             inline-flex items-center gap-1"
           >
-            New Booking
+            <FiPlus className="w-4 h-4" />
+            <span>New Booking</span>
           </button>
         </div>
 
@@ -243,22 +247,20 @@ const BookingHistoryPage = () => {
             <div className="flex bg-white rounded-lg border border-gray-200 p-1">
               <button
                 onClick={() => setViewMode("list")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${
-                  viewMode === "list"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${viewMode === "list"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
               >
                 <FiList className="w-4 h-4" />
                 List
               </button>
               <button
                 onClick={() => setViewMode("calendar")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${
-                  viewMode === "calendar"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${viewMode === "calendar"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
               >
                 <FiCalendar className="w-4 h-4" />
                 Calendar

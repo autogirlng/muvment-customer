@@ -10,9 +10,9 @@ interface PriceRangeFilterProps {
 
 const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
   range = [0, 50000],
-  onChange = () => {},
+  onChange = () => { },
   maxPrice = 50000,
-  onClear = () => {},
+  onClear = () => { },
   compact = false,
 }) => {
   const [min, setMin] = useState(range[0]);

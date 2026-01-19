@@ -163,7 +163,7 @@ const ItineraryForm = ({
                 Booking Details
               </h6>
 
-              <p className="text-sm my-4">Trip per day</p>
+              <p className="text-sm my-4">Daily Iternary </p>
 
               {trips.map((trip, index) => {
                 return (
@@ -221,7 +221,7 @@ const ItineraryForm = ({
                 steps={steps}
                 currentStep={currentStep}
                 setCurrentStep={setCurrentStep}
-                handleSaveDraft={() => {}}
+                handleSaveDraft={() => { }}
                 isSaveDraftloading={false}
                 disableNextButton={!isTripFormsComplete}
               />
