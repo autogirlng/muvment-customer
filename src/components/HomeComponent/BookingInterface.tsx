@@ -517,19 +517,16 @@ export default function HeroBookingSection() {
 
   const getLocationInformation = () => {
     if (typeof window === "undefined" || !window.google) return;
-    console.log("here")
 
     const geocoder = new google.maps.Geocoder();
     if (location.lat != null && location.lng != null) {
-      // @ts-ignore
-      geocoder.geocode({ location }, (results, status) => {
+      geocoder.geocode({ location: { lat: location.lat, lng: location.lng } }, (results, status) => {
         if (status !== "OK" || !results?.[0]) return;
-
         const components = results[0].address_components;
-
         const state = components.find((c) => c.types.includes("administrative_area_level_1"))?.long_name || "";
         const country = components.find((c) => c.types.includes("country"))?.long_name || "";
         setLocationDetails(state + ", " + country)
+        console.log(state + ", " + country)
 
       })
     }
