@@ -106,9 +106,11 @@ export const NavbarSearchBar = () => {
       latParam !== null && !isNaN(Number(latParam)) ? Number(latParam) : null;
 
     const bookingTypeParam = params.get("bookingType");
-    const fromDateParam = params.get("fromDate");
-    const untilDateParam = params.get("untilDate");
-    const vehicleTypeIdParam = params.get("vehicleTypeId");
+    const fromDateParam = params.get("fromDate") ?? "";
+    const untilDateParam = params.get("untilDate") ?? "";
+    const vehicleTypeIdParam = params.get("vehicleTypeId") ?? "";
+
+
 
     if (bookingTypeParam) setBookingType(bookingTypeParam);
     if (fromDateParam) setFromDate(new Date(fromDateParam));

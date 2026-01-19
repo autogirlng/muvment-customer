@@ -434,7 +434,7 @@ export default function HeroBookingSection() {
       const position = await new Promise<GeolocationPosition>(
         (resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
+            enableHighAccuracy: false,
             timeout: 10000,
             maximumAge: 0,
           });
@@ -442,6 +442,7 @@ export default function HeroBookingSection() {
       );
 
       const { latitude, longitude } = position.coords;
+      console.log(latitude)
       setLocationPermissionStatus("granted");
       setIsUsingDefaultLocation(false);
 

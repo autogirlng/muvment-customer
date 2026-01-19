@@ -376,6 +376,7 @@ export default function ExploreVehiclesClient() {
           </div>
 
           <div className="mb-6">
+
             <SimplifiedFilterBar
               filterState={filterState}
               onFilterChange={handleFilterChange}

@@ -439,12 +439,12 @@ export const patchData = async (
 
     const query = queryParams
       ? "?" +
-        Object.entries(queryParams)
-          .map(
-            ([key, val]) =>
-              `${encodeURIComponent(key)}=${encodeURIComponent(val)}`
-          )
-          .join("&")
+      Object.entries(queryParams)
+        .map(
+          ([key, val]) =>
+            `${encodeURIComponent(key)}=${encodeURIComponent(val)}`
+        )
+        .join("&")
       : "";
 
     const url = `${path}/${id}${extraPath}${query}`;
