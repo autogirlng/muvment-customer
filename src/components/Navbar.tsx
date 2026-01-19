@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/context/AuthContext";
 import { guestMenuItems, menuItems } from "@/utils/MenuContent";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // Added useRef
 import { HiMenuAlt3 } from "react-icons/hi";
 import { IoLogOutOutline } from "react-icons/io5";
 import { Avatar } from "./Avatar";
@@ -28,6 +28,11 @@ export const Navbar = ({
   const router = useRouter();
   const pathname = usePathname();
 
+  // 1. Create Refs for the specific interactive elements
+  const desktopMenuRef = useRef<HTMLDivElement>(null);
+  const mobileButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+
   const [bookingTypeID, setBookingTypeID] = useState<string>();
   const [bookingOptions, setBookingOptions] = useState<BookingOption[]>([]);
 
@@ -51,6 +56,36 @@ export const Navbar = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // 2. Logic to handle clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // If menu is closed, we don't need to do anything
+      if (!isMenuOpen) return;
+
+      const target = event.target as Node;
+
+      // Check if click is inside the Desktop Menu Wrapper
+      const isInsideDesktop = desktopMenuRef.current?.contains(target);
+      // Check if click is inside the Mobile Toggle Button
+      const isInsideMobileButton = mobileButtonRef.current?.contains(target);
+      // Check if click is inside the Mobile Menu Dropdown
+      const isInsideMobileMenu = mobileMenuRef.current?.contains(target);
+
+      // If the click is NOT inside any of our menu elements, close the menu
+      if (!isInsideDesktop && !isInsideMobileButton && !isInsideMobileMenu) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    // Bind the event listener
+    document.addEventListener("mousedown", handleClickOutside);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
   const handleNavClick = (link: string) => {
     router.push(link);
     setIsMenuOpen(false);
@@ -63,7 +98,7 @@ export const Navbar = ({
 
   const items = user ? menuItems : guestMenuItems;
   const announcementMessages = [
-    "We've moved! Autogirl.ng is now Muvment.ng | Hurry! Use MUVMENT2026 (₦5,000 off) — all coupons expire Jan 31, 2026 at 11:45pm",
+    "We've moved! Autogirl.ng is now Muvment.ng | Hurry! Use MUVMENT2026 (₦5,000 off) — all coupons expire Jan 31, 2026 at 11:45pm",
   ];
   return (
     <nav
@@ -112,7 +147,8 @@ export const Navbar = ({
 
             {/* <div className="h-6 w-px bg-gray-300" /> */}
 
-            <div className="relative">
+            {/* 3. Attach Ref to Desktop Wrapper */}
+            <div className="relative" ref={desktopMenuRef}>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-full hover:shadow-md transition-shadow"
@@ -180,7 +216,9 @@ export const Navbar = ({
           </div>
 
           {/* Mobile Menu Button */}
+          {/* 4. Attach Ref to Mobile Toggle Button */}
           <button
+            ref={mobileButtonRef}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-full hover:shadow-md transition-shadow"
           >
@@ -192,7 +230,11 @@ export const Navbar = ({
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
+        // 5. Attach Ref to Mobile Menu Container
+        <div 
+          ref={mobileMenuRef}
+          className="md:hidden bg-white border-t border-gray-200 shadow-lg"
+        >
           <div className="px-4 py-4 space-y-2">
             {user && (
               <div className="flex items-center gap-3 pb-4 mb-4 border-b border-gray-200">
