@@ -45,7 +45,6 @@ export default function HeroBookingSection() {
     "Detecting location..."
   );
 
-  console.log(userLocation);
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<
     "pending" | "granted" | "denied"
   >("pending");
@@ -442,7 +441,6 @@ export default function HeroBookingSection() {
       );
 
       const { latitude, longitude } = position.coords;
-      console.log(latitude)
       setLocationPermissionStatus("granted");
       setIsUsingDefaultLocation(false);
 
@@ -479,6 +477,74 @@ export default function HeroBookingSection() {
       });
     }
   };
+
+  const [location, setLocation] = useState<{
+    lat: number | null;
+    lng: number | null;
+  }>({
+    lat: null,
+    lng: null,
+
+  });
+
+  const [locationDetails, setLocationDetails] = useState<string>("Lagos, Nigeria (Default)")
+
+  const [error, setError] = useState<string | null>(null);
+
+  const getLongitudeLatitude = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by this browser");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (err) => {
+        setError(err.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  }
+
+  const getLocationInformation = () => {
+    if (typeof window === "undefined" || !window.google) return;
+    console.log("here")
+
+    const geocoder = new google.maps.Geocoder();
+    if (location.lat != null && location.lng != null) {
+      // @ts-ignore
+      geocoder.geocode({ location }, (results, status) => {
+        if (status !== "OK" || !results?.[0]) return;
+
+        const components = results[0].address_components;
+
+        const state = components.find((c) => c.types.includes("administrative_area_level_1"))?.long_name || "";
+        const country = components.find((c) => c.types.includes("country"))?.long_name || "";
+        setLocationDetails(state + ", " + country)
+
+      })
+    }
+
+  }
+
+  useEffect(() => {
+    getLongitudeLatitude();
+  }, []);
+  useEffect(() => {
+
+    getLocationInformation()
+  }, [location])
+
+
 
   return (
     <div className="relative w-full h-screen overflow-hidden mt-[5rem] md:mt-0">
@@ -720,8 +786,8 @@ export default function HeroBookingSection() {
                 : "text-yellow-400"
               }`}
           />
-          <span>{userLocation}</span>
-
+          {/* <span>{location.state} {location.country}</span> */}
+          <span>{locationDetails}</span>
           {/* Retry button if location permission was denied */}
           {locationPermissionStatus === "denied" && (
             <button
