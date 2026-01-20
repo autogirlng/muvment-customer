@@ -238,7 +238,6 @@ const VehicleDetailsClient: React.FC = () => {
     return pricing;
   };
 
-  console.log(pricing)
   return (
     <>
       <Navbar />

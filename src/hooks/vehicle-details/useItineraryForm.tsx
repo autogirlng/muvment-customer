@@ -28,7 +28,6 @@ export const useItineraryForm = () => {
       const newTrip = { id, tripDetails: sessionTrips[0] }
       sessionStorage.setItem("trips", JSON.stringify([...sessionTrips, { ...newTrip.tripDetails, id: newTrip.id }]))
       updatedTrips.push(newTrip)
-
       setTrips(updatedTrips)
     } else {
       setTrips((prev) => [...prev, { id }]);
