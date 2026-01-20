@@ -64,7 +64,6 @@ const TopRating: React.FC<TopRatingProps> = ({
     setCurrentImageIndex(index);
   };
 
-  // console.log(vehicle);
 
   const handleRouteToDetails = () => {
     router.push(`/booking/details/${vehicle.id}`);
@@ -76,7 +75,7 @@ const TopRating: React.FC<TopRatingProps> = ({
       {/* Mobile Layout - Current Design */}
       <div className="md:hidden">
         {/* Image Section */}
-        <div className="relative h-48 rounded-t-xl overflow-hidden">
+        <div className="relative h-48 rounded-t-xl overflow-hidden" >
           <img
             src={
               vehicle.photos[currentImageIndex]?.cloudinaryUrl ||
@@ -170,7 +169,7 @@ const TopRating: React.FC<TopRatingProps> = ({
               <MdLocationOn className="w-4 h-4 text-blue-600" />
               <span>{vehicle.city}</span>
             </div>
-            <button className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:gap-2 transition-all">
+            <button className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:gap-2 cursor-pointer transition-all" onClick={handleRouteToDetails}>
               Open Front Door
               <FaChevronRight className="w-3 h-3" />
             </button>
@@ -328,7 +327,7 @@ const TopRating: React.FC<TopRatingProps> = ({
             {/* Right: Action Button */}
             <button
               onClick={handleRouteToDetails}
-              className="text-blue-600 text-xs pr-4 font-medium flex items-center gap-1 hover:gap-2 transition-all"
+              className="text-blue-600 text-xs pr-4 font-medium flex cursor-pointer items-center gap-1 hover:gap-2 transition-all"
             >
               Open Front Door
               <FaChevronRight className="w-2.5 h-2.5" />

@@ -505,7 +505,7 @@ export default function HeroBookingSection() {
               }`}
           />
 
-          <span>{userLocation} {locationPermissionStatus === "denied" && "(Default Location)"}</span>
+          <span>{userLocation} {locationPermissionStatus === "denied" && "(Default)"}</span>
           {locationPermissionStatus === "denied" && (
             <button
               onClick={getLocationInformation}
