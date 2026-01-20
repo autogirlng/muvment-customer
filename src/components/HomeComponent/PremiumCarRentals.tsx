@@ -26,7 +26,7 @@ const CarRentalFeatures: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-[80vh] bg-white flex items-center justify-center p-3 ">
+    <div className=" bg-white flex items-center justify-center p-3 ">
       <div className="max-w-7xl w-full">
         <h1 className="text-[1.2rem] md:text-[2rem] font-bold text-center mb-6 md:mb-12 py-6 text-gray-900">
           Delivering Premium Car Rental Experiences

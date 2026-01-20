@@ -9,10 +9,12 @@ import { useRouter } from "next/navigation";
 
 interface TopRatedVehiclesProps {
   cardsPerSlide?: number;
+  bookingId?: string;
 }
 
 const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
   cardsPerSlide = 2,
+  bookingId
 }) => {
   const [vehicles, setVehicles] = useState<TopVehicle[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -61,7 +63,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
         setCurrentPage(response[0]?.data?.currentPage || 0);
         setHasMore(
           (response[0]?.data?.currentPage || 0) <
-            (response[0]?.data?.totalPages || 1) - 1
+          (response[0]?.data?.totalPages || 1) - 1
         );
       }
     } catch (error) {
@@ -157,11 +159,11 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
   };
 
   const handeleRoute = () => {
-    router.push(`/booking/search`);
+    router.push(`/booking/search${bookingId && `?bookingType=${bookingId}`}`);
   };
 
   return (
-    <div className="w-full py-6">
+    <div className="w-full py-6 my-[50px]">
       <div className="">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 max-w-[95%] ml-auto px-6">
@@ -181,7 +183,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
           </div>
           <button
             onClick={handeleRoute}
-            className="hidden md:block text-blue-600 font-medium flex items-center gap-2 hover:gap-3 transition-all"
+            className="hidden md:block text-blue-600 cursor-pointer font-medium flex items-center gap-2 hover:gap-3 transition-all"
           >
             See All
           </button>
@@ -193,11 +195,10 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
           <button
             onClick={handlePrev}
             disabled={isPrevDisabled}
-            className={`hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${
-              isPrevDisabled
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-gray-50"
-            }`}
+            className={`hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${isPrevDisabled
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-gray-50"
+              }`}
           >
             <FaChevronLeft className="w-4 h-4 text-gray-700" />
           </button>
@@ -238,11 +239,10 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
           <button
             onClick={handleNext}
             disabled={isNextDisabled}
-            className={`hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${
-              isNextDisabled
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-gray-50"
-            }`}
+            className={`hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${isNextDisabled
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-gray-50"
+              }`}
           >
             <FaChevronRight className="w-4 h-4 text-gray-700" />
           </button>
@@ -259,11 +259,10 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
             <button
               key={i}
               onClick={() => handleDotClick(i)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === getActiveDot()
-                  ? "bg-blue-600 w-8"
-                  : "bg-gray-300 hover:bg-gray-400"
-              }`}
+              className={`w-2 h-2 rounded-full transition-all ${i === getActiveDot()
+                ? "bg-blue-600 w-8"
+                : "bg-gray-300 hover:bg-gray-400"
+                }`}
             />
           ))}
         </div>

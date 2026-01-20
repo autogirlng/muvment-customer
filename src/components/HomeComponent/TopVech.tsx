@@ -157,7 +157,7 @@ const TopRating: React.FC<TopRatingProps> = ({
                 {vehicle.name}
               </h3>
               <p className="text-sm text-gray-500 mb-2">
-                NGN {price.toLocaleString()}/{price}
+                NGN {price.toLocaleString()}/{bookingType}
               </p>
               <p className="text-sm text-gray-600">{vehicle.vehicleTypeName}</p>
             </div>
