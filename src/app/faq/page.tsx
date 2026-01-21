@@ -136,7 +136,6 @@ function FAQPageClient() {
     <>
       <Navbar />
       <div className="min-h-screen pt-16 lg:pt-20">
-
         {/* Header Section with Logo Background */}
         <div className="relative h-64 lg:h-[70vh] w-full bg-[#0673FF] overflow-hidden">
           {/* Logo Pattern Background */}
@@ -160,7 +159,7 @@ function FAQPageClient() {
               <h1 className="text-white text-3xl md:text-5xl lg:text-6xl font-bold mb-4">
                 Questions
               </h1>
-              <p className="text-white text-sm md:text-base max-w-md mx-auto">
+              <p className="text-white text-sm md:text-base w-full mx-auto">
                 Quick answers to common questions about Product/Service.
               </p>
               <p className="text-white text-sm md:text-base">
@@ -180,10 +179,11 @@ function FAQPageClient() {
                 <button
                   key={section.id}
                   onClick={() => scrollToSection(section.id)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeSection === section.id
-                    ? "text-[#0673FF] bg-blue-50"
-                    : "text-gray-700 hover:bg-gray-200"
-                    }`}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                    activeSection === section.id
+                      ? "text-[#0673FF] bg-blue-50"
+                      : "text-gray-700 hover:bg-gray-200"
+                  }`}
                 >
                   {section.label}
                 </button>
@@ -206,10 +206,11 @@ function FAQPageClient() {
                     <button
                       key={section.id}
                       onClick={() => scrollToSection(section.id)}
-                      className={`px-4 py-3 rounded-lg text-left text-sm transition-colors ${activeSection === section.id
-                        ? "text-[#0673FF] bg-blue-50"
-                        : "text-gray-700 hover:bg-gray-200"
-                        }`}
+                      className={`px-4 py-3 rounded-lg text-left text-sm transition-colors ${
+                        activeSection === section.id
+                          ? "text-[#0673FF] bg-blue-50"
+                          : "text-gray-700 hover:bg-gray-200"
+                      }`}
                     >
                       {section.label}
                     </button>
@@ -235,13 +236,15 @@ function FAQPageClient() {
                         {faq.question}
                       </h3>
                       <BiChevronDown
-                        className={`w-5 h-5 text-[#0B2253] flex-shrink-0 transition-transform ${openFAQ === faq.id ? "rotate-180" : ""
-                          }`}
+                        className={`w-5 h-5 text-[#0B2253] flex-shrink-0 transition-transform ${
+                          openFAQ === faq.id ? "rotate-180" : ""
+                        }`}
                       />
                     </button>
                     <div
-                      className={`overflow-hidden transition-all duration-300 ${openFAQ === faq.id ? "max-h-96" : "max-h-0"
-                        }`}
+                      className={`overflow-hidden transition-all duration-300 ${
+                        openFAQ === faq.id ? "max-h-96" : "max-h-0"
+                      }`}
                     >
                       <div className="px-5 pb-5 pt-2">
                         <p className="text-sm md:text-base text-gray-700 leading-relaxed">
@@ -268,13 +271,15 @@ function FAQPageClient() {
                         {faq.question}
                       </h3>
                       <BiChevronDown
-                        className={`w-5 h-5 text-[#0B2253] flex-shrink-0 transition-transform ${openFAQ === faq.id ? "rotate-180" : ""
-                          }`}
+                        className={`w-5 h-5 text-[#0B2253] flex-shrink-0 transition-transform ${
+                          openFAQ === faq.id ? "rotate-180" : ""
+                        }`}
                       />
                     </button>
                     <div
-                      className={`overflow-hidden transition-all duration-300 ${openFAQ === faq.id ? "max-h-96" : "max-h-0"
-                        }`}
+                      className={`overflow-hidden transition-all duration-300 ${
+                        openFAQ === faq.id ? "max-h-96" : "max-h-0"
+                      }`}
                     >
                       <div className="px-5 pb-5 pt-2">
                         <p className="text-sm md:text-base text-gray-700 leading-relaxed">
@@ -301,13 +306,15 @@ function FAQPageClient() {
                         {faq.question}
                       </h3>
                       <BiChevronDown
-                        className={`w-5 h-5 text-[#0B2253] flex-shrink-0 transition-transform ${openFAQ === faq.id ? "rotate-180" : ""
-                          }`}
+                        className={`w-5 h-5 text-[#0B2253] flex-shrink-0 transition-transform ${
+                          openFAQ === faq.id ? "rotate-180" : ""
+                        }`}
                       />
                     </button>
                     <div
-                      className={`overflow-hidden transition-all duration-300 ${openFAQ === faq.id ? "max-h-96" : "max-h-0"
-                        }`}
+                      className={`overflow-hidden transition-all duration-300 ${
+                        openFAQ === faq.id ? "max-h-96" : "max-h-0"
+                      }`}
                     >
                       <div className="px-5 pb-5 pt-2">
                         <p className="text-sm md:text-base text-gray-700 leading-relaxed">
@@ -334,13 +341,15 @@ function FAQPageClient() {
                         {faq.question}
                       </h3>
                       <BiChevronDown
-                        className={`w-5 h-5 text-[#0B2253] flex-shrink-0 transition-transform ${openFAQ === faq.id ? "rotate-180" : ""
-                          }`}
+                        className={`w-5 h-5 text-[#0B2253] flex-shrink-0 transition-transform ${
+                          openFAQ === faq.id ? "rotate-180" : ""
+                        }`}
                       />
                     </button>
                     <div
-                      className={`overflow-hidden transition-all duration-300 ${openFAQ === faq.id ? "max-h-96" : "max-h-0"
-                        }`}
+                      className={`overflow-hidden transition-all duration-300 ${
+                        openFAQ === faq.id ? "max-h-96" : "max-h-0"
+                      }`}
                     >
                       <div className="px-5 pb-5 pt-2">
                         <p className="text-sm md:text-base text-gray-700 leading-relaxed">
@@ -367,13 +376,15 @@ function FAQPageClient() {
                         {faq.question}
                       </h3>
                       <BiChevronDown
-                        className={`w-5 h-5 text-[#0B2253] flex-shrink-0 transition-transform ${openFAQ === faq.id ? "rotate-180" : ""
-                          }`}
+                        className={`w-5 h-5 text-[#0B2253] flex-shrink-0 transition-transform ${
+                          openFAQ === faq.id ? "rotate-180" : ""
+                        }`}
                       />
                     </button>
                     <div
-                      className={`overflow-hidden transition-all duration-300 ${openFAQ === faq.id ? "max-h-96" : "max-h-0"
-                        }`}
+                      className={`overflow-hidden transition-all duration-300 ${
+                        openFAQ === faq.id ? "max-h-96" : "max-h-0"
+                      }`}
                     >
                       <div className="px-5 pb-5 pt-2">
                         <p className="text-sm md:text-base text-gray-700 leading-relaxed">

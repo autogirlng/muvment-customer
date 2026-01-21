@@ -30,6 +30,7 @@ import {
 } from "@/types/vehicleDetails";
 import { BookingService } from "@/controllers/booking/bookingService";
 import { trackPaymentClick } from "@/services/analytics";
+import Footer from "../HomeComponent/Footer";
 
 const VehicleDetailsClient: React.FC = () => {
   const router = useRouter();
@@ -175,10 +176,10 @@ const VehicleDetailsClient: React.FC = () => {
     const tripSegments = trips.map((trip) => {
       const details = trip?.tripDetails;
       const pickupCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${details?.pickupCoordinates}`
+        `${details?.pickupCoordinates}`,
       );
       const dropoffCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${details?.dropoffCoordinates}`
+        `${details?.dropoffCoordinates}`,
       );
       let areaOfUseCoordinates: { lat: number; lng: number } | null = null;
       if (details?.areaOfUseCoordinates) {
@@ -201,12 +202,12 @@ const VehicleDetailsClient: React.FC = () => {
         dropoffLocationString: details?.dropoffLocation,
         areaOfUse: areaOfUseCoordinates
           ? [
-            {
-              areaOfUseLatitude: areaOfUseCoordinates.lat,
-              areaOfUseLongitude: areaOfUseCoordinates.lng,
-              areaOfUseName: details?.areaOfUse,
-            },
-          ]
+              {
+                areaOfUseLatitude: areaOfUseCoordinates.lat,
+                areaOfUseLongitude: areaOfUseCoordinates.lng,
+                areaOfUseName: details?.areaOfUse,
+              },
+            ]
           : [],
       };
     });
@@ -238,7 +239,7 @@ const VehicleDetailsClient: React.FC = () => {
     return pricing;
   };
 
-  console.log(pricing)
+  console.log(pricing);
   return (
     <>
       <Navbar />
@@ -263,7 +264,7 @@ const VehicleDetailsClient: React.FC = () => {
 
                   <IconButton
                     className="bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer p-2 sm:p-2.5 rounded-full"
-                    onClick={() => { }}
+                    onClick={() => {}}
                   >
                     <FiHeart size={16} className="sm:size-[18px]" />
                   </IconButton>
@@ -346,11 +347,9 @@ const VehicleDetailsClient: React.FC = () => {
                 <section>
                   <h2 className="text-lg text-gray-800 pb-1"> Reviews </h2>
                   <div className="max-h-96 overflow-y-auto">
-
                     <Reviews vehicleId={id as string} />
                   </div>
                 </section>
-
               </div>
 
               <div className="w-full md:w-2/5 border-1 py-5 px-3 rounded-xl border-[#E4E7EC]">
@@ -360,7 +359,7 @@ const VehicleDetailsClient: React.FC = () => {
 
                   {trips?.map((key, index) => {
                     const initialValues = JSON.parse(
-                      sessionStorage.getItem("trips") || "[]"
+                      sessionStorage.getItem("trips") || "[]",
                     );
                     let tripInitialValues;
 
@@ -431,18 +430,19 @@ const VehicleDetailsClient: React.FC = () => {
                         subLabel={
                           pricing.data.data.appliedGeofenceNames?.length > 0
                             ? `Applied to: ${pricing.data.data.appliedGeofenceNames.join(
-                              ", "
-                            )}`
+                                ", ",
+                              )}`
                             : null
                         }
                       />
 
-                      {pricing.data.data.vatPercentage && <PriceRow
-                        label="VAT Amount"
-                        value={pricing.data.data.vatAmount}
-                        subLabel={`${pricing.data.data.vatPercentage}%`}
-                      />}
-
+                      {pricing.data.data.vatPercentage && (
+                        <PriceRow
+                          label="VAT Amount"
+                          value={pricing.data.data.vatAmount}
+                          subLabel={`${pricing.data.data.vatPercentage}%`}
+                        />
+                      )}
 
                       <PriceRow
                         label="Duration Discount"
@@ -451,8 +451,9 @@ const VehicleDetailsClient: React.FC = () => {
                       />
 
                       <PriceRow
-                        label={`Coupon (${pricing.data.data.appliedCouponCode || "Applied"
-                          })`}
+                        label={`Coupon (${
+                          pricing.data.data.appliedCouponCode || "Applied"
+                        })`}
                         value={pricing.data.data.couponDiscountAmount}
                         isDiscount
                       />
@@ -531,6 +532,7 @@ const VehicleDetailsClient: React.FC = () => {
           </div>
         </div>
       </div>
+      <Footer />
       <Modal isOpen={bookRideModal} onClose={() => setBookRideModal(false)}>
         <div className="flex flex-col px-[50px] py-[25px]">
           <h2 className="text-xl font-semibold mb-4">Book Ride</h2>
@@ -590,15 +592,17 @@ const PriceRow = ({
 
   return (
     <div
-      className={`flex justify-between items-start ${isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
-        }`}
+      className={`flex justify-between items-start ${
+        isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
+      }`}
     >
       <div className="flex flex-col">
         <span
-          className={`${isTotal
-            ? "text-base font-bold text-gray-900"
-            : "text-sm text-gray-600"
-            }`}
+          className={`${
+            isTotal
+              ? "text-base font-bold text-gray-900"
+              : "text-sm text-gray-600"
+          }`}
         >
           {label}
         </span>
@@ -610,12 +614,13 @@ const PriceRow = ({
       </div>
 
       <span
-        className={`font-medium ${isTotal
-          ? "text-lg text-blue-600 font-bold"
-          : isDiscount
-            ? "text-green-600 text-sm"
-            : "text-gray-900 text-sm"
-          }`}
+        className={`font-medium ${
+          isTotal
+            ? "text-lg text-blue-600 font-bold"
+            : isDiscount
+              ? "text-green-600 text-sm"
+              : "text-gray-900 text-sm"
+        }`}
       >
         {isDiscount ? "-" : ""} NGN
         {value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
