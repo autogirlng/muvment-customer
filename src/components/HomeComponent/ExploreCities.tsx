@@ -98,8 +98,8 @@ const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({
             key={i}
             onClick={() => scrollToSlide(i)}
             className={`transition-all duration-300 rounded-full ${activeIndex === i
-                ? "w-8 h-2.5 bg-blue-600" // Stretch the active dot for better UI
-                : "w-2.5 h-2.5 bg-gray-300 hover:bg-gray-400"
+              ? "w-8 h-2.5 bg-blue-600" // Stretch the active dot for better UI
+              : "w-2.5 h-2.5 bg-gray-300 hover:bg-gray-400"
               }`}
             aria-label={`Go to slide ${i + 1}`}
           />

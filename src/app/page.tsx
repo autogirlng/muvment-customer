@@ -34,8 +34,8 @@ function page() {
     <div>
       <Navbar showAnnouncementBar={true} />
       <BookingInterface />
+      <TopRateing bookingId={bookingTypeID} />
       <PremiumCarRental />
-      <TopRateing />
       <ExploreCities bookingTypeId={bookingTypeID} />
       <VehicleCategories />
       <FindNewListings />
