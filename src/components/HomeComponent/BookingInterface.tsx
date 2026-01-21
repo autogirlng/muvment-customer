@@ -40,20 +40,19 @@ export default function HeroBookingSection() {
   const [errorMessage, setErrorMessage] = useState("");
   const [categoryOptions, setcategoryOptions] = useState([]);
 
+  const [error, setError] = useState<string | null>(null);
+
+
   // User's current location state
   const [userLocation, setUserLocation] = useState<string>(
     "Detecting location..."
   );
 
-  console.log(userLocation);
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<
     "pending" | "granted" | "denied"
   >("pending");
 
-  // New state for tracking if user actually got real location
-  const [isUsingDefaultLocation, setIsUsingDefaultLocation] = useState(true);
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+
 
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -77,248 +76,138 @@ export default function HeroBookingSection() {
       setBookingType(data.dropdownOptions[0].value);
     }
   };
-
-  // Initialize Google Maps Service
-  useEffect(() => {
-    getBookingOptions();
-    const initGoogleMaps = async () => {
-      try {
-        googleMapsServiceRef.current = new GoogleMapsService();
-        await googleMapsServiceRef.current.initialize();
-      } catch (error) {
-        console.error("Failed to initialize Google Maps:", error);
-      }
-    };
-    initGoogleMaps();
-  }, []);
-
-  const reverseGeocodeWithGoogle = async (
-    lat: number,
-    lng: number
-  ): Promise<string> => {
+  const initGoogleMaps = async () => {
     try {
-      if (!window.google || !window.google.maps) {
-        throw new Error("Google Maps not loaded");
-      }
-
-      const geocoder = new window.google.maps.Geocoder();
-      const latlng = { lat, lng };
-
-      return new Promise((resolve) => {
-        geocoder.geocode({ location: latlng }, (results, status) => {
-          if (status === "OK" && results && results[0]) {
-            const addressComponents = results[0].address_components;
-            let route = "";
-            let locality = "";
-            let political = "";
-            let adminLevel1 = "";
-            let country = "";
-
-            for (const component of addressComponents) {
-              if (component.types.includes("route")) {
-                route = component.long_name;
-              } else if (component.types.includes("locality")) {
-                locality = component.long_name;
-              } else if (
-                component.types.includes("administrative_area_level_3") &&
-                component.types.includes("political")
-              ) {
-                political = component.long_name;
-              } else if (
-                component.types.includes("administrative_area_level_1")
-              ) {
-                adminLevel1 = component.long_name;
-              } else if (component.types.includes("country")) {
-                country = component.long_name;
-              }
-            }
-
-            let locationParts = [];
-            if (route) locationParts.push(route);
-            if (political) locationParts.push(political);
-            if (locality) locationParts.push(locality);
-            if (!locality && adminLevel1) locationParts.push(adminLevel1);
-
-            const locationName =
-              locationParts.length > 0
-                ? locationParts.join(", ")
-                : country || "lagos";
-
-            resolve(locationName);
-          } else {
-            console.error("Geocoder failed:", status);
-            resolve("lagos");
-          }
-        });
-      });
+      googleMapsServiceRef.current = new GoogleMapsService();
+      await googleMapsServiceRef.current.initialize();
     } catch (error) {
-      console.error("Error reverse geocoding:", error);
-      return "lagos";
+      console.error("Failed to initialize Google Maps:", error);
     }
   };
 
-  const checkStoredLocation = () => {
-    try {
-      const stored = sessionStorage.getItem("userLocation");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const age = Date.now() - parsed.timestamp;
-        if (age < 10 * 60 * 1000) {
-          setUserLocation(parsed.name);
-          setSearchValue(parsed.name);
-          setSelectedLocation({
-            name: parsed.name,
-            lat: parsed.lat,
-            lng: parsed.lng,
-          });
-          setLocationPermissionStatus("granted");
-          setIsUsingDefaultLocation(false);
-          return true;
-        }
-      }
-    } catch (error) {
-      console.error("Error reading stored location:", error);
+
+
+  const [location, setLocation] = useState<{
+    lat: number | null;
+    lng: number | null;
+  }>({
+    lat: null,
+    lng: null,
+
+  });
+
+
+  const revertToDefaultLocation = () => {
+    setLocationPermissionStatus("denied");
+    setUserLocation("Lagos, Nigeria");
+    setSearchValue(DEFAULT_LOCATION.name);
+    setSelectedLocation({
+      name: DEFAULT_LOCATION.name,
+      lat: DEFAULT_LOCATION.lat,
+      lng: DEFAULT_LOCATION.lng,
+    });
+
+
+  }
+
+
+  const getLongitudeLatitude = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by this browser");
+      return;
     }
-    return false;
-  };
 
-  useEffect(() => {
-    const fallbackToDefault = () => {
-      setUserLocation("Lagos, Nigeria");
-      setSearchValue(DEFAULT_LOCATION.name);
-      setSelectedLocation({
-        name: DEFAULT_LOCATION.name,
-        lat: DEFAULT_LOCATION.lat,
-        lng: DEFAULT_LOCATION.lng,
-      });
-      setIsUsingDefaultLocation(true);
-      setTimeout(() => {
-        setShowLocationPrompt(true);
-      }, 2000);
-    };
-
-    const getUserLocation = async () => {
-      const hasStored = checkStoredLocation();
-      if (hasStored) return;
-
-      if (!navigator.geolocation) {
-        setLocationPermissionStatus("denied");
-        fallbackToDefault();
-        return;
-      }
-
-      try {
-        const position = await new Promise<GeolocationPosition>(
-          (resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 0,
-            });
-          }
-        );
-
-        const { latitude, longitude } = position.coords;
-        setLocationPermissionStatus("granted");
-        setIsUsingDefaultLocation(false);
-
-        if (googleMapsServiceRef.current) {
-          await googleMapsServiceRef.current.initialize();
-        }
-
-        const locationName = await reverseGeocodeWithGoogle(
-          latitude,
-          longitude
-        );
-
-        setUserLocation(locationName);
-        setSearchValue(locationName);
-        setSelectedLocation({
-          name: locationName,
-          lat: latitude,
-          lng: longitude,
-        });
-        sessionStorage.setItem(
-          "userLocation",
-          JSON.stringify({
-            name: locationName,
-            lat: latitude,
-            lng: longitude,
-            timestamp: Date.now(),
-          })
-        );
-      } catch (error: any) {
-        console.error("Error getting location:", error?.message || error);
-        setLocationPermissionStatus("denied");
-        fallbackToDefault();
-      }
-    };
-
-    const timer = setTimeout(() => {
-      getUserLocation();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleRequestLocation = async () => {
-    setIsRequestingLocation(true);
     setUserLocation("Detecting location...");
-    setLocationPermissionStatus("pending");
 
-    try {
-      const position = await new Promise<GeolocationPosition>(
-        (resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0,
-          });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setError(null);
+
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+
+        });
+      },
+      (err) => {
+        switch (err.code) {
+          case 1:
+            setError("Location permission denied");
+            break;
+          case 2:
+            setError("Location unavailable. Please turn on location services.");
+            break;
+
+          default:
+            setError("Unable to get location");
         }
-      );
 
-      const { latitude, longitude } = position.coords;
-      setLocationPermissionStatus("granted");
-      setIsUsingDefaultLocation(false);
-      setShowLocationPrompt(false);
-
-      if (googleMapsServiceRef.current) {
-        await googleMapsServiceRef.current.initialize();
+        revertToDefaultLocation();
+      },
+      {
+        enableHighAccuracy: false, // 🔑 important
+        timeout: 10000,
+        maximumAge: 60000,
       }
-
-      const locationName = await reverseGeocodeWithGoogle(latitude, longitude);
-      console.log(locationName);
-      setUserLocation(locationName);
-      setSearchValue(locationName);
-      setSelectedLocation({
-        name: locationName,
-        lat: latitude,
-        lng: longitude,
-      });
-
-      sessionStorage.setItem(
-        "userLocation",
-        JSON.stringify({
-          name: locationName,
-          lat: latitude,
-          lng: longitude,
-          timestamp: Date.now(),
-        })
-      );
-    } catch (error) {
-      setLocationPermissionStatus("denied");
-      setUserLocation("Lagos, Nigeria");
-      setSearchValue(DEFAULT_LOCATION.name);
-      setSelectedLocation({
-        name: DEFAULT_LOCATION.name,
-        lat: DEFAULT_LOCATION.lat,
-        lng: DEFAULT_LOCATION.lng,
-      });
-      setShowLocationPrompt(false);
-    } finally {
-      setIsRequestingLocation(false);
-    }
+    );
   };
+
+  const getLocationInformation = () => {
+
+    setUserLocation("Detecting Location...")
+    if (typeof window === "undefined" || !window.google) return;
+
+    if (location.lat == null && location.lng == null) {
+      getLongitudeLatitude()
+    }
+    try {
+      const geocoder = new google.maps.Geocoder();
+      if (location.lat != null && location.lng != null) {
+        geocoder.geocode({ location: { lat: location.lat, lng: location.lng } }, (results, status) => {
+          if (status !== "OK" || !results?.[0]) return;
+          const components = results[0].address_components;
+          const state = components.find((c) => c.types.includes("administrative_area_level_1"))?.long_name || "";
+          const country = components.find((c) => c.types.includes("country"))?.long_name || "";
+          const locationName = state + ", " + country
+          setUserLocation(locationName);
+          setSearchValue(locationName);
+          setSelectedLocation({
+            name: locationName,
+            lat: location.lat,
+            lng: location.lng,
+          });
+
+          sessionStorage.setItem(
+            "userLocation",
+            JSON.stringify({
+              name: locationName,
+              lat: location.lat,
+              lng: location.lng,
+              timestamp: Date.now(),
+            })
+          );
+        })
+
+        setLocationPermissionStatus("granted");
+
+      }
+    } catch (error) {
+      revertToDefaultLocation()
+    }
+  }
+
+
+  useEffect(() => {
+    if (location.lat == null || location.lng == null) return;
+
+    getLocationInformation();
+  }, [location.lat, location.lng]);
+
+
+
+
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -359,6 +248,9 @@ export default function HeroBookingSection() {
 
   useEffect(() => {
     getvechileType();
+    getLongitudeLatitude();
+    getBookingOptions();
+    initGoogleMaps();
   }, []);
 
   const handleDropdownToggle = (dropdownId: string) => {
@@ -426,60 +318,6 @@ export default function HeroBookingSection() {
     }
   };
 
-  const handleRetryLocation = async () => {
-    setUserLocation("Detecting location...");
-    setLocationPermissionStatus("pending");
-
-    try {
-      const position = await new Promise<GeolocationPosition>(
-        (resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: false,
-            timeout: 10000,
-            maximumAge: 0,
-          });
-        }
-      );
-
-      const { latitude, longitude } = position.coords;
-      console.log(latitude)
-      setLocationPermissionStatus("granted");
-      setIsUsingDefaultLocation(false);
-
-      if (googleMapsServiceRef.current) {
-        await googleMapsServiceRef.current.initialize();
-      }
-
-      const locationName = await reverseGeocodeWithGoogle(latitude, longitude);
-      setUserLocation(locationName);
-      setSearchValue(locationName);
-      setSelectedLocation({
-        name: locationName,
-        lat: latitude,
-        lng: longitude,
-      });
-
-      sessionStorage.setItem(
-        "userLocation",
-        JSON.stringify({
-          name: locationName,
-          lat: latitude,
-          lng: longitude,
-          timestamp: Date.now(),
-        })
-      );
-    } catch (error) {
-      setLocationPermissionStatus("denied");
-      setUserLocation("Lagos, Nigeria");
-      setSearchValue(DEFAULT_LOCATION.name);
-      setSelectedLocation({
-        name: DEFAULT_LOCATION.name,
-        lat: DEFAULT_LOCATION.lat,
-        lng: DEFAULT_LOCATION.lng,
-      });
-    }
-  };
-
   return (
     <div className="relative w-full h-screen overflow-hidden mt-[5rem] md:mt-0">
       {/* Background with overlay */}
@@ -494,61 +332,7 @@ export default function HeroBookingSection() {
         <div className="absolute inset-0 bg-gradient-to-r from-gray-900/70 via-gray-800/50 to-gray-900/30"></div>
       </div>
 
-      {/* Location Permission Prompt */}
-      {showLocationPrompt && isUsingDefaultLocation && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 relative animate-slide-up">
-            {/* Close button */}
-            <button
-              onClick={() => setShowLocationPrompt(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Dismiss"
-            >
-              <FiX className="w-5 h-5" />
-            </button>
 
-            {/* Icon */}
-            <div className="flex items-center justify-center w-14 h-14 bg-blue-100 rounded-full mb-4">
-              <FiMapPin className="w-7 h-7 text-blue-600" />
-            </div>
-
-            {/* Content */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Enable Location Services
-              </h3>
-              <p className="text-sm text-gray-600">
-                Get better search results and find vehicles near you. We'll show
-                you cars available in your area.
-              </p>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowLocationPrompt(false)}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-              >
-                Not now
-              </button>
-              <button
-                onClick={handleRequestLocation}
-                disabled={isRequestingLocation}
-                className="flex-1 px-4 py-2.5 bg-blue-600 rounded-lg text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isRequestingLocation ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Detecting...
-                  </>
-                ) : (
-                  "Enable Location"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-12 lg:px-20 xl:px-32">
@@ -720,18 +504,19 @@ export default function HeroBookingSection() {
                 : "text-yellow-400"
               }`}
           />
-          <span>{userLocation}</span>
 
-          {/* Retry button if location permission was denied */}
+          <span>{userLocation} {locationPermissionStatus === "denied" && "(Default)"}</span>
           {locationPermissionStatus === "denied" && (
             <button
-              onClick={handleRetryLocation}
+              onClick={getLocationInformation}
               className="ml-2 text-sm bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-colors"
               title="Retry location access"
             >
               Retry
             </button>
           )}
+
+
         </div>
       </div>
     </div>

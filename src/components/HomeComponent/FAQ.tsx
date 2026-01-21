@@ -67,11 +67,10 @@ export default function FAQ({
               </button>
 
               <div
-                className={`px-6 pb-6 transition-all duration-300 ease-in-out ${
-                  openIndex === index
+                className={`px-6 pb-6 transition-all duration-300 ease-in-out ${openIndex === index
                     ? "opacity-100 max-h-96"
                     : "opacity-0 max-h-0 overflow-hidden"
-                }`}
+                  }`}
               >
                 <div className="pl-12 border-t border-gray-100 pt-4">
                   <p className="text-gray-600 leading-relaxed text-lg">
@@ -120,8 +119,16 @@ const defaultFAQs: FAQItem[] = [
   },
   {
     title: "Do I need to fuel the car during my rental?",
-    content:
-      "Yes, if you're responsible for refueling, there's a minimum fuel purchase requirement: ₦5,000 minimum for Sedans and ₦10,000 minimum for SUVs.",
+    content: `For daily rentals, each vehicle comes with a half tank of fuel
+included. If the fuel runs out within the 24-hour rental period due to
+the distance traveled, you are required to refill the vehicle. The
+fuel refill cost ranges from ₦8,000 minimum for Sedans to ₦14,000
+maximum for SUVs.
+
+For self-drive rentals, fuel is not included. You are fully
+responsible for fueling the vehicle throughout your rental period. The
+same fuel cost range applies: ₦8,000 minimum for Sedans and ₦14,000
+maximum for SUVs.`,
   },
   {
     title: "Can I book a trip outside Lagos?",
