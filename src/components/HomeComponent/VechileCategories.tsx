@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { VehicleSearchService } from "@/controllers/booking/vechicle";
 
 interface VehicleCategory {
   name: string;
@@ -10,7 +11,7 @@ interface VehicleCategory {
 
 const VehicleCategories: React.FC = () => {
   const router = useRouter();
-
+  const [category, setCategory] = useState([]);
   const categories: VehicleCategory[] = [
     { name: "Sedan", image: "/images/vehicles/sedan.png", id: "sedan-id" },
     { name: "Truck", image: "/images/vehicles/truck.png", id: "truck-id" },
@@ -22,7 +23,19 @@ const VehicleCategories: React.FC = () => {
     router.push(`/booking/search?category=${categoryId}`);
   };
 
-  useEffect(() => {});
+  const getvechileType = async () => {
+    const result = await VehicleSearchService.getVechielType();
+    const data = result[0].data;
+    const transformedOptions = data.map((item: any) => ({
+      value: item.id,
+      label: item.name.replace("_", " "),
+    }));
+    setCategory(transformedOptions);
+  };
+  console.log(category);
+  useEffect(() => {
+    getvechileType();
+  }, []);
 
   return (
     <div className="bg-white min-h-[60vh] w-full flex flex-col items-center justify-center py-10">

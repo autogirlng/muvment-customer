@@ -38,7 +38,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       .map((p) => p?.cloudinaryUrl)
       .filter(
         (url) =>
-          url && (url.startsWith("http://") || url.startsWith("https://"))
+          url && (url.startsWith("http://") || url.startsWith("https://")),
       );
   }, [photos]);
 
@@ -56,7 +56,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     e.stopPropagation();
     if (images.length > 0) {
       setCurrentImageIndex((prev) =>
-        prev === images.length - 1 ? 0 : prev + 1
+        prev === images.length - 1 ? 0 : prev + 1,
       );
     }
   };
@@ -65,7 +65,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     e.stopPropagation();
     if (images.length > 0) {
       setCurrentImageIndex((prev) =>
-        prev === 0 ? images.length - 1 : prev - 1
+        prev === 0 ? images.length - 1 : prev - 1,
       );
     }
   };
@@ -97,8 +97,8 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     });
     router.push(
       `/booking/details/${id}?vehicleType=${encodeURIComponent(
-        vehicleTypeName
-      )}&bookingType=${bookingType}`
+        vehicleTypeName,
+      )}&bookingType=${bookingType}`,
     );
   };
 
@@ -167,28 +167,23 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
                 <span className="text-xs text-gray-600">
                   {getDisplayLabel(bookingType, bookingOptions)}
                 </span>
-                <IoInformationCircleOutline className="w-3 h-3 text-gray-400" />
+                {/* <IoInformationCircleOutline className="w-3 h-3 text-gray-400" /> */}
               </div>
               <p className="text-base font-semibold text-gray-900">
                 {formatCurrency(
                   getDisplayPrice(
                     bookingType,
                     allPricingOptions,
-                    bookingOptions
-                  )
+                    bookingOptions,
+                  ),
                 )}
-
-
-
               </p>
-
-
             </div>
             {extraHourlyRate > 0 && (
               <div>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-600">Extra hours</span>
-                  <IoInformationCircleOutline className="w-3 h-3 text-gray-400" />
+                  {/* <IoInformationCircleOutline className="w-3 h-3 text-gray-400" /> */}
                 </div>
                 <p className="text-base font-semibold text-gray-900">
                   {formatCurrency(extraHourlyRate)}
@@ -289,15 +284,15 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
                 <span className="text-xs text-gray-600">
                   {getDisplayLabel(bookingType, bookingOptions)}
                 </span>
-                <IoInformationCircleOutline className="w-3.5 h-3.5 text-gray-400" />
+                {/* <IoInformationCircleOutline className="w-3.5 h-3.5 text-gray-400" /> */}
               </div>
               <p className="text-base font-semibold text-gray-900">
                 {formatCurrency(
                   getDisplayPrice(
                     bookingType,
                     allPricingOptions,
-                    bookingOptions
-                  )
+                    bookingOptions,
+                  ),
                 )}
               </p>
             </div>
@@ -305,7 +300,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
               <div>
                 <div className="flex items-center gap-1 mb-1">
                   <span className="text-xs text-gray-600">Extra hours</span>
-                  <IoInformationCircleOutline className="w-3.5 h-3.5 text-gray-400" />
+                  {/* <IoInformationCircleOutline className="w-3.5 h-3.5 text-gray-400" /> */}
                 </div>
                 <p className="text-base font-semibold text-gray-900">
                   {formatCurrency(extraHourlyRate)}
