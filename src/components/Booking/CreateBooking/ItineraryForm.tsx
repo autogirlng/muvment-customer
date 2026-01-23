@@ -15,6 +15,9 @@ import { TripDetails } from "@/types/vehicleDetails";
 import TextArea from "@/components/general/forms/textarea";
 import InputField from "@/components/general/forms/inputField";
 import { PersonalInformationMyselfValues } from "@/types/booking";
+import SelectInput from "@/components/general/forms/select";
+import { RIDE_PURPOSES } from "@/helpers/metadata";
+import AutocompleteSelect from "@/components/general/forms/AutoCompleteSelect";
 
 const ItineraryForm = ({
   steps,
@@ -66,7 +69,7 @@ const ItineraryForm = ({
 
   useEffect(() => {
     const tripsInfo = JSON.parse(
-      sessionStorage.getItem("trips") || "[]"
+      sessionStorage.getItem("trips") || "[]",
     ) as TripDetails[];
     const tripData = tripsInfo.map((trip) => {
       return { id: trip.id || "", tripDetails: { ...trip } };
@@ -107,7 +110,7 @@ const ItineraryForm = ({
       } catch (error) {
         console.error(
           "Failed to parse booking information from sessionStorage:",
-          error
+          error,
         );
       }
     }
@@ -122,7 +125,7 @@ const ItineraryForm = ({
 
           try {
             bookingInformation = JSON.parse(
-              sessionStorage.getItem("userBookingInformation") || "{}"
+              sessionStorage.getItem("userBookingInformation") || "{}",
             );
           } catch (e) {
             console.error("Invalid bookingInformation JSON", e);
@@ -138,7 +141,7 @@ const ItineraryForm = ({
 
           sessionStorage.setItem(
             "userBookingInformation",
-            JSON.stringify(bookingInformation)
+            JSON.stringify(bookingInformation),
           );
           setCurrentStep(currentStep + 1);
         }}
@@ -203,15 +206,16 @@ const ItineraryForm = ({
                 value={values.extraDetails}
               />
 
-              <InputField
-                name="purposeOfRide"
+              <AutocompleteSelect
                 id="purposeOfRide"
-                type="text"
-                label="Ride purpose(optional)"
-                placeholder="Enter the purpose of the ride"
+                label="Ride purpose (optional)"
+                placeholder="Search or select ride purpose..."
+                options={RIDE_PURPOSES.map((purpose) => ({
+                  value: purpose,
+                  option: purpose,
+                }))}
                 value={values.purposeOfRide}
-                onChange={handleChange}
-                onBlur={handleBlur}
+                onChange={(value) => setFieldValue("purposeOfRide", value)}
                 error={
                   errors.purposeOfRide && touched.purposeOfRide
                     ? String(errors.purposeOfRide)
@@ -223,7 +227,7 @@ const ItineraryForm = ({
                 steps={steps}
                 currentStep={currentStep}
                 setCurrentStep={setCurrentStep}
-                handleSaveDraft={() => { }}
+                handleSaveDraft={() => {}}
                 isSaveDraftloading={false}
                 disableNextButton={!isTripFormsComplete}
               />

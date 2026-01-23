@@ -106,3 +106,26 @@ export function generatePageMetadata({
     },
   };
 }
+
+export const RIDE_PURPOSES = [
+  "Airport Transfer",
+  "Business Meeting",
+  "Wedding",
+  "Corporate Event",
+  "City Tour",
+  "Shopping",
+  "Medical Appointment",
+  "School Run",
+  "Party/Night Out",
+  "Hotel Transfer",
+  "Conference",
+  "Funeral",
+  "Date Night",
+  "Concert/Event",
+  "Family Outing",
+  "Religious Service",
+  "Sports Event",
+  "Restaurant Visit",
+  "Sightseeing",
+  "Other",
+];
