@@ -54,6 +54,7 @@ const VehicleDetailsClient: React.FC = () => {
     toggleOpen,
     openTripIds,
     isTripFormsComplete,
+    generateNextTripId,
   } = useItineraryForm();
 
   useEffect(() => {
@@ -137,40 +138,6 @@ const VehicleDetailsClient: React.FC = () => {
     );
   }
 
-  const VehicleDetailsChip = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: string;
-  }) => (
-    <div className="flex items-center space-x-1 px-3 font-medium text-gray-900 py-2 rounded-lg text-sm bg-[#F0F2F5]">
-      <span>{label}:</span>
-      <span>{value}</span>
-    </div>
-  );
-
-  const FeatureTag = ({ children }: { children: ReactNode }) => (
-    <span className="inline-block bg-gray-100 text-gray-700 text-sm font-medium px-2 py-1 rounded-lg border border-gray-200">
-      {children}
-    </span>
-  );
-
-  const DiscountRow = ({
-    days,
-    discount,
-    color,
-  }: {
-    days: string;
-    discount: string;
-    color: string;
-  }) => (
-    <div className="flex justify-between items-center p-3 bg-gray-50 border border-[#D0D5DD] rounded-lg">
-      <span className="text-sm font-medium text-gray-700">{days}</span>
-      <span className={`text-sm font-bold ${color}`}>{discount}</span>
-    </div>
-  );
-
   const estimatePrice = async (): Promise<EstimatedBookingPrice> => {
     const tripSegments = trips.map((trip) => {
       const details = trip?.tripDetails;
@@ -237,6 +204,9 @@ const VehicleDetailsClient: React.FC = () => {
     setContinueBooking(true);
     return pricing;
   };
+
+
+
 
   return (
     <>
@@ -364,14 +334,14 @@ const VehicleDetailsClient: React.FC = () => {
                     let tripInitialValues;
 
                     if (initialValues.length > 0) {
-                      tripInitialValues = initialValues[0];
+                      tripInitialValues = initialValues[initialValues.length - 1];
                     } else {
                       tripInitialValues = null;
                     }
 
                     return (
                       <TripAccordion
-                        key={key.id}
+                        key={`${key.id}`}
                         day={`${index + 1}`}
                         id={key.id}
                         vehicle={vehicle}
@@ -386,7 +356,7 @@ const VehicleDetailsClient: React.FC = () => {
                     );
                   })}
                   <button
-                    onClick={() => addTrip(`trip-${trips.length}`)}
+                    onClick={() => addTrip(generateNextTripId())}
                     className="text-[#0673ff] mt-3 text-sm cursor-pointer border-0"
                   >
                     + Add Trip
@@ -623,4 +593,40 @@ const PriceRow = ({
   );
 };
 
+
+
+
+const VehicleDetailsChip = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) => (
+  <div className="flex items-center space-x-1 px-3 font-medium text-gray-900 py-2 rounded-lg text-sm bg-[#F0F2F5]">
+    <span>{label}:</span>
+    <span>{value}</span>
+  </div>
+);
+
+const FeatureTag = ({ children }: { children: ReactNode }) => (
+  <span className="inline-block bg-gray-100 text-gray-700 text-sm font-medium px-2 py-1 rounded-lg border border-gray-200">
+    {children}
+  </span>
+);
+
+const DiscountRow = ({
+  days,
+  discount,
+  color,
+}: {
+  days: string;
+  discount: string;
+  color: string;
+}) => (
+  <div className="flex justify-between items-center p-3 bg-gray-50 border border-[#D0D5DD] rounded-lg">
+    <span className="text-sm font-medium text-gray-700">{days}</span>
+    <span className={`text-sm font-bold ${color}`}>{discount}</span>
+  </div>
+);
 export default VehicleDetailsClient;
