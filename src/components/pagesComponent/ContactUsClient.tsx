@@ -1,16 +1,17 @@
 "use client";
 import { Navbar } from "@/components/Navbar";
-import React, { useState } from "react";
+import React, { useState, FormEvent } from "react";
 import {
   FaTwitter,
   FaInstagram,
   FaFacebookF,
   FaWhatsapp,
   FaLinkedinIn,
-  FaMapMarkerAlt,
   FaEnvelope,
-  FaPhoneAlt,
+
 } from "react-icons/fa";
+import { createData } from "@/controllers/connnector/app.callers";
+import { toast } from "react-toastify";
 
 interface FormData {
   firstName: string;
@@ -30,20 +31,59 @@ const ContactUsClient: React.FC = () => {
     location: "",
     message: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  function validate() {
+    const newErrors: Record<string, string> = {};
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+    if (!formData.firstName.trim())
+      newErrors.firstName = "First name is required";
 
-  const handleSubmit = () => {
-    alert("Form submitted! Check console for data.");
-  };
+    if (!formData.lastName.trim())
+      newErrors.lastName = "Last name is required";
+
+    if (!/^\d{10}$/.test(formData.phoneNumber))
+      newErrors.phoneNumber = "Enter a valid 10-digit number";
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      newErrors.email = "Enter a valid email";
+
+    if (!formData.location.trim())
+      newErrors.location = "Location is required";
+
+    if (!formData.message.trim())
+      newErrors.message = "Message is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" });
+  }
+  async function sendForm() {
+    const response = await createData("/api/v1/contact-form", formData);
+
+    if (response?.error === false) {
+      toast.success("Form submitted successfully!");
+      setFormData({
+        firstName: "",
+        lastName: "",
+        phoneNumber: "",
+        email: "",
+        location: "",
+        message: "",
+      });
+    }
+  }
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!validate()) return;
+
+
+    await sendForm();
+
+  }
 
   return (
     <div className="">
@@ -165,10 +205,10 @@ const ContactUsClient: React.FC = () => {
             </h2>
             <p className="text-gray-600 text-sm mb-8">
               No idea is too big. No question is too small. Reach out and let's
-              create some movement together.
+              create some <b>MUVMENT</b> together.
             </p>
 
-            <div>
+            <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
                 <div>
                   <label className="block text-gray-700 text-sm font-medium mb-2">
@@ -180,8 +220,12 @@ const ContactUsClient: React.FC = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="Enter first name"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  />
+                    className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
+${errors.firstName ? "border-red-500" : "border-gray-200"}
+focus:ring-2 focus:ring-blue-500`} />
+                  {errors.firstName && (
+                    <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-gray-700 text-sm font-medium mb-2">
@@ -193,8 +237,12 @@ const ContactUsClient: React.FC = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="Enter last name"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  />
+                    className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
+${errors.lastName ? "border-red-500" : "border-gray-200"}
+focus:ring-2 focus:ring-blue-500`} />
+                  {errors.lastName && (
+                    <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+                  )}
                 </div>
               </div>
 
@@ -204,33 +252,31 @@ const ContactUsClient: React.FC = () => {
                 </label>
                 <div className="flex flex-nowrap">
                   <div className="flex items-center px-2 sm:px-3 py-3 border border-r-0 border-gray-200 rounded-l-lg bg-gray-50 flex-shrink-0">
-                    <div className="w-5 h-3 sm:w-6 sm:h-4 bg-green-600 rounded-sm mr-1 sm:mr-2 flex-shrink-0"></div>
                     <span className="text-gray-700 text-xs sm:text-sm whitespace-nowrap">
                       +234
                     </span>
-                    <svg
-                      className="w-3 h-3 sm:w-4 sm:h-4 ml-1 text-gray-400 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
+
                   </div>
                   <input
-                    type="tel"
+                    type="text" // change from number → removes arrows
                     name="phoneNumber"
                     value={formData.phoneNumber}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      // allow only digits and max length 10
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setFormData({ ...formData, phoneNumber: val });
+                      setErrors({ ...errors, phoneNumber: "" }); // clear error while typing
+                    }}
                     placeholder="Enter phone number"
-                    className="flex-1 min-w-0 px-3 sm:px-4 py-3 border border-gray-200 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
+${errors.phoneNumber ? "border-red-500" : "border-gray-200"}
+focus:ring-2 focus:ring-blue-500`}
                   />
+
                 </div>
+                {errors.phoneNumber && (
+                  <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>
+                )}
               </div>
 
               <div className="mb-4 sm:mb-6">
@@ -243,8 +289,12 @@ const ContactUsClient: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Enter email address"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
+                  className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
+${errors.email ? "border-red-500" : "border-gray-200"}
+focus:ring-2 focus:ring-blue-500`} />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                )}
               </div>
 
               <div className="mb-4 sm:mb-6">
@@ -257,8 +307,12 @@ const ContactUsClient: React.FC = () => {
                   value={formData.location}
                   onChange={handleChange}
                   placeholder="Enter your location"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
+                  className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
+${errors.location ? "border-red-500" : "border-gray-200"}
+focus:ring-2 focus:ring-blue-500`} />
+                {errors.location && (
+                  <p className="text-red-500 text-xs mt-1">{errors.location}</p>
+                )}
               </div>
 
               <div className="mb-6 sm:mb-8">
@@ -271,21 +325,24 @@ const ContactUsClient: React.FC = () => {
                   onChange={handleChange}
                   placeholder="Type your message here"
                   rows={6}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
-                />
+                  className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
+${errors.message ? "border-red-500" : "border-gray-200"}
+focus:ring-2 focus:ring-blue-500`} />
+                {errors.message && (
+                  <p className="text-red-500 text-xs mt-1">{errors.message}</p>
+                )}
               </div>
 
               <button
-                onClick={handleSubmit}
-                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-4 rounded-lg transition-colors text-sm sm:text-base"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 rounded-lg transition-colors text-sm sm:text-base"
               >
                 Submit
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 
