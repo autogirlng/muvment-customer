@@ -13,6 +13,7 @@ import { CiLocationOn } from "react-icons/ci";
 import { clarityEvent } from "@/services/clarity";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 import LocationPrompt from "../Booking/LocationPrompt";
+import Footer from "../HomeComponent/Footer";
 
 export default function ExploreVehiclesClient() {
   const searchParams = useSearchParams();
@@ -509,6 +510,7 @@ export default function ExploreVehiclesClient() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   );
 }
