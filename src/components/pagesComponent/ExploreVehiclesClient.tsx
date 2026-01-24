@@ -17,8 +17,11 @@ import LocationPrompt from "../Booking/LocationPrompt";
 export default function ExploreVehiclesClient() {
   const searchParams = useSearchParams();
   const observerTarget = useRef<HTMLDivElement>(null);
-  const searchTimeout = useRef<NodeJS.Timeout>(null);
   const router = useRouter();
+  const isInitialized = useRef(false);
+
+  const initializationInProgress = useRef(false);
+
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [filterState, setFilterState] = useState<FilterState>({
     priceRange: undefined,
@@ -41,8 +44,9 @@ export default function ExploreVehiclesClient() {
   const [makes, setMakes] = useState([]);
   const [features, setFeatures] = useState([]);
   const [models, setModels] = useState([]);
+  const [dynamicMaxPrice, setDynamicMaxPrice] = useState(100000);
+  const [dynamicMinPrice, setDynamicMinPrice] = useState(25000);
 
-  // Get URL params
   const lat = searchParams.get("lat");
   const lng = searchParams.get("lng");
   const location = searchParams.get("location");
@@ -51,6 +55,7 @@ export default function ExploreVehiclesClient() {
   const fromDate = searchParams.get("fromDate");
   const untilDate = searchParams.get("untilDate");
   const city = searchParams.get("city");
+
   const {
     status: locationStatus,
     location: detectedLocation,
@@ -59,32 +64,15 @@ export default function ExploreVehiclesClient() {
     isDetecting,
   } = useLocationDetection();
 
-  // Check if URL has location params
   const hasLocationParams = lat && lng;
-
-  // Update search when location is detected and no params in URL
-  useEffect(() => {
-    if (
-      locationStatus === "granted" &&
-      !hasLocationParams &&
-      detectedLocation
-    ) {
-      // Update URL with detected location
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("lat", detectedLocation.lat.toString());
-      params.set("lng", detectedLocation.lng.toString());
-      params.set("location", detectedLocation.name);
-
-      router.replace(`/booking/search?${params.toString()}`);
-    }
-  }, [locationStatus, detectedLocation, hasLocationParams]);
+  const PAG_SIZE = 20;
 
   const initializeFiltersFromUrl = useCallback((): FilterState => {
     const minPriceParam = searchParams.get("minPrice");
     const maxPriceParam = searchParams.get("maxPrice");
     const type = searchParams.getAll("type");
     const make = searchParams.getAll("make");
-    const model = searchParams.getAll("model"); // ADD THIS
+    const model = searchParams.getAll("model");
     const yearOfRelease = searchParams.getAll("yearOfRelease");
     const numberOfSeats = searchParams.getAll("numberOfSeats");
     const featuresList = searchParams.getAll("features");
@@ -96,71 +84,80 @@ export default function ExploreVehiclesClient() {
           : undefined,
       selectedVehicleTypes: type.length > 0 ? type : undefined,
       selectedMakes: make.length > 0 ? make : undefined,
-      selectedModels: model.length > 0 ? model : undefined, // ADD THIS
+      selectedModels: model.length > 0 ? model : undefined,
       selectedYears: yearOfRelease.length > 0 ? yearOfRelease : undefined,
       selectedSeats: numberOfSeats.length > 0 ? numberOfSeats : undefined,
       selectedFeatures: featuresList.length > 0 ? featuresList : undefined,
     };
   }, [searchParams]);
 
-  // Fetch filter options
-
   useEffect(() => {
-    const fetchFilterOptions = async () => {
+    if (isInitialized.current || initializationInProgress.current) return;
+
+    initializationInProgress.current = true;
+
+    const initialize = async () => {
       try {
         const [typesData, makesData, modelsData, featuresData] =
           await Promise.all([
             VehicleSearchService.getVehicleTypes(),
             VehicleSearchService.getVehicleMakes(),
-            VehicleSearchService.getVehicleModels(), // ADD THIS
+            VehicleSearchService.getVehicleModels(),
             VehicleSearchService.getVehicleFeatures(),
           ]);
+
         setVehicleTypes(typesData[0].data);
         setMakes(makesData[0].data);
-        setModels(modelsData[0].data); // ADD THIS
+        setModels(modelsData[0].data);
         setFeatures(featuresData[0].data);
+
+        if (
+          locationStatus === "granted" &&
+          !hasLocationParams &&
+          detectedLocation
+        ) {
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("lat", detectedLocation.lat.toString());
+          params.set("lng", detectedLocation.lng.toString());
+          params.set("location", detectedLocation.name);
+
+          router.replace(`/booking/search?${params.toString()}`);
+
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        const initialFilters = initializeFiltersFromUrl();
+        setFilterState(initialFilters);
+        await performSearch(0, false, initialFilters);
+
+        isInitialized.current = true;
       } catch (err) {
-        console.error("Error fetching filter options:", err);
+        console.error("Initialization error:", err);
+        setError("Failed to initialize");
+        setLoading(false);
+      } finally {
+        initializationInProgress.current = false;
       }
     };
-    fetchFilterOptions();
+
+    initialize();
   }, []);
 
   useEffect(() => {
-    setFilterState(initializeFiltersFromUrl());
-  }, [initializeFiltersFromUrl]);
-
-  const handleFilterChange = (filterId: string, value: any) => {
-    setFilterState((prev) => ({
-      ...prev,
-      [filterId]: value,
-    }));
-  };
-
+    performSearchRef.current = performSearch;
+  });
   useEffect(() => {
+    if (!isInitialized.current) return;
+
     setCurrentPage(0);
     setHasMore(true);
-    searchVehicles(0, false);
+    performSearch(0, false, filterState);
   }, [filterState, lat, lng, category, fromDate, untilDate, city]);
 
-  const handleClearAll = () => {
-    setFilterState({
-      priceRange: undefined,
-      selectedVehicleTypes: undefined,
-      selectedMakes: undefined,
-      selectedYears: undefined,
-      selectedSeats: undefined,
-      selectedFeatures: undefined,
-    });
-
-    router.replace("/booking/search");
-  };
-
-  async function searchVehicles(
+  const performSearch = async (
     page: number = 0,
     append: boolean = false,
-    clearAll: boolean = false,
-  ) {
+    filters: FilterState = filterState,
+  ) => {
     if (append) {
       setLoadingMore(true);
     } else {
@@ -171,59 +168,55 @@ export default function ExploreVehiclesClient() {
     try {
       const params: VehicleSearchParams = {
         page,
-        size: 10,
+        size: PAG_SIZE,
       };
+      const currentLat = searchParams.get("lat") || lat;
+      const currentLng = searchParams.get("lng") || lng;
+      const currentCity = searchParams.get("city") || city;
 
-      if (!clearAll) {
-        if (lat && lng) {
-          params.latitude = parseFloat(lat);
-          params.longitude = parseFloat(lng);
-        }
-        if (city) params.city = city;
-        if (category) params.vehicleTypeId = category;
-        if (fromDate) params.fromDate = fromDate;
-        if (untilDate) params.untilDate = untilDate;
-        if (bookingType) params.bookingTypeId = bookingType;
+      if (currentLat && currentLng) {
+        params.latitude = parseFloat(currentLat);
+        params.longitude = parseFloat(currentLng);
+      }
+      if (currentCity) params.city = currentCity;
+      if (category) params.vehicleTypeId = category;
+      if (fromDate) params.fromDate = fromDate;
+      if (untilDate) params.untilDate = untilDate;
+      if (bookingType) params.bookingTypeId = bookingType;
 
-        if (filterState.selectedVehicleTypes !== undefined) {
-          params.vehicleTypeId = filterState.selectedVehicleTypes[0];
-        }
-        if (filterState.selectedMakes !== undefined) {
-          params.vehicleMakeId = filterState.selectedMakes[0];
-        }
-        if (filterState.selectedYears !== undefined) {
-          params.yearOfRelease = filterState.selectedYears[0];
-        }
-        if (filterState.selectedSeats !== undefined) {
-          params.numberOfSeats = filterState.selectedSeats[0];
-        }
-        if (filterState.selectedFeatures !== undefined) {
-          params.featureIds = filterState.selectedFeatures[0];
-        }
+      if (filters.selectedVehicleTypes !== undefined) {
+        params.vehicleTypeId = filters.selectedVehicleTypes[0];
+      }
+      if (filters.selectedMakes !== undefined) {
+        params.vehicleMakeId = filters.selectedMakes[0];
+      }
+      if (filters.selectedYears !== undefined) {
+        params.yearOfRelease = filters.selectedYears[0];
+      }
+      if (filters.selectedSeats !== undefined) {
+        params.numberOfSeats = filters.selectedSeats[0];
+      }
+      if (filters.selectedFeatures !== undefined) {
+        params.featureIds = filters.selectedFeatures[0];
+      }
+      if (filters.selectedModels !== undefined) {
+        params.vehicleModelId = filters.selectedModels[0];
+      }
 
-        if (filterState.selectedModels !== undefined) {
-          params.vehicleModelId = filterState.selectedModels[0];
-        }
-
-        if (
-          filterState.priceRange &&
-          filterState.priceRange[0] >= 0 &&
-          filterState.priceRange[1] <= 100000
-        ) {
-          params.minPrice = filterState.priceRange[0];
-          params.maxPrice = filterState.priceRange[1];
-        }
+      if (filters.priceRange && filters.priceRange[0] >= 0) {
+        params.minPrice = filters.priceRange[0];
+        params.maxPrice = filters.priceRange[1];
       }
 
       clarityEvent("vehicle_search", {
-        location,
-        lat,
-        lng,
+        location: searchParams.get("location") || location,
+        lat: currentLat,
+        lng: currentLng,
         bookingType,
         category,
         fromDate,
         untilDate,
-        city,
+        city: currentCity,
         minPrice: params.minPrice,
         maxPrice: params.maxPrice,
         vehicleTypeFilter: params.vehicleTypeId,
@@ -231,6 +224,7 @@ export default function ExploreVehiclesClient() {
         seatsFilter: params.numberOfSeats,
         page,
       });
+
       const response = await VehicleSearchService.searchVehicles(params);
       const vehiclesData = response.data.data?.content || [];
 
@@ -248,9 +242,44 @@ export default function ExploreVehiclesClient() {
 
         const total = response.data.data?.totalElements || vehiclesData.length;
         setTotalCount(total);
-
         setChildCount(total > 100 ? "100+" : total);
-        setHasMore(vehiclesData.length === 10);
+        setHasMore(vehiclesData.length === PAG_SIZE);
+        if (vehiclesData.length > 0) {
+          const allVehicles = append
+            ? [...vehicles, ...vehiclesData]
+            : vehiclesData;
+
+          const allPrices = allVehicles
+            .map((v: any) => {
+              if (v.allPricingOptions && v.allPricingOptions.length > 0) {
+                return v.allPricingOptions[0].price;
+              }
+              return 0;
+            })
+            .filter((price: number) => price > 0);
+
+          if (allPrices.length > 0) {
+            let minPrice = allPrices[0];
+            let maxPrice = allPrices[0];
+
+            for (let i = 1; i < allPrices.length; i++) {
+              const price = allPrices[i];
+
+              if (price < minPrice) minPrice = price;
+              if (price > maxPrice) maxPrice = price;
+            }
+            const roundedMin = Math.floor(minPrice / 1000) * 1000;
+            const roundedMax = Math.ceil(maxPrice / 1000) * 1000;
+            setDynamicMinPrice(roundedMin);
+            setDynamicMaxPrice(roundedMax);
+            if (!filters.priceRange && page === 0 && !append) {
+              setFilterState((prev) => ({
+                ...prev,
+                priceRange: [roundedMin, roundedMax],
+              }));
+            }
+          }
+        }
       }
     } catch (err: any) {
       setError(err.message || "Failed to load vehicles");
@@ -259,8 +288,8 @@ export default function ExploreVehiclesClient() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }
-
+  };
+  const performSearchRef = useRef(performSearch);
   const fetchRecommendedVehicles = async () => {
     try {
       const response = await VehicleSearchService.searchVehicles({
@@ -274,27 +303,34 @@ export default function ExploreVehiclesClient() {
     }
   };
 
-  useEffect(() => {
-    setCurrentPage(0);
-    setHasMore(true);
-    searchVehicles(0, false);
-  }, [searchParams]);
+  const handleFilterChange = (filterId: string, value: any) => {
+    setFilterState((prev) => ({
+      ...prev,
+      [filterId]: value,
+    }));
+  };
+
+  const handleClearAll = () => {
+    setFilterState({
+      priceRange: undefined,
+      selectedVehicleTypes: undefined,
+      selectedMakes: undefined,
+      selectedYears: undefined,
+      selectedSeats: undefined,
+      selectedFeatures: undefined,
+    });
+    router.replace("/booking/search");
+  };
 
   useEffect(() => {
-    return () => {
-      if (searchTimeout.current) {
-        clearTimeout(searchTimeout.current);
-      }
-    };
-  }, []);
+    if (!isInitialized.current) return;
 
-  useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
           const nextPage = currentPage + 1;
           setCurrentPage(nextPage);
-          searchVehicles(nextPage, true);
+          performSearch(nextPage, true);
         }
       },
       { threshold: 0.1 },
@@ -310,7 +346,8 @@ export default function ExploreVehiclesClient() {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, loading, loadingMore, currentPage, searchVehicles]);
+  }, [hasMore, loading, loadingMore, currentPage]);
+
   return (
     <div>
       <Navbar showSearchBar={true} />
@@ -323,152 +360,155 @@ export default function ExploreVehiclesClient() {
         />
       )}
       <div className="mt-22"></div>
-      <div className="min-h-screen ">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="h-[2rem] lg:h-[3rem]"></div>
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <CiLocationOn
-                  color="#0673FF"
-                  size={24}
-                  className="hidden lg:block"
-                />{" "}
-                {city
-                  ? `Vehicles in ${
-                      city.charAt(0).toUpperCase() + city.slice(1)
-                    }`
-                  : location
-                    ? `Vehicles in ${location}`
-                    : "Vehicles in Lagos"}
-              </h1>
-              <p className="text-[1.2rem] md:text-2xl font-bold text-gray-900 mb-2">
-                {loading && vehicles.length === 0
-                  ? "Loading..."
-                  : totalCount < 10
-                    ? `${totalCount || 0} vehicles available`
-                    : `${totalCount || 0}+ vehicles available`}
-              </p>
-            </div>
 
-            {/* View Toggle Buttons */}
-            <div className="flex hidden lg:block items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === "list"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-                aria-label="List view"
-              >
-                <HiViewList className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === "grid"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-                aria-label="Grid view"
-              >
-                <BsFillGridFill className="w-5 h-5" />
-              </button>
-            </div>
+      {!isInitialized.current ? (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-600 text-lg">Loading vehicles...</p>
           </div>
-
-          <div className="mb-6">
-            <SimplifiedFilterBar
-              filterState={filterState}
-              onFilterChange={handleFilterChange}
-              onClearAll={handleClearAll}
-              vehicleTypes={vehicleTypes}
-              makes={makes}
-              models={models} // ADD THIS
-              features={features}
-              totalCount={childCount as number}
-            />
-          </div>
-
-          {/* Header with View Toggle */}
-
-          {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Main Content */}
-          <main className="flex-1 min-h-[calc(100vh-300px)] pb-10">
-            {loading && vehicles.length === 0 && (
-              <div className="flex items-center justify-center py-20">
-                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-
-            {!loading && vehicles.length > 0 && (
-              <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                    : "grid grid-cols-1 gap-6"
-                }
-              >
-                {vehicles.map((v: any) => (
-                  <VehicleCard
-                    key={v.id}
-                    {...v}
-                    bookingType={bookingType}
-                    viewMode={viewMode}
+        </div>
+      ) : (
+        <div className="min-h-screen">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+            <div className="lg:h-[1rem]"></div>
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <CiLocationOn
+                    color="#0673FF"
+                    size={24}
+                    className="hidden lg:block"
                   />
-                ))}
+                  {city
+                    ? `Vehicles in ${city.charAt(0).toUpperCase() + city.slice(1)}`
+                    : location
+                      ? `Vehicles in ${location}`
+                      : "Vehicles in Lagos"}
+                </h1>
+                <p className="text-[1.2rem] md:text-2xl font-bold text-gray-900 mb-2">
+                  {loading && vehicles.length === 0
+                    ? "Loading..."
+                    : totalCount < 10
+                      ? `${totalCount || 0} vehicles available`
+                      : `${totalCount || 0}+ vehicles available`}
+                </p>
+              </div>
+
+              <div className="flex hidden lg:block items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 rounded-md transition-colors ${
+                    viewMode === "list"
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                  aria-label="List view"
+                >
+                  <HiViewList className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 rounded-md transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                  aria-label="Grid view"
+                >
+                  <BsFillGridFill className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="sticky top-0 z-10 bg-white pb-1 mb-2">
+              <SimplifiedFilterBar
+                filterState={filterState}
+                onFilterChange={handleFilterChange}
+                onClearAll={handleClearAll}
+                vehicleTypes={vehicleTypes}
+                makes={makes}
+                models={models}
+                features={features}
+                totalCount={childCount as number}
+                maxPrice={dynamicMaxPrice}
+                minPrice={dynamicMinPrice}
+              />
+            </div>
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-800 text-sm">{error}</p>
               </div>
             )}
 
-            {/* Infinite scroll trigger */}
-            {hasMore && vehicles.length > 0 && (
-              <div ref={observerTarget} className="py-8 flex justify-center">
-                {loadingMore && (
-                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                )}
-              </div>
-            )}
-
-            {!loading && !hasMore && vehicles.length > 0 && (
-              <div className="text-center py-8 text-gray-500">
-                No more vehicles to load
-              </div>
-            )}
-
-            {!loading &&
-              vehicles.length === 0 &&
-              recommendedVehicles.length > 0 && (
-                <div className="mt-10">
-                  <h2 className="text-xl font-semibold mb-4 text-gray-800">
-                    Recommended Cars
-                  </h2>
-                  <div
-                    className={
-                      viewMode === "grid"
-                        ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                        : "grid grid-cols-1 gap-6"
-                    }
-                  >
-                    {recommendedVehicles.map((v: any) => (
-                      <VehicleCard
-                        key={v.id}
-                        {...v}
-                        bookingType={bookingType}
-                        viewMode={viewMode}
-                      />
-                    ))}
-                  </div>
+            <main className="h-[calc(100vh-250px)] overflow-y-auto hide-scrollbar pb-20">
+              {loading && vehicles.length === 0 && (
+                <div className="flex items-center justify-center py-20">
+                  <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 </div>
               )}
-          </main>
+
+              {!loading && vehicles.length > 0 && (
+                <div
+                  className={
+                    viewMode === "grid"
+                      ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                      : "grid grid-cols-1 gap-6"
+                  }
+                >
+                  {vehicles.map((v: any) => (
+                    <VehicleCard
+                      key={v.id}
+                      {...v}
+                      bookingType={bookingType}
+                      viewMode={viewMode}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {hasMore && vehicles.length > 0 && (
+                <div ref={observerTarget} className="py-8 flex justify-center">
+                  {loadingMore && (
+                    <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  )}
+                </div>
+              )}
+
+              {!loading && !hasMore && vehicles.length > 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No more vehicles to load
+                </div>
+              )}
+
+              {!loading &&
+                vehicles.length === 0 &&
+                recommendedVehicles.length > 0 && (
+                  <div className="mt-10">
+                    <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                      Recommended Cars
+                    </h2>
+                    <div
+                      className={
+                        viewMode === "grid"
+                          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                          : "grid grid-cols-1 gap-6"
+                      }
+                    >
+                      {recommendedVehicles.map((v: any) => (
+                        <VehicleCard
+                          key={v.id}
+                          {...v}
+                          bookingType={bookingType}
+                          viewMode={viewMode}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+            </main>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
