@@ -3,10 +3,10 @@ import { FiX } from "react-icons/fi";
 import { FilterState } from "@/types/filters";
 import PriceRangeFilter from "../NewFilterComponent/PriceRangeFilter";
 import VehicleTypeFilter from "../NewFilterComponent/VehicleTypeFilter";
-import MakeFilter from "../NewFilterComponent/MakeFilter";
 import YearsFilter from "../NewFilterComponent/YearsFilter";
 import SeatsFilter from "../NewFilterComponent/SeatFilter";
 import FeaturesFilter from "../NewFilterComponent/FeaturesFilter";
+import MakeModelFilter from "./MakeModelFilter";
 
 import {
   getSelectedFeatureName,
@@ -18,8 +18,10 @@ import {
 import { CiSettings } from "react-icons/ci";
 import { BiChevronDown } from "react-icons/bi";
 import { MdChevronLeft } from "react-icons/md";
-import { getSelectedModelName } from "@/services/vechilePriceUtiles";
-import ModelFilter from "./ModelFilter";
+import {
+  getSelectedModelName,
+  PriceRangeformatPrice,
+} from "@/services/vechilePriceUtiles";
 
 interface SimplifiedFilterBarProps {
   filterState: FilterState;
@@ -30,6 +32,8 @@ interface SimplifiedFilterBarProps {
   models: any[];
   features: any[];
   totalCount: number;
+  maxPrice?: number;
+  minPrice?: number;
 }
 
 export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
@@ -41,6 +45,8 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   models,
   features,
   totalCount,
+  maxPrice,
+  minPrice,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -54,7 +60,6 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
     setOpenDropdown(null);
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -98,18 +103,18 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
 
   const selectedVehicleType = getSelectedVehicleTypeName(
     filterState.selectedVehicleTypes,
-    vehicleTypes
+    vehicleTypes,
   );
   const selectedMake = getSelectedMakeName(filterState.selectedMakes, makes);
   const selectedModel = getSelectedModelName(
     filterState.selectedModels,
-    models
+    models,
   );
   const selectedYear = getSelectedYearName(filterState.selectedYears);
   const selectedSeat = getSelectedSeatName(filterState.selectedSeats);
   const selectedFeature = getSelectedFeatureName(
     filterState.selectedFeatures,
-    features
+    features,
   );
 
   const FilterButton = ({
@@ -130,16 +135,18 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
     <div className="relative">
       <button
         onClick={() => toggleDropdown(id)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${isActive
-          ? "bg-gray-600 text-white relative"
-          : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-          }`}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+          isActive
+            ? "bg-gray-600 text-white relative"
+            : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+        }`}
       >
         <span>{selectedLabel || label}</span>
         {count > 0 && (
           <span
-            className={`inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full ${isActive ? "bg-white text-gray-600" : "bg-gray-600 text-white"
-              }`}
+            className={`inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full ${
+              isActive ? "bg-white text-gray-600" : "bg-gray-600 text-white"
+            }`}
           >
             {count}
           </span>
@@ -172,7 +179,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
             label="Daily price"
             selectedLabel={
               isPriceActive
-                ? `₦${filterState.priceRange?.[0]}-${filterState.priceRange?.[1]}`
+                ? `₦${PriceRangeformatPrice(filterState.priceRange?.[0] || 0)}-${PriceRangeformatPrice(filterState.priceRange?.[1] || 0)}`
                 : undefined
             }
             count={isPriceActive ? 1 : 0}
@@ -180,8 +187,15 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
           >
             {openDropdown === "price" && (
               <PriceRangeFilter
-                range={filterState.priceRange || [0, 100000]}
+                range={
+                  filterState.priceRange || [
+                    minPrice || 25000,
+                    maxPrice || 10000000,
+                  ]
+                }
                 onChange={(range) => onFilterChange("priceRange", range)}
+                maxPrice={maxPrice || 10000000}
+                minPrice={minPrice || 25000}
                 onClear={() => {
                   onFilterChange("priceRange", undefined);
                   closeAllDropdowns();
@@ -210,35 +224,27 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
           </FilterButton>
 
           <FilterButton
-            id="make"
-            label="Make"
-            selectedLabel={selectedMake}
-            count={isMakeActive ? 1 : 0}
-            isActive={isMakeActive}
+            id="make-model"
+            label="Make & Model"
+            selectedLabel={
+              selectedMake && selectedModel
+                ? `${selectedMake} - ${selectedModel}`
+                : selectedMake
+                  ? selectedMake
+                  : undefined
+            }
+            count={(isMakeActive ? 1 : 0) + (isModelActive ? 1 : 0)}
+            isActive={isMakeActive || isModelActive}
           >
-            {openDropdown === "make" && (
-              <MakeFilter
-                value={filterState.selectedMakes}
-                onChange={(value) => onFilterChange("selectedMakes", value)}
-                makes={makes}
-                onClose={closeAllDropdowns}
-              />
-            )}
-          </FilterButton>
-
-          <FilterButton
-            id="model"
-            label="Model"
-            selectedLabel={selectedModel}
-            count={isModelActive ? 1 : 0}
-            isActive={isModelActive}
-          >
-            {openDropdown === "model" && (
-              <ModelFilter
-                value={filterState.selectedModels}
-                onChange={(value: any) =>
+            {openDropdown === "make-model" && (
+              <MakeModelFilter
+                makeValue={filterState.selectedMakes}
+                modelValue={filterState.selectedModels}
+                onMakeChange={(value) => onFilterChange("selectedMakes", value)}
+                onModelChange={(value) =>
                   onFilterChange("selectedModels", value)
                 }
+                makes={makes}
                 models={models}
                 onClose={closeAllDropdowns}
               />
@@ -347,6 +353,8 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
           models={models}
           features={features}
           totalCount={totalCount}
+          maxPrice={maxPrice}
+          minPrice={minPrice}
         />
       )}
     </>
@@ -366,271 +374,264 @@ const MobileFilterDrawer: React.FC<
   models,
   features,
   totalCount,
+  maxPrice,
+  minPrice,
 }) => {
-    // Local state to track temporary filter changes before applying
-    const [tempFilterState, setTempFilterState] =
-      useState<FilterState>(filterState);
+  const [tempFilterState, setTempFilterState] =
+    useState<FilterState>(filterState);
 
-    const isPriceActive = tempFilterState.priceRange !== undefined;
-    const isTypeActive = tempFilterState.selectedVehicleTypes !== undefined;
-    const isMakeActive = tempFilterState.selectedMakes !== undefined;
-    const isModelActive = tempFilterState.selectedModels !== undefined;
-    const isYearsActive = tempFilterState.selectedYears !== undefined;
-    const isSeatsActive = tempFilterState.selectedSeats !== undefined;
-    const isFeaturesActive = tempFilterState.selectedFeatures !== undefined;
+  const isPriceActive = tempFilterState.priceRange !== undefined;
+  const isTypeActive = tempFilterState.selectedVehicleTypes !== undefined;
+  const isMakeActive = tempFilterState.selectedMakes !== undefined;
+  const isModelActive = tempFilterState.selectedModels !== undefined;
+  const isYearsActive = tempFilterState.selectedYears !== undefined;
+  const isSeatsActive = tempFilterState.selectedSeats !== undefined;
+  const isFeaturesActive = tempFilterState.selectedFeatures !== undefined;
 
-    const hasActiveFilters =
-      isPriceActive ||
-      isTypeActive ||
-      isMakeActive ||
-      isModelActive ||
-      isYearsActive ||
-      isSeatsActive ||
-      isFeaturesActive;
+  const hasActiveFilters =
+    isPriceActive ||
+    isTypeActive ||
+    isMakeActive ||
+    isModelActive ||
+    isYearsActive ||
+    isSeatsActive ||
+    isFeaturesActive;
 
-    // Handle temporary filter changes
-    const handleTempFilterChange = (filterId: string, value: any) => {
-      setTempFilterState((prev) => ({
-        ...prev,
-        [filterId]: value,
-      }));
+  const handleTempFilterChange = (filterId: string, value: any) => {
+    setTempFilterState((prev) => ({
+      ...prev,
+      [filterId]: value,
+    }));
+  };
+
+  const handleApplyFilters = () => {
+    Object.keys(tempFilterState).forEach((key) => {
+      onFilterChange(key, tempFilterState[key as keyof FilterState]);
+    });
+    onClose();
+  };
+
+  const handleClearFilter = (filterId: string) => {
+    handleTempFilterChange(filterId, undefined);
+  };
+
+  const handleClearAll = () => {
+    const emptyState: FilterState = {
+      priceRange: [minPrice || 25000, maxPrice || 10000000],
+      selectedVehicleTypes: undefined,
+      selectedMakes: undefined,
+      selectedModels: undefined,
+      selectedYears: undefined,
+      selectedSeats: undefined,
+      selectedFeatures: undefined,
     };
 
-    // Apply filters and close drawer
-    const handleApplyFilters = () => {
-      // Apply all temp filters to actual filter state
-      Object.keys(tempFilterState).forEach((key) => {
-        onFilterChange(key, tempFilterState[key as keyof FilterState]);
-      });
-      onClose();
-    };
+    setTempFilterState(emptyState);
+    onClearAll();
+  };
 
-    // Clear individual filter
-    const handleClearFilter = (filterId: string) => {
-      handleTempFilterChange(filterId, undefined);
-    };
+  return (
+    <div className="fixed inset-0 z-50 md:hidden">
+      <div
+        className="absolute inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+      />
+      <div className="absolute top-0 right-0 left-0 bg-white rounded-t-2xl max-h-[100vh] flex flex-col animate-in slide-in-from-bottom">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between rounded-t-2xl z-10">
+          <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+          >
+            <MdChevronLeft className="w-6 h-6" /> hide filters
+          </button>
+        </div>
 
-    // Clear all and reset
-    const handleClearAll = () => {
-      const emptyState: FilterState = {
-        priceRange: undefined,
-        selectedVehicleTypes: undefined,
-        selectedMakes: undefined,
-        selectedModels: undefined,
-        selectedYears: undefined,
-        selectedSeats: undefined,
-        selectedFeatures: undefined,
-      };
-      setTempFilterState(emptyState);
-      onClearAll();
-    };
+        {/* Filter Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Price Range */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Price Range
+              </h3>
+              {isPriceActive && (
+                <button
+                  onClick={() => handleClearFilter("priceRange")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <PriceRangeFilter
+              range={
+                tempFilterState.priceRange || [
+                  minPrice || 25000,
+                  maxPrice || 10000000,
+                ]
+              }
+              onChange={(range) => handleTempFilterChange("priceRange", range)}
+              maxPrice={maxPrice || 10000000}
+              minPrice={minPrice || 25000}
+              onClear={() => handleClearFilter("priceRange")}
+              compact={true}
+            />
+          </div>
 
-    return (
-      <div className="fixed inset-0 z-50 md:hidden">
-        <div className="absolute inset-0" onClick={onClose} />
-        <div className="absolute top-0 right-0 left-0 bg-white rounded-t-2xl max-h-[100vh] flex flex-col animate-in slide-in-from-bottom">
-          {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between rounded-t-2xl z-10">
-            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+          {/* Vehicle Type */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Vehicle Type
+              </h3>
+              {isTypeActive && (
+                <button
+                  onClick={() => handleClearFilter("selectedVehicleTypes")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <VehicleTypeFilter
+              value={tempFilterState.selectedVehicleTypes}
+              onChange={(value) =>
+                handleTempFilterChange("selectedVehicleTypes", value)
+              }
+              vehicleTypes={vehicleTypes}
+              onClose={onClose}
+              compact={true}
+            />
+          </div>
+
+          {/* Make & Model Combined */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Make & Model
+              </h3>
+              {(isMakeActive || isModelActive) && (
+                <button
+                  onClick={() => {
+                    handleClearFilter("selectedMakes");
+                    handleClearFilter("selectedModels");
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <MakeModelFilter
+              makeValue={tempFilterState.selectedMakes}
+              modelValue={tempFilterState.selectedModels}
+              onMakeChange={(value) =>
+                handleTempFilterChange("selectedMakes", value)
+              }
+              onModelChange={(value) =>
+                handleTempFilterChange("selectedModels", value)
+              }
+              makes={makes}
+              models={models}
+              onClose={onClose}
+              compact={true}
+            />
+          </div>
+
+          {/* Years */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">Years</h3>
+              {isYearsActive && (
+                <button
+                  onClick={() => handleClearFilter("selectedYears")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <YearsFilter
+              value={tempFilterState.selectedYears}
+              onChange={(value) =>
+                handleTempFilterChange("selectedYears", value)
+              }
+              onClose={onClose}
+              compact={true}
+            />
+          </div>
+
+          {/* Seats */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">Seats</h3>
+              {isSeatsActive && (
+                <button
+                  onClick={() => handleClearFilter("selectedSeats")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <SeatsFilter
+              value={tempFilterState.selectedSeats}
+              onChange={(value) =>
+                handleTempFilterChange("selectedSeats", value)
+              }
+              onClose={onClose}
+              compact={true}
+            />
+          </div>
+
+          {/* Features */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">Features</h3>
+              {isFeaturesActive && (
+                <button
+                  onClick={() => handleClearFilter("selectedFeatures")}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <FeaturesFilter
+              value={tempFilterState.selectedFeatures}
+              onChange={(value) =>
+                handleTempFilterChange("selectedFeatures", value)
+              }
+              features={features}
+              onClose={onClose}
+              compact={true}
+            />
+          </div>
+
+          {/* Add spacing for footer */}
+          <div className="h-24" />
+        </div>
+
+        {/* Footer - Sticky at bottom */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 space-y-3">
+          {hasActiveFilters && (
             <button
-              onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+              onClick={handleClearAll}
+              className="w-full py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <MdChevronLeft className="w-6 h-6" /> hide filters
+              Clear all filters
             </button>
-          </div>
-
-          {/* Filter Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {/* Price Range */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">
-                  Price Range
-                </h3>
-                {isPriceActive && (
-                  <button
-                    onClick={() => handleClearFilter("priceRange")}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <PriceRangeFilter
-                range={tempFilterState.priceRange || [0, 100000]}
-                onChange={(range) => handleTempFilterChange("priceRange", range)}
-                onClear={() => handleClearFilter("priceRange")}
-                compact={true}
-              />
-            </div>
-
-            {/* Vehicle Type */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">
-                  Vehicle Type
-                </h3>
-                {isTypeActive && (
-                  <button
-                    onClick={() => handleClearFilter("selectedVehicleTypes")}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <VehicleTypeFilter
-                value={tempFilterState.selectedVehicleTypes}
-                onChange={(value) =>
-                  handleTempFilterChange("selectedVehicleTypes", value)
-                }
-                vehicleTypes={vehicleTypes}
-                onClose={onClose}
-                compact={true}
-              />
-            </div>
-
-            {/* Make */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">Make</h3>
-                {isMakeActive && (
-                  <button
-                    onClick={() => handleClearFilter("selectedMakes")}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <MakeFilter
-                value={tempFilterState.selectedMakes}
-                onChange={(value) =>
-                  handleTempFilterChange("selectedMakes", value)
-                }
-                makes={makes}
-                onClose={onClose}
-                compact={true}
-              />
-            </div>
-
-            {/* Model */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">Model</h3>
-                {isModelActive && (
-                  <button
-                    onClick={() => handleClearFilter("selectedModels")}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <ModelFilter
-                value={tempFilterState.selectedModels}
-                onChange={(value) =>
-                  handleTempFilterChange("selectedModels", value)
-                }
-                models={models}
-                onClose={onClose}
-                compact={true}
-              />
-            </div>
-
-            {/* Years */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">Years</h3>
-                {isYearsActive && (
-                  <button
-                    onClick={() => handleClearFilter("selectedYears")}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <YearsFilter
-                value={tempFilterState.selectedYears}
-                onChange={(value) =>
-                  handleTempFilterChange("selectedYears", value)
-                }
-                onClose={onClose}
-                compact={true}
-              />
-            </div>
-
-            {/* Seats */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">Seats</h3>
-                {isSeatsActive && (
-                  <button
-                    onClick={() => handleClearFilter("selectedSeats")}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <SeatsFilter
-                value={tempFilterState.selectedSeats}
-                onChange={(value) =>
-                  handleTempFilterChange("selectedSeats", value)
-                }
-                onClose={onClose}
-                compact={true}
-              />
-            </div>
-
-            {/* Features */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">Features</h3>
-                {isFeaturesActive && (
-                  <button
-                    onClick={() => handleClearFilter("selectedFeatures")}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <FeaturesFilter
-                value={tempFilterState.selectedFeatures}
-                onChange={(value) =>
-                  handleTempFilterChange("selectedFeatures", value)
-                }
-                features={features}
-                onClose={onClose}
-                compact={true}
-              />
-            </div>
-
-            {/* Add spacing for footer */}
-            <div className="h-24" />
-          </div>
-
-          {/* Footer - Sticky at bottom */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 space-y-3">
-            {hasActiveFilters && (
-              <button
-                onClick={handleClearAll}
-                className="w-full py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Clear all filters
-              </button>
-            )}
-            <button
-              onClick={handleApplyFilters}
-              className="w-full py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Show results
-            </button>
-          </div>
+          )}
+          <button
+            onClick={handleApplyFilters}
+            className="w-full py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Show results
+          </button>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};

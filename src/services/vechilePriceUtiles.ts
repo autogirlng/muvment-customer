@@ -16,7 +16,7 @@ export const formatCurrency = (amount: number): string => {
 export const getDisplayPrice = (
   bookingType: string | null | undefined,
   allPricingOptions: PricingOption[],
-  bookingOptions: { value: string; label: string }[]
+  bookingOptions: { value: string; label: string }[],
 ): number => {
   if (!allPricingOptions?.length) return 0;
 
@@ -25,10 +25,10 @@ export const getDisplayPrice = (
   }
 
   const bookingTypeOption = bookingOptions.find(
-    (opt) => opt.value === bookingType
+    (opt) => opt.value === bookingType,
   );
   const bookingTypePrice = allPricingOptions.find(
-    (bt) => bt.bookingTypeName === bookingTypeOption?.label
+    (bt) => bt.bookingTypeName === bookingTypeOption?.label,
   );
 
   return bookingTypePrice ? bookingTypePrice.price : allPricingOptions[0].price;
@@ -36,7 +36,7 @@ export const getDisplayPrice = (
 
 export const getDisplayLabel = (
   bookingType: string | null | undefined,
-  bookingOptions: { value: string; label: string }[]
+  bookingOptions: { value: string; label: string }[],
 ): string => {
   if (!bookingOptions?.length) return "";
 
@@ -51,7 +51,7 @@ export const getDisplayLabel = (
 export const getPriceDisplay = (
   bookingType: string | null | undefined,
   allPricingOptions: PricingOption[],
-  bookingOptions: { value: string; label: string }[]
+  bookingOptions: { value: string; label: string }[],
 ): { price: number; formattedPrice: string; label: string } => {
   const price = getDisplayPrice(bookingType, allPricingOptions, bookingOptions);
   const formattedPrice = formatCurrency(price);
@@ -62,9 +62,19 @@ export const getPriceDisplay = (
 
 export const getSelectedModelName = (
   selectedModels: string[] | undefined,
-  models: any[]
+  models: any[],
 ): string | undefined => {
   if (!selectedModels || selectedModels.length === 0) return undefined;
   const model = models.find((m) => m.id === selectedModels[0]);
   return model?.name;
+};
+
+export const PriceRangeformatPrice = (price: number) => {
+  if (price >= 1000000) {
+    return `${(price / 1000000).toFixed(1)}M`.replace(".0M", "M");
+  }
+  if (price >= 1000) {
+    return `${Math.round(price / 1000)}k`;
+  }
+  return price.toString();
 };

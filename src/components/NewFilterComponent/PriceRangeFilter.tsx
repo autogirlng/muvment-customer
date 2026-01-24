@@ -1,18 +1,21 @@
+import { PriceRangeformatPrice } from "@/services/vechilePriceUtiles";
 import React, { useState, useRef, useEffect } from "react";
 
 interface PriceRangeFilterProps {
   range?: [number, number];
   onChange?: (range: [number, number]) => void;
   maxPrice?: number;
+  minPrice?: number; // Add this
   onClear?: () => void;
   compact?: boolean;
 }
 
 const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
   range = [0, 50000],
-  onChange = () => { },
+  onChange = () => {},
   maxPrice = 50000,
-  onClear = () => { },
+  minPrice = 0, // Add this with default
+  onClear = () => {},
   compact = false,
 }) => {
   const [min, setMin] = useState(range[0]);
@@ -25,11 +28,11 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
     setMax(range[1]);
   }, [range]);
 
-  const getPercent = (value: number) =>
-    Math.min(100, Math.max(0, (value / maxPrice) * 100));
-
-  const formatPrice = (price: number) =>
-    price >= 1000 ? `${Math.round(price / 1000)}k` : price.toString();
+  // Update getPercent to use minPrice
+  const getPercent = (value: number) => {
+    const priceRange = maxPrice - minPrice;
+    return Math.min(100, Math.max(0, ((value - minPrice) / priceRange) * 100));
+  };
 
   const handleMouseDown = (type: "min" | "max") => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -43,11 +46,14 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
       const rect = trackRef.current.getBoundingClientRect();
       let percent = ((e.clientX - rect.left) / rect.width) * 100;
       percent = Math.min(100, Math.max(0, percent));
-      const value = Math.round((percent / 100) * maxPrice);
+
+      // Calculate value based on minPrice and maxPrice range
+      const priceRange = maxPrice - minPrice;
+      const value = Math.round((percent / 100) * priceRange + minPrice);
 
       if (isDragging === "min") {
         const newMin = Math.min(value, max - 1000);
-        setMin(Math.max(0, newMin));
+        setMin(Math.max(minPrice, newMin));
       } else {
         const newMax = Math.max(value, min + 1000);
         setMax(Math.min(maxPrice, newMax));
@@ -69,26 +75,26 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
         document.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [isDragging, min, max, maxPrice, onChange]);
+  }, [isDragging, min, max, maxPrice, minPrice, onChange]);
 
   const minPercent = getPercent(min);
   const maxPercent = getPercent(max);
 
   const handleClear = () => {
-    setMin(0);
+    setMin(minPrice);
     setMax(maxPrice);
     onClear();
-    onChange([0, maxPrice]);
+    onChange([minPrice, maxPrice]);
   };
 
   // Compact mode for mobile
   if (compact) {
     return (
-      <div className="w-full bg-white space-y-4">
+      <div className="w-full bg-white space-y-4 ">
         {/* Price display */}
         <div className="text-center">
           <p className="text-sm font-medium text-gray-700">
-            {formatPrice(min)} – {formatPrice(max)} / day
+            {PriceRangeformatPrice(min)} – {PriceRangeformatPrice(max)} / day
           </p>
         </div>
 
@@ -137,8 +143,8 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
 
           {/* Price labels */}
           <div className="flex justify-between mt-3 text-xs text-gray-500">
-            <span>0</span>
-            <span>{formatPrice(maxPrice)}</span>
+            <span>₦{PriceRangeformatPrice(minPrice)}</span>
+            <span>₦{PriceRangeformatPrice(maxPrice)}</span>
           </div>
         </div>
       </div>
@@ -160,7 +166,7 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
 
       {/* Price display */}
       <p className="text-center text-sm font-medium text-gray-700 mb-3">
-        {formatPrice(min)} – {formatPrice(max)} / day
+        {PriceRangeformatPrice(min)} – {PriceRangeformatPrice(max)} / day
       </p>
 
       {/* Slider */}
@@ -195,8 +201,8 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
 
       {/* Price labels */}
       <div className="flex justify-between mt-4 text-xs text-gray-600">
-        <span>0/day</span>
-        <span>{formatPrice(maxPrice)}/day</span>
+        <span>₦{PriceRangeformatPrice(minPrice)}/day</span>
+        <span>₦{PriceRangeformatPrice(maxPrice)}/day</span>
       </div>
     </div>
   );
