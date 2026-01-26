@@ -121,7 +121,7 @@ const SelectInput = ({
           >
             <Select.Viewport className="p-1.5">
               <Select.Group>
-                {options.map((option, index) => (
+                {options?.map((option, index) => (
                   <SelectItem
                     key={index}
                     value={option.value}

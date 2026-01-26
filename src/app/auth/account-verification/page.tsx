@@ -37,7 +37,7 @@ export default function VerifyAccountComponent() {
   useEffect(() => {
     if (!emailFromUrl) {
       toast.error("Email is required. Please sign up first.");
-      router.push("/auth/signup");
+      router.push("/auth/register");
     }
   }, [emailFromUrl, router]);
 
@@ -169,7 +169,7 @@ export default function VerifyAccountComponent() {
           <div className="max-w-[90%] m-auto w-full flex flex-col justify-center min-h-screen py-12">
             <div className="mb-8">
               <button
-                onClick={() => router.push("/auth/signup")}
+                onClick={() => router.push("/auth/register")}
                 className="flex items-center text-blue-500 hover:text-blue-600 mb-6"
               >
                 <svg
@@ -222,17 +222,16 @@ export default function VerifyAccountComponent() {
                   type="button"
                   onClick={handleResendOTP}
                   disabled={isResending || resendTimer > 0}
-                  className={`text-sm font-medium ${
-                    isResending || resendTimer > 0
-                      ? "text-gray-400 cursor-not-allowed"
-                      : "text-blue-500 hover:underline"
-                  }`}
+                  className={`text-sm font-medium ${isResending || resendTimer > 0
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-blue-500 hover:underline"
+                    }`}
                 >
                   {resendTimer > 0
                     ? `Resend in ${resendTimer}s`
                     : isResending
-                    ? "Sending..."
-                    : "Resend Code"}
+                      ? "Sending..."
+                      : "Resend Code"}
                 </button>
               </div>
 
@@ -241,11 +240,10 @@ export default function VerifyAccountComponent() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={isLoading || otp.join("").length !== 6}
-                className={`w-full py-5 rounded-2xl font-medium transition-all duration-200 text-sm ${
-                  isLoading || otp.join("").length !== 6
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-gray-800 text-white hover:bg-gray-900 active:scale-95"
-                }`}
+                className={`w-full py-5 rounded-2xl font-medium transition-all duration-200 text-sm ${isLoading || otp.join("").length !== 6
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-gray-800 text-white hover:bg-gray-900 active:scale-95"
+                  }`}
               >
                 {isLoading ? "Verifying..." : "Verify Account"}
               </Button>

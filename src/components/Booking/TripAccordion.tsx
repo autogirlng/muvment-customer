@@ -61,10 +61,10 @@ const TripAccordion = ({
   const [bookingType, setBookingType] = useState(
     initialValues?.bookingType || ""
   );
-  const initialTripStartTime = initialValues
+  const initialTripStartTime = initialValues?.tripStartTime
     ? new Date(`${initialValues.tripStartTime}`)
     : null;
-  const initialTripStartDate = initialValues
+  const initialTripStartDate = initialValues?.tripStartDate
     ? new Date(`${initialValues.tripStartDate}`)
     : null;
   const [tripStartDate, setTripStartDate] = useState<Date | null>(
@@ -138,6 +138,7 @@ const TripAccordion = ({
     if (initialTripStartDate) {
       const formattedDate = format(initialTripStartDate, "MMM do yyyy");
       setDate(`Day ${day}: ${formattedDate}`);
+
     }
 
   }, [])

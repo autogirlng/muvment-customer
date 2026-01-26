@@ -4,6 +4,7 @@ import { Trips, TripDetails } from "@/types/vehicleDetails";
 export const useItineraryForm = () => {
   const [trips, setTrips] = useState<Trips[]>([]);
 
+
   const [openTripIds, setOpenTripIds] = useState<Set<string>>(() => {
     const allIds = trips.map((trip) => trip.id);
     return new Set(allIds);
@@ -25,10 +26,26 @@ export const useItineraryForm = () => {
       const updatedTrips = sessionTrips.map((trip: any) => {
         return { id: trip.id, tripDetails: trip }
       })
-      const newTrip = { id, tripDetails: sessionTrips[0] }
-      sessionStorage.setItem("trips", JSON.stringify([...sessionTrips, { ...newTrip.tripDetails, id: newTrip.id }]))
-      updatedTrips.push(newTrip)
-      setTrips(updatedTrips)
+
+      const lastTrip = sessionTrips[sessionTrips.length - 1];
+      let prevDate = lastTrip.tripStartDate;
+
+
+      if (prevDate) {
+        const date = new Date(lastTrip.tripStartDate);
+        prevDate = new Date(date.setDate(date.getDate() + 1)).toString();
+      }
+
+      const newTrip = {
+        ...lastTrip,
+        id,
+        tripStartDate: prevDate
+      }
+      const updatedSessionTrips = [...sessionTrips, newTrip]
+      sessionStorage.setItem("trips", JSON.stringify(updatedSessionTrips))
+      updatedTrips.push({ id: newTrip.id, tripDetails: newTrip })
+      setTrips(updatedTrips);
+
     } else {
       setTrips((prev) => [...prev, { id }]);
 
@@ -104,6 +121,20 @@ export const useItineraryForm = () => {
     setIsTripFormComplete(missingFields.length === 0);
   }, [trips]);
 
+  const generateNextTripId = () => {
+    const trips = JSON.parse(sessionStorage.getItem("trips") || "[]");
+
+    if (trips.length === 0) return "trip-1";
+
+    const max = Math.max(
+      ...trips.map((t: any) => {
+        const num = Number(t.id.split("-")[1]);
+        return isNaN(num) ? 0 : num;
+      })
+    );
+    return `trip-${max + 1}`;
+  }
+
   return {
     setTrips,
     trips,
@@ -113,5 +144,7 @@ export const useItineraryForm = () => {
     onChangeTrip,
     addTrip,
     isTripFormsComplete,
+    setIsTripFormComplete,
+    generateNextTripId
   };
 };

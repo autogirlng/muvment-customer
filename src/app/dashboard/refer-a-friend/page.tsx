@@ -13,12 +13,13 @@ import { FiCopy, FiShare2, FiUser } from "react-icons/fi";
 
 interface ReferralData {
   id: number;
-  name: string;
-  email: string;
-  phone: string;
-  dateJoined: string;
-  status: string;
-  totalSpent: number;
+  fullName: string;
+  referredAt: string;
+  // email: string;
+  // phone: string;
+  // dateJoined: string;
+  // status: string;
+  // totalSpent: number;
 }
 
 export default function ReferralPage() {
@@ -28,11 +29,8 @@ export default function ReferralPage() {
   const [referralLink, setReferralLink] = useState("");
   const [copySuccess, setCopySuccess] = useState(false);
   const [userData, setProfile] = useState<UserProfile | null>(null);
-  const { user } = useAuth();
+  const [codeGenerated, setCodeGenerated] = useState(false);
 
-  useEffect(() => {
-    fetchReferralData();
-  }, []);
 
   const fetchReferralData = async () => {
     try {
@@ -49,9 +47,13 @@ export default function ReferralPage() {
       }
 
       setProfile(profileData as UserProfile);
-      setReferralLink(
-        `${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/register?code=${profileData?.referralCode}`
-      );
+      if (profileData?.referralCode) {
+        setReferralLink(
+          `${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/register?code=${profileData?.referralCode}`
+        );
+      }
+
+      profileData?.referralCode && setReferralCode(profileData?.referralCode)
       const getcode = await ReferralService.getReferralCode();
       const result = getcode?.data[0].data;
 
@@ -63,8 +65,19 @@ export default function ReferralPage() {
     }
   };
 
+  const generateReferralCode = async () => {
+    await ReferralService.generateReferralCode();
+    setCodeGenerated(true)
+  }
+
+
+  useEffect(() => {
+
+    fetchReferralData();
+  }, [codeGenerated]);
+
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(referralCode);
+    referralCode && navigator.clipboard.writeText(referralCode);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2000);
   };
@@ -93,7 +106,7 @@ export default function ReferralPage() {
 
   const columns: TableColumn<ReferralData>[] = [
     {
-      key: "name",
+      key: "fullName",
       label: "Name",
       render: (value, row) => (
         <div className="flex items-center gap-2">
@@ -104,41 +117,36 @@ export default function ReferralPage() {
         </div>
       ),
     },
+    // {
+    //   key: "email",
+    //   label: "Email",
+    // },
+    // {
+    //   key: "phone",
+    //   label: "Phone",
+    // },
     {
-      key: "email",
-      label: "Email",
-    },
-    {
-      key: "phone",
-      label: "Phone",
-    },
-    {
-      key: "dateJoined",
+      key: "referredAt",
       label: "Date Joined",
       render: (value) => new Date(value).toLocaleDateString(),
     },
-    {
-      key: "status",
-      label: "Status",
-      render: (value) => (
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-medium ${
-            value === "Active"
-              ? "bg-green-100 text-green-700"
-              : value === "Pending"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-gray-100 text-gray-700"
-          }`}
-        >
-          {value}
-        </span>
-      ),
-    },
-    {
-      key: "totalSpent",
-      label: "Total Spent",
-      render: (value) => `$${value.toFixed(2)}`,
-    },
+    // {
+    //   key: "status",
+    //   label: "Status",
+    //   render: (value) => (
+    //     <span
+    //       className={`px-3 py-1 rounded-full text-xs font-medium ${value === "Active"
+    //         ? "bg-green-100 text-green-700"
+    //         : value === "Pending"
+    //           ? "bg-yellow-100 text-yellow-700"
+    //           : "bg-gray-100 text-gray-700"
+    //         }`}
+    //     >
+    //       {value}
+    //     </span>
+    //   ),
+    // },
+
   ];
 
   return (
@@ -174,13 +182,23 @@ export default function ReferralPage() {
                     readOnly
                     className="w-full sm:flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono text-base sm:text-lg"
                   />
-                  <button
-                    onClick={handleCopyCode}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <FiCopy />
-                    {copySuccess ? "Copied!" : "Copy"}
-                  </button>
+
+                  {
+                    !referralCode ? <button
+                      onClick={generateReferralCode}
+                      className="flex items-center cursor-pointer justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <FiCopy />
+                      Generate
+                    </button> : <button
+                      onClick={handleCopyCode}
+                      className="flex items-center cursor-pointer justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <FiCopy />
+                      {copySuccess ? "Copied!" : "Copy"}
+                    </button>
+                  }
+
                 </div>
               </div>
 
@@ -198,7 +216,7 @@ export default function ReferralPage() {
                   />
                   <button
                     onClick={handleShare}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    className="flex items-center cursor-pointer  justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   >
                     <FiShare2 />
                     Share
@@ -217,25 +235,25 @@ export default function ReferralPage() {
                   {referrals.length}
                 </p>
               </div>
-              <div className="bg-green-50 rounded-lg p-4 text-center sm:text-left">
+              {/* <div className="bg-green-50 rounded-lg p-4 text-center sm:text-left">
                 <p className="text-sm text-green-600 font-medium mb-1">
                   Active Referrals
                 </p>
                 <p className="text-2xl sm:text-3xl font-bold text-green-900">
                   {referrals.filter((r) => r.status === "Active").length}
                 </p>
-              </div>
-              <div className="bg-purple-50 rounded-lg p-4 text-center sm:text-left">
+              </div> */}
+              {/* <div className="bg-purple-50 rounded-lg p-4 text-center sm:text-left">
                 <p className="text-sm text-purple-600 font-medium mb-1">
                   Total Revenue
                 </p>
                 <p className="text-2xl sm:text-3xl font-bold text-purple-900">
-                  $
+                  ₦
                   {referrals
                     .reduce((sum, r) => sum + r.totalSpent, 0)
                     .toFixed(2)}
                 </p>
-              </div>
+              </div> */}
             </div>
           </div>
 

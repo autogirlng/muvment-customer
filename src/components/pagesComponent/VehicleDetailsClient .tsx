@@ -56,6 +56,7 @@ const VehicleDetailsClient: React.FC = () => {
     toggleOpen,
     openTripIds,
     isTripFormsComplete,
+    generateNextTripId,
   } = useItineraryForm();
 
   useEffect(() => {
@@ -139,40 +140,6 @@ const VehicleDetailsClient: React.FC = () => {
     );
   }
 
-  const VehicleDetailsChip = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: string;
-  }) => (
-    <div className="flex items-center space-x-1 px-3 font-medium text-gray-900 py-2 rounded-lg text-sm bg-[#F0F2F5]">
-      <span>{label}:</span>
-      <span>{value}</span>
-    </div>
-  );
-
-  const FeatureTag = ({ children }: { children: ReactNode }) => (
-    <span className="inline-block bg-gray-100 text-gray-700 text-sm font-medium px-2 py-1 rounded-lg border border-gray-200">
-      {children}
-    </span>
-  );
-
-  const DiscountRow = ({
-    days,
-    discount,
-    color,
-  }: {
-    days: string;
-    discount: string;
-    color: string;
-  }) => (
-    <div className="flex justify-between items-center p-3 bg-gray-50 border border-[#D0D5DD] rounded-lg">
-      <span className="text-sm font-medium text-gray-700">{days}</span>
-      <span className={`text-sm font-bold ${color}`}>{discount}</span>
-    </div>
-  );
-
   const estimatePrice = async (): Promise<EstimatedBookingPrice> => {
     const tripSegments = trips.map((trip) => {
       const details = trip?.tripDetails;
@@ -203,12 +170,12 @@ const VehicleDetailsClient: React.FC = () => {
         dropoffLocationString: details?.dropoffLocation,
         areaOfUse: areaOfUseCoordinates
           ? [
-              {
-                areaOfUseLatitude: areaOfUseCoordinates.lat,
-                areaOfUseLongitude: areaOfUseCoordinates.lng,
-                areaOfUseName: details?.areaOfUse,
-              },
-            ]
+            {
+              areaOfUseLatitude: areaOfUseCoordinates.lat,
+              areaOfUseLongitude: areaOfUseCoordinates.lng,
+              areaOfUseName: details?.areaOfUse,
+            },
+          ]
           : [],
       };
     });
@@ -240,6 +207,9 @@ const VehicleDetailsClient: React.FC = () => {
     return pricing;
   };
 
+
+
+
   return (
     <>
       <Navbar />
@@ -264,7 +234,7 @@ const VehicleDetailsClient: React.FC = () => {
 
                   <IconButton
                     className="bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer p-2 sm:p-2.5 rounded-full"
-                    onClick={() => {}}
+                    onClick={() => { }}
                   >
                     <FiHeart size={16} className="sm:size-[18px]" />
                   </IconButton>
@@ -381,14 +351,14 @@ const VehicleDetailsClient: React.FC = () => {
                     let tripInitialValues;
 
                     if (initialValues.length > 0) {
-                      tripInitialValues = initialValues[0];
+                      tripInitialValues = initialValues[initialValues.length - 1];
                     } else {
                       tripInitialValues = null;
                     }
 
                     return (
                       <TripAccordion
-                        key={key.id}
+                        key={`${key.id}`}
                         day={`${index + 1}`}
                         id={key.id}
                         vehicle={vehicle}
@@ -403,7 +373,7 @@ const VehicleDetailsClient: React.FC = () => {
                     );
                   })}
                   <button
-                    onClick={() => addTrip(`trip-${trips.length}`)}
+                    onClick={() => addTrip(generateNextTripId())}
                     className="text-[#0673ff] mt-3 text-sm cursor-pointer border-0"
                   >
                     + Add Trip
@@ -447,8 +417,8 @@ const VehicleDetailsClient: React.FC = () => {
                         subLabel={
                           pricing.data.data.appliedGeofenceNames?.length > 0
                             ? `Applied to: ${pricing.data.data.appliedGeofenceNames.join(
-                                ", ",
-                              )}`
+                              ", ",
+                            )}`
                             : null
                         }
                       />
@@ -468,9 +438,8 @@ const VehicleDetailsClient: React.FC = () => {
                       />
 
                       <PriceRow
-                        label={`Coupon (${
-                          pricing.data.data.appliedCouponCode || "Applied"
-                        })`}
+                        label={`Coupon (${pricing.data.data.appliedCouponCode || "Applied"
+                          })`}
                         value={pricing.data.data.couponDiscountAmount}
                         isDiscount
                       />
@@ -609,17 +578,15 @@ const PriceRow = ({
 
   return (
     <div
-      className={`flex justify-between items-start ${
-        isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
-      }`}
+      className={`flex justify-between items-start ${isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
+        }`}
     >
       <div className="flex flex-col">
         <span
-          className={`${
-            isTotal
-              ? "text-base font-bold text-gray-900"
-              : "text-sm text-gray-600"
-          }`}
+          className={`${isTotal
+            ? "text-base font-bold text-gray-900"
+            : "text-sm text-gray-600"
+            }`}
         >
           {label}
         </span>
@@ -631,13 +598,12 @@ const PriceRow = ({
       </div>
 
       <span
-        className={`font-medium ${
-          isTotal
-            ? "text-lg text-blue-600 font-bold"
-            : isDiscount
-              ? "text-green-600 text-sm"
-              : "text-gray-900 text-sm"
-        }`}
+        className={`font-medium ${isTotal
+          ? "text-lg text-blue-600 font-bold"
+          : isDiscount
+            ? "text-green-600 text-sm"
+            : "text-gray-900 text-sm"
+          }`}
       >
         {isDiscount ? "-" : ""} NGN
         {value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -646,4 +612,40 @@ const PriceRow = ({
   );
 };
 
+
+
+
+const VehicleDetailsChip = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) => (
+  <div className="flex items-center space-x-1 px-3 font-medium text-gray-900 py-2 rounded-lg text-sm bg-[#F0F2F5]">
+    <span>{label}:</span>
+    <span>{value}</span>
+  </div>
+);
+
+const FeatureTag = ({ children }: { children: ReactNode }) => (
+  <span className="inline-block bg-gray-100 text-gray-700 text-sm font-medium px-2 py-1 rounded-lg border border-gray-200">
+    {children}
+  </span>
+);
+
+const DiscountRow = ({
+  days,
+  discount,
+  color,
+}: {
+  days: string;
+  discount: string;
+  color: string;
+}) => (
+  <div className="flex justify-between items-center p-3 bg-gray-50 border border-[#D0D5DD] rounded-lg">
+    <span className="text-sm font-medium text-gray-700">{days}</span>
+    <span className={`text-sm font-bold ${color}`}>{discount}</span>
+  </div>
+);
 export default VehicleDetailsClient;
