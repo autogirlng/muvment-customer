@@ -15,6 +15,7 @@ import {
   FiShare2,
   FiTag,
   FiInfo,
+  FiClock,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import { SocialShareButton } from "@/components/general/share";
@@ -277,16 +278,33 @@ const VehicleDetailsClient: React.FC = () => {
               />
             </div>
 
-            <div className="bg-[#F7F9FC] py-3 w-full px-3 flex items-center space-x-2 rounded-t-xl">
-              <FiBell
-                size={40}
-                color="#F38218 "
-                className="p-2 bg-[#FBE2B7] rounded-lg border-[#F38218] border-1"
-              />
-              <span className="text-sm font-medium text-gray-800">
-                1 day advance notice required before booking
-              </span>
+            <div className="bg-[#F7F9FC] py-4 w-full px-4 rounded-t-xl space-y-3">
+              {/* Advance Notice */}
+              <div className="flex items-center space-x-3">
+                <FiBell
+                  size={30}
+                  // color="#F38218"
+                  className="p-2 bg-[#FBE2B7] rounded-lg border border-[#F38218] flex-shrink-0"
+                />
+                <span className="text-sm font-medium text-gray-800">
+                  1 day advance notice required before booking
+                </span>
+              </div>
+
+              {/* Delivery Time */}
+              {/* <div className="flex items-center space-x-3">
+                <FiClock
+                  size={30}
+                  // color="#10B981"
+                  className="p-2 bg-[#D1FAE5] rounded-lg border border-[#10B981] flex-shrink-0"
+                />
+                <span className="text-sm font-medium text-gray-800">
+                  Your vehicle will arrive within 1-2 hours of booking,
+                  regardless of where it's currently located
+                </span>
+              </div> */}
             </div>
+
             <div className="p-6 md:p-8 flex flex-col md:flex-row gap-8">
               <div className="w-full md:w-3/5 space-y-8 mt-5">
                 <div className="space-y-2">
