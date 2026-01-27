@@ -3,14 +3,14 @@ import { useEffect, ReactNode } from "react";
 import Collapse from "@/components/general/collapsible";
 import Vehicle from "./Vehicle";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
-import { FiBell } from "react-icons/fi";
+import { FiBell, FiClock } from "react-icons/fi";
 import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
 import { format } from "date-fns";
 import cn from "classnames";
 import CostBreakdown from "./CostBreakdown";
 import { TripDetails } from "@/types/vehicleDetails";
 import { StepperNavigation } from "./stepper";
-
+import EstimatedPickupTime from "./EstimatedPickupTime";
 
 type Props = {
   vehicle: any | null;
@@ -62,20 +62,20 @@ export default function BookingSummary({
   vehicleDetails,
   steps,
   currentStep,
-  setCurrentStep
+  setCurrentStep,
 }: Props) {
-  const {
-    setTrips,
-    trips,
-  } = useItineraryForm();
+  const { setTrips, trips } = useItineraryForm();
 
   useEffect(() => {
-    const tripsInfo = JSON.parse(sessionStorage.getItem("trips") || "[]") as TripDetails[];
+    const tripsInfo = JSON.parse(
+      sessionStorage.getItem("trips") || "[]",
+    ) as TripDetails[];
     const tripData = tripsInfo.map((trip) => {
-      return { id: trip.id || "", tripDetails: { ...trip } }
-    })
-    setTrips(tripData)
+      return { id: trip.id || "", tripDetails: { ...trip } };
+    });
+    setTrips(tripData);
   }, []);
+  console.log("trips", trips);
 
   return (
     <div className="flex justify-between flex-col-reverse md:flex-row items-start gap-8">
@@ -91,15 +91,31 @@ export default function BookingSummary({
           className="bg-[#F9FAFB] border border-[#98a2b3] rounded-3xl py-5 px-7"
         >
           <Vehicle photos={vehicleImages} />
-          <div className="bg-[#F7F9FC] py-3 w-full  px-3 flex items-center space-x-2 rounded-t-xl">
-            <FiBell
-              size={40}
-              color="#F38218 "
-              className="p-2 bg-[#FBE2B7] rounded-lg border-[#F38218] border-1"
-            />
-            <span className="text-sm font-medium text-gray-800">
-              1 day advance notice required before booking
-            </span>
+          <div className="bg-[#F7F9FC] py-4 w-full px-4 rounded-t-xl space-y-3">
+            {/* Advance Notice */}
+            <div className="flex items-center space-x-3">
+              <FiBell
+                size={30}
+                // color="#F38218"
+                className="p-2 bg-[#FBE2B7] rounded-lg border border-[#F38218] flex-shrink-0"
+              />
+              <span className="text-sm font-medium text-gray-800">
+                1 day advance notice required before booking
+              </span>
+            </div>
+
+            {/* Delivery Time */}
+            <div className="flex items-center space-x-3">
+              <FiClock
+                size={30}
+                // color="#10B981"
+                className="p-2 bg-[#D1FAE5] rounded-lg border border-[#10B981] flex-shrink-0"
+              />
+              <span className="text-sm font-medium text-gray-800">
+                Your vehicle will arrive within 1-2 hours of booking, regardless
+                of where it's currently located
+              </span>
+            </div>
           </div>
           <div className="w-full md:w-3/5 space-y-8 mt-5">
             <div className="space-y-2">
@@ -153,7 +169,7 @@ export default function BookingSummary({
                   vehicleDetails?.data.vehicleFeatures.map(
                     (feature: string) => {
                       return <FeatureTag key={feature}>{feature} </FeatureTag>;
-                    }
+                    },
                   )}
               </div>
             </div>
@@ -171,43 +187,44 @@ export default function BookingSummary({
           isDefaultOpen
           className="bg-[#F9FAFB] border border-[#98a2b3] mt-4 rounded-3xl py-5 px-7"
         >
-          {
-            trips.map((trip, index) => {
+          {trips.map((trip, index) => {
+            return (
+              <div key={trip.id}>
+                <p>Trip {index + 1}</p>
 
-              return (
-                <div key={trip.id}>
-                  <p>Trip {index + 1}</p>
+                <TripInfoWrapper title="Booking Type">
+                  <DurationDetails
+                    date={new Date(trip?.tripDetails?.tripStartDate || "")}
+                    time={new Date(trip?.tripDetails?.tripStartTime || "")}
+                    icon={Icons.ic_flag}
+                    iconColor="text-primary-500"
+                    title="Start"
+                  />
+                </TripInfoWrapper>
 
-                  <TripInfoWrapper title="Booking Type">
-                    <DurationDetails
-                      date={new Date(trip?.tripDetails?.tripStartDate || "")}
-                      time={new Date(trip?.tripDetails?.tripStartTime || "")}
-                      icon={Icons.ic_flag}
-                      iconColor="text-primary-500"
-                      title="Start"
-                    />
-                  </TripInfoWrapper>
-
-                  <TripInfoWrapper title="Itinerary">
-                    <SectionDetails
-                      title="Pick-up"
-                      description={trip?.tripDetails?.pickupLocation || "N/A"}
-                      isLocation
-                    />
-                    <SectionDetails
-                      title="Drop-off"
-                      description={trip?.tripDetails?.dropoffLocation || "N/A"}
-                      isLocation
-                    />
-                    <SectionDetails
-                      title="Areas of Use"
-                      description={trip?.tripDetails?.areaOfUse || "N/A"}
-                    />
-                  </TripInfoWrapper>
-                </div>
-              );
-            })
-          }
+                <TripInfoWrapper title="Itinerary">
+                  <SectionDetails
+                    title="Pick-up"
+                    description={trip?.tripDetails?.pickupLocation || "N/A"}
+                    isLocation
+                  />
+                  <SectionDetails
+                    title="Drop-off"
+                    description={trip?.tripDetails?.dropoffLocation || "N/A"}
+                    isLocation
+                  />
+                  <SectionDetails
+                    title="Areas of Use"
+                    description={trip?.tripDetails?.areaOfUse || "N/A"}
+                  />
+                  <EstimatedPickupTime
+                    tripStartDate={trip?.tripDetails?.tripStartDate || ""}
+                    tripStartTime={trip?.tripDetails?.tripStartTime || ""}
+                  />
+                </TripInfoWrapper>
+              </div>
+            );
+          })}
         </Collapse>
       </div>
       <CostBreakdown trips={trips} vehicleId={vehicleDetails?.data.id || ""} />
@@ -216,7 +233,7 @@ export default function BookingSummary({
         steps={steps}
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
-        handleSaveDraft={() => { }}
+        handleSaveDraft={() => {}}
         isSaveDraftloading={false}
         disableNextButton={true}
       />
