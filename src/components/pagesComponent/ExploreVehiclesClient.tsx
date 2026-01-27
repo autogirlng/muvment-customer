@@ -71,7 +71,7 @@ export default function ExploreVehiclesClient() {
   const initializeFiltersFromUrl = useCallback((): FilterState => {
     const minPriceParam = searchParams.get("minPrice");
     const maxPriceParam = searchParams.get("maxPrice");
-    const type = searchParams.getAll("type");
+    const type = searchParams.getAll("vehicleTypeId");
     const make = searchParams.getAll("make");
     const model = searchParams.getAll("model");
     const yearOfRelease = searchParams.getAll("yearOfRelease");
@@ -121,7 +121,10 @@ export default function ExploreVehiclesClient() {
           params.set("lat", detectedLocation.lat.toString());
           params.set("lng", detectedLocation.lng.toString());
           params.set("location", detectedLocation.name);
-
+          console.log(
+            "Updating URL with detected location:",
+            params.toString(),
+          );
           router.replace(`/booking/search?${params.toString()}`);
 
           await new Promise((resolve) => setTimeout(resolve, 100));
