@@ -55,7 +55,7 @@ const OurStory = () => {
               </div>
               <div className="text-left">
                 <p className="text-[#2c3e50] text-[14px] font-bold">
-                  Gbemisola Ajiwe
+                  Chinazom Arinze
                 </p>
                 <p className="text-gray-500 text-[12px]">CEO & Co-Founder</p>
               </div>
