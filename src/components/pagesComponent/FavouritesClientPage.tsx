@@ -1,19 +1,16 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import VehicleCard from "@/components/Booking/VehicleCard";
 import { HiViewList } from "react-icons/hi";
 import { BsFillGridFill } from "react-icons/bs";
 import Footer from "../HomeComponent/Footer";
 import { getSingleData } from "@/controllers/connnector/app.callers";
-import { FullPageSpinner } from "../general/spinner";
 import { FavouritesVehicleData } from "@/types/favourites";
 import { FiLoader } from "react-icons/fi";
 
 export default function FavouritesVehiclesClient() {
-  const searchParams = useSearchParams();
-
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const router = useRouter();
 
@@ -29,7 +26,7 @@ export default function FavouritesVehiclesClient() {
 
       const { data: favoritesData } = data[0] as FavouritesVehicleData;
 
-      const vehicles = favoritesData.vehicles.map((vehicle) => {
+      const vehicles = favoritesData?.vehicles?.map((vehicle) => {
         const {
           city,
           extraHourlyRate,
@@ -40,6 +37,7 @@ export default function FavouritesVehiclesClient() {
           name,
           id,
         } = vehicle;
+
         return {
           id,
           city,
@@ -47,16 +45,17 @@ export default function FavouritesVehiclesClient() {
           willProvideDriver,
           willProvideFuel,
           numberOfSeats,
-          photos,
+          // photos,
           name,
-          allPricingOptions: vehicle.pricing,
-          vehicleTypeName: vehicle.vehicleMake.name,
-          bookingType: vehicle.pricing[0].bookingTypeId,
+          // allPricingOptions: vehicle?.pricing,
+          vehicleTypeName: vehicle?.vehicleMake.name || "",
+          // bookingType: vehicle?.pricing[0]?.bookingTypeId || "",
         };
       });
       setVehicles(vehicles);
     } catch (error) {
       console.error("Error fetching favourite vehicles:", error);
+
       setError(true);
     } finally {
       setLoading(false);
@@ -97,6 +96,16 @@ export default function FavouritesVehiclesClient() {
     );
   }
 
+  if (!vehicles || vehicles.length === 0) {
+    return (
+      <>
+        <Navbar />
+        <div className="text-center text-gray-500 mt-10">
+          You don’t have any favourite vehicles yet.
+        </div>
+      </>
+    );
+  }
   return (
     <div>
       <Navbar />
@@ -152,14 +161,16 @@ export default function FavouritesVehiclesClient() {
                     : "grid grid-cols-1 gap-6"
                 }
               >
-                {vehicles.map((v: any) => (
-                  <VehicleCard
-                    key={v.id}
-                    {...v}
-                    // bookingType={bookingType}
-                    viewMode={viewMode}
-                  />
-                ))}
+                {vehicles &&
+                  vehicles.length > 0 &&
+                  vehicles?.map((v: any) => (
+                    <VehicleCard
+                      key={v.id}
+                      {...v}
+                      // bookingType={bookingType}
+                      viewMode={viewMode}
+                    />
+                  ))}
               </div>
             )}
           </main>

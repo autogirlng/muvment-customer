@@ -8,12 +8,15 @@ import { VehicleCardProps } from "@/types/vehicle";
 import { useRouter } from "next/navigation";
 import React, { useState, useMemo, useEffect } from "react";
 import { FiMapPin, FiUser, FiDroplet, FiHeart } from "react-icons/fi";
+import { FaHeart } from "react-icons/fa6";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
 import { IoInformationCircleOutline } from "react-icons/io5";
 import { getBookingOption } from "@/context/Constarain";
 import { clarityEvent } from "@/services/clarity";
 import { trackVehicleView } from "@/services/analytics";
-
+import { useAuth } from "@/context/AuthContext";
+import { FavouriteService } from "@/controllers/favourites/favouriteService";
+import { Spinner } from "../general/spinner";
 interface VehicleCardPropsExtended extends VehicleCardProps {
   viewMode?: "list" | "grid";
 }
@@ -32,6 +35,9 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   bookingType,
   viewMode = "list",
 }) => {
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+
   const images = useMemo(() => {
     if (!photos || photos.length === 0) return [];
     return photos
@@ -44,7 +50,10 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [bookingOptions, setBookingOptions] = useState<any[]>([]);
-  const router = useRouter();
+  const [favouriteStatus, setFavouriteStatus] = useState<boolean>(false);
+  const [loadingFavouriteStatus, setLoadingFavouriteStatus] =
+    useState<boolean>(false);
+
   const getBookingOptions = async () => {
     const data = await getBookingOption();
     setBookingOptions(data.dropdownOptions);
@@ -70,7 +79,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     }
   };
 
-  const handleLike = (e: React.MouseEvent) => {
+  const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     clarityEvent("vehicle_favorited", {
       vehicleId: id,
@@ -78,8 +87,37 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       city,
       vehicleType: vehicleTypeName,
     });
+
     // Add like functionality here
+    setLoadingFavouriteStatus(true);
+    try {
+      if (favouriteStatus) {
+        const data = await FavouriteService.deleteVehicleFromFavourite(id);
+        if (data.message === "Success") {
+          setFavouriteStatus(false);
+        }
+      } else {
+        const data = await FavouriteService.makeVehicleFavourite(id);
+        if (data?.message === "Success") {
+          setFavouriteStatus(true);
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoadingFavouriteStatus(false);
+    }
   };
+
+  const getVehicleFavouriteStatus = async () => {
+    const favorite = await FavouriteService.getVehicleFavouriteStatus(id);
+    setFavouriteStatus(favorite);
+  };
+  useEffect(() => {
+    if (isAuthenticated) {
+      getVehicleFavouriteStatus();
+    }
+  }, []);
 
   const handleCardClick = () => {
     clarityEvent("vehicle_view", {
@@ -145,14 +183,24 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             </span>
           </div>
 
-          {/* Like Button */}
-          <button
-            onClick={handleLike}
-            className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors"
-            aria-label="Add to favorites"
-          >
-            <FiHeart className="w-4 h-4 text-gray-700" />
-          </button>
+          {isAuthenticated && (
+            <>
+              {/* Like Button */}
+              <button
+                onClick={handleLike}
+                className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors flex items-center justify-center"
+                aria-label="Add to favorites"
+              >
+                {loadingFavouriteStatus ? (
+                  <Spinner />
+                ) : favouriteStatus ? (
+                  <FaHeart className="w-4 h-4 text-red-500 cursor-pointer" />
+                ) : (
+                  <FiHeart className="w-4 h-4 text-gray-700 cursor-pointer" />
+                )}
+              </button>
+            </>
+          )}
         </div>
 
         {/* Content Section */}
@@ -352,28 +400,44 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
           </div>
         </div>
 
-        {/* Vertical Divider */}
-        <div className="hidden md:block w-px h-28 bg-gray-200 flex-shrink-0"></div>
+        {isAuthenticated && (
+          <>
+            {/* Vertical Divider */}
+            <div className="hidden md:block w-px h-28 bg-gray-200 flex-shrink-0"></div>
 
-        {/* Like Button */}
-        <div className="hidden md:flex items-center justify-center px-5">
-          <button
-            onClick={handleLike}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Add to favorites"
-          >
-            <FiHeart className="w-5 h-5 text-gray-700" />
-          </button>
-        </div>
+            {/* Like Button */}
+            <div className="hidden md:flex items-center justify-center px-5">
+              <button
+                onClick={handleLike}
+                className="p-2 hover:bg-gray-100 cursor-pointer rounded-full transition-colors"
+                aria-label="Add to favorites"
+              >
+                {loadingFavouriteStatus ? (
+                  <Spinner />
+                ) : favouriteStatus ? (
+                  <FaHeart className="w-4 h-4 text-red-500 cursor-pointer" />
+                ) : (
+                  <FiHeart className="w-4 h-4 text-gray-700 cursor-pointer" />
+                )}
+              </button>
+            </div>
 
-        {/* Mobile Like Button */}
-        <button
-          onClick={handleLike}
-          className="md:hidden absolute top-2 right-2 bg-white p-2 rounded-full hover:bg-gray-100 transition-colors"
-          aria-label="Add to favorites"
-        >
-          <FiHeart className="w-5 h-5 text-gray-700" />
-        </button>
+            {/* Mobile Like Button */}
+            <button
+              onClick={handleLike}
+              className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors flex items-center justify-center"
+              aria-label="Add to favorites"
+            >
+              {loadingFavouriteStatus ? (
+                <Spinner />
+              ) : favouriteStatus ? (
+                <FaHeart className="w-4 h-4 text-red-500 cursor-pointer" />
+              ) : (
+                <FiHeart className="w-4 h-4 text-gray-700 cursor-pointer" />
+              )}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

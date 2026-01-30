@@ -69,9 +69,10 @@ export interface Customer {
   lastName: string;
   email: string;
   phoneNumber: string;
-  userType: "CUSTOMER" | "HOST" | string;
+  userType: string;
   referredById: string;
   active: boolean;
+  departmentName?: string;
 }
 
 export interface Vehicle {
@@ -118,6 +119,21 @@ export interface Vehicle {
   discounts: unknown[];
   outOfBoundsAreaIds: string[];
 }
+
+// export interface FavouriteResponseVehicle {
+//   id: string;
+//   hasInsurance: boolean;
+//   hasTracker: boolean;
+//   willProvideDriver: boolean;
+//   willProvideFuel: boolean;
+// }
+
+// export interface FavouriteResponse extends BaseResponse {
+//   data: {
+//     customer: Customer;
+//     vehicles: FavouriteResponseVehicle[];
+//   };
+// }
 
 export interface FavouritesVehiclePayload {
   customer: Customer;
