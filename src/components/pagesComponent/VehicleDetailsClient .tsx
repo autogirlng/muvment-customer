@@ -169,12 +169,12 @@ const VehicleDetailsClient: React.FC = () => {
         dropoffLocationString: details?.dropoffLocation,
         areaOfUse: areaOfUseCoordinates
           ? [
-            {
-              areaOfUseLatitude: areaOfUseCoordinates.lat,
-              areaOfUseLongitude: areaOfUseCoordinates.lng,
-              areaOfUseName: details?.areaOfUse,
-            },
-          ]
+              {
+                areaOfUseLatitude: areaOfUseCoordinates.lat,
+                areaOfUseLongitude: areaOfUseCoordinates.lng,
+                areaOfUseName: details?.areaOfUse,
+              },
+            ]
           : [],
       };
     });
@@ -206,9 +206,6 @@ const VehicleDetailsClient: React.FC = () => {
     return pricing;
   };
 
-
-
-
   return (
     <>
       <Navbar />
@@ -233,7 +230,7 @@ const VehicleDetailsClient: React.FC = () => {
 
                   <IconButton
                     className="bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer p-2 sm:p-2.5 rounded-full"
-                    onClick={() => { }}
+                    onClick={() => {}}
                   >
                     <FiHeart size={16} className="sm:size-[18px]" />
                   </IconButton>
@@ -333,7 +330,8 @@ const VehicleDetailsClient: React.FC = () => {
                     let tripInitialValues;
 
                     if (initialValues.length > 0) {
-                      tripInitialValues = initialValues[initialValues.length - 1];
+                      tripInitialValues =
+                        initialValues[initialValues.length - 1];
                     } else {
                       tripInitialValues = null;
                     }
@@ -399,8 +397,8 @@ const VehicleDetailsClient: React.FC = () => {
                         subLabel={
                           pricing.data.data.appliedGeofenceNames?.length > 0
                             ? `Applied to: ${pricing.data.data.appliedGeofenceNames.join(
-                              ", ",
-                            )}`
+                                ", ",
+                              )}`
                             : null
                         }
                       />
@@ -420,8 +418,9 @@ const VehicleDetailsClient: React.FC = () => {
                       />
 
                       <PriceRow
-                        label={`Coupon (${pricing.data.data.appliedCouponCode || "Applied"
-                          })`}
+                        label={`Coupon (${
+                          pricing.data.data.appliedCouponCode || "Applied"
+                        })`}
                         value={pricing.data.data.couponDiscountAmount}
                         isDiscount
                       />
@@ -560,15 +559,17 @@ const PriceRow = ({
 
   return (
     <div
-      className={`flex justify-between items-start ${isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
-        }`}
+      className={`flex justify-between items-start ${
+        isTotal ? "mt-3 pt-3 border-t border-gray-200" : "mb-2"
+      }`}
     >
       <div className="flex flex-col">
         <span
-          className={`${isTotal
-            ? "text-base font-bold text-gray-900"
-            : "text-sm text-gray-600"
-            }`}
+          className={`${
+            isTotal
+              ? "text-base font-bold text-gray-900"
+              : "text-sm text-gray-600"
+          }`}
         >
           {label}
         </span>
@@ -580,12 +581,13 @@ const PriceRow = ({
       </div>
 
       <span
-        className={`font-medium ${isTotal
-          ? "text-lg text-blue-600 font-bold"
-          : isDiscount
-            ? "text-green-600 text-sm"
-            : "text-gray-900 text-sm"
-          }`}
+        className={`font-medium ${
+          isTotal
+            ? "text-lg text-blue-600 font-bold"
+            : isDiscount
+              ? "text-green-600 text-sm"
+              : "text-gray-900 text-sm"
+        }`}
       >
         {isDiscount ? "-" : ""} NGN
         {value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -593,9 +595,6 @@ const PriceRow = ({
     </div>
   );
 };
-
-
-
 
 const VehicleDetailsChip = ({
   label,

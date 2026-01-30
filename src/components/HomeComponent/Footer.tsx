@@ -125,7 +125,6 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
   const isFormValid =
     formData.email.trim() !== "" && Object.keys(errors).length === 0;
 
-  console.log(bookingTypeID)
 
 
   return (
