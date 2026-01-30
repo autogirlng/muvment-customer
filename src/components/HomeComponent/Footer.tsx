@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import useNewsletter from "@/utils/useNewLetter";
@@ -7,6 +7,8 @@ import Input from "../utils/InputComponent";
 import Button from "../utils/Button";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { FaTiktok } from "react-icons/fa6";
+import { getBookingOption } from "@/context/Constarain";
+import { BookingOption } from "@/types/booking";
 
 type FooterNavProps = {
   title: string;
@@ -23,7 +25,7 @@ const footerNav: FooterNavProps[] = [
   {
     title: "Company",
     links: [
-      { name: "About us", link: "/" },
+      { name: "About us", link: "/about-us" },
       { name: "Contact us", link: "/contact-us" },
       { name: "FAQs", link: "/faq" },
     ],
@@ -35,7 +37,11 @@ const footerNav: FooterNavProps[] = [
       { name: "Abuja", link: "/booking/search?city=abuja", type: "link" },
       { name: "Benin City", link: "/booking/search?city=benin", type: "link" },
       { name: "Enugu", link: "/booking/search?city=enugu", type: "link" },
-      { name: "Port Harcourt", link: "/booking/search?city=port-harcourt", type: "link" },
+      {
+        name: "Port Harcourt",
+        link: "/booking/search?city=port-harcourt",
+        type: "link",
+      },
       { name: "Accra", link: "/booking/search?city=accra", type: "link" },
     ],
   },
@@ -60,6 +66,10 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
   const [formData, setFormData] = useState<NewsletterForm>({ email: "" });
   const [errors, setErrors] = useState<Partial<NewsletterForm>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingType, setBookingType] = useState<string | undefined>(
+    bookingTypeID,
+  );
+  const [_, setBookingOptions] = useState<BookingOption[]>([]);
 
   const currentYear = new Date().getFullYear();
 
@@ -72,6 +82,19 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
       });
     }
   };
+
+  useEffect(() => {
+    const getBookingOptions = async () => {
+      if (!bookingTypeID) {
+        const data = await getBookingOption();
+        if (data.dropdownOptions?.length > 0) {
+          setBookingType(data.dropdownOptions[0].value);
+        }
+      }
+    };
+
+    getBookingOptions();
+  }, [bookingTypeID]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<NewsletterForm> = {};
@@ -125,6 +148,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
   const isFormValid =
     formData.email.trim() !== "" && Object.keys(errors).length === 0;
 
+  console.log(bookingTypeID)
 
 
   return (
@@ -192,7 +216,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                         </button>
                       ) : navLink.type === "link" ? (
                         <Link
-                          href={`${navLink.link}${bookingTypeID && `&bookingType=${bookingTypeID}`
+                          href={`${navLink.link}${bookingType && `&bookingType=${bookingType}`
                             }`}
                           className="hover:text-primary-500"
                         >

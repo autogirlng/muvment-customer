@@ -42,17 +42,14 @@ export default function HeroBookingSection() {
 
   const [error, setError] = useState<string | null>(null);
 
-
   // User's current location state
   const [userLocation, setUserLocation] = useState<string>(
-    "Detecting location..."
+    "Detecting location...",
   );
 
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<
     "pending" | "granted" | "denied"
   >("pending");
-
-
 
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -85,17 +82,13 @@ export default function HeroBookingSection() {
     }
   };
 
-
-
   const [location, setLocation] = useState<{
     lat: number | null;
     lng: number | null;
   }>({
     lat: null,
     lng: null,
-
   });
-
 
   const revertToDefaultLocation = () => {
     setLocationPermissionStatus("denied");
@@ -106,10 +99,7 @@ export default function HeroBookingSection() {
       lat: DEFAULT_LOCATION.lat,
       lng: DEFAULT_LOCATION.lng,
     });
-
-
-  }
-
+  };
 
   const getLongitudeLatitude = () => {
     if (!navigator.geolocation) {
@@ -119,7 +109,6 @@ export default function HeroBookingSection() {
 
     setUserLocation("Detecting location...");
 
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setError(null);
@@ -127,7 +116,6 @@ export default function HeroBookingSection() {
         setLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-
         });
       },
       (err) => {
@@ -149,65 +137,65 @@ export default function HeroBookingSection() {
         enableHighAccuracy: false, // 🔑 important
         timeout: 10000,
         maximumAge: 60000,
-      }
+      },
     );
   };
 
   const getLocationInformation = () => {
-
-    setUserLocation("Detecting Location...")
+    setUserLocation("Detecting Location...");
     if (typeof window === "undefined" || !window.google) return;
 
     if (location.lat == null && location.lng == null) {
-      getLongitudeLatitude()
+      getLongitudeLatitude();
     }
     try {
       const geocoder = new google.maps.Geocoder();
       if (location.lat != null && location.lng != null) {
-        geocoder.geocode({ location: { lat: location.lat, lng: location.lng } }, (results, status) => {
-          if (status !== "OK" || !results?.[0]) return;
-          const components = results[0].address_components;
-          const state = components.find((c) => c.types.includes("administrative_area_level_1"))?.long_name || "";
-          const country = components.find((c) => c.types.includes("country"))?.long_name || "";
-          const locationName = state + ", " + country
-          setUserLocation(locationName);
-          setSearchValue(locationName);
-          setSelectedLocation({
-            name: locationName,
-            lat: location.lat,
-            lng: location.lng,
-          });
-
-          sessionStorage.setItem(
-            "userLocation",
-            JSON.stringify({
+        geocoder.geocode(
+          { location: { lat: location.lat, lng: location.lng } },
+          (results, status) => {
+            if (status !== "OK" || !results?.[0]) return;
+            const components = results[0].address_components;
+            const state =
+              components.find((c) =>
+                c.types.includes("administrative_area_level_1"),
+              )?.long_name || "";
+            const country =
+              components.find((c) => c.types.includes("country"))?.long_name ||
+              "";
+            const locationName = state + ", " + country;
+            setUserLocation(locationName);
+            setSearchValue(locationName);
+            setSelectedLocation({
               name: locationName,
               lat: location.lat,
               lng: location.lng,
-              timestamp: Date.now(),
-            })
-          );
-        })
+            });
+
+            sessionStorage.setItem(
+              "userLocation",
+              JSON.stringify({
+                name: locationName,
+                lat: location.lat,
+                lng: location.lng,
+                timestamp: Date.now(),
+              }),
+            );
+          },
+        );
 
         setLocationPermissionStatus("granted");
-
       }
     } catch (error) {
-      revertToDefaultLocation()
+      revertToDefaultLocation();
     }
-  }
-
+  };
 
   useEffect(() => {
     if (location.lat == null || location.lng == null) return;
 
     getLocationInformation();
   }, [location.lat, location.lng]);
-
-
-
-
-
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -258,7 +246,7 @@ export default function HeroBookingSection() {
   };
 
   const handleSearchInputChangeEvent = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const value = e.target.value;
     setSearchValue(value);
@@ -286,8 +274,9 @@ export default function HeroBookingSection() {
     }
 
     trackVehicleSearch({
-      searchTerm: `${selectedLocation.name} ${bookingType || ""} ${fromDate || ""
-        }   ${untilDate || ""}`.trim(),
+      searchTerm: `${selectedLocation.name} ${bookingType || ""} ${
+        fromDate || ""
+      }   ${untilDate || ""}`.trim(),
       category,
       location: selectedLocation.name,
     });
@@ -307,9 +296,9 @@ export default function HeroBookingSection() {
         bookingType,
         category,
         fromDate,
-        untilDate
+        untilDate,
       );
-
+      console.log("Navigating to search URL:", searchUrl);
       router.push(searchUrl);
     } catch (error) {
       setErrorMessage("Failed to search vehicles. Please try again.");
@@ -331,8 +320,6 @@ export default function HeroBookingSection() {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-gray-900/70 via-gray-800/50 to-gray-900/30"></div>
       </div>
-
-
 
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-12 lg:px-20 xl:px-32">
@@ -497,15 +484,19 @@ export default function HeroBookingSection() {
         {/* Bottom Location Badge */}
         <div className="absolute bottom-8 left-4 md:left-12 lg:left-20 xl:left-32 flex items-center gap-2 text-white text-xl md:text-2xl font-semibold">
           <FiMapPin
-            className={`w-6 h-6 ${locationPermissionStatus === "granted"
-              ? "text-blue-400"
-              : locationPermissionStatus === "denied"
-                ? "text-red-400"
-                : "text-yellow-400"
-              }`}
+            className={`w-6 h-6 ${
+              locationPermissionStatus === "granted"
+                ? "text-blue-400"
+                : locationPermissionStatus === "denied"
+                  ? "text-red-400"
+                  : "text-yellow-400"
+            }`}
           />
 
-          <span>{userLocation} {locationPermissionStatus === "denied" && "(Default)"}</span>
+          <span>
+            {userLocation}{" "}
+            {locationPermissionStatus === "denied" && "(Default)"}
+          </span>
           {locationPermissionStatus === "denied" && (
             <button
               onClick={getLocationInformation}
@@ -515,8 +506,6 @@ export default function HeroBookingSection() {
               Retry
             </button>
           )}
-
-
         </div>
       </div>
     </div>
