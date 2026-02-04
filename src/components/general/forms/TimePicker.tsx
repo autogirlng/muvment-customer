@@ -253,8 +253,8 @@ function TimePicker({
             disabled
               ? "text-gray-400"
               : selectedTime
-              ? "text-gray-800"
-              : "text-gray-400"
+                ? "text-gray-800"
+                : "text-gray-400"
           } whitespace-nowrap`}
         >
           {getDisplayTime()}

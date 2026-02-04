@@ -38,20 +38,19 @@ const CostBreakdown = ({
 }) => {
   const [estimatedPriceId, setEstimatedPriceId] = useState<string>("");
   const [priceReEstimated, setPriceReEstimated] = useState<boolean>(false);
-  const [bookId, setBookId] = useState<string>("")
+  const [bookId, setBookId] = useState<string>("");
   const [pricing, setPricing] = useState<EstimatedBookingPrice>();
   const [paymentGateway, setPaymentGateway] =
     useState<PaymentGateway>("PAYSTACK");
   const router = useRouter();
 
-
   const estimatePrice = async () => {
     const tripSegments = trips?.map((trip, index) => {
       const pickupCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${trip?.tripDetails?.pickupCoordinates}`
+        `${trip?.tripDetails?.pickupCoordinates}`,
       );
       const dropoffCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${trip?.tripDetails?.dropoffCoordinates}`
+        `${trip?.tripDetails?.dropoffCoordinates}`,
       );
 
       let areaOfUseCoordinates: { lat: number; lng: number } | null = null;
@@ -59,7 +58,7 @@ const CostBreakdown = ({
       if (trip?.tripDetails?.areaOfUseCoordinates) {
         try {
           areaOfUseCoordinates = JSON.parse(
-            `${trip?.tripDetails.areaOfUseCoordinates}`
+            `${trip?.tripDetails.areaOfUseCoordinates}`,
           );
         } catch (e) {
           console.error("Error parsing area of use:", e);
@@ -70,11 +69,11 @@ const CostBreakdown = ({
         bookingTypeId: trip?.tripDetails?.bookingType,
         startDate: format(
           new Date(trip?.tripDetails?.tripStartDate || ""),
-          "yyyy-MM-dd"
+          "yyyy-MM-dd",
         ),
         startTime: format(
           new Date(trip?.tripDetails?.tripStartTime || ""),
-          "HH:mm:ss"
+          "HH:mm:ss",
         ),
         pickupLatitude: pickupCoordinates.lat,
         pickupLongitude: pickupCoordinates.lng,
@@ -84,12 +83,12 @@ const CostBreakdown = ({
         dropoffLocationString: trip?.tripDetails?.dropoffLocation,
         areaOfUse: areaOfUseCoordinates
           ? [
-            {
-              areaOfUseLatitude: areaOfUseCoordinates.lat,
-              areaOfUseLongitude: areaOfUseCoordinates.lng,
-              areaOfUseName: trip?.tripDetails?.areaOfUse,
-            },
-          ]
+              {
+                areaOfUseLatitude: areaOfUseCoordinates.lat,
+                areaOfUseLongitude: areaOfUseCoordinates.lng,
+                areaOfUseName: trip?.tripDetails?.areaOfUse,
+              },
+            ]
           : [],
       };
     });
@@ -103,7 +102,7 @@ const CostBreakdown = ({
     const pricing = (await updateData(
       `/api/v1/public/bookings/calculate`,
       estimatedPriceId,
-      data
+      data,
     )) as EstimatedBookingPrice;
 
     sessionStorage.setItem("priceEstimateId", pricing.data.data.calculationId);
@@ -116,18 +115,14 @@ const CostBreakdown = ({
     const bookingId = sessionStorage.getItem("bookingId") || "";
 
     setEstimatedPriceId(estimatedPriceId);
-    setBookId(bookingId)
+    setBookId(bookingId);
     setPriceReEstimated(false);
     estimatePrice();
   }, [trips]);
 
-
-
-
-
   const processPayment = async () => {
     const userBookingInfo: PersonalInformationMyselfValues = JSON.parse(
-      sessionStorage.getItem("userBookingInformation") || ""
+      sessionStorage.getItem("userBookingInformation") || "",
     );
 
     let data;
@@ -173,18 +168,14 @@ const CostBreakdown = ({
       }
     }
 
-
     try {
       const booking: any = await createData("/api/v1/bookings", data);
       let bookingId = booking?.data?.data?.bookingId;
 
       if (bookingId) {
-        setBookId(bookingId)
-        sessionStorage.setItem("bookingId", bookingId)
-
+        setBookId(bookingId);
+        sessionStorage.setItem("bookingId", bookingId);
       }
-
-
 
       if (!bookingId && booking.data !== 409) {
         throw new Error("Booking ID not returned from API");
@@ -195,13 +186,13 @@ const CostBreakdown = ({
       if (paymentGateway === "MONNIFY") {
         // --- MONNIFY FLOW ---
         const payment = await createData("/api/v1/payments/initiate", {
-          bookingId: bookingId || bookId,
+          bookingId: bookingId,
         });
         authUrl = payment?.data?.data?.authorizationUrl;
       } else if (paymentGateway === "PAYSTACK") {
         const payment = await createData(
           `/api/v1/payments/initialize/${bookingId || bookId}`,
-          {}
+          {},
         );
         authUrl = payment?.data?.data;
       }
@@ -212,7 +203,6 @@ const CostBreakdown = ({
 
       router.push(authUrl);
     } catch (err) {
-
       console.error("Booking or payment failed:", err);
     }
   };
@@ -226,7 +216,11 @@ const CostBreakdown = ({
             <div className="border-b border-grey-200 pb-4">
               <div className="w-full text-sm flex text-black justify-between mt-3">
                 <span>Base Price</span>
-                <span>NGN {(pricing?.data.data.basePrice || 0) + (pricing?.data.data.platformFeeAmount || 0)}</span>
+                <span>
+                  NGN{" "}
+                  {(pricing?.data.data.basePrice || 0) +
+                    (pricing?.data.data.platformFeeAmount || 0)}
+                </span>
               </div>
 
               {pricing?.data.data.vatAmount ? (
@@ -270,7 +264,7 @@ const CostBreakdown = ({
                     "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
                     paymentGateway === "PAYSTACK"
                       ? "border-blue-500 bg-blue-50/50"
-                      : "border-gray-100 bg-white hover:border-blue-200"
+                      : "border-gray-100 bg-white hover:border-blue-200",
                   )}
                 >
                   <img
@@ -297,7 +291,7 @@ const CostBreakdown = ({
                     "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
                     paymentGateway === "MONNIFY"
                       ? "border-blue-500 bg-blue-50/50"
-                      : "border-gray-100 bg-white hover:border-blue-200"
+                      : "border-gray-100 bg-white hover:border-blue-200",
                   )}
                 >
                   <img
@@ -318,8 +312,6 @@ const CostBreakdown = ({
                     />
                   )}
                 </div>
-
-
               </div>
             </div>
           </section>

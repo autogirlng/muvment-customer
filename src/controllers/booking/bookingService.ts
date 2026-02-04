@@ -52,6 +52,8 @@ export interface BookingFilters {
 
 export class BookingService {
   private static readonly BASE_URL = "/api/v1/bookings";
+  private static readonly BASE_URL_SPECIAL_BOOKING =
+    "/api/v1/bookings/service-pricing";
   private static readonly BOOKINGS_URL = "/api/v1/public/bookings";
   private static readonly PAYMENT_URL = "/api/v1/payments";
   private static readonly BOOKING_TYPE =
@@ -61,12 +63,12 @@ export class BookingService {
     "/api/v1/payments/initialize";
 
   static async getMyBookings(
-    filters: BookingFilters = {}
+    filters: BookingFilters = {},
   ): Promise<BookingResponse> {
     try {
       const response = await getTableData(
         `${this.BASE_URL}/my-segments`,
-        filters
+        filters,
       );
       if (response) {
         return response.data as BookingResponse;
@@ -125,7 +127,7 @@ export class BookingService {
     try {
       const response = await createData(
         this.BOOKINGS_URL + "/calculate",
-        request
+        request,
       );
       if (!response || !response.data)
         throw new Error("Failed to calculate booking price");
@@ -150,8 +152,24 @@ export class BookingService {
     }
   }
 
+  static async createSpecialBooking(bookingData: any) {
+    // console.log("Creating booking with data:", bookingData);
+    try {
+      const response = await createData(
+        this.BASE_URL_SPECIAL_BOOKING,
+        bookingData,
+      );
+      if (!response || !response.data)
+        throw new Error("Failed to create booking");
+
+      return response;
+    } catch (error) {
+      console.error("Booking creation error:", error);
+      throw error;
+    }
+  }
   static async initiatePayment(
-    paymentData: PaymentInitiationRequest
+    paymentData: PaymentInitiationRequest,
   ): Promise<PaymentInitiationResponse> {
     try {
       let paymentURL;
@@ -160,6 +178,7 @@ export class BookingService {
       } else {
         paymentURL = this.INITIATE_PAYMENT;
       }
+      console.log(paymentURL);
       const response = await createData(paymentURL, paymentData);
       if (!response || !response.data)
         throw new Error("Failed to initiate payment");
@@ -170,27 +189,27 @@ export class BookingService {
     }
   }
 
-  static async createReview(reviewData: {
-    rating: number;
-    review: string;
-    recommend: string;
-    entityId: string;
-    entityType: string;
-    source: string;
-    // isAnonymous: boolean,
-  }, isAnonymous: boolean): Promise<any> {
+  static async createReview(
+    reviewData: {
+      rating: number;
+      review: string;
+      recommend: string;
+      entityId: string;
+      entityType: string;
+      source: string;
+      // isAnonymous: boolean,
+    },
+    isAnonymous: boolean,
+  ): Promise<any> {
     let END_POINT;
     if (!isAnonymous) {
-      END_POINT = "/api/v1/rating-review"
+      END_POINT = "/api/v1/rating-review";
     } else {
-      END_POINT = "/api/v1/rating-review/anonymouse-user"
+      END_POINT = "/api/v1/rating-review/anonymouse-user";
     }
 
     try {
-      const response = await createData(
-        END_POINT,
-        reviewData
-      );
+      const response = await createData(END_POINT, reviewData);
       if (!response || !response.data)
         throw new Error("Failed to create review");
       return response.data;
@@ -200,18 +219,17 @@ export class BookingService {
     }
   }
 
-
   static async checkIfUserHasReviewed(bookingId: string): Promise<boolean> {
     try {
       const response = await getSingleData(
-        `/api/v1/rating-review/entity/${bookingId}`
+        `/api/v1/rating-review/entity/${bookingId}`,
       );
 
       if (!response || !response.data) {
         return false; // No review exists
       }
 
-      const data = response.data[0].data.content
+      const data = response.data[0].data.content;
       return data.length > 0;
     } catch (error) {
       return false;
