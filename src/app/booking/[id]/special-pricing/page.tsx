@@ -13,10 +13,8 @@ export async function generateMetadata({ params }: PageProps) {
   const { yearRangeId, servicePricingId } = await params;
 
   try {
-    const pricingData = await ServicePricingService.getServicePricingById(
-      yearRangeId,
-      servicePricingId,
-    );
+    const pricingData =
+      await ServicePricingService.getServicePricingById(servicePricingId);
 
     if (!pricingData) {
       return generatePageMetadata({
