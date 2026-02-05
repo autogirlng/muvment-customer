@@ -43,6 +43,7 @@ export const ServicePricingShowcaseList: React.FC = () => {
       setError(null);
 
       const data = await ServicePricingService.getServicePricingShowcase();
+
       setPricingData(data[0].data);
     } catch (err) {
       setError(
