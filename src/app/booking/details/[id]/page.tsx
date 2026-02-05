@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps) {
         vehicle.city,
         "car rental Nigeria",
       ],
-      url: `/ooking/details/${id}`,
+      url: `/booking/details/${id}`,
       image: vehicle.photos?.[0]?.cloudinaryUrl || "/images/image1.png",
       type: "website",
     });
