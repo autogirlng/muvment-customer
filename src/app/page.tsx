@@ -13,10 +13,12 @@ import React, { useEffect } from "react";
 import { getBookingOption } from "@/context/Constarain";
 import { useState } from "react";
 import { BookingOption } from "@/types/booking";
+import { ServicePricingShowcaseList } from "@/components/HomeComponent/Servicepricingshowcaselist";
 function page() {
-  const [bookingTypeID, setBookingTypeID] = useState<string | undefined>(undefined);
+  const [bookingTypeID, setBookingTypeID] = useState<string | undefined>(
+    undefined,
+  );
   const [_, setBookingOptions] = useState<BookingOption[]>([]);
-
 
   const getBookingOptions = async () => {
     const data = await getBookingOption();
@@ -28,12 +30,13 @@ function page() {
 
   useEffect(() => {
     getBookingOptions();
-  }, [])
+  }, []);
 
   return (
     <div>
       <Navbar showAnnouncementBar={true} />
       <BookingInterface />
+      <ServicePricingShowcaseList />
       <TopRateing bookingId={bookingTypeID} />
       <PremiumCarRental />
       <ExploreCities bookingTypeId={bookingTypeID} />

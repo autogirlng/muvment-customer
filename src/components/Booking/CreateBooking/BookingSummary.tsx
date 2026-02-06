@@ -75,7 +75,6 @@ export default function BookingSummary({
     });
     setTrips(tripData);
   }, []);
-  console.log("trips", trips);
 
   return (
     <div className="flex justify-between flex-col-reverse md:flex-row items-start gap-8">

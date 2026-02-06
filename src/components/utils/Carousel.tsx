@@ -2,7 +2,6 @@ import React, { useState, useRef } from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import Modal from "../general/modal";
 
-
 const IconButton = ({
   children,
   className = "",
@@ -20,11 +19,10 @@ const IconButton = ({
   </button>
 );
 
-const Carousel = ({ urls }: { urls: string[] }) => {
+const Carousel = ({ urls = [] }: { urls: string[] }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [openModal, setOpenModal] = useState<boolean>(false);
-  const totalImages = urls.length;
-
+  const totalImages = urls?.length;
 
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -51,7 +49,6 @@ const Carousel = ({ urls }: { urls: string[] }) => {
             key={activeImage}
             onClick={() => setOpenModal(true)}
           />
-
         </div>
 
         <IconButton
@@ -59,7 +56,8 @@ const Carousel = ({ urls }: { urls: string[] }) => {
           className="
                         absolute cursor-pointer top-1/2 left-2 md:left-4 transform -translate-y-1/2 
                         bg-black bg-opacity-20 text-white hover:bg-opacity-60 transition z-10 
-                        p-2 md:p-3">
+                        p-2 md:p-3"
+        >
           <FiChevronLeft size={24} />
         </IconButton>
         <IconButton
@@ -77,17 +75,18 @@ const Carousel = ({ urls }: { urls: string[] }) => {
         </div>
       </div>
 
-
       <div className="flex gap-3 md:gap-4 pt-4 pb-4 overflow-x-auto whitespace-nowrap scrollbar-hide w-full">
         {urls.map((img, index) => (
           <div
             key={index}
             className={`flex-shrink-0 cursor-pointer w-20 h-14 md:w-32 md:h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 transform hover:scale-[1.02] 
-                            ${index === activeIndex
-                ? "border-blue-600 shadow-lg ring-2 md:ring-4 ring-blue-200"
-                : "border-gray-200 hover:border-blue-400"
-              }`}
-            onClick={() => setActiveIndex(index)}>
+                            ${
+                              index === activeIndex
+                                ? "border-blue-600 shadow-lg ring-2 md:ring-4 ring-blue-200"
+                                : "border-gray-200 hover:border-blue-400"
+                            }`}
+            onClick={() => setActiveIndex(index)}
+          >
             <img
               src={img.replace("800x600", "150x100")}
               alt={`Thumbnail ${index + 1}: carousel`}
@@ -133,7 +132,7 @@ const Carousel = ({ urls }: { urls: string[] }) => {
               onWheel={(e) => {
                 e.preventDefault();
                 setScale((prev) =>
-                  Math.min(3, Math.max(1, prev + (e.deltaY < 0 ? 0.1 : -0.1)))
+                  Math.min(3, Math.max(1, prev + (e.deltaY < 0 ? 0.1 : -0.1))),
                 );
               }}
             >
