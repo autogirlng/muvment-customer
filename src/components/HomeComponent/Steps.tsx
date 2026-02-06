@@ -35,12 +35,12 @@ const HowItWorks: React.FC = () => {
                   Step 1
                 </p>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-                  Sign Up
+                  Select Car
                 </h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  Our simple sign-up process gets you started in no time. Create
-                  your account and join other hosts to start a business for
-                  free.
+                  Browse available vehicles based on your location and trip needs.
+                  Compare car types, pricing, and features before making a choice.
+                  Choose the vehicle that best fits your journey.
                 </p>
               </div>
             </div>
@@ -55,12 +55,12 @@ const HowItWorks: React.FC = () => {
                   Step 2
                 </p>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-                  List Your Vehicle
+                  Provide Booking Details
                 </h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  Adding your vehicle to the platform is straightforward.
-                  Provide all vehicle and driver details, set your availability
-                  schedule, and get your car ready for rental.
+                  Tell us when and where you need the vehicle.
+                  Add your pickup time, trip duration, and preferred service option.
+                  Review your details to ensure a smooth ride experience.
                 </p>
               </div>
 
@@ -72,7 +72,7 @@ const HowItWorks: React.FC = () => {
           </div>
 
           {/* Step 3 */}
-          <div className="relative">
+          <div className="relative mb-10 sm:mb-14 lg:mb-28">
             <div className="flex flex-col lg:flex-row items-center lg:justify-end lg:pr-8">
               <div className="hidden lg:block w-5/12"></div>
 
@@ -85,14 +85,38 @@ const HowItWorks: React.FC = () => {
                   Step 3
                 </p>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-                  Start Earning
+                  Make Payment
                 </h3>
                 <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                  Get paid promptly and securely. Track your earnings and
-                  withdraw your funds with ease, directly from your personal
-                  wallet.
+                  Confirm your booking by making a secure payment.
+                  Choose your preferred payment method and see a clear price breakdown.
+                  Once payment is successful, your ride is reserved.
                 </p>
               </div>
+            </div>
+          </div>
+
+          <div className="relative mb-10 sm:mb-14 lg:mb-28">
+            <div className="flex flex-col lg:flex-row items-center lg:justify-start lg:pl-8">
+              {/* Card */}
+              <div className="w-full lg:w-5/12 lg:pr-8 bg-gray-100 shadow-sm p-5 sm:p-6 rounded-2xl text-center lg:text-right">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+                  Step 4
+                </p>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                  Enjoy Your Ride
+                </h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Your vehicle is ready and assigned for your trip.
+                  Track your ride details and get support anytime you need it.
+                  Sit back, relax, and enjoy the Muvment experience.
+                </p>
+              </div>
+
+              {/* Dot (desktop only) */}
+              <div className="hidden lg:block absolute lg:left-1/2 lg:transform lg:-translate-x-1/2 w-8 h-8 bg-gray-400 rounded-full border-4 border-white z-10"></div>
+
+              <div className="hidden lg:block w-5/12"></div>
             </div>
           </div>
         </div>
