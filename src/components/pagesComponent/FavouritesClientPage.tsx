@@ -123,22 +123,20 @@ export default function FavouritesVehiclesClient() {
             <div className="flex hidden lg:block items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === "list"
+                className={`p-2 rounded-md transition-colors ${viewMode === "list"
                     ? "bg-blue-600 text-white"
                     : "text-gray-600 hover:bg-gray-100"
-                }`}
+                  }`}
                 aria-label="List view"
               >
                 <HiViewList className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === "grid"
+                className={`p-2 rounded-md transition-colors ${viewMode === "grid"
                     ? "bg-blue-600 text-white"
                     : "text-gray-600 hover:bg-gray-100"
-                }`}
+                  }`}
                 aria-label="Grid view"
               >
                 <BsFillGridFill className="w-5 h-5" />
