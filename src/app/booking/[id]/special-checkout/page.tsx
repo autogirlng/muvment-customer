@@ -286,7 +286,7 @@ const ServicePricingCheckoutPage = () => {
           throw new Error("Paystack payment initialization failed");
         }
       }
-    } catch (error: any) {
+    } catch (error: any) {  
       throw new Error(
         error.response?.data?.message || "Payment initialization failed",
       );
