@@ -12,11 +12,9 @@ import { NavbarSearchBar } from "./HomeComponent/NavbarSearchBar";
 import SlidingBanner from "./Dashboard/SlidingBanner";
 import { getBookingOption } from "@/context/Constarain";
 import { BookingOption } from "@/types/booking";
+import { getSingleData } from "@/controllers/connnector/app.callers";
+import { NavbarProps, BannerContent } from "@/types/navbar";
 
-interface NavbarProps {
-  showSearchBar?: boolean;
-  showAnnouncementBar?: boolean;
-}
 
 export const Navbar = ({
   showSearchBar = false,
@@ -25,6 +23,7 @@ export const Navbar = ({
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [bannerContent, setBannerContent] = useState<BannerContent | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -79,7 +78,7 @@ export const Navbar = ({
 
     // Bind the event listener
     document.addEventListener("mousedown", handleClickOutside);
-    
+
     // Cleanup
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -91,24 +90,28 @@ export const Navbar = ({
     setIsMenuOpen(false);
   };
 
-  // const test = async () => {
-  //   const data = await getBookingOption();
-  //   // console.log(data);
-  // };
+  const getBannerMessage = async () => {
+    const banner = await getSingleData('/api/v1/banner')
+    setBannerContent(banner.data[0].data.content[0]);
+  }
+
+
+  useEffect(() => {
+    if (showAnnouncementBar) {
+      getBannerMessage();
+    }
+  }, [showAnnouncementBar]);
 
   const items = user ? menuItems : guestMenuItems;
-  const announcementMessages = [
-    "We've moved! Autogirl.ng is now Muvment.ng | Hurry! Use MUVMENT2026 (₦5,000 off) — all coupons expire Jan 31, 2026 at 11:45pm",
-  ];
+
   return (
     <nav
-      className={`fixed top-0 left-0 right-0  z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white shadow-md" : "bg-white/90 backdrop-blur-md"
-      }  `}
+      className={`fixed top-0 left-0 right-0  z-50 transition-all duration-300 ${isScrolled ? "bg-white shadow-md" : "bg-white/90 backdrop-blur-md"
+        }  `}
     >
-      {showAnnouncementBar && (
+      {showAnnouncementBar && bannerContent && bannerContent.description && (
         <SlidingBanner
-          message={announcementMessages[0]}
+          message={bannerContent.description}
           backgroundColor="bg-gradient-to-r from-violet-600 to-indigo-600"
           textColor="text-white"
           duration={30}
@@ -231,7 +234,7 @@ export const Navbar = ({
       {/* Mobile Menu */}
       {isMenuOpen && (
         // 5. Attach Ref to Mobile Menu Container
-        <div 
+        <div
           ref={mobileMenuRef}
           className="md:hidden bg-white border-t border-gray-200 shadow-lg"
         >
