@@ -75,6 +75,11 @@ const ServicePricingCheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [paymentGateway, setPaymentGateway] =
     useState<PaymentGateway>("PAYSTACK");
+  
+  // New state for checkbox
+  const [usePreviousInfo, setUsePreviousInfo] = useState(false);
+  const [hasPreviousInfo, setHasPreviousInfo] = useState(false);
+  const [existingBookingId, setExistingBookingId] = useState<string | null>(null);
 
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -97,21 +102,54 @@ const ServicePricingCheckoutPage = () => {
 
       setIsUserDataLocked(true);
     } else {
+      // Check if there's saved info in cookies
       const savedInfo = Cookies.get("servicePricingPersonalInfo");
       if (savedInfo) {
         try {
           const parsed = JSON.parse(savedInfo);
-          if (
-            confirm("Do you want to use your previous booking information?")
-          ) {
-            setPersonalInfo(parsed);
-          }
+          setHasPreviousInfo(true);
+          // Don't auto-populate, wait for checkbox
         } catch (error) {
           console.error("Error parsing saved info:", error);
         }
       }
     }
+
+    // Check for existing booking ID
+    const savedBookingId = Cookies.get("servicePricingBookingId");
+    if (savedBookingId) {
+      setExistingBookingId(savedBookingId);
+      console.log("Found existing booking ID:", savedBookingId);
+    }
   }, [isAuthenticated, user]);
+
+  // Handle checkbox toggle
+  useEffect(() => {
+    if (usePreviousInfo && hasPreviousInfo && !isAuthenticated) {
+      const savedInfo = Cookies.get("servicePricingPersonalInfo");
+      if (savedInfo) {
+        try {
+          const parsed = JSON.parse(savedInfo);
+          setPersonalInfo(parsed);
+        } catch (error) {
+          console.error("Error parsing saved info:", error);
+        }
+      }
+    } else if (!usePreviousInfo && !isAuthenticated) {
+      // Clear the form when unchecked
+      setPersonalInfo({
+        fullName: "",
+        email: "",
+        phoneNumber: "",
+        secondaryPhoneNumber: "",
+        rideFor: "myself",
+        recipientFullName: "",
+        recipientEmail: "",
+        recipientPhoneNumber: "",
+        extraDetails: "",
+      });
+    }
+  }, [usePreviousInfo, hasPreviousInfo, isAuthenticated]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -127,7 +165,7 @@ const ServicePricingCheckoutPage = () => {
           setPriceEstimate(JSON.parse(savedEstimate));
         } else {
           toast.error("No booking data found");
-          router.push("/booking/service-pricing");
+          router.push("/");
           return;
         }
       } catch (err) {
@@ -202,14 +240,23 @@ const ServicePricingCheckoutPage = () => {
         const paymentResponse = await createData("/api/v1/payments/initiate", {
           bookingId: bookingId,
         });
+        console.log(paymentGateway)
+       const authUrl = 
+          paymentResponse.data?.data?.authorizationUrl || 
+          paymentResponse.data?.authorizationUrl ||
+          paymentResponse.data?.data?.data?.authorizationUrl;
 
-        if (paymentResponse.data.authorizationUrl) {
+        console.log("Authorization URL:", authUrl);
+
+        if (authUrl) {
+          // Clean up storage before redirect
           sessionStorage.removeItem("servicePricingTrips");
           sessionStorage.removeItem("servicePricingEstimate");
           sessionStorage.removeItem("servicePricingId");
           sessionStorage.removeItem("yearRangeId");
-
-          window.location.href = paymentResponse.data.authorizationUrl;
+          Cookies.remove("servicePricingBookingId");
+          
+          window.location.href = authUrl;
         } else {
           throw new Error("Payment authorization URL missing");
         }
@@ -219,14 +266,22 @@ const ServicePricingCheckoutPage = () => {
           {},
         );
 
-        if (paymentResponse.data.data) {
-          // Clean up session storage before redirecting
+         const paymentUrl = 
+          paymentResponse.data?.data ||
+          paymentResponse.data?.data?.authorization_url ||
+          paymentResponse.data?.authorization_url;
+
+        console.log("Payment URL:", paymentUrl);
+
+        if (paymentUrl) {
+          // Clean up storage before redirect
           sessionStorage.removeItem("servicePricingTrips");
           sessionStorage.removeItem("servicePricingEstimate");
           sessionStorage.removeItem("servicePricingId");
           sessionStorage.removeItem("yearRangeId");
-
-          window.location.href = paymentResponse.data.data;
+          Cookies.remove("servicePricingBookingId");
+          
+          window.location.href = paymentUrl;
         } else {
           throw new Error("Paystack payment initialization failed");
         }
@@ -238,9 +293,27 @@ const ServicePricingCheckoutPage = () => {
     }
   };
 
-  console.log(priceEstimate);
+  const createNewBooking = async () => {
+    const savedTrips = sessionStorage.getItem("servicePricingTrips");
+    if (!savedTrips) {
+      throw new Error("Trip data not found. Please start over.");
+    }
 
-  const handleBookNow = async () => {
+    const tripsData: any[] = JSON.parse(savedTrips);
+    const firstTrip = tripsData[0]?.tripDetails;
+
+    if (!firstTrip) {
+      throw new Error("Trip details not found.");
+    }
+
+    const formatDateForAPI = (dateString: string) => {
+      return format(new Date(dateString), "yyyy-MM-dd");
+    };
+
+    const formatTimeForAPI = (timeString: string) => {
+      return format(new Date(timeString), "HH:mm:ss");
+    };
+
     const {
       fullName,
       email,
@@ -251,6 +324,63 @@ const ServicePricingCheckoutPage = () => {
       recipientFullName,
       secondaryPhoneNumber,
       extraDetails,
+    } = personalInfo;
+
+    const bookingPayload = {
+      servicePricingId: id,
+      bookingTypeId:
+        firstTrip.bookingType || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      startDate: formatDateForAPI(
+        firstTrip.tripStartDate || new Date().toISOString(),
+      ),
+      startTime: formatTimeForAPI(
+        firstTrip.tripStartTime || new Date().toISOString(),
+      ),
+      pickupLocationString: firstTrip.pickupLocation || "string",
+      pickupLatitude: firstTrip.pickupCoordinates?.lat || 0.1,
+      pickupLongitude: firstTrip.pickupCoordinates?.lng || 0.1,
+      dropoffLocationString: firstTrip.dropoffLocation || "string",
+      dropoffLatitude: firstTrip.dropoffCoordinates?.lat || 0.1,
+      dropoffLongitude: firstTrip.dropoffCoordinates?.lng || 0.1,
+      primaryPhoneNumber: phoneNumber,
+      secondaryPhoneNumber: secondaryPhoneNumber || phoneNumber,
+      guestFullName: fullName,
+      guestEmail: email,
+      guestPhoneNumber: phoneNumber,
+      isBookingForOthers: rideFor === "others",
+      recipientFullName:
+        rideFor === "others" ? recipientFullName || fullName : fullName,
+      recipientEmail: rideFor === "others" ? recipientEmail || email : email,
+      recipientPhoneNumber:
+        rideFor === "others"
+          ? recipientPhoneNumber || phoneNumber
+          : phoneNumber,
+      purposeOfRide: extraDetails || "N/A",
+      extraDetails: extraDetails || "N/A",
+      channel: "WEBSITE",
+      paymentMethod: "ONLINE",
+    };
+
+    const bookingResponse =
+      await BookingService.createSpecialBooking(bookingPayload);
+
+    const newBookingId = bookingResponse.data.data.bookingId;
+    
+    // Store booking ID in cookies (expires in 1 day)
+    Cookies.set("servicePricingBookingId", newBookingId, { expires: 1 });
+    
+    return newBookingId;
+  };
+
+  const handleBookNow = async () => {
+    const {
+      fullName,
+      email,
+      phoneNumber,
+      rideFor,
+      recipientEmail,
+      recipientPhoneNumber,
+      recipientFullName,
     } = personalInfo;
 
     if (!fullName || !email || !phoneNumber) {
@@ -285,72 +415,15 @@ const ServicePricingCheckoutPage = () => {
     setError(null);
 
     try {
-      // Get trip data from session storage
-      const savedTrips = sessionStorage.getItem("servicePricingTrips");
-      if (!savedTrips) {
-        throw new Error("Trip data not found. Please start over.");
+      let bookingId: string;
+
+      // Check if we have an existing booking ID
+      if (existingBookingId) {
+        bookingId = existingBookingId;
+      } else {
+        bookingId = await createNewBooking();
+        setExistingBookingId(bookingId);
       }
-
-      const tripsData: any[] = JSON.parse(savedTrips);
-      const firstTrip = tripsData[0]?.tripDetails;
-
-      if (!firstTrip) {
-        throw new Error("Trip details not found.");
-      }
-
-      // Format dates properly
-      const formatDateForAPI = (dateString: string) => {
-        return format(new Date(dateString), "yyyy-MM-dd");
-      };
-
-      const formatTimeForAPI = (timeString: string) => {
-        return format(new Date(timeString), "HH:mm:ss");
-      };
-
-      // Create booking payload using extracted trip data
-      const bookingPayload = {
-        servicePricingId: id,
-        bookingTypeId:
-          firstTrip.bookingType || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        startDate: formatDateForAPI(
-          firstTrip.tripStartDate || new Date().toISOString(),
-        ),
-        startTime: formatTimeForAPI(
-          firstTrip.tripStartTime || new Date().toISOString(),
-        ),
-        pickupLocationString: firstTrip.pickupLocation || "string",
-        pickupLatitude: firstTrip.pickupCoordinates?.lat || 0.1,
-        pickupLongitude: firstTrip.pickupCoordinates?.lng || 0.1,
-        dropoffLocationString: firstTrip.dropoffLocation || "string",
-        dropoffLatitude: firstTrip.dropoffCoordinates?.lat || 0.1,
-        dropoffLongitude: firstTrip.dropoffCoordinates?.lng || 0.1,
-        primaryPhoneNumber: phoneNumber,
-        secondaryPhoneNumber: secondaryPhoneNumber || phoneNumber,
-        guestFullName: fullName,
-        guestEmail: email,
-        guestPhoneNumber: phoneNumber,
-        isBookingForOthers: rideFor === "others",
-        recipientFullName:
-          rideFor === "others" ? recipientFullName || fullName : fullName,
-        recipientEmail: rideFor === "others" ? recipientEmail || email : email,
-        recipientPhoneNumber:
-          rideFor === "others"
-            ? recipientPhoneNumber || phoneNumber
-            : phoneNumber,
-        purposeOfRide: extraDetails || "N/A",
-        extraDetails: extraDetails || "N/A",
-        channel: "WEBSITE",
-        paymentMethod: "ONLINE",
-      };
-
-      // If you have calculationId in priceEstimate, add it
-      //   if (priceEstimate?.calculationId) {
-      //     bookingPayload.calculationId = priceEstimate.calculationId;
-      //   }
-      console.log(bookingPayload);
-      const bookingResponse =
-        await BookingService.createSpecialBooking(bookingPayload);
-
       if (!isAuthenticated) {
         Cookies.set(
           "servicePricingPersonalInfo",
@@ -360,11 +433,10 @@ const ServicePricingCheckoutPage = () => {
           },
         );
       }
-      console.log(bookingResponse);
-      // Initiate payment based on selected gateway
-      await initiatePayment(bookingResponse.data.data.bookingId);
 
-      // Clear session storage after successful payment initiation
+
+      await initiatePayment(bookingId);
+
       sessionStorage.removeItem("servicePricingTrips");
       sessionStorage.removeItem("servicePricingEstimate");
       sessionStorage.removeItem("servicePricingId");
@@ -373,9 +445,14 @@ const ServicePricingCheckoutPage = () => {
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        "Failed to create booking. Please try again.";
+        "Failed to process booking. Please try again.";
       setError(errorMessage);
       toast.error(errorMessage);
+
+      if (error.message?.includes("booking")) {
+        Cookies.remove("servicePricingBookingId");
+        setExistingBookingId(null);
+      }
     } finally {
       setIsCreatingBooking(false);
     }
@@ -557,6 +634,31 @@ const ServicePricingCheckoutPage = () => {
               </div>
 
               <div className="p-6">
+                {/* Existing Booking ID Notice */}
+         
+
+                {/* Use Previous Info Checkbox */}
+                {!isAuthenticated && hasPreviousInfo && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={usePreviousInfo}
+                        onChange={(e) => setUsePreviousInfo(e.target.checked)}
+                        className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-900">
+                          Use my previous booking information
+                        </p>
+                        <p className="text-xs text-blue-700 mt-1">
+                          We found your information from a previous booking. Check this box to auto-fill the form.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                )}
+
                 {isAuthenticated && isUserDataLocked && (
                   <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
                     <FiCheck className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -866,7 +968,7 @@ const ServicePricingCheckoutPage = () => {
                   {isCreatingBooking ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Processing...
+                      {existingBookingId ? "Processing Payment..." : "Creating Booking..."}
                     </>
                   ) : (
                     <>

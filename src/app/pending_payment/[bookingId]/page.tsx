@@ -96,6 +96,7 @@ const PendingPayment = () => {
 
     useEffect(() => {
         setLoading(true)
+        sessionStorage.removeItem("servicePricingBookingId")
         fetchPageData()
     }, [])
 

@@ -113,6 +113,7 @@ const BookingDetailsClient = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+        sessionStorage.removeItem("servicePricingBookingId")
       if (!bookingId) {
         setLoading(false);
         return;

@@ -27,7 +27,7 @@ import DateInput, { CalendarValue } from "@/components/general/forms/DateInput";
 import TimeInput from "@/components/general/forms/TimeInput";
 import SelectInput from "@/components/general/forms/select";
 import { GoogleMapsLocationInput } from "@/components/general/forms/GoogleMapsLocationInput";
-
+import Cookies from "js-cookie";
 interface TripDetails {
   id: string;
   bookingType: string;
@@ -81,6 +81,7 @@ const ServicePricingBookingPage: React.FC = () => {
       );
     });
     setCanProceed(allTripsComplete && trips.length > 0);
+    Cookies.remove("servicePricingBookingId");
   }, [trips]);
 
   const fetchPricingData = async () => {
