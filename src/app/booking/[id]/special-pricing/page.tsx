@@ -23,8 +23,6 @@ export async function generateMetadata({ params }: PageProps) {
         url: `/service-pricing/details/${yearRangeId}/${servicePricingId}`,
       });
     }
-
-    // ✅ Normalize arrays ONCE
     const prices = Array.isArray(pricingData.prices) ? pricingData.prices : [];
 
     const images = Array.isArray(pricingData.sampleImages)
