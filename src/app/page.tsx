@@ -36,7 +36,7 @@ function page() {
     <div>
       <Navbar showAnnouncementBar={true} />
       <BookingInterface />
-      {/*<ServicePricingShowcaseList />*/}
+      <ServicePricingShowcaseList />
       <TopRateing bookingId={bookingTypeID} />
       <PremiumCarRental />
       <ExploreCities bookingTypeId={bookingTypeID} />
