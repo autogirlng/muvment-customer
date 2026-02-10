@@ -148,8 +148,6 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
   const isFormValid =
     formData.email.trim() !== "" && Object.keys(errors).length === 0;
 
-
-
   return (
     <footer className="px-4 md:px-6 lg:px-8 mb-24 bg-white text-black">
       <div className="py-8 md:py-12 lg:py-16 px-6 md:px-10 lg:px-16 bg-[#F8F9FA] rounded-[32px] md:rounded-[48px] mx-2 md:mx-4 lg:mx-6">
@@ -165,7 +163,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                   className="h-auto"
                 />
               </div>
-              <p className="!font-normal text-base md:text-lg text-grey-600">
+              {/*<p className="!font-normal text-base md:text-lg text-grey-600">
                 Be the first to receive all the recent updates, articles, and
                 valuable materials.
               </p>
@@ -195,7 +193,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                 >
                   Subscribe
                 </Button>
-              </form>
+              </form>*/}
             </div>
 
             {footerNav.map((nav) => (
@@ -215,8 +213,9 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                         </button>
                       ) : navLink.type === "link" ? (
                         <Link
-                          href={`${navLink.link}${bookingType && `&bookingType=${bookingType}`
-                            }`}
+                          href={`${navLink.link}${
+                            bookingType && `&bookingType=${bookingType}`
+                          }`}
                           className="hover:text-primary-500"
                         >
                           {navLink.name}
