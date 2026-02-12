@@ -1,23 +1,25 @@
 import { array, object, ref, string } from "yup";
+import { CountryCode, isValidPhoneNumber } from "libphonenumber-js";
 
 export const emailRegEx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const validatePhoneNumber = (phoneNumber: string, country: string) => {
-  let isPhoneNumberValid = false;
-  if (country === "NG") {
-    isPhoneNumberValid = phoneNumber.length === 11 || phoneNumber.length === 10;
-  } else {
-    isPhoneNumberValid = phoneNumber.length === 10 || phoneNumber.length === 11;
-  }
+export const validatePhoneNumber = (
+  phoneNumber: string,
+  country: CountryCode,
+) => {
+  // let isPhoneNumberValid = false;
+  // if (country === "NG") {
+  //   isPhoneNumberValid = phoneNumber.length === 11 || phoneNumber.length === 10;
+  // } else {
+  //   isPhoneNumberValid = phoneNumber.length === 10 || phoneNumber.length === 11;
+  // }
 
-  return isPhoneNumberValid;
+  return isValidPhoneNumber(phoneNumber, country);
 };
 
 export const itineraryInformationSchema = object().shape({
- 
-  extraDetails:string().optional(),
-  purposeOfRide:string().optional()
-
+  extraDetails: string().optional(),
+  purposeOfRide: string().optional(),
 });
 
 export const personalInformationMyselfSchema = object().shape({
@@ -34,7 +36,6 @@ export const personalInformationMyselfSchema = object().shape({
     }),
 });
 
-
 export const personalInformationOthersSchema = object().shape({
   recipientFullName: string().required("Please enter your full name"),
   recipientEmail: string()
@@ -47,11 +48,10 @@ export const personalInformationOthersSchema = object().shape({
       const { country } = this.parent;
       return validatePhoneNumber(val, country);
     }),
-//  recipientSecondaryPhoneNumber: string()
-//     .notRequired()
-//     .test("phoneNumber", "Invalid phone number", function (val) {
-//       const { country } = this.parent;
-//       return validatePhoneNumber(val || "", country);
-//     }),
+  //  recipientSecondaryPhoneNumber: string()
+  //     .notRequired()
+  //     .test("phoneNumber", "Invalid phone number", function (val) {
+  //       const { country } = this.parent;
+  //       return validatePhoneNumber(val || "", country);
+  //     }),
 });
-
