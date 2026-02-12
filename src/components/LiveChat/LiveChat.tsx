@@ -56,7 +56,7 @@ export default function WhatsAppChat() {
   if (!showWidget) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-6 right-8 z-50 flex flex-col items-end gap-3 pr-2">
       {/* Greeting Message Bubble with Chat Options */}
       {isOpen && (
         <div className="animate-slideIn max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-gray-100">
@@ -152,45 +152,64 @@ export default function WhatsAppChat() {
         </div>
       )}
 
-      {/* Main Chat Button */}
-      <button
-        onClick={toggleChat}
-        className="group relative h-14 w-14 rounded-full bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-lg transition-all hover:scale-110 hover:shadow-xl active:scale-95"
-        aria-label={isOpen ? "Close chat" : "Open chat"}
-      >
+      {/* Main Chat Button with Text Label */}
+      <div className="relative flex flex-col items-center gap-2">
+        {/* Text Label - Only shows when closed */}
         {!isOpen && (
-          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 items-center justify-center text-[10px] font-bold text-white shadow-md">
-              1
-            </span>
-          </span>
+          <div className="absolute -top-8 whitespace-nowrap animate-fadeIn">
+            <div className="bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
+              Chat with an agent
+            </div>
+            {/* Arrow pointing to button */}
+            <div className="absolute left-1/2 -translate-x-1/2 -bottom-1">
+              <div className="w-2 h-2 bg-green-600 rotate-45"></div>
+            </div>
+          </div>
         )}
 
-        {/* Chat Icon */}
-        <div className={`transition-all duration-300 ${isOpen ? 'rotate-0 scale-100' : 'rotate-0 scale-100'}`}>
-          {isOpen ? (
-            <svg
-              viewBox="0 0 24 24"
-              fill="white"
-              className="h-7 w-7 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} stroke="white" fill="none" d="M19 9l-7 7-7-7" />
-            </svg>
-          ) : (
-            <svg
-              viewBox="0 0 24 24"
-              fill="white"
-              className="h-7 w-7 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            >
-              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-              <circle cx="8" cy="10" r="1.5"/>
-              <circle cx="12" cy="10" r="1.5"/>
-              <circle cx="16" cy="10" r="1.5"/>
-            </svg>
+        <button
+          onClick={toggleChat}
+          className="group relative h-14 w-14 transition-all hover:scale-110 active:scale-95"
+          aria-label={isOpen ? "Close chat" : "Open chat"}
+        >
+          {/* Notification Badge */}
+          {!isOpen && (
+            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center z-10">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 items-center justify-center text-[10px] font-bold text-white shadow-md">
+                1
+              </span>
+            </span>
           )}
-        </div>
-      </button>
+
+          {/* Center Button */}
+          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-lg flex items-center justify-center transition-all group-hover:shadow-xl">
+            {/* Chat Icon */}
+            <div className={`transition-all duration-300 ${isOpen ? 'rotate-0 scale-100' : 'rotate-0 scale-100'}`}>
+              {isOpen ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="white"
+                  className="h-7 w-7"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} stroke="white" fill="none" d="M19 9l-7 7-7-7" />
+                </svg>
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="white"
+                  className="h-7 w-7"
+                >
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                  <circle cx="8" cy="10" r="1.5"/>
+                  <circle cx="12" cy="10" r="1.5"/>
+                  <circle cx="16" cy="10" r="1.5"/>
+                </svg>
+              )}
+            </div>
+          </div>
+        </button>
+      </div>
 
       <style jsx>{`
         @keyframes slideIn {
@@ -205,6 +224,20 @@ export default function WhatsAppChat() {
         }
         .animate-slideIn {
           animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(5px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.4s ease-out 0.5s forwards;
+          opacity: 0;
         }
       `}</style>
     </div>
