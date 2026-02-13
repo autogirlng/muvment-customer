@@ -331,13 +331,14 @@ const ServicePricingBookingPage: React.FC = () => {
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 {/* Header Section */}
-                <div className="mb-6 flex justify-between items-start">
+                <div className="mb-6 flex flex-col md:flex-row justify-between items-start">
                   <div className="">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                    {pricing.servicePricingName}
-                  </h1>
-                  <p className="text-gray-600 text-base mb-4">{pricing.name}</p>
-                  
+                    <h1 className="text-2xl md:text-3x1 font-bold text-gray-900 mb-3">
+                      {pricing.servicePricingName}
+                    </h1>
+                    <p className="text-gray-600 text-base mb-4">
+                      {pricing.name}
+                    </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="px-4 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-md font-medium">
@@ -356,33 +357,39 @@ const ServicePricingBookingPage: React.FC = () => {
                       src={pricing.imageUrl}
                       alt={pricing.servicePricingName}
                       className="w-full max-w-2xl h-auto object-contain"
-                      style={{ maxHeight: '700px' }}
+                      style={{ maxHeight: "700px" }}
                     />
                   </div>
                 </div>
 
                 {/* Info Cards */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <FiTag className="w-5 h-5 text-blue-600" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-100">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <FiTag className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-600 font-medium">Service Type</p>
-                        <p className="text-base font-semibold text-gray-900">{pricing.rideType}</p>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                          Service Type
+                        </p>
+                        <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">
+                          {pricing.rideType}
+                        </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-200">
-                        <FiCalendar className="w-5 h-5 text-gray-700" />
+                  <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-200">
+                        <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-600 font-medium">Year Range</p>
-                        <p className="text-base font-semibold text-gray-900">
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                          Year Range
+                        </p>
+                        <p className="text-sm sm:text-base font-semibold text-gray-900 whitespace-nowrap">
                           {pricing.minYear} - {pricing.maxYear}
                         </p>
                       </div>
@@ -578,7 +585,9 @@ const TripCard = ({
               </span>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">{dateLabel}</h3>
+              <h3 className="font-semibold text-gray-900 text-sm">
+                {dateLabel}
+              </h3>
               {details.tripStartTime && (
                 <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                   <FiClock className="w-3.5 h-3.5" />
