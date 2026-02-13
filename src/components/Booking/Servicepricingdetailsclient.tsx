@@ -362,33 +362,33 @@ const ServicePricingBookingPage: React.FC = () => {
                 </div>
 
                 {/* Info Cards */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <FiTag className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600 font-medium">Service Type</p>
-                        <p className="text-base font-semibold text-gray-900">{pricing.rideType}</p>
-                      </div>
-                    </div>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+  <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-100">
+    <div className="flex items-center gap-2 sm:gap-3">
+      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+        <FiTag className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs sm:text-sm text-gray-600 font-medium">Service Type</p>
+        <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">{pricing.rideType}</p>
+      </div>
+    </div>
+  </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-200">
-                        <FiCalendar className="w-5 h-5 text-gray-700" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600 font-medium">Year Range</p>
-                        <p className="text-base font-semibold text-gray-900">
-                          {pricing.minYear} - {pricing.maxYear}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+  <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
+    <div className="flex items-center gap-2 sm:gap-3">
+      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-200">
+        <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs sm:text-sm text-gray-600 font-medium">Year Range</p>
+        <p className="text-sm sm:text-base font-semibold text-gray-900 whitespace-nowrap">
+          {pricing.minYear} - {pricing.maxYear}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
               </div>
             </div>
 
