@@ -129,10 +129,14 @@ const CostBreakdown = ({
     if (userBookingInfo.isBookingForOthers) {
       data = {
         calculationId: estimatedPriceId,
-        primaryPhoneNumber: userBookingInfo.recipientPhoneNumber || "",
+        primaryPhoneNumber:
+          userBookingInfo.countryCode + userBookingInfo.recipientPhoneNumber ||
+          "",
         recipientFullName: userBookingInfo.recipientFullName || "",
         recipientEmail: userBookingInfo.recipientEmail || "",
-        recipientPhoneNumber: userBookingInfo.recipientPhoneNumber || "",
+        recipientPhoneNumber:
+          userBookingInfo.countryCode + userBookingInfo.recipientPhoneNumber ||
+          "",
         extraDetails: userBookingInfo.extraDetails || "N/A",
         isBookingForOthers: userBookingInfo.isBookingForOthers,
         purposeOfRide: "N/A",
@@ -140,16 +144,23 @@ const CostBreakdown = ({
         paymentMethod: "ONLINE",
         discountAmount: pricing?.data.data.discountAmount,
       };
-      if (userBookingInfo.secondaryPhoneNumber) {
+      if (
+        userBookingInfo.secondaryPhoneNumber &&
+        !userBookingInfo.isBookingForOthers
+      ) {
         data = {
           ...data,
-          secondaryPhoneNumber: userBookingInfo.secondaryPhoneNumber,
+          secondaryPhoneNumber:
+            userBookingInfo.secondaryCountryCode +
+            userBookingInfo.secondaryPhoneNumber,
         };
       }
     } else {
       data = {
         calculationId: estimatedPriceId,
-        primaryPhoneNumber: userBookingInfo.primaryPhoneNumber || "",
+        primaryPhoneNumber:
+          userBookingInfo.countryCode + userBookingInfo.primaryPhoneNumber ||
+          "",
         extraDetails: userBookingInfo.extraDetails || "N/A",
         isBookingForOthers: userBookingInfo.isBookingForOthers,
         purposeOfRide: userBookingInfo.purposeOfRide || "N/A",
@@ -163,6 +174,7 @@ const CostBreakdown = ({
         data = {
           ...data,
           recipientSecondaryPhoneNumber:
+            userBookingInfo.secondaryCountryCode +
             userBookingInfo.recipientSecondaryPhoneNumber,
         };
       }

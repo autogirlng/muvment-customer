@@ -1,7 +1,6 @@
 import cn from "classnames";
-
 import SelectInput from "./select";
-import Icons from "./icons";
+import { allowedCountries } from "./icons";
 
 type SelectCountryProps = {
   name: string;
@@ -16,11 +15,6 @@ type SelectCountryProps = {
   onChange: (value: string) => void;
   [key: string]: any;
 };
-
-const allowedCountries = [
-  { flag: Icons.ic_country_nigeria, option: "+234", value: "NG" },
-  // { flag: Icons.ic_country_ghana, option: "+233", value: "GH" },
-];
 
 const SelectCountry = ({
   label,
@@ -40,12 +34,13 @@ const SelectCountry = ({
           htmlFor={id}
           className={cn(
             "text-sm block font-medium",
-            variant === "filled" ? "text-white" : "text-grey-900"
+            variant === "filled" ? "text-white" : "text-grey-900",
           )}
         >
           {label}
         </label>
       )}
+
       <SelectInput
         defaultValue="NG"
         variant="outlined"

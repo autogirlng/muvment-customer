@@ -53,7 +53,7 @@ const SelectInput = ({
           htmlFor={id}
           className={cn(
             "text-sm font-medium text-nowrap flex items-center gap-2",
-            variant === "filled" ? "text-white" : "text-grey-900"
+            variant === "filled" ? "text-white" : "text-grey-900",
           )}
         >
           <span>{label}</span>
@@ -74,7 +74,8 @@ const SelectInput = ({
       >
         <Select.Trigger
           className={cn(
-            `group flex items-center justify-between w-full cursor-pointer rounded-[12px] px-4 text-sm ${profile ? "h-[56px]" : "h-[45px]"
+            `group flex items-center justify-between w-full cursor-pointer rounded-[12px] px-4 text-sm ${
+              profile ? "h-[56px]" : "h-[45px]"
             } gap-2 outline-none transition-all duration-200 ease-in-out`,
             "disabled:bg-[#e4e7ec] disabled:text-grey-400 disabled:cursor-not-allowed disabled:border-grey-300",
             error
@@ -82,7 +83,7 @@ const SelectInput = ({
               : variant === "filled"
                 ? "bg-gray-800 text-gray-400 border-none hover:bg-gray-700"
                 : "bg-white text-gray-900 border border-[#e4e7ec] hover:border-primary-500",
-            className
+            className,
           )}
           aria-label={id}
         >
@@ -116,10 +117,10 @@ const SelectInput = ({
               "w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)]",
               variant === "filled"
                 ? "bg-grey-800 text-white"
-                : "bg-white border border-[#e4e7ec]"
+                : "bg-white border border-[#e4e7ec]",
             )}
           >
-            <Select.Viewport className="p-1.5">
+            <Select.Viewport className="p-1.5 max-h-60 overflow-y-auto">
               <Select.Group>
                 {options?.map((option, index) => (
                   <SelectItem
@@ -173,7 +174,7 @@ const SelectItem = ({
         variant === "filled"
           ? "data-[highlighted]:bg-grey-700 data-[highlighted]:text-white"
           : "data-[highlighted]:bg-primary-50 data-[highlighted]:text-primary-600",
-        className
+        className,
       )}
       {...props}
     >
