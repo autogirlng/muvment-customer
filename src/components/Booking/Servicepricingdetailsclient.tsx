@@ -331,9 +331,9 @@ const ServicePricingBookingPage: React.FC = () => {
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 {/* Header Section */}
-                <div className="mb-6 flex justify-between items-start">
+                <div className="mb-6 flex flex-col md:flex-row justify-between items-start">
                   <div className="">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-3">
+                    <h1 className="text-2xl md:text-3x1 font-bold text-gray-900 mb-3">
                     {pricing.servicePricingName}
                   </h1>
                   <p className="text-gray-600 text-base mb-4">{pricing.name}</p>
