@@ -213,7 +213,7 @@ export default function ExploreVehiclesClient() {
       }
 
       clarityEvent("vehicle_search", {
-        location: searchParams.get("location") || location,
+        location: searchParams.get("city") || location,
         lat: currentLat,
         lng: currentLng,
         bookingType,
