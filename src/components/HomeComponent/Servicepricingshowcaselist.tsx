@@ -5,7 +5,7 @@ import { ServicePricingShowcase } from "@/types/Servicepricing";
 import React, { useState, useEffect, useRef } from "react";
 import { FiLoader, FiAlertCircle } from "react-icons/fi";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import { ServicePricingCard } from "../Booking/Servicepricingcard";
+import { ServicePricingCard } from "../general/Servicepricingcard";
 
 export const ServicePricingShowcaseList: React.FC = () => {
   const [pricingData, setPricingData] = useState<ServicePricingShowcase[]>([]);
@@ -43,7 +43,8 @@ export const ServicePricingShowcaseList: React.FC = () => {
       setError(null);
 
       const data = await ServicePricingService.getServicePricingShowcase();
-
+   
+      // Updated to handle flat array structure
       setPricingData(data[0].data);
     } catch (err) {
       setError(
@@ -131,7 +132,7 @@ export const ServicePricingShowcaseList: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <FiLoader className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading service pricing...</p>
+          <p className="text-gray-600">Loading available vehicles...</p>
         </div>
       </div>
     );
@@ -162,7 +163,7 @@ export const ServicePricingShowcaseList: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <p className="text-gray-600 text-lg">
-            No service pricing available at the moment.
+            No vehicles available at the moment.
           </p>
         </div>
       </div>
@@ -176,11 +177,10 @@ export const ServicePricingShowcaseList: React.FC = () => {
         <div className="flex items-center justify-between mb-6 max-w-[95%] ml-auto px-6">
           <div className="text-center md:text-start">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Service Pricing Showcase
+              Explore Available Vehicles Nearby
             </h2>
             <p className="text-gray-600">
-              Explore our range of service packages with flexible pricing
-              options
+              Explore our range of service packages with flexible pricing options
             </p>
           </div>
         </div>

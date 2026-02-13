@@ -274,7 +274,7 @@ function TimePicker({
       {isOpen && !disabled && (
         <div
           ref={dropdownRef}
-          className="absolute top-full right-0 mt-2 w-[120px] bg-white border border-grey-200 rounded-2xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06)] z-50 max-h-[300px] overflow-hidden"
+          className="absolute bottom-full right-0 mt-2 w-[120px] bg-white border border-grey-200 rounded-2xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06)] z-50 max-h-[300px] overflow-hidden"
         >
           <div className="py-2 overflow-y-auto max-h-[280px] custom-scrollbar">
             {timeOptions.map((time, index) => (

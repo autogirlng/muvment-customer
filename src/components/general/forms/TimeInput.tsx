@@ -8,7 +8,7 @@ const TimeInput = ({
   name,
   label,
   timeType = "all",
-  disabled = false, // Add disabled prop
+  disabled = false,
   ...rest
 }: {
   onChange: (value: Date) => void;
@@ -17,7 +17,7 @@ const TimeInput = ({
   label?: string;
   name: string;
   timeType?: "start" | "end" | "all";
-  disabled?: boolean; // Add to interface
+  disabled?: boolean;
   [key: string]: any;
 }) => {
   // Convert value to proper Date object if it exists
@@ -44,7 +44,7 @@ const TimeInput = ({
 
   // Handle time change from TimePicker
   const handleTimeChange = (selectedDate: Date) => {
-    if (disabled) return; // Prevent changes if disabled
+    if (disabled) return;
 
     // Ensure we're getting a valid Date object
     if (selectedDate instanceof Date && !isNaN(selectedDate.getTime())) {
@@ -67,7 +67,7 @@ const TimeInput = ({
           htmlFor={name}
           className={cn(
             "label text-left text-sm block font-medium text-nowrap",
-            disabled && "text-grey-400" // Style disabled label
+            disabled && "text-grey-400"
           )}
         >
           <span> {label}</span>
@@ -82,6 +82,7 @@ const TimeInput = ({
             ? "border-error-500 focus:border-error-500 bg-white text-gray-900"
             : "bg-white text-gray-900 border-[#e4e7ec] focus:shadow-[0_0_0_4px_#1E93FF1A]"
         )}
+        style={{ position: 'relative', overflow: 'visible' }}
       >
         <TimePicker
           name={name}
@@ -91,7 +92,7 @@ const TimeInput = ({
           width="w-full"
           showArrow={true}
           timeType={timeType}
-          disabled={disabled} // Pass disabled to TimePicker
+          disabled={disabled}
           {...rest}
         />
       </div>

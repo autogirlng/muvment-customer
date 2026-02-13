@@ -1,8 +1,9 @@
-export interface ServicePrice {
+// Updated interface to match the new payload structure
+
+export interface PriceDetail {
   bookingTypeId: string;
   bookingTypeName: string;
   price: number;
-  id?: string;
 }
 
 export interface ServicePricingShowcase {
@@ -10,24 +11,16 @@ export interface ServicePricingShowcase {
   name: string;
   minYear: number;
   maxYear: number;
-  imageUrl: string;
   servicePricingId: string;
   servicePricingName: string;
   rideType: string;
-  id?: string;
-  sampleImages: string[];
-  prices: ServicePrice[];
+  imageUrl: string;
+  prices: PriceDetail[];
 }
 
+// If you need the response type from the API
 export interface ServicePricingResponse {
-  status: string;
-  message: string;
-  errorCode: string;
   data: ServicePricingShowcase[];
-  timestamp: string;
-}
-
-export interface ServicePricingDetailsProps {
-  yearRangeId: string;
-  servicePricingId: string;
+  success: boolean;
+  message?: string;
 }
