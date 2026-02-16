@@ -15,11 +15,13 @@ export interface VehicleSearchParams {
   size?: number;
   minPrice?: number;
   maxPrice?: number;
-  fromDate?: string;
-  untilDate?: string;
+  startDate?: string;
+  endDate?: string;
   yearOfRelease?: string;
   numberOfSeats?: string;
   city?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 export interface Vehicle {
@@ -171,8 +173,6 @@ export interface CreateBookingResponse {
   timestamp: string;
 }
 
-
-
 export interface PaymentInitiationRequest {
   bookingId: string;
   paymentProvider?: string;
@@ -241,4 +241,3 @@ export interface TopVehicle {
   numberOfSeats: number;
   rating?: number;
 }
-

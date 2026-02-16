@@ -53,8 +53,13 @@ export default function ExploreVehiclesClient() {
   const location = searchParams.get("location");
   const bookingType = searchParams.get("bookingType");
   const category = searchParams.get("category");
-  const fromDate = searchParams.get("fromDate");
-  const untilDate = searchParams.get("untilDate");
+  
+  // Read date and time separately from URL
+  const startDate = searchParams.get("startDate");
+  const startTime = searchParams.get("startTime");
+  const endDate = searchParams.get("endDate");
+  const endTime = searchParams.get("endTime");
+  
   const city = searchParams.get("city");
 
   const {
@@ -149,13 +154,14 @@ export default function ExploreVehiclesClient() {
   useEffect(() => {
     performSearchRef.current = performSearch;
   });
+
   useEffect(() => {
     if (!isInitialized.current) return;
 
     setCurrentPage(0);
     setHasMore(true);
     performSearch(0, false, filterState);
-  }, [filterState, lat, lng, category, fromDate, untilDate, city]);
+  }, [filterState, lat, lng, category, startDate, startTime, endDate, endTime, city]);
 
   const performSearch = async (
     page: number = 0,
@@ -184,8 +190,13 @@ export default function ExploreVehiclesClient() {
       }
       if (currentCity) params.city = currentCity;
       if (category) params.vehicleTypeId = category;
-      if (fromDate) params.fromDate = fromDate;
-      if (untilDate) params.untilDate = untilDate;
+      
+      // Pass date and time separately to the API
+      // if (startDate) params.startDate = startDate;
+      if (startTime) params.startTime = startTime;
+      // if (endDate) params.endDate = endDate;
+      if (endTime) params.endTime = endTime;
+      
       if (bookingType) params.bookingTypeId = bookingType;
 
       if (filters.selectedVehicleTypes !== undefined) {
@@ -218,8 +229,10 @@ export default function ExploreVehiclesClient() {
         lng: currentLng,
         bookingType,
         category,
-        fromDate,
-        untilDate,
+        startDate: startDate,
+        startTime: startTime,
+        endDate: endDate,
+        endTime: endTime,
         city: currentCity,
         minPrice: params.minPrice,
         maxPrice: params.maxPrice,
@@ -293,7 +306,9 @@ export default function ExploreVehiclesClient() {
       setLoadingMore(false);
     }
   };
+  
   const performSearchRef = useRef(performSearch);
+  
   const fetchRecommendedVehicles = async () => {
     try {
       const response = await VehicleSearchService.searchVehicles({
