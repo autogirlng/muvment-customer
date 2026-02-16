@@ -177,10 +177,10 @@ export const ServicePricingShowcaseList: React.FC = () => {
         <div className="flex items-center justify-between mb-6 max-w-[95%] ml-auto px-6">
           <div className="text-center md:text-start">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Explore Available Vehicles Nearby
+              Short term Hourly Car Rentals
             </h2>
             <p className="text-gray-600">
-              Explore our range of service packages with flexible pricing options
+              explore our range of vehicles for hourly rent starting from 3 hours
             </p>
           </div>
         </div>
