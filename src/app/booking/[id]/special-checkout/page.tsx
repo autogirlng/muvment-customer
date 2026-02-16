@@ -178,22 +178,18 @@ const ServicePricingCheckoutPage = () => {
     loadData();
   }, [id, router]);
 
+  // Fixed: Only auto-populate when "myself" is selected, preserve data when "others"
   useEffect(() => {
     if (personalInfo.rideFor === "myself") {
+      // Auto-populate recipient fields when booking for myself
       setPersonalInfo((prev) => ({
         ...prev,
         recipientFullName: prev.fullName,
         recipientEmail: prev.email,
         recipientPhoneNumber: prev.phoneNumber,
       }));
-    } else {
-      setPersonalInfo((prev) => ({
-        ...prev,
-        recipientFullName: "",
-        recipientEmail: "",
-        recipientPhoneNumber: "",
-      }));
     }
+    // When rideFor is "others", don't clear the fields - let user type freely
   }, [
     personalInfo.rideFor,
     personalInfo.fullName,
@@ -396,6 +392,7 @@ const ServicePricingCheckoutPage = () => {
     }
 
     if (rideFor === "others") {
+      console.log(recipientFullName, recipientEmail, recipientPhoneNumber )
       if (!recipientFullName || !recipientEmail || !recipientPhoneNumber) {
         toast.error("Please fill in all recipient information");
         return;
@@ -714,6 +711,92 @@ const ServicePricingCheckoutPage = () => {
                     </div>
                   </div>
 
+                  {/* Recipient Fields - Only show when "others" is selected */}
+                  {personalInfo.rideFor === "others" && (
+                    <>
+                      <div className="pt-4 border-t border-gray-200">
+                        <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                          Recipient Information
+                        </h3>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                          Recipient Full Name
+                        </label>
+                        <input
+                          type="text"
+                          value={personalInfo.recipientFullName || ""}
+                          onChange={(e) =>
+                            handleInputChange("recipientFullName", e.target.value)
+                          }
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          placeholder="Enter recipient's full name"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                          Recipient Email Address
+                        </label>
+                        <input
+                          type="email"
+                          value={personalInfo.recipientEmail || ""}
+                          onChange={(e) =>
+                            handleInputChange("recipientEmail", e.target.value)
+                          }
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          placeholder="Enter recipient's email address"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                          Recipient Phone Number
+                        </label>
+                        <div className="flex gap-2">
+                          <div className="relative">
+                            <button
+                              type="button"
+                              className="h-11 px-3 border border-gray-300 rounded-lg bg-white flex items-center gap-2 hover:bg-gray-50 transition"
+                            >
+                              <span className="text-xl">🇳🇬</span>
+                              <span className="text-sm text-gray-700">+234</span>
+                              <svg
+                                className="w-4 h-4 text-gray-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                          <input
+                            type="tel"
+                            value={personalInfo.recipientPhoneNumber || ""}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "recipientPhoneNumber",
+                                e.target.value,
+                              )
+                            }
+                            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            placeholder="Enter recipient's phone number"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-gray-900 mb-2">
                       Extra Details (Optional)
@@ -724,7 +807,7 @@ const ServicePricingCheckoutPage = () => {
                         handleInputChange("extraDetails", e.target.value)
                       }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      placeholder="e.g I would appreciate a full tank before pickup ready for me to start my trip with thank you."
+                      placeholder="e.g this booking is for my boss, reach me for anything payment or time extension."
                       rows={4}
                     />
                   </div>
