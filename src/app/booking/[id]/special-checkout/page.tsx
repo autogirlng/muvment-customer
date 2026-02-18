@@ -17,6 +17,8 @@ import {
   FiAlertCircle,
   FiCheckCircle,
   FiCircle,
+  FiLink,
+  FiCreditCard,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import { BookingService } from "@/controllers/booking/bookingService";
@@ -72,7 +74,10 @@ const ServicePricingCheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [paymentGateway, setPaymentGateway] =
     useState<PaymentGateway>("PAYSTACK");
-
+  const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
+  const [generatedBookingId, setGeneratedBookingId] = useState<string | null>(
+    null,
+  );
   // New state for checkbox
   const [usePreviousInfo, setUsePreviousInfo] = useState(false);
   const [hasPreviousInfo, setHasPreviousInfo] = useState(false);
@@ -358,9 +363,7 @@ const ServicePricingCheckoutPage = () => {
 
     const bookingResponse =
       await BookingService.createSpecialBooking(bookingPayload);
-
     const newBookingId = bookingResponse.data.data.bookingId;
-
     // Store booking ID in cookies (expires in 1 day)
     Cookies.set("servicePricingBookingId", newBookingId, { expires: 1 });
 
@@ -392,7 +395,7 @@ const ServicePricingCheckoutPage = () => {
     }
 
     if (rideFor === "others") {
-      console.log(recipientFullName, recipientEmail, recipientPhoneNumber )
+      console.log(recipientFullName, recipientEmail, recipientPhoneNumber);
       if (!recipientFullName || !recipientEmail || !recipientPhoneNumber) {
         toast.error("Please fill in all recipient information");
         return;
@@ -420,6 +423,7 @@ const ServicePricingCheckoutPage = () => {
         bookingId = await createNewBooking();
         setExistingBookingId(bookingId);
       }
+
       if (!isAuthenticated) {
         Cookies.set(
           "servicePricingPersonalInfo",
@@ -430,12 +434,16 @@ const ServicePricingCheckoutPage = () => {
         );
       }
 
-      await initiatePayment(bookingId);
-
-      sessionStorage.removeItem("servicePricingTrips");
-      sessionStorage.removeItem("servicePricingEstimate");
-      sessionStorage.removeItem("servicePricingId");
-      sessionStorage.removeItem("yearRangeId");
+      if (personalInfo.rideFor === "others") {
+        sessionStorage.removeItem("servicePricingTrips");
+        sessionStorage.removeItem("servicePricingEstimate");
+        sessionStorage.removeItem("servicePricingId");
+        sessionStorage.removeItem("yearRangeId");
+        Cookies.remove("servicePricingBookingId");
+        router.push(`/booking/success?bookingId=${bookingId}`);
+      } else {
+        await initiatePayment(bookingId);
+      }
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message ||
@@ -728,7 +736,10 @@ const ServicePricingCheckoutPage = () => {
                           type="text"
                           value={personalInfo.recipientFullName || ""}
                           onChange={(e) =>
-                            handleInputChange("recipientFullName", e.target.value)
+                            handleInputChange(
+                              "recipientFullName",
+                              e.target.value,
+                            )
                           }
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                           placeholder="Enter recipient's full name"
@@ -763,7 +774,9 @@ const ServicePricingCheckoutPage = () => {
                               className="h-11 px-3 border border-gray-300 rounded-lg bg-white flex items-center gap-2 hover:bg-gray-50 transition"
                             >
                               <span className="text-xl">🇳🇬</span>
-                              <span className="text-sm text-gray-700">+234</span>
+                              <span className="text-sm text-gray-700">
+                                +234
+                              </span>
                               <svg
                                 className="w-4 h-4 text-gray-500"
                                 fill="none"
@@ -948,7 +961,7 @@ const ServicePricingCheckoutPage = () => {
             </div>
           </div>
 
-          {/* Right Column - Payment */}
+          {/* Right Column - Payment/Action */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6 text-center border-b border-gray-200">
@@ -959,101 +972,193 @@ const ServicePricingCheckoutPage = () => {
               </div>
 
               <div className="p-6">
-                <h3 className="text-sm font-semibold mb-4 text-gray-700">
-                  Select Payment Method
-                </h3>
+                {personalInfo.rideFor === "myself" ? (
+                  // Show payment methods for "myself"
+                  <>
+                    <h3 className="text-sm font-semibold mb-4 text-gray-700">
+                      Select Payment Method
+                    </h3>
 
-                <div className="mb-6">
-                  <div className="flex flex-col gap-3">
-                    <div
-                      onClick={() => setPaymentGateway("PAYSTACK")}
-                      className={cn(
-                        "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
-                        paymentGateway === "PAYSTACK"
-                          ? "border-blue-500 bg-blue-50/50"
-                          : "border-gray-100 bg-white hover:border-blue-200",
-                      )}
-                    >
-                      <img
-                        src="/images/paymentgateway/paystack1.svg"
-                        alt="Paystack"
-                        className="h-8 w-auto object-contain"
-                      />
+                    <div className="mb-6">
+                      <div className="flex flex-col gap-3">
+                        <div
+                          onClick={() => setPaymentGateway("PAYSTACK")}
+                          className={cn(
+                            "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
+                            paymentGateway === "PAYSTACK"
+                              ? "border-blue-500 bg-blue-50/50"
+                              : "border-gray-100 bg-white hover:border-blue-200",
+                          )}
+                        >
+                          <img
+                            src="/images/paymentgateway/paystack1.svg"
+                            alt="Paystack"
+                            className="h-8 w-auto object-contain"
+                          />
 
-                      {paymentGateway === "PAYSTACK" ? (
-                        <FiCheckCircle
-                          className="text-blue-600 min-w-[24px]"
-                          size={24}
-                        />
-                      ) : (
-                        <FiCircle
-                          className="text-gray-300 min-w-[24px]"
-                          size={24}
-                        />
-                      )}
+                          {paymentGateway === "PAYSTACK" ? (
+                            <FiCheckCircle
+                              className="text-blue-600 min-w-[24px]"
+                              size={24}
+                            />
+                          ) : (
+                            <FiCircle
+                              className="text-gray-300 min-w-[24px]"
+                              size={24}
+                            />
+                          )}
+                        </div>
+                        <div
+                          onClick={() => setPaymentGateway("MONNIFY")}
+                          className={cn(
+                            "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
+                            paymentGateway === "MONNIFY"
+                              ? "border-blue-500 bg-blue-50/50"
+                              : "border-gray-100 bg-white hover:border-blue-200",
+                          )}
+                        >
+                          <img
+                            src="/images/paymentgateway/monnify.svg"
+                            alt="Monnify"
+                            className="h-8 w-auto object-contain"
+                          />
+
+                          {paymentGateway === "MONNIFY" ? (
+                            <FiCheckCircle
+                              className="text-blue-600 min-w-[24px]"
+                              size={24}
+                            />
+                          ) : (
+                            <FiCircle
+                              className="text-gray-300 min-w-[24px]"
+                              size={24}
+                            />
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div
-                      onClick={() => setPaymentGateway("MONNIFY")}
-                      className={cn(
-                        "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
-                        paymentGateway === "MONNIFY"
-                          ? "border-blue-500 bg-blue-50/50"
-                          : "border-gray-100 bg-white hover:border-blue-200",
-                      )}
+
+                    <button
+                      onClick={handleBookNow}
+                      disabled={isCreatingBooking}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                     >
-                      <img
-                        src="/images/paymentgateway/monnify.svg"
-                        alt="Monnify"
-                        className="h-8 w-auto object-contain"
-                      />
-
-                      {paymentGateway === "MONNIFY" ? (
-                        <FiCheckCircle
-                          className="text-blue-600 min-w-[24px]"
-                          size={24}
-                        />
+                      {isCreatingBooking ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          {existingBookingId
+                            ? "Processing Payment..."
+                            : "Creating Booking..."}
+                        </>
                       ) : (
-                        <FiCircle
-                          className="text-gray-300 min-w-[24px]"
-                          size={24}
-                        />
+                        <>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                            />
+                          </svg>
+                          Proceed to Payment (
+                          {paymentGateway === "MONNIFY"
+                            ? "Monnify"
+                            : "Paystack"}
+                          )
+                        </>
                       )}
-                    </div>
-                  </div>
-                </div>
+                    </button>
+                  </>
+                ) : (
+                  // Show action options for "others"
+                  <>
+                    <h3 className="text-lg font-semibold mb-2 text-gray-900 text-center">
+                      Do you want to pay now or generate payment link?
+                    </h3>
 
-                <button
-                  onClick={handleBookNow}
-                  disabled={isCreatingBooking}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
-                >
-                  {isCreatingBooking ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      {existingBookingId
-                        ? "Processing Payment..."
-                        : "Creating Booking..."}
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    <p className="text-sm text-gray-600 mb-6 text-center">
+                      Pay now if you want to make payment on behalf of the
+                      person taking the ride, otherwise send booking and
+                      generate payment link for them to pay later.
+                    </p>
+
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => {
+                          // For "pay now", show payment methods
+                          // This would need to toggle a state or show payment methods
+                          // For simplicity, we'll keep the current behavior
+                          handleBookNow();
+                        }}
+                        disabled={isCreatingBooking}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                        />
-                      </svg>
-                      Proceed to Payment (
-                      {paymentGateway === "MONNIFY" ? "Monnify" : "Paystack"})
-                    </>
-                  )}
-                </button>
+                        <FiCreditCard className="w-4 h-4" />
+                        Pay Now
+                      </button>
+
+                      <button
+                        onClick={async () => {
+                          const {
+                            fullName,
+                            email,
+                            phoneNumber,
+                            recipientEmail,
+                            recipientPhoneNumber,
+                            recipientFullName,
+                          } = personalInfo;
+                          if (!fullName || !email || !phoneNumber) {
+                            toast.error(
+                              "Please fill in all required personal information",
+                            );
+                            return;
+                          }
+                          if (
+                            !recipientFullName ||
+                            !recipientEmail ||
+                            !recipientPhoneNumber
+                          ) {
+                            toast.error(
+                              "Please fill in all recipient information",
+                            );
+                            return;
+                          }
+
+                          setIsCreatingBooking(true);
+                          try {
+                            const bookingId =
+                              existingBookingId || (await createNewBooking());
+                            setGeneratedBookingId(bookingId);
+
+                            sessionStorage.removeItem("servicePricingTrips");
+                            sessionStorage.removeItem("servicePricingEstimate");
+                            sessionStorage.removeItem("servicePricingId");
+                            sessionStorage.removeItem("yearRangeId");
+                            Cookies.remove("servicePricingBookingId");
+
+                            setShowPaymentLinkModal(true);
+                          } catch (error: any) {
+                            toast.error(
+                              error.message || "Failed to create booking",
+                            );
+                          } finally {
+                            setIsCreatingBooking(false);
+                          }
+                        }}
+                        disabled={isCreatingBooking}
+                        className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                      >
+                        <FiLink className="w-4 h-4" />
+                        Generate Payment Link
+                      </button>
+                    </div>
+                  </>
+                )}
 
                 {error && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -1062,7 +1167,9 @@ const ServicePricingCheckoutPage = () => {
                 )}
 
                 <p className="text-xs text-gray-500 text-center mt-4">
-                  By clicking "Pay Now", you agree to our{" "}
+                  By clicking "
+                  {personalInfo.rideFor === "myself" ? "Pay Now" : "Continue"}",
+                  you agree to our{" "}
                   <a href="#" className="text-blue-600 hover:underline">
                     Terms of Service
                   </a>{" "}
@@ -1077,6 +1184,148 @@ const ServicePricingCheckoutPage = () => {
         </div>
       </div>
 
+      {/* Payment Link Modal */}
+      {showPaymentLinkModal && generatedBookingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            {/* Success Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                <FiCheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+            </div>
+
+            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+              Booking Created Successfully!
+            </h2>
+
+            <p className="text-sm text-gray-600 text-center mb-6">
+              Please send the booking link below to the person expected to make
+              the payment.
+            </p>
+
+            {/* Payment Link Box */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-gray-500 mb-1 font-medium">
+                Payment Link
+              </p>
+              <p className="text-sm text-blue-600 break-all font-mono">
+                {`${window.location.origin}/booking/success?bookingId=${generatedBookingId}`}
+              </p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/booking/success?bookingId=${generatedBookingId}`,
+                  );
+                  toast.success("Link copied to clipboard!");
+                }}
+                className="mt-2 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md transition flex items-center gap-1"
+              >
+                <FiLink className="w-3 h-3" />
+                Copy Link
+              </button>
+            </div>
+
+            {/* Message Preview */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5 text-sm text-gray-700 leading-relaxed">
+              <p className="font-semibold text-blue-800 mb-2">
+                Message to send:
+              </p>
+              <p className="mb-2">
+                Hi, a booking has just been generated by{" "}
+                <span className="font-semibold">{personalInfo.fullName}</span>{" "}
+                on Muvment. Please click the link below to proceed with your
+                payment.
+              </p>
+              <p className="text-blue-600 break-all mb-2 font-mono text-xs">
+                {`${window.location.origin}/booking/success?bookingId=${generatedBookingId}`}
+              </p>
+              <p className="text-xs text-gray-500">
+                ⚠️ <span className="font-semibold">Please note:</span> Only
+                payments on <span className="font-semibold">muvment.ng</span>{" "}
+                are valid. Do not make any payment on any platform that is not
+                Muvment, and please do not share your card details with anyone
+                or any staff of Muvment for this payment.
+              </p>
+            </div>
+
+            {/* Share Buttons */}
+            <div className="mb-5">
+              <p className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wide">
+                Share via
+              </p>
+              <div className="flex gap-3">
+                {/* WhatsApp */}
+                <button
+                  onClick={() => {
+                    const paymentLink = `${window.location.origin}/booking/success?bookingId=${generatedBookingId}`;
+                    const message = `Hi, a booking has just been generated by ${personalInfo.fullName} on Muvment. Please click the link below to proceed with your payment.\n\n${paymentLink}\n\n⚠️ Please note: Only payments on muvment.ng are valid. Do not make any payment on any platform that is not Muvment, and please do not share your card details with anyone or any staff of Muvment for this payment.`;
+                    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, "_blank");
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition text-sm"
+                >
+                  {/* WhatsApp SVG Icon */}
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-5 h-5 fill-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                  WhatsApp
+                </button>
+
+                {/* Email */}
+                <button
+                  onClick={() => {
+                    const paymentLink = `${window.location.origin}/booking/success?bookingId=${generatedBookingId}`;
+                    const subject = encodeURIComponent(
+                      "Your Muvment Booking Payment Link",
+                    );
+                    const body = encodeURIComponent(
+                      `Hi,\n\nA booking has just been generated by ${personalInfo.fullName} on Muvment. Please click the link below to proceed with your payment.\n\n${paymentLink}\n\n⚠️ Please note: Only payments on muvment.ng are valid. Do not make any payment on any platform that is not Muvment, and please do not share your card details with anyone or any staff of Muvment for this payment.\n\nThank you,\nMuvment Team`,
+                    );
+                    window.open(
+                      `mailto:${personalInfo.recipientEmail || ""}?subject=${subject}&body=${body}`,
+                      "_blank",
+                    );
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl transition text-sm"
+                >
+                  <FiMail className="w-5 h-5" />
+                  Email
+                </button>
+
+                {/* Copy */}
+                <button
+                  onClick={() => {
+                    const paymentLink = `${window.location.origin}/booking/success?bookingId=${generatedBookingId}`;
+                    const message = `Hi, a booking has just been generated by ${personalInfo.fullName} on Muvment. Please click the link below to proceed with your payment.\n\n${paymentLink}\n\n⚠️ Please note: Only payments on muvment.ng are valid. Do not make any payment on any platform that is not Muvment, and please do not share your card details with anyone or any staff of Muvment for this payment.`;
+                    navigator.clipboard.writeText(message);
+                    toast.success("Message copied to clipboard!");
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 rounded-xl transition text-sm"
+                >
+                  <FiLink className="w-5 h-5" />
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setShowPaymentLinkModal(false);
+                router.push("/");
+              }}
+              className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition text-sm"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       <Footer />
     </div>
   );

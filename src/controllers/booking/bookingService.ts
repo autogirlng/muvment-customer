@@ -83,7 +83,7 @@ export class BookingService {
 
   static async getBookingById(bookingId: string): Promise<any> {
     try {
-      const response = await getSingleData(`${this.BASE_URL}/${bookingId}`);
+      const response = await getSingleData(`${this.BOOKINGS_URL}/${bookingId}`);
       return response?.data || null;
     } catch (error) {
       console.error("Error fetching booking details:", error);
