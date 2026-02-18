@@ -196,123 +196,64 @@ const BookingDetailsClient = () => {
 
   if (!booking || !vehicle) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        <Navbar />
+     <div className="min-h-screen ">
+      <Navbar />
 
-        <main className="max-w-2xl mx-auto px-4 py-16 mt-16">
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-            {/* Header with animated gradient */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
-              <div className="relative z-10">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full mb-4 animate-bounce">
-                  <FiCheckCircle className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-3xl font-bold text-white mb-2">
-                  Payment Received!
-                </h2>
-                <p className="text-blue-100 text-sm">
-                  Booking ID: {bookingId || "Processing..."}
+      <main className="max-w-lg mx-auto px-4 py-16 mt-16">
+        <div className="bg-white rounded-2xl  p-8 text-center">
+          {/* Success Icon */}
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-green-500 rounded-full mb-6">
+            <FiCheckCircle className="w-14 h-14 text-white" strokeWidth={2.5} />
+          </div>
+
+          {/* Main Heading */}
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            Payment Received!
+          </h2>
+
+          {/* Subheading */}
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            We're Assigning Your Driver.
+          </h3>
+
+          {/* Description */}
+          <p className="text-gray-500 text-sm leading-relaxed mb-6">
+            Your booking is being processed. A professional driver will be assigned to you shortly. You'll receive a notification once everything is confirmed.
+          </p>
+
+          {/* Estimated Time Notice */}
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-left">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-red-500 flex items-center justify-center mt-0.5">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm mb-1">
+                  Estimated Assignment Time
                 </p>
-              </div>
-            </div>
-
-            {/* Main content */}
-            <div className="p-8 md:p-10">
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                  We're Assigning Your Driver
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Your booking is being processed. A professional driver will be
-                  assigned to you shortly. You'll receive a notification once
-                  everything is confirmed.
+                <p className="text-xs text-gray-600">
+                  Usually takes 5-15 minutes. We'll notify you as soon as a driver is assigned.
                 </p>
-              </div>
-
-              {/* Status steps */}
-              <div className="space-y-4 mb-8">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <FiCheckCircle className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="flex-1 pt-0.5">
-                    <p className="font-semibold text-gray-900">
-                      Payment Confirmed
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Your payment has been successfully processed
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center animate-pulse">
-                    <FiClock className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1 pt-0.5">
-                    <p className="font-semibold text-gray-900">
-                      Driver Assignment in Progress
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      We're matching you with the perfect driver
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4 opacity-50">
-                  <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <FiUser className="w-5 h-5 text-gray-400" />
-                  </div>
-                  <div className="flex-1 pt-0.5">
-                    <p className="font-semibold text-gray-900">
-                      Driver Details Coming Soon
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      You'll be notified once assigned
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Estimated time */}
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-8">
-                <div className="flex items-start gap-3">
-                  <FiClock className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold text-amber-900 mb-1">
-                      Estimated Assignment Time
-                    </p>
-                    <p className="text-sm text-amber-700">
-                      Usually takes 5-15 minutes. We'll notify you as soon as a
-                      driver is confirmed.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="space-y-3">
-                <button
-                  onClick={() => router.push("/")}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg shadow-blue-200 hover:shadow-xl flex items-center justify-center gap-2"
-                >
-                  <FiArrowLeft className="w-5 h-5" />
-                  Return to Home
-                </button>
-
-                <button
-                  onClick={() => router.push("/contact-us")}
-                  className="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-4 px-6 rounded-xl transition-all duration-200 border-2 border-gray-200 hover:border-gray-300 flex items-center justify-center gap-2"
-                >
-                  <FiShield className="w-5 h-5" />
-                  Contact Support
-                </button>
               </div>
             </div>
           </div>
-        </main>
-      </div>
+
+          {/* Return to Home Button */}
+          <button
+            onClick={() => router.push("/")}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-full transition-all duration-200 flex items-center justify-center gap-2 mb-8"
+          >
+            <FiArrowLeft className="w-5 h-5" />
+            Return to Home
+          </button>
+
+          {/* Booking ID */}
+          <p className="text-xs text-gray-500">
+            Booking ID: <span className="text-blue-600 font-mono">{bookingId || "671ff981-6c18-4e88-b9ff-7bc01ded45e3"}</span>
+          </p>
+        </div>
+      </main>
+    </div>
     );
   }
 

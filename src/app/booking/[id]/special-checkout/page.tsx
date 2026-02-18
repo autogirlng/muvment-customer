@@ -14,13 +14,10 @@ import {
   FiMail,
   FiPhone,
   FiChevronLeft,
-  FiShield,
-  FiCheck,
-  FiTag,
+  FiAlertCircle,
   FiCheckCircle,
   FiCircle,
 } from "react-icons/fi";
-import { MdPayment } from "react-icons/md";
 import { Navbar } from "@/components/Navbar";
 import { BookingService } from "@/controllers/booking/bookingService";
 import Footer from "@/components/HomeComponent/Footer";
@@ -75,11 +72,13 @@ const ServicePricingCheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [paymentGateway, setPaymentGateway] =
     useState<PaymentGateway>("PAYSTACK");
-  
+
   // New state for checkbox
   const [usePreviousInfo, setUsePreviousInfo] = useState(false);
   const [hasPreviousInfo, setHasPreviousInfo] = useState(false);
-  const [existingBookingId, setExistingBookingId] = useState<string | null>(null);
+  const [existingBookingId, setExistingBookingId] = useState<string | null>(
+    null,
+  );
 
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -179,22 +178,18 @@ const ServicePricingCheckoutPage = () => {
     loadData();
   }, [id, router]);
 
+  // Fixed: Only auto-populate when "myself" is selected, preserve data when "others"
   useEffect(() => {
     if (personalInfo.rideFor === "myself") {
+      // Auto-populate recipient fields when booking for myself
       setPersonalInfo((prev) => ({
         ...prev,
         recipientFullName: prev.fullName,
         recipientEmail: prev.email,
         recipientPhoneNumber: prev.phoneNumber,
       }));
-    } else {
-      setPersonalInfo((prev) => ({
-        ...prev,
-        recipientFullName: "",
-        recipientEmail: "",
-        recipientPhoneNumber: "",
-      }));
     }
+    // When rideFor is "others", don't clear the fields - let user type freely
   }, [
     personalInfo.rideFor,
     personalInfo.fullName,
@@ -222,7 +217,7 @@ const ServicePricingCheckoutPage = () => {
     return `₦${amount.toLocaleString("en-NG", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    })}`;
+    })}`.replace(/₦/, "NGN ");
   };
 
   const formatDate = (dateString: string) => {
@@ -240,9 +235,9 @@ const ServicePricingCheckoutPage = () => {
         const paymentResponse = await createData("/api/v1/payments/initiate", {
           bookingId: bookingId,
         });
-        console.log(paymentGateway)
-       const authUrl = 
-          paymentResponse.data?.data?.authorizationUrl || 
+        console.log(paymentGateway);
+        const authUrl =
+          paymentResponse.data?.data?.authorizationUrl ||
           paymentResponse.data?.authorizationUrl ||
           paymentResponse.data?.data?.data?.authorizationUrl;
 
@@ -255,7 +250,7 @@ const ServicePricingCheckoutPage = () => {
           sessionStorage.removeItem("servicePricingId");
           sessionStorage.removeItem("yearRangeId");
           Cookies.remove("servicePricingBookingId");
-          
+
           window.location.href = authUrl;
         } else {
           throw new Error("Payment authorization URL missing");
@@ -266,7 +261,7 @@ const ServicePricingCheckoutPage = () => {
           {},
         );
 
-         const paymentUrl = 
+        const paymentUrl =
           paymentResponse.data?.data ||
           paymentResponse.data?.data?.authorization_url ||
           paymentResponse.data?.authorization_url;
@@ -280,13 +275,13 @@ const ServicePricingCheckoutPage = () => {
           sessionStorage.removeItem("servicePricingId");
           sessionStorage.removeItem("yearRangeId");
           Cookies.remove("servicePricingBookingId");
-          
+
           window.location.href = paymentUrl;
         } else {
           throw new Error("Paystack payment initialization failed");
         }
       }
-    } catch (error: any) {  
+    } catch (error: any) {
       throw new Error(
         error.response?.data?.message || "Payment initialization failed",
       );
@@ -365,10 +360,10 @@ const ServicePricingCheckoutPage = () => {
       await BookingService.createSpecialBooking(bookingPayload);
 
     const newBookingId = bookingResponse.data.data.bookingId;
-    
+
     // Store booking ID in cookies (expires in 1 day)
     Cookies.set("servicePricingBookingId", newBookingId, { expires: 1 });
-    
+
     return newBookingId;
   };
 
@@ -397,6 +392,7 @@ const ServicePricingCheckoutPage = () => {
     }
 
     if (rideFor === "others") {
+      console.log(recipientFullName, recipientEmail, recipientPhoneNumber )
       if (!recipientFullName || !recipientEmail || !recipientPhoneNumber) {
         toast.error("Please fill in all recipient information");
         return;
@@ -433,7 +429,6 @@ const ServicePricingCheckoutPage = () => {
           },
         );
       }
-
 
       await initiatePayment(bookingId);
 
@@ -493,271 +488,169 @@ const ServicePricingCheckoutPage = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 py-8 mt-16">
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="p-2 hover:bg-gray-100 rounded-full transition"
-          >
-            <FiChevronLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Complete Your Booking
-          </h1>
-        </div>
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-gray-700 hover:text-gray-900 mb-6 transition"
+        >
+          <div className="w-6 h-6 rounded-full border-2 border-gray-700 flex items-center justify-center">
+            <span className="text-sm">✕</span>
+          </div>
+          <span className="font-medium">Cancel</span>
+        </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
+          Complete Your Booking
+        </h1>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Personal Information & Booking Invoice */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                <div className="flex items-center gap-2 text-white">
-                  <MdPayment className="w-5 h-5" />
-                  <h2 className="text-xl font-semibold">Booking Invoice</h2>
-                </div>
-              </div>
-
-              <div className="p-6">
-                <div className="mb-6 pb-6 border-b border-gray-200">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                    Trip Details
-                  </h4>
-                  <div className="space-y-4">
-                    {trips.map((trip, index) => (
-                      <div
-                        key={index}
-                        className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-                      >
-                        <p className="font-semibold text-gray-900 mb-3">
-                          Trip {index + 1}
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div className="flex items-center gap-2 text-gray-700">
-                            <FiCalendar className="w-4 h-4 text-blue-600" />
-                            <span className="font-medium">Date:</span>
-                            <span>{formatDate(trip.tripStartDate)}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-700">
-                            <FiClock className="w-4 h-4 text-blue-600" />
-                            <span className="font-medium">Time:</span>
-                            <span>
-                              {format(new Date(trip.tripStartTime), "hh:mm a")}
-                            </span>
-                          </div>
-                          <div className="flex items-start gap-2 text-gray-700 col-span-2">
-                            <FiMapPin className="w-4 h-4 text-green-600 mt-0.5" />
-                            <div className="flex-1">
-                              <span className="font-medium">Pickup:</span>
-                              <p className="text-xs mt-1">
-                                {trip.pickupLocation}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-2 text-gray-700 col-span-2">
-                            <FiMapPin className="w-4 h-4 text-red-600 mt-0.5" />
-                            <div className="flex-1">
-                              <span className="font-medium">Drop-off:</span>
-                              <p className="text-xs mt-1">
-                                {trip.dropoffLocation}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="col-span-2">
-                            <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
-                              <FiTag className="w-3 h-3" />
-                              {trip.bookingType}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                    Cost Breakdown
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Base Price</span>
-                      <span className="font-medium">
-                        {formatCurrency(priceEstimate.basePrice || 0)}
-                      </span>
-                    </div>
-                    {priceEstimate.platformFeeAmount > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Service Fee</span>
-                        <span className="font-medium">
-                          {formatCurrency(priceEstimate.platformFeeAmount)}
-                        </span>
-                      </div>
-                    )}
-                    {priceEstimate.vatAmount && priceEstimate.vatAmount > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">
-                          VAT ({priceEstimate.vatPercentage}%)
-                        </span>
-                        <span className="font-medium">
-                          {formatCurrency(priceEstimate.vatAmount)}
-                        </span>
-                      </div>
-                    )}
-                    {priceEstimate.discountAmount > 0 && (
-                      <div className="flex justify-between items-center text-green-600">
-                        <span>Discount</span>
-                        <span>
-                          -{formatCurrency(priceEstimate.discountAmount)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="border-t border-gray-200 pt-3 mt-2">
-                      <div className="flex justify-between items-center text-lg font-bold">
-                        <span>Total Amount</span>
-                        <span className="text-blue-600">
-                          {formatCurrency(priceEstimate.totalPrice || 0)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
-                <div className="flex items-center gap-2 text-white">
+            {/* Personal Information Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 bg-gray-100">
+                <div className="flex items-center gap-2 text-gray-900">
                   <FiUser className="w-5 h-5" />
-                  <h2 className="text-xl font-semibold">
+                  <h2 className="text-lg font-semibold">
                     Personal Information
                   </h2>
                 </div>
               </div>
 
               <div className="p-6">
-                {/* Existing Booking ID Notice */}
-         
-
-                {/* Use Previous Info Checkbox */}
-                {!isAuthenticated && hasPreviousInfo && (
-                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={usePreviousInfo}
-                        onChange={(e) => setUsePreviousInfo(e.target.checked)}
-                        className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
+                {/* Account Info Banner */}
+                {isAuthenticated && isUserDataLocked && (
+                  <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <FiAlertCircle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-blue-900">
-                          Use my previous booking information
+                        <p className="text-sm font-semibold text-orange-900">
+                          Using your account information
                         </p>
-                        <p className="text-xs text-blue-700 mt-1">
-                          We found your information from a previous booking. Check this box to auto-fill the form.
+                        <p className="text-xs text-orange-700 mt-1">
+                          Your personal details are pre-filled from your
+                          account.
                         </p>
                       </div>
-                    </label>
-                  </div>
-                )}
-
-                {isAuthenticated && isUserDataLocked && (
-                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
-                    <FiCheck className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-blue-900">
-                        Using your account information
-                      </p>
-                      <p className="text-xs text-blue-700 mt-1">
-                        Your personal details are pre-filled from your account.
-                      </p>
                     </div>
                   </div>
                 )}
 
+                {/* Warning Banner for non-authenticated users */}
+                {!isAuthenticated && hasPreviousInfo && (
+                  <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <FiAlertCircle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-orange-900">
+                          We found previous information
+                        </p>
+                        <p className="text-xs text-orange-700 mt-1">
+                          Do you wish to auto-fill form data with your stored
+                          info to save time and avoid errors?
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Who is this ride for */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Who is this ride for? *
+                  <label className="block text-base font-semibold text-gray-900 mb-3">
+                    Who is this ride for?
                   </label>
                   <div className="flex gap-4">
-                    <button
-                      type="button"
-                      onClick={() => handleRideForChange("myself")}
-                      className={`flex-1 py-3 px-4 border-2 rounded-lg text-center transition ${
-                        personalInfo.rideFor === "myself"
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-                      }`}
-                    >
-                      <FiUser className="w-5 h-5 mx-auto mb-1" />
-                      <span className="font-medium">Myself</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRideForChange("others")}
-                      className={`flex-1 py-3 px-4 border-2 rounded-lg text-center transition ${
-                        personalInfo.rideFor === "others"
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-                      }`}
-                    >
-                      <FiUser className="w-5 h-5 mx-auto mb-1" />
-                      <span className="font-medium">Others</span>
-                    </button>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="rideFor"
+                        value="myself"
+                        checked={personalInfo.rideFor === "myself"}
+                        onChange={() => handleRideForChange("myself")}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">Myself</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="rideFor"
+                        value="others"
+                        checked={personalInfo.rideFor === "others"}
+                        onChange={() => handleRideForChange("others")}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">Others</span>
+                    </label>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* Form Fields */}
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name *
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Full name
                     </label>
-                    <div className="relative">
-                      <FiUser className="absolute left-3 top-3 text-gray-400" />
-                      <input
-                        type="text"
-                        value={personalInfo.fullName}
-                        onChange={(e) =>
-                          handleInputChange("fullName", e.target.value)
-                        }
-                        disabled={isUserDataLocked}
-                        className={`w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          isUserDataLocked
-                            ? "bg-gray-100 cursor-not-allowed"
-                            : ""
-                        }`}
-                        placeholder="Enter your full name"
-                        required
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      value={personalInfo.fullName}
+                      onChange={(e) =>
+                        handleInputChange("fullName", e.target.value)
+                      }
+                      disabled={isUserDataLocked}
+                      className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
+                        isUserDataLocked ? "bg-gray-100 cursor-not-allowed" : ""
+                      }`}
+                      placeholder="Enter your full name"
+                      required
+                    />
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address *
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Email Address
                     </label>
-                    <div className="relative">
-                      <FiMail className="absolute left-3 top-3 text-gray-400" />
-                      <input
-                        type="email"
-                        value={personalInfo.email}
-                        onChange={(e) =>
-                          handleInputChange("email", e.target.value)
-                        }
-                        disabled={isUserDataLocked}
-                        className={`w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          isUserDataLocked
-                            ? "bg-gray-100 cursor-not-allowed"
-                            : ""
-                        }`}
-                        placeholder="Enter your email"
-                        required
-                      />
-                    </div>
+                    <input
+                      type="email"
+                      value={personalInfo.email}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
+                      disabled={isUserDataLocked}
+                      className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
+                        isUserDataLocked ? "bg-gray-100 cursor-not-allowed" : ""
+                      }`}
+                      placeholder="Enter your email address"
+                      required
+                    />
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number *
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Phone number- primary
                     </label>
-                    <div className="relative">
-                      <FiPhone className="absolute left-3 top-3 text-gray-400" />
+                    <div className="flex gap-2">
+                      <div className="relative">
+                        <button
+                          type="button"
+                          className="h-11 px-3 border border-gray-300 rounded-lg bg-white flex items-center gap-2 hover:bg-gray-50 transition"
+                        >
+                          <span className="text-xl">🇳🇬</span>
+                          <span className="text-sm text-gray-700">+234</span>
+                          <svg
+                            className="w-4 h-4 text-gray-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                       <input
                         type="tel"
                         value={personalInfo.phoneNumber}
@@ -765,22 +658,44 @@ const ServicePricingCheckoutPage = () => {
                           handleInputChange("phoneNumber", e.target.value)
                         }
                         disabled={isUserDataLocked}
-                        className={`w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        className={`flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
                           isUserDataLocked
                             ? "bg-gray-100 cursor-not-allowed"
                             : ""
                         }`}
-                        placeholder="Enter your phone number"
+                        placeholder="Enter phone number"
                         required
                       />
                     </div>
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Secondary Phone (Optional)
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Phone number- Secondary (optional)
                     </label>
-                    <div className="relative">
-                      <FiPhone className="absolute left-3 top-3 text-gray-400" />
+                    <div className="flex gap-2">
+                      <div className="relative">
+                        <button
+                          type="button"
+                          className="h-11 px-3 border border-gray-300 rounded-lg bg-white flex items-center gap-2 hover:bg-gray-50 transition"
+                        >
+                          <span className="text-xl">🇳🇬</span>
+                          <span className="text-sm text-gray-700">+234</span>
+                          <svg
+                            className="w-4 h-4 text-gray-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                       <input
                         type="tel"
                         value={personalInfo.secondaryPhoneNumber}
@@ -790,107 +705,265 @@ const ServicePricingCheckoutPage = () => {
                             e.target.value,
                           )
                         }
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter secondary phone"
+                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        placeholder="Enter phone number"
                       />
                     </div>
                   </div>
-                </div>
 
-                {personalInfo.rideFor === "others" && (
-                  <div className="border-t pt-6 mt-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                      Recipient Information
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Recipient Fields - Only show when "others" is selected */}
+                  {personalInfo.rideFor === "others" && (
+                    <>
+                      <div className="pt-4 border-t border-gray-200">
+                        <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                          Recipient Information
+                        </h3>
+                      </div>
+
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Recipient Full Name *
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                          Recipient Full Name
                         </label>
                         <input
                           type="text"
-                          value={personalInfo.recipientFullName}
+                          value={personalInfo.recipientFullName || ""}
                           onChange={(e) =>
-                            handleInputChange(
-                              "recipientFullName",
-                              e.target.value,
-                            )
+                            handleInputChange("recipientFullName", e.target.value)
                           }
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                           placeholder="Enter recipient's full name"
                           required
                         />
                       </div>
+
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Recipient Email *
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                          Recipient Email Address
                         </label>
                         <input
                           type="email"
-                          value={personalInfo.recipientEmail}
+                          value={personalInfo.recipientEmail || ""}
                           onChange={(e) =>
                             handleInputChange("recipientEmail", e.target.value)
                           }
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="Enter recipient's email"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          placeholder="Enter recipient's email address"
                           required
                         />
                       </div>
+
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Recipient Phone Number *
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                          Recipient Phone Number
                         </label>
-                        <input
-                          type="tel"
-                          value={personalInfo.recipientPhoneNumber}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "recipientPhoneNumber",
-                              e.target.value,
-                            )
-                          }
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="Enter recipient's phone number"
-                          required
-                        />
+                        <div className="flex gap-2">
+                          <div className="relative">
+                            <button
+                              type="button"
+                              className="h-11 px-3 border border-gray-300 rounded-lg bg-white flex items-center gap-2 hover:bg-gray-50 transition"
+                            >
+                              <span className="text-xl">🇳🇬</span>
+                              <span className="text-sm text-gray-700">+234</span>
+                              <svg
+                                className="w-4 h-4 text-gray-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                          <input
+                            type="tel"
+                            value={personalInfo.recipientPhoneNumber || ""}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "recipientPhoneNumber",
+                                e.target.value,
+                              )
+                            }
+                            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            placeholder="Enter recipient's phone number"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Extra Details (Optional)
+                    </label>
+                    <textarea
+                      value={personalInfo.extraDetails}
+                      onChange={(e) =>
+                        handleInputChange("extraDetails", e.target.value)
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      placeholder="e.g this booking is for my boss, reach me for anything payment or time extension."
+                      rows={4}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Booking Invoice Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 bg-gray-100">
+                <div className="flex items-center gap-2 text-gray-900">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <h2 className="text-lg font-semibold">Booking Invoice</h2>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <h4 className="text-sm font-semibold text-gray-900 mb-4">
+                  Trip Details
+                </h4>
+
+                <div className="space-y-4 mb-6">
+                  {trips.map((trip, index) => (
+                    <div
+                      key={index}
+                      className="border border-gray-200 rounded-lg p-4 space-y-3"
+                    >
+                      <p className="text-sm font-semibold text-gray-900 mb-6">
+                        Trip {index + 1}
+                      </p>
+
+                      <div className="flex items-center gap-10 text-sm text-gray-700 mb-6">
+                        <div className="flex items-center gap-2">
+                          <FiCalendar className="w-4 h-4 text-blue-500" />
+                          <span>
+                            <span className="font-medium">Date:</span>{" "}
+                            {formatDate(trip.tripStartDate)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <FiClock className="w-4 h-4 text-blue-500" />
+                          <span>
+                            <span className="font-medium">Time:</span>
+                            {format(new Date(trip.tripStartTime), "hh:mm a")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-sm text-gray-700 mb-6">
+                        <FiMapPin className="w-4 h-4 mt-0.5 text-green-500" />
+                        <span>
+                          <span className="font-medium">Pickup:</span>{" "}
+                          {trip.pickupLocation}
+                        </span>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-sm text-gray-700 mb-6">
+                        <FiMapPin className="w-4 h-4 mt-0.5 text-red-500" />
+                        <span>
+                          <span className="font-medium">Drop-off:</span>{" "}
+                          {trip.dropoffLocation}
+                        </span>
+                      </div>
+
+                      <div className="border border-dashed border-blue-300 rounded-lg bg-blue-50/30 px-3 py-2 flex items-center gap-2 mb-6">
+                        <svg
+                          className="w-4 h-4 text-blue-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                          />
+                        </svg>
+                        <span className="text-xs text-blue-600 font-mono">
+                          {id}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-gray-200 pt-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-4">
+                    Cost Breakdown
+                  </h4>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Base Price</span>
+                      <span className="text-gray-900">
+                        {formatCurrency(priceEstimate.basePrice || 0)}
+                      </span>
+                    </div>
+
+                    {priceEstimate.vatAmount && priceEstimate.vatAmount > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">VAT</span>
+                        <span className="text-gray-900">
+                          {formatCurrency(priceEstimate.vatAmount)}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-center text-xs text-gray-500">
+                      <span>{priceEstimate.vatPercentage}%</span>
+                      <span>
+                        {formatCurrency(priceEstimate.platformFeeAmount || 0)}
+                      </span>
+                    </div>
+
+                    <div className="border-t border-gray-200 pt-2 mt-2">
+                      <div className="flex justify-between items-center font-semibold">
+                        <span className="text-gray-900">TOTAL</span>
+                        <span className="text-blue-600 text-lg">
+                          {formatCurrency(priceEstimate.totalPrice || 0)}
+                        </span>
                       </div>
                     </div>
                   </div>
-                )}
-
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Extra Details (Optional)
-                  </label>
-                  <textarea
-                    value={personalInfo.extraDetails}
-                    onChange={(e) =>
-                      handleInputChange("extraDetails", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Add any special requests or details"
-                    rows={4}
-                  />
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Right Column - Payment */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <div className="text-center mb-6">
-                  <div className="text-2xl font-bold text-blue-600 mb-2">
-                    {formatCurrency(priceEstimate.totalPrice || 0)}
-                  </div>
-                  <p className="text-sm text-gray-600">Total Amount</p>
+            <div className="sticky top-24 bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6 text-center border-b border-gray-200">
+                <div className="text-3xl font-bold text-blue-600 mb-1">
+                  {formatCurrency(priceEstimate.totalPrice || 0)}
                 </div>
+                <p className="text-sm text-gray-600">TOTAL AMOUNT</p>
+              </div>
 
-                {/* Payment Gateway Selection */}
+              <div className="p-6">
+                <h3 className="text-sm font-semibold mb-4 text-gray-700">
+                  Select Payment Method
+                </h3>
+
                 <div className="mb-6">
-                  <h3 className="text-sm font-semibold mb-3 text-gray-700">
-                    Select Payment Method
-                  </h3>
                   <div className="flex flex-col gap-3">
                     <div
                       onClick={() => setPaymentGateway("PAYSTACK")}
@@ -949,32 +1022,35 @@ const ServicePricingCheckoutPage = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center gap-2 text-sm text-green-600">
-                    <FiShield className="w-4 h-4" />
-                    <span>Secure SSL Encryption</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-green-600">
-                    <FiCheck className="w-4 h-4" />
-                    <span>Safe Payment Processing</span>
-                  </div>
-                </div>
-
                 <button
                   onClick={handleBookNow}
                   disabled={isCreatingBooking}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                 >
                   {isCreatingBooking ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      {existingBookingId ? "Processing Payment..." : "Creating Booking..."}
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      {existingBookingId
+                        ? "Processing Payment..."
+                        : "Creating Booking..."}
                     </>
                   ) : (
                     <>
-                      <MdPayment className="w-5 h-5" />
-                      Pay with{" "}
-                      {paymentGateway === "MONNIFY" ? "Monnify" : "Paystack"}
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                      Proceed to Payment (
+                      {paymentGateway === "MONNIFY" ? "Monnify" : "Paystack"})
                     </>
                   )}
                 </button>
@@ -986,8 +1062,14 @@ const ServicePricingCheckoutPage = () => {
                 )}
 
                 <p className="text-xs text-gray-500 text-center mt-4">
-                  By clicking "Pay Now", you agree to our Terms of Service and
-                  Privacy Policy
+                  By clicking "Pay Now", you agree to our{" "}
+                  <a href="#" className="text-blue-600 hover:underline">
+                    Terms of Service
+                  </a>{" "}
+                  and{" "}
+                  <a href="#" className="text-blue-600 hover:underline">
+                    Privacy Policy
+                  </a>
                 </p>
               </div>
             </div>

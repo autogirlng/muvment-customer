@@ -18,7 +18,6 @@ import {
   FiPlus,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
-import { Carousel } from "@/components/utils/Carousel";
 import Footer from "../HomeComponent/Footer";
 import { ServicePricingShowcase } from "@/types/Servicepricing";
 import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
@@ -28,6 +27,7 @@ import TimeInput from "@/components/general/forms/TimeInput";
 import SelectInput from "@/components/general/forms/select";
 import { GoogleMapsLocationInput } from "@/components/general/forms/GoogleMapsLocationInput";
 import Cookies from "js-cookie";
+
 interface TripDetails {
   id: string;
   bookingType: string;
@@ -251,7 +251,7 @@ const ServicePricingBookingPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="flex items-center justify-center h-screen">
           <div className="flex flex-col items-center gap-4">
@@ -268,7 +268,7 @@ const ServicePricingBookingPage: React.FC = () => {
 
   if (error || !pricing) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="flex flex-col items-center justify-center h-screen px-4">
           <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
@@ -314,70 +314,82 @@ const ServicePricingBookingPage: React.FC = () => {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen ">
+        <div className="h-[10vh]"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Back Button */}
           <button
             onClick={handleBackClick}
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors mb-6 group"
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mb-6 "
           >
-            <FiArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Back to Listings</span>
+            <FiArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Back</span>
           </button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Service Details */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Service Header */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm px-4 py-1.5 rounded-full font-semibold">
-                        {pricing.rideType}
-                      </span>
-                      <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                        {pricing.minYear} - {pricing.maxYear}
-                      </span>
-                    </div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                {/* Header Section */}
+                <div className="mb-6 flex flex-col md:flex-row justify-between items-start">
+                  <div className="">
+                    <h1 className="text-2xl md:text-3x1 font-bold text-gray-900 mb-3">
                       {pricing.servicePricingName}
                     </h1>
-                    <p className="text-gray-600 text-lg">{pricing.name}</p>
+                    <p className="text-gray-600 text-base mb-4">
+                      {pricing.name}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="px-4 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-md font-medium">
+                      {pricing.minYear} - {pricing.maxYear}
+                    </span>
+                    <span className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md font-medium">
+                      {pricing.rideType}
+                    </span>
                   </div>
                 </div>
 
-                {/* Image Carousel */}
-                <div className="rounded-xl overflow-hidden">
-                  <Carousel urls={pricing.sampleImages} />
+                {/* Vehicle Image */}
+                <div className=" mb-6">
+                  <div className="flex items-center justify-center">
+                    <img
+                      src={pricing.imageUrl}
+                      alt={pricing.servicePricingName}
+                      className="w-full max-w-2xl h-auto object-contain"
+                      style={{ maxHeight: "700px" }}
+                    />
+                  </div>
                 </div>
 
-                {/* Service Info Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                  <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-5 border border-blue-100">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <FiTag className="w-5 h-5 text-blue-600" />
+                {/* Info Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-100">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <FiTag className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm text-gray-600 font-medium">
                           Service Type
-                        </h3>
-                        <p className="text-gray-600">{pricing.rideType}</p>
+                        </p>
+                        <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">
+                          {pricing.rideType}
+                        </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-5 border border-gray-200">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <FiCalendar className="w-5 h-5 text-gray-600" />
+                  <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-200">
+                        <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm text-gray-600 font-medium">
                           Year Range
-                        </h3>
-                        <p className="text-gray-600">
+                        </p>
+                        <p className="text-sm sm:text-base font-semibold text-gray-900 whitespace-nowrap">
                           {pricing.minYear} - {pricing.maxYear}
                         </p>
                       </div>
@@ -390,16 +402,16 @@ const ServicePricingBookingPage: React.FC = () => {
             {/* Right Column - Booking Form */}
             <div className="space-y-6">
               {/* Booking Card */}
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 sticky top-24">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 sticky top-24">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                     <FiCalendar className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">
+                    <h2 className="text-lg font-bold text-gray-900">
                       Book Your Trip
                     </h2>
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-gray-500 text-sm">
                       Customize your itinerary
                     </p>
                   </div>
@@ -421,23 +433,10 @@ const ServicePricingBookingPage: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Add Trip Button */}
-                {/* <button
-                  onClick={addTrip}
-                  className="w-full mt-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-colors group"
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <FiPlus className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
-                    <span className="text-gray-600 group-hover:text-blue-600 font-medium">
-                      Add Another Trip
-                    </span>
-                  </div>
-                </button> */}
-
                 {/* Price Estimate Section */}
                 {priceEstimate && (
-                  <div className="mt-8 pt-6 border-t border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <h3 className="text-base font-bold text-gray-900 mb-4">
                       Price Estimate
                     </h3>
                     <div className="space-y-3">
@@ -466,7 +465,7 @@ const ServicePricingBookingPage: React.FC = () => {
                           isDiscount
                         />
                       )}
-                      <div className="pt-4 border-t border-gray-300">
+                      <div className="pt-3 border-t border-gray-300">
                         <PriceRow
                           label="Total Amount"
                           value={priceEstimate.totalPrice || 0}
@@ -478,14 +477,14 @@ const ServicePricingBookingPage: React.FC = () => {
                 )}
 
                 {/* Important Note */}
-                <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-200">
-                  <div className="flex items-start gap-3">
-                    <FiInfo className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                <div className="mt-5 p-3.5 bg-orange-50 rounded-lg border border-orange-200">
+                  <div className="flex items-start gap-2.5">
+                    <FiInfo className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-bold text-orange-900 mb-1">
+                      <h4 className="text-sm font-semibold text-orange-900 mb-0.5">
                         Important Note
                       </h4>
-                      <p className="text-sm text-orange-800">
+                      <p className="text-xs text-orange-800 leading-relaxed">
                         All prices are estimates. Final pricing will be
                         confirmed during checkout.
                       </p>
@@ -494,20 +493,20 @@ const ServicePricingBookingPage: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="mt-8 space-y-3">
+                <div className="mt-6 space-y-3">
                   {!priceEstimate ? (
                     <button
                       onClick={estimatePrice}
                       disabled={!canProceed || isEstimating}
-                      className={`w-full py-4 rounded-xl font-semibold transition-all ${
+                      className={`w-full py-3.5 rounded-lg font-semibold text-sm transition-all ${
                         canProceed && !isEstimating
-                          ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                           : "bg-gray-100 text-gray-400 cursor-not-allowed"
                       }`}
                     >
                       {isEstimating ? (
                         <div className="flex items-center justify-center gap-2">
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                           Estimating Price...
                         </div>
                       ) : (
@@ -517,7 +516,7 @@ const ServicePricingBookingPage: React.FC = () => {
                   ) : (
                     <button
                       onClick={proceedToCheckout}
-                      className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                      className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm shadow-sm transition-all"
                     >
                       Continue to Checkout
                     </button>
@@ -572,24 +571,26 @@ const TripCard = ({
   };
 
   return (
-    <div className="border border-gray-200 rounded-xl ">
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
       {/* Card Header */}
       <div
-        className="bg-gradient-to-r from-gray-50 to-white p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+        className="bg-gray-50 px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors"
         onClick={onToggle}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-7 h-7 bg-blue-100 rounded-md flex items-center justify-center">
               <span className="text-sm font-bold text-blue-600">
                 {index + 1}
               </span>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">{dateLabel}</h3>
+              <h3 className="font-semibold text-gray-900 text-sm">
+                {dateLabel}
+              </h3>
               {details.tripStartTime && (
-                <p className="text-sm text-gray-500 flex items-center gap-1">
-                  <FiClock className="w-4 h-4" />
+                <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                  <FiClock className="w-3.5 h-3.5" />
                   {format(new Date(details.tripStartTime), "h:mm a")}
                 </p>
               )}
@@ -602,13 +603,13 @@ const TripCard = ({
                   e.stopPropagation();
                   onDelete();
                 }}
-                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
               >
                 <FiTrash2 className="w-4 h-4" />
               </button>
             )}
             <FiChevronDown
-              className={`w-5 h-5 text-gray-400 transition-transform ${
+              className={`w-4 h-4 text-gray-400 transition-transform ${
                 isOpen ? "rotate-180" : ""
               }`}
             />
@@ -621,12 +622,12 @@ const TripCard = ({
         <div className="p-4 bg-white border-t border-gray-100 space-y-4">
           {/* Booking Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Booking Type
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">
+              Booking type
             </label>
             <SelectInput
               id={`bookingType-${trip.id}`}
-              placeholder="Select duration"
+              placeholder="Select Duration"
               variant="outlined"
               options={bookingOptions}
               value={details.bookingType || ""}
@@ -637,14 +638,14 @@ const TripCard = ({
           {/* Location Inputs */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                <FiMapPin className="w-4 h-4 text-blue-600" />
+              <label className="block text-xs font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                <FiMapPin className="w-3.5 h-3.5 text-blue-600" />
                 Pickup Location
               </label>
               <GoogleMapsLocationInput
                 value={details.pickupLocation || ""}
                 onChange={(value) => onUpdate(trip.id, "pickupLocation", value)}
-                placeholder="Enter pickup address"
+                placeholder="Enter Pick Up Address"
                 coordinates={handleCoordinates}
                 type="pickupCoordinates"
                 disabled={false}
@@ -652,8 +653,8 @@ const TripCard = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                <FiMapPin className="w-4 h-4 text-green-600" />
+              <label className="block text-xs font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                <FiMapPin className="w-3.5 h-3.5 text-red-600" />
                 Drop-off Location
               </label>
               <GoogleMapsLocationInput
@@ -661,7 +662,7 @@ const TripCard = ({
                 onChange={(value) =>
                   onUpdate(trip.id, "dropoffLocation", value)
                 }
-                placeholder="Enter drop-off address"
+                placeholder="Enter Drop-off Location"
                 coordinates={handleCoordinates}
                 type="dropoffCoordinates"
                 disabled={false}
@@ -670,9 +671,9 @@ const TripCard = ({
           </div>
 
           {/* Date & Time Grid */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 Trip Date
               </label>
               <DateInput
@@ -687,7 +688,7 @@ const TripCard = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 z-10">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 Trip Time
               </label>
               <TimeInput
@@ -728,8 +729,8 @@ const PriceRow = ({
         <span
           className={`${
             isTotal
-              ? "text-base font-bold text-gray-900"
-              : "text-sm text-gray-600"
+              ? "text-sm font-bold text-gray-900"
+              : "text-xs text-gray-600"
           }`}
         >
           {label}
@@ -741,10 +742,10 @@ const PriceRow = ({
       <span
         className={`font-semibold ${
           isTotal
-            ? "text-xl text-gray-900"
+            ? "text-lg text-gray-900"
             : isDiscount
-              ? "text-green-600"
-              : "text-gray-700"
+              ? "text-green-600 text-sm"
+              : "text-gray-700 text-sm"
         }`}
       >
         {isDiscount ? "-" : ""}₦

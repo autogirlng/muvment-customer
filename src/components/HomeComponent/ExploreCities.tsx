@@ -28,7 +28,7 @@ const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({
   const handleCityClick = (cityName: string) => {
     const formattedCity = cityName.toLowerCase().replace(/\s+/g, "-");
     router.push(
-      `/booking/search?location=${formattedCity}&bookingType=${bookingTypeId}`,
+      `/booking/search?city=${formattedCity}&bookingType=${bookingTypeId}`,
     );
   };
 
