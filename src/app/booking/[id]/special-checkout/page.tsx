@@ -54,6 +54,7 @@ const ServicePricingCheckoutPage = () => {
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
 
+  console.log(user)
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
     fullName: "",
     email: "",
@@ -95,13 +96,13 @@ const ServicePricingCheckoutPage = () => {
         user.lastName || ""
       }`.trim();
       const userEmail = user.email || "";
-      const userPhone = user.phoneNumber || "";
+      // const userPhone = user.phoneNumber || "";
 
       setPersonalInfo((prev) => ({
         ...prev,
         fullName: userFullName,
         email: userEmail,
-        phoneNumber: userPhone,
+        // phoneNumber: userPhone,
       }));
 
       setIsUserDataLocked(true);
@@ -191,7 +192,7 @@ const ServicePricingCheckoutPage = () => {
         ...prev,
         recipientFullName: prev.fullName,
         recipientEmail: prev.email,
-        recipientPhoneNumber: prev.phoneNumber,
+        // recipientPhoneNumber: prev.phoneNumber,
       }));
     }
     // When rideFor is "others", don't clear the fields - let user type freely
@@ -199,7 +200,7 @@ const ServicePricingCheckoutPage = () => {
     personalInfo.rideFor,
     personalInfo.fullName,
     personalInfo.email,
-    personalInfo.phoneNumber,
+    // personalInfo.phoneNumber,
   ]);
 
   const handleInputChange = (field: keyof PersonalInfo, value: string) => {
@@ -240,7 +241,7 @@ const ServicePricingCheckoutPage = () => {
         const paymentResponse = await createData("/api/v1/payments/initiate", {
           bookingId: bookingId,
         });
-        console.log(paymentGateway);
+  
         const authUrl =
           paymentResponse.data?.data?.authorizationUrl ||
           paymentResponse.data?.authorizationUrl ||
@@ -395,7 +396,7 @@ const ServicePricingCheckoutPage = () => {
     }
 
     if (rideFor === "others") {
-      console.log(recipientFullName, recipientEmail, recipientPhoneNumber);
+      // console.log(recipientFullName, recipientEmail, recipientPhoneNumber);
       if (!recipientFullName || !recipientEmail || !recipientPhoneNumber) {
         toast.error("Please fill in all recipient information");
         return;
@@ -665,10 +666,10 @@ const ServicePricingCheckoutPage = () => {
                         onChange={(e) =>
                           handleInputChange("phoneNumber", e.target.value)
                         }
-                        disabled={isUserDataLocked}
+                        // disabled={isUserDataLocked}
                         className={`flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
                           isUserDataLocked
-                            ? "bg-gray-100 cursor-not-allowed"
+                            ? ""
                             : ""
                         }`}
                         placeholder="Enter phone number"
@@ -1332,3 +1333,5 @@ const ServicePricingCheckoutPage = () => {
 };
 
 export default ServicePricingCheckoutPage;
+
+
