@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { FiSearch, FiDownload, FiShare2 } from "react-icons/fi";
-import { CiCreditCard1 } from "react-icons/ci";
+import { FiSearch, FiShare2 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import {
   Payment,
   PaymentFilters,
   PaymentService,
-  ReceiptGenerator,
 } from "@/controllers/booking/paymentService";
 import DataTable, {
   SeeMoreData,
@@ -17,78 +15,99 @@ import DataTable, {
 } from "@/components/utils/TableComponent";
 import Dropdown from "@/components/utils/DropdownCustom";
 import { toast } from "react-toastify";
-import { FaCreditCard, FaReceipt } from "react-icons/fa6";
+import { FaReceipt } from "react-icons/fa6";
 import { BookingService } from "@/controllers/booking/bookingService";
 
-interface Booking {
-  id: string;
-  bookingId: string;
-  paymentStatus: string;
+interface BookingPayment extends Payment {
   paymentProvider: string;
-  transactionReference: string;
-  totalPayable: number;
-  createdAt: string;
-  paymentRef: string;
-  bookingRef: string;
-  userEmail: string;
-  userPhone: string;
-  userName: string;
-  invoiceNumber: string;
-  vehicleName: string;
-  vehicleIdentifier: string;
-  vehicleId: string;
-  userId: string;
+  bookingId: string;
 }
+
+const PAGE_SIZE = 10;
 
 const PaymentHistoryPage = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<PaymentFilters>({ page: 0, size: 10 });
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const [filters, setFilters] = useState<Omit<PaymentFilters, "page" | "size">>({});
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
 
+  const fetchPage = useCallback(
+    async (pageNumber: number, reset = false) => {
+      try {
+        reset ? setLoading(true) : setLoadingMore(true);
+
+        const response = await PaymentService.getMyPayments({
+          ...filters,
+          page: pageNumber,
+          size: PAGE_SIZE,
+        });
+
+        const content: Payment[] = response.data.content;
+        const totalPages: number = response.data.totalPages ?? 1;
+
+        setPayments((prev) => (reset ? content : [...prev, ...content]));
+        setHasMore(pageNumber + 1 < totalPages);
+      } catch (error) {
+        console.error("Error loading payments:", error);
+        toast.error("Failed to load payments.");
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [filters],
+  );
+
+  // Reset and reload when status filter changes
   useEffect(() => {
-    loadPayments();
-  }, [filters.page, filters.size, filters.paymentStatus]);
+    setPage(0);
+    setHasMore(true);
+    fetchPage(0, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.paymentStatus]);
 
-  const loadPayments = async () => {
-    try {
-      setLoading(true);
-      const response = await PaymentService.getMyPayments(filters);
-      setPayments(response.data.content);
-    } catch (error) {
-      console.error("Error loading payments:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  //  Debounced search effect
+  // Debounced search
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
-      loadPayments();
-    }, 2000);
+      setPage(0);
+      setHasMore(true);
+      fetchPage(0, true);
+    }, 500);
+
     return () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.searchTerm]);
 
+  // Fetch next page when page increments
+  useEffect(() => {
+    if (page === 0) return;
+    fetchPage(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      setPage((prev) => prev + 1);
+    }
+  }, [loadingMore, hasMore]);
+
   const handleSharePayment = (payment: Payment) => {
-    const shareText = `Payment for ${payment.vehicleName} - ${formatCurrency(
-      payment.amountPaid
-    )}`;
+    const shareText = `Payment for ${payment.vehicleName} - ${formatCurrency(payment.amountPaid)}`;
     const shareUrl = `${window.location.origin}/booking-tracking?paymentId=${payment.id}&bookingId=${payment.bookingId}`;
     if (navigator.share) {
-      navigator.share({
-        title: "Payment Receipt",
-        text: shareText,
-        url: shareUrl,
-      });
+      navigator.share({ title: "Payment Receipt", text: shareText, url: shareUrl });
     } else {
       navigator.clipboard.writeText(shareUrl);
-      alert("Payment tracking link copied to clipboard!");
+      toast.success("Payment tracking link copied to clipboard!");
     }
   };
 
@@ -119,44 +138,6 @@ const PaymentHistoryPage = () => {
     return colors[status] || "bg-gray-100 text-gray-800";
   };
 
-  const columns: TableColumn<Payment>[] = [
-    { key: "transactionReference", label: "Reference" },
-    {
-      key: "vehicleName",
-      label: "Vehicle",
-      render: (_, row) => (
-        <div>
-          <div className="text-sm font-medium text-gray-900">
-            {row.vehicleName}
-          </div>
-        </div>
-      ),
-    },
-    { key: "createdAt", label: "Date", render: (val) => formatDate(val) },
-    {
-      key: "paymentStatus",
-      label: "Status",
-      render: (val) => (
-        <span
-          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-            val
-          )}`}
-        >
-          {val}
-        </span>
-      ),
-    },
-    {
-      key: "totalPayable",
-      label: "Total Payable",
-      render: (val) => formatCurrency(val),
-    },
-    {
-      key: "amountPaid",
-      label: "Amount Paid",
-      render: (val) => formatCurrency(val),
-    },
-  ];
   const handleDownloadReceipt = async (payment: Payment) => {
     if (payment.paymentStatus !== "SUCCESSFUL") {
       return toast.warn("Payment still pending, try again later");
@@ -165,39 +146,80 @@ const PaymentHistoryPage = () => {
       await PaymentService.getPDFFile(payment.bookingId);
     } catch (error) {
       console.error("Error downloading receipt:", error);
-      alert("Failed to download receipt. Please try again.");
+      toast.error("Failed to download receipt. Please try again.");
     }
   };
 
-  const makePayment = async (x: Booking) => {
+  const makePayment = async (payment: BookingPayment) => {
     const booking = await BookingService.initiatePayment({
-      bookingId: x.bookingId,
-      paymentProvider: x.paymentProvider,
+      bookingId: payment.bookingId,
+      paymentProvider: payment.paymentProvider,
     });
-    if (x.paymentProvider === "PAYSTACK" && booking.data) {
-      // @ts-ignore
-      router.push(booking.data);
+    if (payment.paymentProvider === "PAYSTACK" && booking.data) {
+      router.push(booking.data as any);
     } else {
-      if (booking.data.authorizationUrl)
-        router.push(booking.data.authorizationUrl);
+      if (booking.data.authorizationUrl) router.push(booking.data.authorizationUrl);
     }
   };
+
   const handleAction = (payment: any) => {
-    if (payment.paymentStatus === "SUCCESSFUL") {
-      return handleDownloadReceipt(payment);
-    }
-    if (payment.paymentStatus === "PENDING") {
-      return makePayment(payment);
-    }
+    if (payment.paymentStatus === "SUCCESSFUL") return handleDownloadReceipt(payment);
+    if (payment.paymentStatus === "PENDING") return makePayment(payment);
   };
-  const seeMoreData: SeeMoreData[] = [
-    {
-      name: "Download Receipt",
-      handleAction,
-      icon: FaReceipt,
-    },
-    { name: "Share Payment", handleAction: handleSharePayment, icon: FiShare2 },
-  ];
+
+  const columns: TableColumn<Payment>[] = useMemo(
+    () => [
+      { key: "transactionReference", label: "Reference" },
+      {
+        key: "vehicleName",
+        label: "Vehicle",
+        render: (_, row) => (
+          <div className="text-sm font-medium text-gray-900">{row.vehicleName}</div>
+        ),
+      },
+      {
+        key: "createdAt",
+        label: "Date",
+        render: (val) => (
+          <span className="text-sm text-gray-700">{formatDate(val)}</span>
+        ),
+      },
+      {
+        key: "paymentStatus",
+        label: "Status",
+        render: (val) => (
+          <span
+            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(val)}`}
+          >
+            {val}
+          </span>
+        ),
+      },
+      {
+        key: "totalPayable",
+        label: "Total Payable",
+        render: (val) => (
+          <span className="text-sm font-medium text-gray-900">{formatCurrency(val)}</span>
+        ),
+      },
+      {
+        key: "amountPaid",
+        label: "Amount Paid",
+        render: (val) => (
+          <span className="text-sm font-medium text-gray-900">{formatCurrency(val)}</span>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const seeMoreData: SeeMoreData[] = useMemo(
+    () => [
+      { name: "Download Receipt", handleAction, icon: FaReceipt },
+      { name: "Share Payment", handleAction: handleSharePayment, icon: FiShare2 },
+    ],
+    [],
+  );
 
   const statusOptions = [
     { value: "", label: "All Status" },
@@ -212,12 +234,8 @@ const PaymentHistoryPage = () => {
       <Navbar />
       <div className="mx-auto py-8 mt-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Payment History
-          </h1>
-          <p className="text-gray-600">
-            View and download your payment receipts
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Payment History</h1>
+          <p className="text-gray-600">View and download your payment receipts</p>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -248,13 +266,17 @@ const PaymentHistoryPage = () => {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8  mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
           </div>
         ) : (
           <DataTable<Payment>
             columns={columns}
             data={payments}
+            height="max-h-[600px]"
             seeMoreData={seeMoreData}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={handleLoadMore}
           />
         )}
       </div>
