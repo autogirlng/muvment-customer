@@ -180,7 +180,7 @@ export const ServicePricingShowcaseList: React.FC = () => {
               Short term Hourly Car Rentals
             </h2>
             <p className="text-gray-600">
-              explore our range of vehicles for hourly rent starting from 3 hours
+              Explore our range of vehicles for hourly rent starting from 3 hours
             </p>
           </div>
         </div>
