@@ -101,7 +101,14 @@ export class BlogService {
         `${this.BLOG_COMMENTS}/post/${postId}?page=${page}&size=${size}`,
       );
       const data = { ...rawData };
-      if (data?.data) return data.data;
+      if (data?.data)
+        return {
+          data: data.data[0].data.content,
+          totalElements: data.data[0].data.totalElements,
+          totalPages: data.data[0].data.totalPages,
+          page: data.data[0].data.page,
+          size: data.data[0].data.size,
+        };
       return { data: [], totalElements: 0, totalPages: 0, page: 0, size: 10 };
     } catch (error) {
       console.error("Error fetching comments:", error);

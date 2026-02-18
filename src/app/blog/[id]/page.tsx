@@ -37,7 +37,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const post = await BlogService.getPostBySlug(id).catch(() => null);
   if (!post) notFound();
-  console.log(post)
+
   const [relatedPosts, initialComments] = await Promise.all([
     BlogService.getRelatedPosts(post.blogCategory?.id, post.id).catch(
       () => []
@@ -51,7 +51,6 @@ export default async function BlogPostPage({ params }: PageProps) {
     })),
   ]);
 
-  console.log(initialComments)
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",

@@ -12,6 +12,8 @@ import { BlogService } from "@/controllers/BlogService/blogService";
 import ShareButton from "./blogUI/Sharebutton";
 import CommentsSection from "./blogUI/Commentssection";
 import RelatedCard from "./blogUI/Relatedcard";
+import Footer from "../HomeComponent/Footer";
+import { Navbar } from "../Navbar";
 
 
 // ── Auth hook ─────────────────────────────────────────────────────────────────
@@ -51,10 +53,6 @@ export default function BlogDetailsClient({
   }, [post.id]);
 
   const handleLike = async () => {
-    if (!isLoggedIn) {
-      setShowLoginModal(true);
-      return;
-    }
     if (likeLoading) return;
 
     setLikeLoading(true);
@@ -90,6 +88,7 @@ export default function BlogDetailsClient({
           returnTo={pathname}
         />
       )} */}
+      <Navbar/>
 
       <nav aria-label="Breadcrumb" className="max-w-6xl mx-auto px-4 pt-6 pb-2">
         <ol
@@ -274,10 +273,10 @@ export default function BlogDetailsClient({
                 <BiHeart className="w-4 h-4" />
                 {likeCount.toLocaleString()} likes
               </span>
-              <span className="flex items-center gap-1.5">
+              {/* <span className="flex items-center gap-1.5">
                 <FiMessageCircle className="w-4 h-4" />
                 {(post.metrics?.commentCount ?? 0).toLocaleString()} comments
-              </span>
+              </span> */}
             </div>
 
             {/* Comments */}
@@ -428,6 +427,7 @@ export default function BlogDetailsClient({
           </section>
         )}
       </div>
+      <Footer/>
     </>
   );
 }

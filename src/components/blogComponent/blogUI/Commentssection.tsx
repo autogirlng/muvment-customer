@@ -25,6 +25,7 @@ export default function CommentsSection({
   const [totalElements, setTotalElements] = useState(
     initialComments.totalElements
   );
+
   const [page, setPage] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [form, setForm] = useState({
@@ -45,6 +46,7 @@ export default function CommentsSection({
     setLoadingMore(true);
     try {
       const res = await BlogService.getCommentsByPost(postId, page + 1, 10);
+      console.log(res)
       setComments((prev) => [...prev, ...res.data]);
       setTotalPages(res.totalPages);
       setPage((p) => p + 1);
@@ -72,10 +74,6 @@ export default function CommentsSection({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isLoggedIn) {
-      onAuthRequired();
-      return;
-    }
 
     if (!form.content.trim() || !form.name.trim() || !form.email.trim()) {
       setFormError("Please fill in all required fields.");
@@ -218,8 +216,8 @@ export default function CommentsSection({
         </div>
       ) : (
         <div>
-          {comments.map((c) => (
-            <CommentItem key={c.id} comment={c} />
+          {comments.map((c:any, i) => (
+            <CommentItem key={i} comment={c || c.data} />
           ))}
         </div>
       )}

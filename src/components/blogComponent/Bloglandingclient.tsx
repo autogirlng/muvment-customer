@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { BiSearch, BiChevronRight } from "react-icons/bi";
+import { BiSearch, BiChevronRight, BiX, BiCategory } from "react-icons/bi";
 import { BlogCategory, BlogPost, PaginatedResponse } from "@/types/blog.type";
 import { BlogService } from "@/controllers/BlogService/blogService";
 import PostCardSkeleton from "./blogUI/Postcardskeleton";
@@ -14,9 +14,11 @@ import Footer from "../HomeComponent/Footer";
 interface BlogLandingClientProps {
   initialPosts: PaginatedResponse<BlogPost>;
   initialSearch: string;
-  initialCategory: string;
+  initialCategory: string; // this is the category ID (or empty string for "All")
   categories: BlogCategory[];
 }
+
+const MAX_VISIBLE_TABS = 5;
 
 export default function BlogLandingClient({
   initialPosts,
@@ -32,17 +34,22 @@ export default function BlogLandingClient({
   const [totalElements, setTotalElements] = useState(initialPosts.totalElements);
   const [currentPage, setCurrentPage] = useState(0);
   const [search, setSearch] = useState(initialSearch);
-  const [category, setCategory] = useState(initialCategory);
+  // categoryId: empty string = All
+  const [categoryId, setCategoryId] = useState(initialCategory);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Derived: find the name of the selected category (for URL display purposes)
+  const selectedCategory = categories.find((c) => String(c.id) === String(categoryId));
+
   const updateUrl = useCallback(
-    (s: string, c: string) => {
+    (s: string, catId: string) => {
       const params = new URLSearchParams();
       if (s) params.set("search", s);
-      if (c) params.set("category", c);
+      if (catId) params.set("category", catId);
       router.push(
         `${pathname}${params.toString() ? `?${params.toString()}` : ""}`,
         { scroll: false }
@@ -55,21 +62,21 @@ export default function BlogLandingClient({
     async (opts: {
       page: number;
       search: string;
-      category: string;
+      categoryId: string;
       append?: boolean;
     }) => {
       if (opts.append) setLoadingMore(true);
       else setLoading(true);
-
+      
       try {
         const result = await BlogService.getPosts({
           page: opts.page,
           size: 9,
           search: opts.search || undefined,
-          category: opts.category || undefined,
+          // Pass undefined when "All" so API returns all posts
+          category: opts.categoryId || undefined,
         });
 
-   
         if (opts.append) {
           setPosts((prev) => [...prev, ...result.data]);
         } else {
@@ -80,7 +87,7 @@ export default function BlogLandingClient({
         setTotalElements(result.totalElements);
         setCurrentPage(opts.page);
       } catch {
-
+        // handle silently
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -93,32 +100,37 @@ export default function BlogLandingClient({
     setSearch(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      updateUrl(val, category);
-      fetchPosts({ page: 0, search: val, category });
+      updateUrl(val, categoryId);
+      fetchPosts({ page: 0, search: val, categoryId });
     }, 400);
   };
 
-  const handleCategory = (cat: string) => {
-    const val = cat === "All" ? "" : cat;
-    setCategory(val);
-    updateUrl(search, val);
-    fetchPosts({ page: 0, search, category: val });
+  const handleCategory = (cat: BlogCategory | null) => {
+    const id = cat ? String(cat.name) : "";
+    setCategoryId(id);
+    setShowCategoryModal(false);
+    updateUrl(search, id);
+    fetchPosts({ page: 0, search, categoryId: id });
   };
 
   const handleLoadMore = () => {
     if (currentPage + 1 < totalPages) {
-      fetchPosts({ page: currentPage + 1, search, category, append: true });
+      fetchPosts({ page: currentPage + 1, search, categoryId, append: true });
     }
   };
 
-  const isFeaturedLayout = !search && !category && currentPage === 0;
+  const isFeaturedLayout = !search && !categoryId && currentPage === 0;
   const featuredPost = isFeaturedLayout ? posts[0] : null;
-  const gridPosts = isFeaturedLayout ? posts.slice(1) : posts;
-  const tabs = ["All", ...categories.map((c) => c.name)];
+  const gridPosts = isFeaturedLayout ? posts : posts;
+
+  const visibleCategories = categories.slice(0, MAX_VISIBLE_TABS);
+  const hasMore = categories.length > MAX_VISIBLE_TABS;
 
   return (
     <>
-      <Navbar/>
+      <Navbar />
+
+      {/* Hero */}
       <section className="relative bg-[#0d1f35] text-white overflow-hidden">
         <div
           className="absolute inset-0 opacity-5"
@@ -157,19 +169,31 @@ export default function BlogLandingClient({
         </div>
       </section>
 
-   
+      {/* Category Tabs */}
       <nav
         className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm"
         aria-label="Blog categories"
       >
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center gap-1.5 overflow-x-auto py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {tabs.map((cat) => {
-              
-              const isActive = cat === "All" ? !category : category === cat;
+            {/* All tab */}
+            <button
+              onClick={() => handleCategory(null)}
+              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 ${
+                !categoryId
+                  ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+              }`}
+            >
+              All
+            </button>
+
+            {/* Visible category tabs */}
+            {visibleCategories.map((cat) => {
+              const isActive = String(cat.id) === String(categoryId);
               return (
                 <button
-                  key={cat}
+                  key={cat.id}
                   onClick={() => handleCategory(cat)}
                   className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 ${
                     isActive
@@ -177,15 +201,26 @@ export default function BlogLandingClient({
                       : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
                   }`}
                 >
-                  {cat}
+                  {cat.name}
                 </button>
               );
             })}
+
+            {/* See all categories button */}
+            {hasMore && (
+              <button
+                onClick={() => setShowCategoryModal(true)}
+                className="whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-blue-600 border border-blue-200 hover:bg-blue-50 transition-all duration-150 flex items-center gap-1.5"
+              >
+                <BiCategory className="w-3.5 h-3.5" />
+                See all categories
+              </button>
+            )}
           </div>
         </div>
       </nav>
 
- 
+      {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-12">
         {loading ? (
           <>
@@ -210,29 +245,27 @@ export default function BlogLandingClient({
           </div>
         ) : (
           <>
-           
-            {(search || category) && (
+            {(search || categoryId) && (
               <p className="text-sm text-gray-400 mb-6">
                 {totalElements.toLocaleString()} result
                 {totalElements !== 1 ? "s" : ""}
                 {search && ` for "${search}"`}
-                {category && ` in ${category}`}
+                {categoryId && selectedCategory && ` in ${selectedCategory.name}`}
               </p>
             )}
+
             {featuredPost && (
               <div className="mb-10">
                 <FeaturedCard post={featuredPost} />
               </div>
             )}
 
-            {/* Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {gridPosts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}
             </div>
 
-            {/* Load more */}
             {currentPage + 1 < totalPages && (
               <div className="flex justify-center mt-12">
                 <button
@@ -242,24 +275,9 @@ export default function BlogLandingClient({
                 >
                   {loadingMore ? (
                     <>
-                      <svg
-                        className="w-4 h-4 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8H4z"
-                        />
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                       </svg>
                       Loading…
                     </>
@@ -275,7 +293,65 @@ export default function BlogLandingClient({
           </>
         )}
       </main>
-      <Footer/>
+
+      <Footer />
+
+      {/* All Categories Modal */}
+      {showCategoryModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCategoryModal(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            {/* Modal header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">All Categories</h2>
+              <button
+                onClick={() => setShowCategoryModal(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+              >
+                <BiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="overflow-y-auto p-6">
+              {/* All option inside modal */}
+              <button
+                onClick={() => handleCategory(null)}
+                className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 mb-2 ${
+                  !categoryId
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                All Articles
+              </button>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {categories.map((cat) => {
+                  const isActive = String(cat.id) === String(categoryId);
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => handleCategory(cat)}
+                      className={`text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
+                        isActive
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

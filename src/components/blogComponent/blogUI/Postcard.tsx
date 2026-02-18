@@ -17,7 +17,7 @@ export default function PostCard({ post }: PostCardProps) {
     >
       <article className="flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50 transition-all duration-300">
         {/* Thumbnail */}
-        <div className="relative overflow-hidden aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+        {/* <div className="relative overflow-hidden aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
           <svg
             className="w-10 h-10 text-slate-300"
             fill="none"
@@ -41,7 +41,7 @@ export default function PostCard({ post }: PostCardProps) {
           <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 text-xs text-gray-500 font-medium">
             {BlogService.estimateReadTime(post.content)} min
           </div>
-        </div>
+        </div> */}
 
         {/* Body */}
         <div className="flex flex-col flex-1 p-5">
