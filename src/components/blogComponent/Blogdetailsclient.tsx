@@ -14,7 +14,7 @@ import CommentsSection from "./blogUI/Commentssection";
 import RelatedCard from "./blogUI/Relatedcard";
 import Footer from "../HomeComponent/Footer";
 import { Navbar } from "../Navbar";
-
+import parse from 'html-react-parser';
 
 // ── Auth hook ─────────────────────────────────────────────────────────────────
 // Replace with your real auth implementation (e.g. useSession, useAuth, etc.)
@@ -79,7 +79,7 @@ export default function BlogDetailsClient({
   const readTime = BlogService.estimateReadTime(post.content);
   const postUrl =
     typeof window !== "undefined" ? window.location.href : `/blog/${post.slug}`;
-
+   console.log("Post content:", post.content); 
   return (
     <>
       {/* {showLoginModal && (
@@ -257,11 +257,9 @@ export default function BlogDetailsClient({
             </header>
 
             {/* Post content */}
-            <div
-              className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:text-gray-900 prose-p:text-gray-600 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-blockquote:border-l-blue-300 prose-blockquote:bg-blue-50 prose-blockquote:rounded-r-xl prose-blockquote:py-1 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:rounded prose-code:px-1 prose-code:text-sm"
-              itemProp="articleBody"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
+            <div className="prose prose-lg max-w-none">
+  {parse(post.content || "")}
+</div>
 
             {/* Metrics bar */}
             <div className="flex items-center gap-6 mt-10 py-5 border-y border-gray-100 text-sm text-gray-400">
