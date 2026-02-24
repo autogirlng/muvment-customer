@@ -14,7 +14,7 @@ import CommentsSection from "./blogUI/Commentssection";
 import RelatedCard from "./blogUI/Relatedcard";
 import Footer from "../HomeComponent/Footer";
 import { Navbar } from "../Navbar";
-import parse from 'html-react-parser';
+import parse from "html-react-parser";
 
 // ── Auth hook ─────────────────────────────────────────────────────────────────
 // Replace with your real auth implementation (e.g. useSession, useAuth, etc.)
@@ -26,7 +26,6 @@ function useAuth() {
   }, []);
   return { isLoggedIn };
 }
-
 
 interface BlogDetailsClientProps {
   post: BlogPost;
@@ -61,12 +60,12 @@ export default function BlogDetailsClient({
         await BlogService.unlikePost(likeId);
         setLiked(false);
         setLikeId(null);
-        setLikeCount((n:any) => Math.max(0, n - 1));
+        setLikeCount((n: any) => Math.max(0, n - 1));
       } else {
         const result = await BlogService.likePost(post.id);
         setLiked(true);
         setLikeId(result.id);
-        setLikeCount((n:any) => n + 1);
+        setLikeCount((n: any) => n + 1);
       }
     } catch {
       // silent
@@ -79,7 +78,7 @@ export default function BlogDetailsClient({
   const readTime = BlogService.estimateReadTime(post.content);
   const postUrl =
     typeof window !== "undefined" ? window.location.href : `/blog/${post.slug}`;
-   console.log("Post content:", post.content); 
+  console.log("Post content:", post.content);
   return (
     <>
       {/* {showLoginModal && (
@@ -88,7 +87,7 @@ export default function BlogDetailsClient({
           returnTo={pathname}
         />
       )} */}
-      <Navbar/>
+      <Navbar />
 
       <nav aria-label="Breadcrumb" className="max-w-6xl mx-auto px-4 pt-6 pb-2">
         <ol
@@ -151,11 +150,8 @@ export default function BlogDetailsClient({
         </ol>
       </nav>
 
-    
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-12 xl:gap-16">
-
-       
           <article
             className="flex-1 min-w-0"
             itemScope
@@ -172,7 +168,7 @@ export default function BlogDetailsClient({
                     {post.blogCategory.name}
                   </Link>
                 )}
-                {(post.tags ?? []).map((tag:any) => (
+                {(post.tags ?? []).map((tag: any) => (
                   <Link
                     key={tag}
                     href={`/blog?search=${encodeURIComponent(tag)}`}
@@ -222,7 +218,7 @@ export default function BlogDetailsClient({
                         itemProp="datePublished"
                       >
                         {BlogService.formatDateLong(
-                          post.approvedAt || post.createdAt
+                          post.approvedAt || post.createdAt,
                         )}
                       </time>
                       <span>·</span>
@@ -258,8 +254,8 @@ export default function BlogDetailsClient({
 
             {/* Post content */}
             <div className="prose prose-lg max-w-none">
-  {parse(post.content || "")}
-</div>
+              {parse(post.content || "")}
+            </div>
 
             {/* Metrics bar */}
             <div className="flex items-center gap-6 mt-10 py-5 border-y border-gray-100 text-sm text-gray-400">
@@ -288,7 +284,6 @@ export default function BlogDetailsClient({
 
           <aside className="lg:w-72 xl:w-80 flex-shrink-0">
             <div className="sticky top-20 space-y-6">
-
               {/* Author */}
               <div className="bg-white rounded-2xl border border-gray-100 p-5">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
@@ -354,7 +349,7 @@ export default function BlogDetailsClient({
                     Tags
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag:any) => (
+                    {post.tags.map((tag: any) => (
                       <Link
                         key={tag}
                         href={`/blog?search=${encodeURIComponent(tag)}`}
@@ -425,7 +420,7 @@ export default function BlogDetailsClient({
           </section>
         )}
       </div>
-      <Footer/>
+      <Footer />
     </>
   );
 }
