@@ -119,6 +119,7 @@ export class BlogService {
   static async createComment(body: CreateCommentBody): Promise<BlogComment> {
     try {
       const response = await createData(this.BLOG_COMMENTS, body);
+
       return response.data;
     } catch (error) {
       console.error("Error creating comment:", error);

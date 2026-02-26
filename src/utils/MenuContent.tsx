@@ -10,6 +10,7 @@ import {
   MdBookOnline,
   MdEventAvailable,
   MdQuestionMark,
+  MdHeadphones,
 } from "react-icons/md";
 import { FiLogIn, FiUserPlus } from "react-icons/fi";
 
@@ -17,6 +18,7 @@ export const menuItems = [
   { name: "Dashboard", link: "/dashboard", icon: MdDashboard },
   { name: "Explore", link: "/booking/search", icon: MdExplore },
   { name: "Payment", link: "/dashboard/payment", icon: MdPayment },
+
   {
     name: "My Bookings",
     link: "/dashboard/my-booking",
@@ -34,6 +36,8 @@ export const menuItems = [
     link: "/dashboard/notification",
     icon: MdNotifications,
   },
+  { name: "Favourites", link: "/dashboard/favourites", icon: MdFavorite },
+
   {
     name: "Refer A Friend",
     link: "/dashboard/refer-a-friend",

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import VehicleCard from "@/components/Booking/VehicleCard";
 import { HiViewList } from "react-icons/hi";
@@ -9,6 +10,9 @@ import Footer from "../HomeComponent/Footer";
 import { getSingleData } from "@/controllers/connnector/app.callers";
 import { FavouritesVehicleData } from "@/types/favourites";
 import { FiLoader } from "react-icons/fi";
+import Link from "next/link";
+import { CiLocationOn } from "react-icons/ci";
+import { BiHeart, BiSolidHeart } from "react-icons/bi";
 
 export default function FavouritesVehiclesClient() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -37,7 +41,6 @@ export default function FavouritesVehiclesClient() {
           name,
           id,
         } = vehicle;
-
         return {
           id,
           city,
@@ -45,11 +48,11 @@ export default function FavouritesVehiclesClient() {
           willProvideDriver,
           willProvideFuel,
           numberOfSeats,
-          // photos,
+          photos,
           name,
-          // allPricingOptions: vehicle?.pricing,
+          allPricingOptions: vehicle?.pricing,
           vehicleTypeName: vehicle?.vehicleMake.name || "",
-          // bookingType: vehicle?.pricing[0]?.bookingTypeId || "",
+          bookingType: vehicle?.pricing[0]?.bookingTypeId || "",
         };
       });
       setVehicles(vehicles);
@@ -100,8 +103,33 @@ export default function FavouritesVehiclesClient() {
     return (
       <>
         <Navbar />
-        <div className="text-center text-gray-500 mt-10">
-          You don’t have any favourite vehicles yet.
+        <FavoritesHeader vehicles={vehicles?.length || 0} />
+
+        <div className="flex min-h-screen flex-col items-center justify-center text-center px-4">
+          <div className="mb-6">
+            <Image
+              src={"/images/empty_state.png"}
+              alt="Empty state"
+              width={180}
+              height={180}
+              className="opacity-80"
+            />
+          </div>
+
+          <h2 className="text-xl font-semibold text-gray-800">
+            You haven't saved any cars yet
+          </h2>
+
+          <p className="mt-2 text-gray-500 max-w-sm">
+            Tap the heart icon on any car to save it there
+          </p>
+
+          <Link
+            href="/booking/search"
+            className="mt-3 px-4 py-3 bg-blue-600 text-white text-lg  rounded-xl hover:bg-blue-800 transition duration-200"
+          >
+            Browse Cars
+          </Link>
         </div>
       </>
     );
@@ -114,29 +142,27 @@ export default function FavouritesVehiclesClient() {
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="lg:h-[1rem]"></div>
           <div className="mb-3 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 flex items-center gap-2">
-                Favourites
-              </h1>
-            </div>
+            <FavoritesHeader vehicles={vehicles.length || 0} />
 
             <div className="flex hidden lg:block items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition-colors ${viewMode === "list"
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === "list"
                     ? "bg-blue-600 text-white"
                     : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                }`}
                 aria-label="List view"
               >
                 <HiViewList className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-md transition-colors ${viewMode === "grid"
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === "grid"
                     ? "bg-blue-600 text-white"
                     : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                }`}
                 aria-label="Grid view"
               >
                 <BsFillGridFill className="w-5 h-5" />
@@ -165,7 +191,7 @@ export default function FavouritesVehiclesClient() {
                     <VehicleCard
                       key={v.id}
                       {...v}
-                      // bookingType={bookingType}
+                      // bookingType={v.bookingType}
                       viewMode={viewMode}
                     />
                   ))}
@@ -178,3 +204,26 @@ export default function FavouritesVehiclesClient() {
     </div>
   );
 }
+
+const FavoritesHeader = ({ vehicles }: { vehicles: number }) => {
+  return (
+    <>
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <span className="bg-red-100 p-2 rounded-full flex items-center justify-center">
+            {vehicles > 0 ? (
+              <BiSolidHeart className="text-red-500" size={20} />
+            ) : (
+              <BiHeart className="text-red-500" size={20} />
+            )}
+          </span>
+          My Favourites
+        </h1>
+
+        <h2 className="text-xl mt-5 font-bold text-gray-900 flex items-center gap-2">
+          {vehicles} saved cars
+        </h2>
+      </div>
+    </>
+  );
+};

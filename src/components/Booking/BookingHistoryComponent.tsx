@@ -148,10 +148,10 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
         render: (value) => (
           <span
             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-              value
+              value,
             )}`}
           >
-            {value.replace(/_/g, " ")}
+            {value?.replace(/_/g, " ")}
           </span>
         ),
       },
@@ -166,7 +166,7 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
         ),
       },
     ],
-    []
+    [],
   );
 
   const seeMoreActions: SeeMoreData[] = useMemo(
@@ -182,7 +182,7 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
         icon: FiShare2,
       },
     ],
-    []
+    [],
   );
 
   const statusOptions = useMemo(
@@ -198,7 +198,7 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
       { value: "COMPLETED", label: "Completed" },
       { value: "NO_SHOW", label: "No Show" },
     ],
-    []
+    [],
   );
 
   const tableData = useMemo(
@@ -207,7 +207,7 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
         ...b,
         id: i,
       })),
-    [bookings]
+    [bookings],
   );
 
   return (
