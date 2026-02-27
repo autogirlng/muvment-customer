@@ -10,6 +10,8 @@ type Props = {
   showArrow?: boolean;
   timeType?: "start" | "end" | "all";
   disabled?: boolean; // Add disabled prop
+  availableTimes?: string[];
+  placeholder?: string;
 };
 
 // Generate time options based on type
@@ -159,14 +161,36 @@ function TimePicker({
   width = "",
   showArrow = true,
   timeType = "all",
-  disabled = false, // Add disabled prop with default
+  disabled = false,
+  availableTimes,
+  placeholder,
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string>("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
 
-  const timeOptions = generateTimeOptions(timeType);
+  const allTimeOptions = generateTimeOptions(timeType);
+
+  const convertAvailableTimes = (times: string[]) => {
+    return times.map((time) => {
+      const [timePart, ampm] = time.split(" ");
+      const [hour, minute] = timePart.split(":").map(Number);
+
+      let hour24 = hour;
+      if (ampm === "AM" && hour === 12) hour24 = 0;
+      if (ampm === "PM" && hour !== 12) hour24 = hour + 12;
+
+      const value = `${hour24.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+      const label = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}${ampm}`;
+
+      return { label, value };
+    });
+  };
+
+  const timeOptions = availableTimes?.length
+    ? convertAvailableTimes(availableTimes)
+    : allTimeOptions;
 
   // Set initial selected time from value prop
   useEffect(() => {
@@ -215,6 +239,10 @@ function TimePicker({
 
   const getDisplayTime = () => {
     if (!selectedTime) {
+      if (placeholder) {
+        return placeholder;
+      }
+
       return "Select time"; // Always show placeholder until user picks time
     }
 

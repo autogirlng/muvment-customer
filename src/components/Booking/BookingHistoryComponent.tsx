@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { FiList, FiCalendar, FiSearch, FiShare2 } from "react-icons/fi";
 import {
   Booking,
@@ -54,7 +60,9 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
-  const [filters, setFilters] = useState<Omit<BookingFilters, "page" | "size">>({});
+  const [filters, setFilters] = useState<Omit<BookingFilters, "page" | "size">>(
+    {},
+  );
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedBookings, setSelectedBookings] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -85,7 +93,9 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           setHasMore(pageNumber + 1 < totalPages);
         }
 
-        setBookings((prev) => (reset ? transformed : [...prev, ...transformed]));
+        setBookings((prev) =>
+          reset ? transformed : [...prev, ...transformed],
+        );
       } catch (error) {
         console.error("Error loading bookings:", error);
         toast.error("Failed to load bookings.");
@@ -273,15 +283,11 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   );
 
   const tableData = useMemo(
-<<<<<<< HEAD
     () =>
       bookings.map((b, i) => ({
         ...b,
         id: i,
       })),
-=======
-    () => bookings.map((b, i) => ({ ...b, id: i })),
->>>>>>> 27d398bb23523d73bce967e76bf8bdb5bcca30fc
     [bookings],
   );
 
