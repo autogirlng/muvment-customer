@@ -18,7 +18,7 @@ const TimeInput = ({
   label?: string;
   name: string;
   timeType?: "start" | "end" | "all";
-  availableTimes?: string[];
+  availableTimes?: { time: string; available: boolean }[];
   disabled?: boolean;
   [key: string]: any;
 }) => {

@@ -283,11 +283,7 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   );
 
   const tableData = useMemo(
-    () =>
-      bookings.map((b, i) => ({
-        ...b,
-        id: i,
-      })),
+    () => bookings.map((b, i) => ({ ...b, id: i })),
     [bookings],
   );
 
