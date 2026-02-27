@@ -10,7 +10,7 @@ type Props = {
   showArrow?: boolean;
   timeType?: "start" | "end" | "all";
   disabled?: boolean; // Add disabled prop
-  availableTimes?: string[];
+  availableTimes?: { time: string; available: boolean }[];
   placeholder?: string;
 };
 
@@ -145,7 +145,7 @@ const generateTimeOptions = (timeType: "start" | "end" | "all" = "all") => {
 
         const label = `${displayHour.toString().padStart(2, "0")}:00${ampm}`;
 
-        times.push({ label, value: timeString });
+        times.push({ label, value: timeString, available: true });
       }
     }
   }
@@ -172,9 +172,11 @@ function TimePicker({
 
   const allTimeOptions = generateTimeOptions(timeType);
 
-  const convertAvailableTimes = (times: string[]) => {
+  const convertAvailableTimes = (
+    times: { time: string; available: boolean }[],
+  ) => {
     return times.map((time) => {
-      const [timePart, ampm] = time.split(" ");
+      const [timePart, ampm] = time.time.split(" ");
       const [hour, minute] = timePart.split(":").map(Number);
 
       let hour24 = hour;
@@ -184,7 +186,7 @@ function TimePicker({
       const value = `${hour24.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
       const label = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}${ampm}`;
 
-      return { label, value };
+      return { label, value, available: time.available };
     });
   };
 
@@ -308,12 +310,21 @@ function TimePicker({
             {timeOptions.map((time, index) => (
               <div
                 key={index}
-                onClick={() => handleTimeSelect(time.value)}
-                className={`px-4 py-2.5 text-sm cursor-pointer transition-colors duration-150 ease-in-out hover:bg-grey-50 ${
-                  selectedTime === time.value
-                    ? "bg-blue-50 text-blue-600 font-medium"
-                    : "text-grey-700"
-                }`}
+                onClick={() => {
+                  if (!time?.available) return;
+                  handleTimeSelect(time.value);
+                }}
+                className={`px-4 py-2.5 mt-1 text-sm transition-colors duration-150 ease-in-out hover:bg-grey-50
+                  ${
+                    !time?.available
+                      ? "bg-red-200  cursor-not-allowed opacity-60"
+                      : "cursor-pointer hover:bg-grey-50"
+                  }
+                  ${
+                    selectedTime === time.value
+                      ? "bg-blue-50 text-blue-600 font-medium"
+                      : "text-grey-700"
+                  }`}
               >
                 {time.label}
               </div>
