@@ -82,7 +82,8 @@ const TripAccordion = ({
     initialValues?.dropoffLocation || "",
   );
   const [areaOfUse, setAreaOfUse] = useState(initialValues?.areaOfUse || "");
-  const [availableTimes, setAvailableTimes] = useState<any>();
+  const [availableTimes, setAvailableTimes] =
+    useState<{ available: boolean; time: string }[]>();
   const [loadingAvailableTimes, setLoadingAvailableTimes] =
     useState<boolean>(false);
   const onChange = (key: string, value: string) => {
@@ -157,11 +158,8 @@ const TripAccordion = ({
             formatLocalDate(tripStartDate),
           );
         if (response[0]?.status === "SUCCESSFUL") {
-          const times = response[0].data.timeSlots
-            .filter(
-              (slot: { time: string; available: boolean }) => slot.available,
-            )
-            .map((slot: { time: string; available: boolean }) => slot.time);
+          const times = response[0].data.timeSlots;
+
           setAvailableTimes(times);
         }
       }
