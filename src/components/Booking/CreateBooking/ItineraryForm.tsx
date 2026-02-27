@@ -49,7 +49,7 @@ const ItineraryForm = ({
     toggleOpen,
     openTripIds,
     isTripFormsComplete,
-    generateNextTripId
+    generateNextTripId,
   } = useItineraryForm();
 
   const generateBookingOptions = () => {
@@ -170,7 +170,6 @@ const ItineraryForm = ({
               <p className="text-sm my-4">Daily Iternary </p>
 
               {trips?.map((trip, index) => {
-
                 return (
                   <TripAccordion
                     key={trip.id}
@@ -184,6 +183,7 @@ const ItineraryForm = ({
                     toggleOpen={() => toggleOpen(trip.id || "")}
                     bookingOptions={bookingOptions}
                     initialValues={trip.tripDetails}
+                    vehicleId={vehicle?.id}
                   />
                 );
               })}
