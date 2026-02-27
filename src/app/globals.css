@@ -21,6 +21,23 @@
   }
 }
 
+@layer base {
+  .prose ul {
+    list-style-type: disc !important;
+    padding-left: 1.5rem !important;
+  }
+  
+  .prose ol {
+    list-style-type: decimal !important;
+    padding-left: 1.5rem !important;
+  }
+  
+  .prose li {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+}
+
 
 /* Hide scrollbar for Chrome, Safari and Opera */
 .hide-scrollbar::-webkit-scrollbar {

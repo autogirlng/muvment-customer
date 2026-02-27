@@ -61,6 +61,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   useEffect(() => {
     getBookingOptions();
   }, []);
+
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (images.length > 0) {
@@ -188,7 +189,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
               {/* Like Button */}
               <button
                 onClick={handleLike}
-                className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors flex items-center justify-center"
+                className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors flex items-center justify-center "
                 aria-label="Add to favorites"
               >
                 {loadingFavouriteStatus ? (
@@ -279,7 +280,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   return (
     <div
       onClick={handleCardClick}
-      className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:h-[180px]"
+      className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer relative hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:h-[180px]"
     >
       {/* Image Section */}
       <div className="relative w-full md:w-[260px] h-[200px] md:h-full bg-gray-100 flex-shrink-0">
@@ -425,7 +426,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             {/* Mobile Like Button */}
             <button
               onClick={handleLike}
-              className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors flex items-center justify-center"
+              className="md:hidden absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors flex items-center justify-center z-10"
               aria-label="Add to favorites"
             >
               {loadingFavouriteStatus ? (
