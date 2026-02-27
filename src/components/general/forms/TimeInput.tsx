@@ -9,6 +9,7 @@ const TimeInput = ({
   label,
   timeType = "all",
   disabled = false,
+  availableTimes,
   ...rest
 }: {
   onChange: (value: Date) => void;
@@ -17,6 +18,7 @@ const TimeInput = ({
   label?: string;
   name: string;
   timeType?: "start" | "end" | "all";
+  availableTimes?: string[];
   disabled?: boolean;
   [key: string]: any;
 }) => {
@@ -67,7 +69,7 @@ const TimeInput = ({
           htmlFor={name}
           className={cn(
             "label text-left text-sm block font-medium text-nowrap",
-            disabled && "text-grey-400"
+            disabled && "text-grey-400",
           )}
         >
           <span> {label}</span>
@@ -79,10 +81,10 @@ const TimeInput = ({
           disabled
             ? "bg-grey-100 text-gray-400 border-grey-300 cursor-not-allowed"
             : error
-            ? "border-error-500 focus:border-error-500 bg-white text-gray-900"
-            : "bg-white text-gray-900 border-[#e4e7ec] focus:shadow-[0_0_0_4px_#1E93FF1A]"
+              ? "border-error-500 focus:border-error-500 bg-white text-gray-900"
+              : "bg-white text-gray-900 border-[#e4e7ec] focus:shadow-[0_0_0_4px_#1E93FF1A]",
         )}
-        style={{ position: 'relative', overflow: 'visible' }}
+        style={{ position: "relative", overflow: "visible" }}
       >
         <TimePicker
           name={name}
@@ -93,6 +95,7 @@ const TimeInput = ({
           showArrow={true}
           timeType={timeType}
           disabled={disabled}
+          availableTimes={availableTimes}
           {...rest}
         />
       </div>

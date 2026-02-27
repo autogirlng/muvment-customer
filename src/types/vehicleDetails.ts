@@ -104,6 +104,7 @@ export interface ITripPerDaySelect {
   day: string;
   deleteMethod?: (idToDelete: string) => void;
   id: string;
+  vehicleId?: string;
   onChangeTrip: (id: string, details: TripDetails) => void;
   vehicle?: VehicleInformation | null;
   disabled: boolean;

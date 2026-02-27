@@ -12,6 +12,7 @@ import {
   TripDetails,
   CalendarValue,
 } from "@/types/vehicleDetails";
+import { VehicleSearchService } from "@/controllers/booking/vechicle";
 
 export function toTitleCase(str: string): string {
   if (!str) {
@@ -56,10 +57,11 @@ const TripAccordion = ({
   isCollapsed,
   toggleOpen,
   bookingOptions,
+  vehicleId,
 }: ITripPerDaySelect) => {
   const [date, setDate] = useState(`Day ${day}: Choose Date`);
   const [bookingType, setBookingType] = useState(
-    initialValues?.bookingType || ""
+    initialValues?.bookingType || "",
   );
   const initialTripStartTime = initialValues?.tripStartTime
     ? new Date(`${initialValues.tripStartTime}`)
@@ -68,22 +70,24 @@ const TripAccordion = ({
     ? new Date(`${initialValues.tripStartDate}`)
     : null;
   const [tripStartDate, setTripStartDate] = useState<Date | null>(
-    initialTripStartDate
+    initialTripStartDate,
   );
   const [tripStartTime, setTripStartTime] = useState<Date | null>(
-    initialTripStartTime
+    initialTripStartTime,
   );
   const [pickupLocation, setPickupLocation] = useState(
-    initialValues?.pickupLocation || ""
+    initialValues?.pickupLocation || "",
   );
   const [dropoffLocation, setDropoffLocation] = useState(
-    initialValues?.dropoffLocation || ""
+    initialValues?.dropoffLocation || "",
   );
   const [areaOfUse, setAreaOfUse] = useState(initialValues?.areaOfUse || "");
-
+  const [availableTimes, setAvailableTimes] = useState<any>();
+  const [loadingAvailableTimes, setLoadingAvailableTimes] =
+    useState<boolean>(false);
   const onChange = (key: string, value: string) => {
     const trips: TripDetails[] = JSON.parse(
-      sessionStorage.getItem("trips") || "[]"
+      sessionStorage.getItem("trips") || "[]",
     );
     const tripExists = trips.some((trip) => trip.id === id);
     let updatedTrips;
@@ -112,6 +116,8 @@ const TripAccordion = ({
       case "tripStartDate":
         const date = new Date(value);
         setTripStartDate(date);
+        setAvailableTimes([]);
+        setTripStartTime(null);
         const formattedDate = format(date, "MMM do yyyy");
         setDate(`Day ${day}: ${formattedDate}`);
         break;
@@ -133,15 +139,47 @@ const TripAccordion = ({
     }
   };
 
-  useEffect(() => {
+  const fetchAvailableTimeSlots = async () => {
+    setLoadingAvailableTimes(true);
 
+    const formatLocalDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const day = date.getDate().toString().padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    try {
+      if (vehicleId && tripStartDate) {
+        const response =
+          await VehicleSearchService.getVehicleAvailableTimeSlots(
+            vehicleId,
+            formatLocalDate(tripStartDate),
+          );
+        if (response[0]?.status === "SUCCESSFUL") {
+          const times = response[0].data.timeSlots
+            .filter(
+              (slot: { time: string; available: boolean }) => slot.available,
+            )
+            .map((slot: { time: string; available: boolean }) => slot.time);
+          setAvailableTimes(times);
+        }
+      }
+    } finally {
+      setLoadingAvailableTimes(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailableTimeSlots();
+  }, [vehicleId, tripStartDate]);
+
+  useEffect(() => {
     if (initialTripStartDate) {
       const formattedDate = format(initialTripStartDate, "MMM do yyyy");
       setDate(`Day ${day}: ${formattedDate}`);
-
     }
-
-  }, [])
+  }, []);
 
   const coordinates = (type: string, value: { lat: number; lng: number }) => {
     onChange(type, JSON.stringify(value));
@@ -185,8 +223,9 @@ const TripAccordion = ({
 
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${isCollapsed ? "rotate-180" : "rotate-0"
-                }`}
+              className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${
+                isCollapsed ? "rotate-180" : "rotate-0"
+              }`}
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -265,16 +304,24 @@ const TripAccordion = ({
                   }}
                   minDate={new Date()}
                 />
+
                 <TimeInput
                   name="startTime"
-                  disabled={disabled}
+                  disabled={disabled || !tripStartDate || loadingAvailableTimes}
                   value={tripStartTime}
                   onChange={(date: Date) =>
                     onChange("tripStartTime", date.toString())
                   }
                   timeType="start"
+                  availableTimes={availableTimes}
+                  placeholder={
+                    loadingAvailableTimes
+                      ? "Loading..."
+                      : !tripStartDate
+                        ? "Select date first"
+                        : "Select time"
+                  }
                 />
-
               </InputSection>
             </div>
             <InputSection title="Area of Use">

@@ -367,6 +367,7 @@ const VehicleDetailsClient: React.FC = () => {
                         isCollapsed={!openTripIds.has(key.id)}
                         toggleOpen={() => toggleOpen(key.id)}
                         bookingOptions={bookingOptions}
+                        vehicleId={id?.toString()}
                       />
                     );
                   })}

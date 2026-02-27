@@ -18,6 +18,7 @@ export class VehicleSearchService {
   private static readonly VEHICLES_MAKE = "/api/v1/public/vehicle-makes";
   private static readonly VEHICLES_FEATURES = "/api/v1/public/vehicle-features";
   private static readonly VEHICLES_COLORS = "/api/v1/public/vehicle-colors";
+
   private static readonly BOOKING_CALCULATE =
     "/api/v1/public/bookings/calculate";
   private static readonly VEHICLE_DETAILS = "/api/v1/public/vehicles";
@@ -37,8 +38,8 @@ export class VehicleSearchService {
     try {
       const filteredParams = Object.fromEntries(
         Object.entries(params || {}).filter(
-          ([_, v]) => v !== null && v !== undefined && v !== ""
-        )
+          ([_, v]) => v !== null && v !== undefined && v !== "",
+        ),
       );
 
       const apiPayload: any = {
@@ -74,11 +75,26 @@ export class VehicleSearchService {
   static async getVehicleById(vehicleId: string): Promise<any> {
     try {
       const response = await getSingleData(
-        `${this.VEHICLE_DETAILS}/${vehicleId}`
+        `${this.VEHICLE_DETAILS}/${vehicleId}`,
       );
       return response?.data || null;
     } catch (error) {
       console.error("Error fetching vehicle details:", error);
+      throw error;
+    }
+  }
+
+  static async getVehicleAvailableTimeSlots(
+    vehicleId: string,
+    date: string,
+  ): Promise<any> {
+    try {
+      const response = await getSingleData(
+        `${this.VEHICLE_DETAILS}/${vehicleId}/time-slots?date=${date}`,
+      );
+      return response?.data || null;
+    } catch (error) {
+      console.error("Error fetching available vehicle time slots", error);
       throw error;
     }
   }
@@ -109,7 +125,7 @@ export class VehicleSearchService {
     bookingType?: string,
     category?: string,
     fromDate?: Date,
-    untilDate?: Date
+    untilDate?: Date,
   ) {
     const params = new URLSearchParams();
 
@@ -192,7 +208,7 @@ export class VehicleSearchService {
   static async fetchFeaturedVehicles(page: number, size: number) {
     try {
       const response = await getSingleData(
-        `/api/v1/public/featured-vehicles?page=${page}&size=${size}`
+        `/api/v1/public/featured-vehicles?page=${page}&size=${size}`,
       );
       return response?.data;
     } catch (error) {
