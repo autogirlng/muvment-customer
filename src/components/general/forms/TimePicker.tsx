@@ -35,12 +35,12 @@ const generateTimeOptions = (timeType: "start" | "end" | "all" = "all") => {
       }
 
       const label = `${displayHour.toString().padStart(2, "0")}:00${ampm}`;
-      times.push({ label, value: timeString });
+      times.push({ label, value: timeString, available: true });
 
       // 30 minutes past the hour
       const timeString30 = `${hour.toString().padStart(2, "0")}:30`;
       const label30 = `${displayHour.toString().padStart(2, "0")}:30${ampm}`;
-      times.push({ label: label30, value: timeString30 });
+      times.push({ label: label30, value: timeString30, available: true });
     }
   } else if (timeType === "end") {
     // From 6:30 AM to 5:30 AM (next day) - full range
@@ -57,7 +57,7 @@ const generateTimeOptions = (timeType: "start" | "end" | "all" = "all") => {
       }
 
       const label30 = `${displayHour.toString().padStart(2, "0")}:30${ampm}`;
-      times.push({ label: label30, value: timeString30 });
+      times.push({ label: label30, value: timeString30, available: true });
 
       // Then on the hour (except for the last iteration to avoid 24:00)
       if (hour < 23) {
@@ -73,17 +73,17 @@ const generateTimeOptions = (timeType: "start" | "end" | "all" = "all") => {
         const label = `${nextDisplayHour
           .toString()
           .padStart(2, "0")}:00${nextAmpm}`;
-        times.push({ label, value: timeString });
+        times.push({ label, value: timeString, available: true });
       }
     }
 
     // Add early morning times: 12:00 AM to 5:30 AM
-    times.push({ label: "Midnight", value: "00:00" });
+    times.push({ label: "Midnight", value: "00:00", available: true });
 
     for (let hour = 0; hour <= 5; hour++) {
       if (hour === 0) {
         // Skip midnight as it's already added, add 12:30AM
-        times.push({ label: "12:30AM", value: "00:30" });
+        times.push({ label: "12:30AM", value: "00:30", available: true });
         continue;
       }
 
@@ -93,19 +93,19 @@ const generateTimeOptions = (timeType: "start" | "end" | "all" = "all") => {
       const ampm = "AM";
 
       const label = `${displayHour.toString().padStart(2, "0")}:00${ampm}`;
-      times.push({ label, value: timeString });
+      times.push({ label, value: timeString, available: true });
 
       // 30 minutes past the hour (only up to 5:30 AM)
       if (hour <= 5) {
         const timeString30 = `${hour.toString().padStart(2, "0")}:30`;
         const label30 = `${displayHour.toString().padStart(2, "0")}:30${ampm}`;
-        times.push({ label: label30, value: timeString30 });
+        times.push({ label: label30, value: timeString30, available: true });
       }
     }
   } else {
     // Full range (original behavior)
     // Add midnight first
-    times.push({ label: "Midnight", value: "00:00" });
+    times.push({ label: "Midnight", value: "00:00", available: true });
 
     // Generate times from 12:30 AM to 11:30 PM
     for (let hour = 0; hour < 24; hour++) {
@@ -127,7 +127,7 @@ const generateTimeOptions = (timeType: "start" | "end" | "all" = "all") => {
           .toString()
           .padStart(2, "0")}:${displayMinute}${ampm}`;
 
-        times.push({ label, value: timeString });
+        times.push({ label, value: timeString, available: true });
       }
 
       // Add the next hour (on the hour)
@@ -193,6 +193,8 @@ function TimePicker({
   const timeOptions = availableTimes?.length
     ? convertAvailableTimes(availableTimes)
     : allTimeOptions;
+
+  console.log(allTimeOptions);
 
   // Set initial selected time from value prop
   useEffect(() => {
