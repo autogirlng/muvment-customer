@@ -126,6 +126,8 @@ export class VehicleSearchService {
     category?: string,
     fromDate?: Date,
     untilDate?: Date,
+    startTime?: string, // Time string in "HH:MM" format
+    endTime?: string, // Time string in "HH:MM" format
   ) {
     const params = new URLSearchParams();
 
@@ -144,12 +146,21 @@ export class VehicleSearchService {
       params.append("vehicleTypeId", category);
     }
 
+    // Add date and time separately
     if (fromDate) {
-      params.append("fromDate", fromDate.toISOString());
+      params.append("startDate", formatDateOnly(fromDate));
     }
 
     if (untilDate) {
-      params.append("untilDate", untilDate.toISOString());
+      params.append("endDate", formatDateOnly(untilDate));
+    }
+
+    if (startTime) {
+      params.append("startTime", formatTimeOnly(startTime));
+    }
+
+    if (endTime) {
+      params.append("endTime", formatTimeOnly(endTime));
     }
 
     return `/booking/search?${params.toString()}`;
@@ -221,3 +232,32 @@ export class VehicleSearchService {
     return this.getVehicleTypes();
   }
 }
+
+export const formatDateOnly = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Formats time string to HH:MM:SS format
+ * @param time - Time string in "HH:MM" format (e.g., "14:30")
+ * @returns Time string in format "14:30:00"
+ */
+export const formatTimeOnly = (time: string): string => {
+  return `${time}:00`;
+};
+
+/**
+ * Combines date and time into separate formatted strings
+ * @param date - JavaScript Date object
+ * @param time - Time string in "HH:MM" format
+ * @returns Object with formatted date and time strings
+ */
+export const formatDateAndTime = (date: Date, time: string) => {
+  return {
+    date: formatDateOnly(date),
+    time: formatTimeOnly(time),
+  };
+};

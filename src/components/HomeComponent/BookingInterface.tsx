@@ -1,16 +1,18 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FiMapPin, FiX } from "react-icons/fi";
+import { FiMapPin } from "react-icons/fi";
 import Image from "next/image";
 import Dropdown from "../utils/DropdownCustom";
 import Calendar from "../utils/Calender";
+
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
 import LocationDropdown from "../utils/LocationDropdown";
 import { getBookingOption } from "@/context/Constarain";
 import { GoogleMapsService } from "@/context/googleMapConnector";
 import { trackCategoryClick, trackVehicleSearch } from "@/services/analytics";
+import TimePicker from "../Booking/BookingTimePicker";
 
 const DEFAULT_LOCATION = {
   name: "Lagos, Nigeria",
@@ -25,6 +27,8 @@ export default function HeroBookingSection() {
   const [bookingType, setBookingType] = useState<string | undefined>(undefined);
   const [fromDate, setFromDate] = useState(new Date());
   const [untilDate, setUntilDate] = useState(new Date());
+  const [fromTime, setFromTime] = useState("14:30"); // Default time
+  const [untilTime, setUntilTime] = useState("14:30"); // Default time
   const [category, setCategory] = useState(undefined);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [bookingOptions, setBookingOptions] = useState<any[]>([]);
@@ -73,6 +77,7 @@ export default function HeroBookingSection() {
       setBookingType(data.dropdownOptions[0].value);
     }
   };
+
   const initGoogleMaps = async () => {
     try {
       googleMapsServiceRef.current = new GoogleMapsService();
@@ -134,7 +139,7 @@ export default function HeroBookingSection() {
         revertToDefaultLocation();
       },
       {
-        enableHighAccuracy: false, // 🔑 important
+        enableHighAccuracy: false,
         timeout: 10000,
         maximumAge: 60000,
       },
@@ -287,6 +292,7 @@ export default function HeroBookingSection() {
     setIsSearching(true);
 
     try {
+      // Pass date and time separately (not combined)
       const searchUrl = await VehicleSearchService.buildSearchUrl(
         {
           name: selectedLocation.name,
@@ -295,8 +301,10 @@ export default function HeroBookingSection() {
         },
         bookingType,
         category,
-        fromDate,
-        untilDate,
+        fromDate,     // Date object
+        untilDate,    // Date object
+        fromTime,     // Time string "14:30"
+        untilTime,    // Time string "18:00"
       );
       console.log("Navigating to search URL:", searchUrl);
       router.push(searchUrl);
@@ -383,32 +391,40 @@ export default function HeroBookingSection() {
                 </div>
               </div>
 
-              {/* From Date */}
+              {/* From Date & Time */}
               <div className="flex-shrink-0 w-full md:w-auto py-2 md:py-0 md:px-4 border-b md:border-b-0 md:border-r border-gray-200">
                 <label className="block text-xs font-medium text-gray-400 mb-1">
                   From
                 </label>
-                <div className="relative">
+                <div className="flex items-center gap-2">
                   <Calendar
                     selectedDate={fromDate}
                     onDateSelect={(date: any) => handleDateSelect(date, "from")}
                     minDate={new Date()}
                   />
+                  <TimePicker
+                    selectedTime={fromTime}
+                    onTimeSelect={setFromTime}
+                  />
                 </div>
               </div>
 
-              {/* Until Date */}
+              {/* Until Date & Time */}
               <div className="flex-shrink-0 w-full md:w-auto py-2 md:py-0 md:px-4 md:border-r border-gray-200">
                 <label className="block text-xs font-medium text-gray-400 mb-1">
                   Until
                 </label>
-                <div className="relative">
+                <div className="flex items-center gap-2">
                   <Calendar
                     selectedDate={untilDate}
                     onDateSelect={(date: any) =>
                       handleDateSelect(date, "until")
                     }
                     minDate={fromDate}
+                  />
+                  <TimePicker
+                    selectedTime={untilTime}
+                    onTimeSelect={setUntilTime}
                   />
                 </div>
               </div>
