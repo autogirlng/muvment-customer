@@ -7,10 +7,7 @@ import PhoneNumberAndCountryField from "@/components/general/forms/phoneNumberAn
 import { getCountryCallingCode } from "react-phone-number-input";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
-
-export const replaceCharactersWithString = (str: string): string => {
-  return str.replace(/\D/g, "");
-};
+import { replaceCharactersWithString } from "./PersonalInformationFormOthers";
 
 type Props = {
   steps: string[];
@@ -80,9 +77,7 @@ const PersonalInformationFormMyself = ({
       validationSchema={personalInformationMyselfSchema}
       onSubmit={(values, { setSubmitting }) => {
         const stored = sessionStorage.getItem("userBookingInformation");
-
         let bookingInfomation = null;
-
         if (stored) {
           try {
             bookingInfomation = JSON.parse(stored);
@@ -91,17 +86,24 @@ const PersonalInformationFormMyself = ({
           }
         }
 
-        let bookingData = values;
+        // ✅ Combine countryCode + phone number into E.164 format
+        const formattedValues = {
+          ...values,
+          primaryPhoneNumber: `${values.countryCode}${values.primaryPhoneNumber}`,
+          ...(values.secondaryPhoneNumber && {
+            secondaryPhoneNumber: `${values.secondaryCountryCode}${values.secondaryPhoneNumber}`,
+          }),
+        };
 
-        if (bookingInfomation && typeof bookingInfomation === "object") {
-          bookingData = { ...bookingInfomation, ...values };
-        }
+        const bookingData =
+          bookingInfomation && typeof bookingInfomation === "object"
+            ? { ...bookingInfomation, ...formattedValues }
+            : formattedValues;
 
         sessionStorage.setItem(
           "userBookingInformation",
           JSON.stringify(bookingData),
         );
-
         setCurrentStep(currentStep + 1);
         setSubmitting(false);
       }}
@@ -207,19 +209,20 @@ const PersonalInformationFormMyself = ({
                   const number = replaceCharactersWithString(
                     event.target.value,
                   );
-
                   setFieldTouched("secondaryPhoneNumber", true);
                   setFieldValue("secondaryPhoneNumber", number);
                 }}
                 selectOnChange={(value: string) => {
                   const countryCode = `+${getCountryCallingCode(value as any)}`;
+                  setFieldValue("country", value);
+                  setFieldValue("countryCode", countryCode);
                   setFieldValue("secondaryCountry", value);
                   setFieldValue("secondaryCountryCode", countryCode);
                 }}
                 inputOnBlur={handleBlur}
                 selectOnBlur={handleBlur}
-                // inputClassname
                 selectClassname="!w-[130px]"
+                // ✅ Error will now show under input if phone is invalid
                 inputError={
                   errors.secondaryPhoneNumber && touched.secondaryPhoneNumber
                     ? String(errors.secondaryPhoneNumber)
@@ -232,7 +235,7 @@ const PersonalInformationFormMyself = ({
                 }
                 info
                 tooltipTitle=""
-                tooltipDescription="Add an extra phone number we can reach you on if your primary line isn’t available. This helps us contact you faster in case of urgent updates or booking issues"
+                tooltipDescription="Add an extra phone number we can reach you on if your primary line isn't available."
               />
             )}
             <button

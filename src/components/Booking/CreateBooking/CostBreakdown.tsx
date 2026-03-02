@@ -104,8 +104,8 @@ const CostBreakdown = ({
       estimatedPriceId,
       data,
     )) as EstimatedBookingPrice;
-
-    sessionStorage.setItem("priceEstimateId", pricing.data.data.calculationId);
+    const priceEstimateIdFromResponse = pricing?.data?.data;
+    sessionStorage.setItem("priceEstimateId", priceEstimateIdFromResponse?.calculationId);
     setPricing(pricing);
     setPriceReEstimated(true);
     return pricing;
@@ -230,38 +230,38 @@ const CostBreakdown = ({
                 <span>Base Price</span>
                 <span>
                   NGN{" "}
-                  {(pricing?.data.data.basePrice || 0) +
-                    (pricing?.data.data.platformFeeAmount || 0)}
+                  {(pricing?.data?.data?.basePrice || 0) +
+                    (pricing?.data?.data?.platformFeeAmount || 0)}
                 </span>
               </div>
 
-              {pricing?.data.data.vatAmount ? (
+              {pricing?.data?.data?.vatAmount ? (
                 <div className="w-full text-sm flex justify-between mt-4">
                   <span>VAT Charge</span>
-                  <span>NGN {pricing?.data.data.vatAmount}</span>
+                  <span>NGN {pricing?.data?.data?.vatAmount}</span>
                 </div>
               ) : null}
 
-              {pricing?.data.data.discountAmount ? (
+              {pricing?.data?.data?.discountAmount ? (
                 <div className="w-full text-sm flex justify-between mt-4 text-green-600">
                   <span>Duration Discount</span>
-                  <span>- NGN {pricing?.data.data.discountAmount}</span>
+                  <span>- NGN {pricing?.data?.data?.discountAmount}</span>
                 </div>
               ) : null}
 
-              {pricing?.data.data.couponDiscountAmount ? (
+              {pricing?.data?.data?.couponDiscountAmount ? (
                 <div className="w-full text-sm flex justify-between mt-4 text-green-600">
                   <span>
-                    Coupon Discount ({pricing.data.data.appliedCouponCode})
+                    Coupon Discount ({pricing.data?.data?.appliedCouponCode})
                   </span>
-                  <span>- NGN {pricing?.data.data.couponDiscountAmount}</span>
+                  <span>- NGN {pricing?.data?.data?.couponDiscountAmount}</span>
                 </div>
               ) : null}
             </div>
             <div className="w-full text-sm flex justify-between mt-4 mb-6">
               <span>Total</span>
               <span className="font-bold">
-                NGN {pricing?.data.data.finalPrice}
+                NGN {pricing?.data?.data?.finalPrice}
               </span>
             </div>
 

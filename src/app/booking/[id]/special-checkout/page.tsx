@@ -25,6 +25,9 @@ import { BookingService } from "@/controllers/booking/bookingService";
 import Footer from "@/components/HomeComponent/Footer";
 import cn from "classnames";
 import { createData } from "@/controllers/connnector/app.callers";
+import PhoneNumberAndCountryField from "@/components/general/forms/phoneNumberAndCountryField";
+import { getCountryCallingCode } from "react-phone-number-input";
+import { isValidPhoneNumber, CountryCode } from "libphonenumber-js";
 
 interface PersonalInfo {
   fullName: string;
@@ -54,7 +57,8 @@ const ServicePricingCheckoutPage = () => {
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
 
-  console.log(user)
+  console.log(user);
+
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
     fullName: "",
     email: "",
@@ -66,6 +70,14 @@ const ServicePricingCheckoutPage = () => {
     recipientPhoneNumber: "",
     extraDetails: "",
   });
+
+  // Country & country code state for each phone field
+  const [primaryCountry, setPrimaryCountry] = useState("NG");
+  const [primaryCountryCode, setPrimaryCountryCode] = useState("+234");
+  const [secondaryCountry, setSecondaryCountry] = useState("NG");
+  const [secondaryCountryCode, setSecondaryCountryCode] = useState("+234");
+  const [recipientCountry, setRecipientCountry] = useState("NG");
+  const [recipientCountryCode, setRecipientCountryCode] = useState("+234");
 
   const [trips, setTrips] = useState<TripDetails[]>([]);
   const [priceEstimate, setPriceEstimate] = useState<any>(null);
@@ -79,56 +91,63 @@ const ServicePricingCheckoutPage = () => {
   const [generatedBookingId, setGeneratedBookingId] = useState<string | null>(
     null,
   );
-  // New state for checkbox
   const [usePreviousInfo, setUsePreviousInfo] = useState(false);
   const [hasPreviousInfo, setHasPreviousInfo] = useState(false);
   const [existingBookingId, setExistingBookingId] = useState<string | null>(
     null,
   );
 
+  // ─── Validation helpers ───────────────────────────────────────────────────
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const validatePhone = (phone: string) => /^[0-9]{10,15}$/.test(phone);
 
+  const validatePhone = (
+    phone: string,
+    country: string,
+    countryCode: string,
+  ): boolean => {
+    if (!phone) return false;
+    const fullNumber = `${countryCode}${phone}`;
+    return isValidPhoneNumber(fullNumber, country as CountryCode);
+  };
+
+  // Format a phone number to E.164 before sending to backend
+  const formatPhone = (phone: string, countryCode: string): string =>
+    phone.startsWith("+") ? phone : `${countryCode}${phone}`;
+
+  // ─── Effects ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (isAuthenticated && user) {
       const userFullName = `${user.firstName || ""} ${
         user.lastName || ""
       }`.trim();
       const userEmail = user.email || "";
-      // const userPhone = user.phoneNumber || "";
 
       setPersonalInfo((prev) => ({
         ...prev,
         fullName: userFullName,
         email: userEmail,
-        // phoneNumber: userPhone,
       }));
 
       setIsUserDataLocked(true);
     } else {
-      // Check if there's saved info in cookies
       const savedInfo = Cookies.get("servicePricingPersonalInfo");
       if (savedInfo) {
         try {
-          const parsed = JSON.parse(savedInfo);
+          JSON.parse(savedInfo);
           setHasPreviousInfo(true);
-          // Don't auto-populate, wait for checkbox
         } catch (error) {
           console.error("Error parsing saved info:", error);
         }
       }
     }
 
-    // Check for existing booking ID
     const savedBookingId = Cookies.get("servicePricingBookingId");
     if (savedBookingId) {
       setExistingBookingId(savedBookingId);
-      console.log("Found existing booking ID:", savedBookingId);
     }
   }, [isAuthenticated, user]);
 
-  // Handle checkbox toggle
   useEffect(() => {
     if (usePreviousInfo && hasPreviousInfo && !isAuthenticated) {
       const savedInfo = Cookies.get("servicePricingPersonalInfo");
@@ -141,7 +160,6 @@ const ServicePricingCheckoutPage = () => {
         }
       }
     } else if (!usePreviousInfo && !isAuthenticated) {
-      // Clear the form when unchecked
       setPersonalInfo({
         fullName: "",
         email: "",
@@ -184,25 +202,21 @@ const ServicePricingCheckoutPage = () => {
     loadData();
   }, [id, router]);
 
-  // Fixed: Only auto-populate when "myself" is selected, preserve data when "others"
   useEffect(() => {
     if (personalInfo.rideFor === "myself") {
-      // Auto-populate recipient fields when booking for myself
       setPersonalInfo((prev) => ({
         ...prev,
         recipientFullName: prev.fullName,
         recipientEmail: prev.email,
-        // recipientPhoneNumber: prev.phoneNumber,
       }));
     }
-    // When rideFor is "others", don't clear the fields - let user type freely
   }, [
     personalInfo.rideFor,
     personalInfo.fullName,
     personalInfo.email,
-    // personalInfo.phoneNumber,
   ]);
 
+  // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleInputChange = (field: keyof PersonalInfo, value: string) => {
     setPersonalInfo((prev) => {
       const updated = { ...prev, [field]: value };
@@ -219,6 +233,7 @@ const ServicePricingCheckoutPage = () => {
     setPersonalInfo((prev) => ({ ...prev, rideFor: value }));
   };
 
+  // ─── Formatting ───────────────────────────────────────────────────────────
   const formatCurrency = (amount: number = 0) => {
     return `₦${amount.toLocaleString("en-NG", {
       minimumFractionDigits: 2,
@@ -235,28 +250,25 @@ const ServicePricingCheckoutPage = () => {
     });
   };
 
+  // ─── Payment ──────────────────────────────────────────────────────────────
   const initiatePayment = async (bookingId: string) => {
     try {
       if (paymentGateway === "MONNIFY") {
         const paymentResponse = await createData("/api/v1/payments/initiate", {
           bookingId: bookingId,
         });
-  
+
         const authUrl =
           paymentResponse.data?.data?.authorizationUrl ||
           paymentResponse.data?.authorizationUrl ||
           paymentResponse.data?.data?.data?.authorizationUrl;
 
-        console.log("Authorization URL:", authUrl);
-
         if (authUrl) {
-          // Clean up storage before redirect
           sessionStorage.removeItem("servicePricingTrips");
           sessionStorage.removeItem("servicePricingEstimate");
           sessionStorage.removeItem("servicePricingId");
           sessionStorage.removeItem("yearRangeId");
           Cookies.remove("servicePricingBookingId");
-
           window.location.href = authUrl;
         } else {
           throw new Error("Payment authorization URL missing");
@@ -272,16 +284,12 @@ const ServicePricingCheckoutPage = () => {
           paymentResponse.data?.data?.authorization_url ||
           paymentResponse.data?.authorization_url;
 
-        console.log("Payment URL:", paymentUrl);
-
         if (paymentUrl) {
-          // Clean up storage before redirect
           sessionStorage.removeItem("servicePricingTrips");
           sessionStorage.removeItem("servicePricingEstimate");
           sessionStorage.removeItem("servicePricingId");
           sessionStorage.removeItem("yearRangeId");
           Cookies.remove("servicePricingBookingId");
-
           window.location.href = paymentUrl;
         } else {
           throw new Error("Paystack payment initialization failed");
@@ -296,24 +304,16 @@ const ServicePricingCheckoutPage = () => {
 
   const createNewBooking = async () => {
     const savedTrips = sessionStorage.getItem("servicePricingTrips");
-    if (!savedTrips) {
-      throw new Error("Trip data not found. Please start over.");
-    }
+    if (!savedTrips) throw new Error("Trip data not found. Please start over.");
 
     const tripsData: any[] = JSON.parse(savedTrips);
     const firstTrip = tripsData[0]?.tripDetails;
+    if (!firstTrip) throw new Error("Trip details not found.");
 
-    if (!firstTrip) {
-      throw new Error("Trip details not found.");
-    }
-
-    const formatDateForAPI = (dateString: string) => {
-      return format(new Date(dateString), "yyyy-MM-dd");
-    };
-
-    const formatTimeForAPI = (timeString: string) => {
-      return format(new Date(timeString), "HH:mm:ss");
-    };
+    const formatDateForAPI = (dateString: string) =>
+      format(new Date(dateString), "yyyy-MM-dd");
+    const formatTimeForAPI = (timeString: string) =>
+      format(new Date(timeString), "HH:mm:ss");
 
     const {
       fullName,
@@ -343,19 +343,25 @@ const ServicePricingCheckoutPage = () => {
       dropoffLocationString: firstTrip.dropoffLocation || "string",
       dropoffLatitude: firstTrip.dropoffCoordinates?.lat || 0.1,
       dropoffLongitude: firstTrip.dropoffCoordinates?.lng || 0.1,
-      primaryPhoneNumber: phoneNumber,
-      secondaryPhoneNumber: secondaryPhoneNumber || phoneNumber,
+      // ✅ E.164 formatted phone numbers
+      primaryPhoneNumber: formatPhone(phoneNumber, primaryCountryCode),
+      secondaryPhoneNumber: secondaryPhoneNumber
+        ? formatPhone(secondaryPhoneNumber, secondaryCountryCode)
+        : formatPhone(phoneNumber, primaryCountryCode),
       guestFullName: fullName,
       guestEmail: email,
-      guestPhoneNumber: phoneNumber,
+      guestPhoneNumber: formatPhone(phoneNumber, primaryCountryCode),
       isBookingForOthers: rideFor === "others",
       recipientFullName:
         rideFor === "others" ? recipientFullName || fullName : fullName,
       recipientEmail: rideFor === "others" ? recipientEmail || email : email,
       recipientPhoneNumber:
         rideFor === "others"
-          ? recipientPhoneNumber || phoneNumber
-          : phoneNumber,
+          ? formatPhone(
+              recipientPhoneNumber || phoneNumber,
+              recipientCountryCode,
+            )
+          : formatPhone(phoneNumber, primaryCountryCode),
       purposeOfRide: extraDetails || "N/A",
       extraDetails: extraDetails || "N/A",
       channel: "WEBSITE",
@@ -365,9 +371,7 @@ const ServicePricingCheckoutPage = () => {
     const bookingResponse =
       await BookingService.createSpecialBooking(bookingPayload);
     const newBookingId = bookingResponse.data.data.bookingId;
-    // Store booking ID in cookies (expires in 1 day)
     Cookies.set("servicePricingBookingId", newBookingId, { expires: 1 });
-
     return newBookingId;
   };
 
@@ -382,6 +386,7 @@ const ServicePricingCheckoutPage = () => {
       recipientFullName,
     } = personalInfo;
 
+    // ── Basic field presence ──
     if (!fullName || !email || !phoneNumber) {
       toast.error("Please fill in all required personal information");
       return;
@@ -390,13 +395,28 @@ const ServicePricingCheckoutPage = () => {
       toast.error("Invalid email format");
       return;
     }
-    if (!validatePhone(phoneNumber)) {
-      toast.error("Invalid phone number (must be 10-15 digits)");
+
+    // ── Primary phone validation ──
+    if (!validatePhone(phoneNumber, primaryCountry, primaryCountryCode)) {
+      toast.error("Invalid primary phone number");
       return;
     }
 
+    // ── Secondary phone validation (optional) ──
+    if (
+      personalInfo.secondaryPhoneNumber &&
+      !validatePhone(
+        personalInfo.secondaryPhoneNumber,
+        secondaryCountry,
+        secondaryCountryCode,
+      )
+    ) {
+      toast.error("Invalid secondary phone number");
+      return;
+    }
+
+    // ── Recipient validation ──
     if (rideFor === "others") {
-      // console.log(recipientFullName, recipientEmail, recipientPhoneNumber);
       if (!recipientFullName || !recipientEmail || !recipientPhoneNumber) {
         toast.error("Please fill in all recipient information");
         return;
@@ -405,8 +425,10 @@ const ServicePricingCheckoutPage = () => {
         toast.error("Invalid recipient email format");
         return;
       }
-      if (!validatePhone(recipientPhoneNumber)) {
-        toast.error("Invalid recipient phone number (must be 10-15 digits)");
+      if (
+        !validatePhone(recipientPhoneNumber, recipientCountry, recipientCountryCode)
+      ) {
+        toast.error("Invalid recipient phone number");
         return;
       }
     }
@@ -417,7 +439,6 @@ const ServicePricingCheckoutPage = () => {
     try {
       let bookingId: string;
 
-      // Check if we have an existing booking ID
       if (existingBookingId) {
         bookingId = existingBookingId;
       } else {
@@ -429,9 +450,7 @@ const ServicePricingCheckoutPage = () => {
         Cookies.set(
           "servicePricingPersonalInfo",
           JSON.stringify(personalInfo),
-          {
-            expires: 30,
-          },
+          { expires: 30 },
         );
       }
 
@@ -462,6 +481,59 @@ const ServicePricingCheckoutPage = () => {
     }
   };
 
+  const handleGeneratePaymentLink = async () => {
+    const {
+      fullName,
+      email,
+      phoneNumber,
+      recipientEmail,
+      recipientPhoneNumber,
+      recipientFullName,
+    } = personalInfo;
+
+    if (!fullName || !email || !phoneNumber) {
+      toast.error("Please fill in all required personal information");
+      return;
+    }
+    if (!validatePhone(phoneNumber, primaryCountry, primaryCountryCode)) {
+      toast.error("Invalid primary phone number");
+      return;
+    }
+    if (!recipientFullName || !recipientEmail || !recipientPhoneNumber) {
+      toast.error("Please fill in all recipient information");
+      return;
+    }
+    if (!validateEmail(recipientEmail)) {
+      toast.error("Invalid recipient email format");
+      return;
+    }
+    if (
+      !validatePhone(recipientPhoneNumber, recipientCountry, recipientCountryCode)
+    ) {
+      toast.error("Invalid recipient phone number");
+      return;
+    }
+
+    setIsCreatingBooking(true);
+    try {
+      const bookingId = existingBookingId || (await createNewBooking());
+      setGeneratedBookingId(bookingId);
+
+      sessionStorage.removeItem("servicePricingTrips");
+      sessionStorage.removeItem("servicePricingEstimate");
+      sessionStorage.removeItem("servicePricingId");
+      sessionStorage.removeItem("yearRangeId");
+      Cookies.remove("servicePricingBookingId");
+
+      setShowPaymentLinkModal(true);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create booking");
+    } finally {
+      setIsCreatingBooking(false);
+    }
+  };
+
+  // ─── Loading / empty states ───────────────────────────────────────────────
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -492,6 +564,7 @@ const ServicePricingCheckoutPage = () => {
     );
   }
 
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -512,16 +585,14 @@ const ServicePricingCheckoutPage = () => {
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Personal Information & Booking Invoice */}
+          {/* ── Left Column ── */}
           <div className="lg:col-span-2 space-y-6">
             {/* Personal Information Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 bg-gray-100">
                 <div className="flex items-center gap-2 text-gray-900">
                   <FiUser className="w-5 h-5" />
-                  <h2 className="text-lg font-semibold">
-                    Personal Information
-                  </h2>
+                  <h2 className="text-lg font-semibold">Personal Information</h2>
                 </div>
               </div>
 
@@ -536,15 +607,14 @@ const ServicePricingCheckoutPage = () => {
                           Using your account information
                         </p>
                         <p className="text-xs text-orange-700 mt-1">
-                          Your personal details are pre-filled from your
-                          account.
+                          Your personal details are pre-filled from your account.
                         </p>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Warning Banner for non-authenticated users */}
+                {/* Previous Info Banner */}
                 {!isAuthenticated && hasPreviousInfo && (
                   <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                     <div className="flex items-start gap-3">
@@ -595,6 +665,7 @@ const ServicePricingCheckoutPage = () => {
 
                 {/* Form Fields */}
                 <div className="space-y-4">
+                  {/* Full Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-900 mb-2">
                       Full name
@@ -614,6 +685,7 @@ const ServicePricingCheckoutPage = () => {
                     />
                   </div>
 
+                  {/* Email */}
                   <div>
                     <label className="block text-sm font-medium text-gray-900 mb-2">
                       Email Address
@@ -633,94 +705,62 @@ const ServicePricingCheckoutPage = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">
-                      Phone number- primary
-                    </label>
-                    <div className="flex gap-2">
-                      <div className="relative">
-                        <button
-                          type="button"
-                          className="h-11 px-3 border border-gray-300 rounded-lg bg-white flex items-center gap-2 hover:bg-gray-50 transition"
-                        >
-                          <span className="text-xl">🇳🇬</span>
-                          <span className="text-sm text-gray-700">+234</span>
-                          <svg
-                            className="w-4 h-4 text-gray-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                      <input
-                        type="tel"
-                        value={personalInfo.phoneNumber}
-                        onChange={(e) =>
-                          handleInputChange("phoneNumber", e.target.value)
-                        }
-                        // disabled={isUserDataLocked}
-                        className={`flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                          isUserDataLocked
-                            ? ""
-                            : ""
-                        }`}
-                        placeholder="Enter phone number"
-                        required
-                      />
-                    </div>
-                  </div>
+                  {/* Primary Phone */}
+                  <PhoneNumberAndCountryField
+                    inputName="phoneNumber"
+                    selectName="primaryCountry"
+                    inputId="phoneNumber"
+                    selectId="primaryCountry"
+                    label="Phone number - Primary"
+                    inputPlaceholder="Enter phone number"
+                    selectPlaceholder="+234"
+                    inputValue={personalInfo.phoneNumber}
+                    selectValue={primaryCountry}
+                    inputOnChange={(event) => {
+                      const number = event.target.value.replace(/\D/g, "");
+                      handleInputChange("phoneNumber", number);
+                    }}
+                    selectOnChange={(value: string) => {
+                      const code = `+${getCountryCallingCode(value as any)}`;
+                      setPrimaryCountry(value);
+                      setPrimaryCountryCode(code);
+                    }}
+                    inputOnBlur={() => {}}
+                    selectOnBlur={() => {}}
+                    selectClassname="!w-[130px]"
+                    inputError=""
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">
-                      Phone number- Secondary (optional)
-                    </label>
-                    <div className="flex gap-2">
-                      <div className="relative">
-                        <button
-                          type="button"
-                          className="h-11 px-3 border border-gray-300 rounded-lg bg-white flex items-center gap-2 hover:bg-gray-50 transition"
-                        >
-                          <span className="text-xl">🇳🇬</span>
-                          <span className="text-sm text-gray-700">+234</span>
-                          <svg
-                            className="w-4 h-4 text-gray-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                      <input
-                        type="tel"
-                        value={personalInfo.secondaryPhoneNumber}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "secondaryPhoneNumber",
-                            e.target.value,
-                          )
-                        }
-                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        placeholder="Enter phone number"
-                      />
-                    </div>
-                  </div>
+                  {/* Secondary Phone */}
+                  <PhoneNumberAndCountryField
+                    inputName="secondaryPhoneNumber"
+                    selectName="secondaryCountry"
+                    inputId="secondaryPhoneNumber"
+                    selectId="secondaryCountry"
+                    label="Phone number - Secondary (optional)"
+                    inputPlaceholder="Enter phone number"
+                    selectPlaceholder="+234"
+                    inputValue={personalInfo.secondaryPhoneNumber || ""}
+                    selectValue={secondaryCountry}
+                    inputOnChange={(event) => {
+                      const number = event.target.value.replace(/\D/g, "");
+                      handleInputChange("secondaryPhoneNumber", number);
+                    }}
+                    selectOnChange={(value: string) => {
+                      const code = `+${getCountryCallingCode(value as any)}`;
+                      setSecondaryCountry(value);
+                      setSecondaryCountryCode(code);
+                    }}
+                    inputOnBlur={() => {}}
+                    selectOnBlur={() => {}}
+                    selectClassname="!w-[130px]"
+                    inputError=""
+                    info
+                    tooltipTitle=""
+                    tooltipDescription="Add an extra phone number we can reach you on if your primary line isn't available. This helps us contact you faster in case of urgent updates or booking issues."
+                  />
 
-                  {/* Recipient Fields - Only show when "others" is selected */}
+                  {/* Recipient Fields */}
                   {personalInfo.rideFor === "others" && (
                     <>
                       <div className="pt-4 border-t border-gray-200">
@@ -737,10 +777,7 @@ const ServicePricingCheckoutPage = () => {
                           type="text"
                           value={personalInfo.recipientFullName || ""}
                           onChange={(e) =>
-                            handleInputChange(
-                              "recipientFullName",
-                              e.target.value,
-                            )
+                            handleInputChange("recipientFullName", e.target.value)
                           }
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                           placeholder="Enter recipient's full name"
@@ -764,53 +801,35 @@ const ServicePricingCheckoutPage = () => {
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
-                          Recipient Phone Number
-                        </label>
-                        <div className="flex gap-2">
-                          <div className="relative">
-                            <button
-                              type="button"
-                              className="h-11 px-3 border border-gray-300 rounded-lg bg-white flex items-center gap-2 hover:bg-gray-50 transition"
-                            >
-                              <span className="text-xl">🇳🇬</span>
-                              <span className="text-sm text-gray-700">
-                                +234
-                              </span>
-                              <svg
-                                className="w-4 h-4 text-gray-500"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                          <input
-                            type="tel"
-                            value={personalInfo.recipientPhoneNumber || ""}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "recipientPhoneNumber",
-                                e.target.value,
-                              )
-                            }
-                            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                            placeholder="Enter recipient's phone number"
-                            required
-                          />
-                        </div>
-                      </div>
+                      {/* Recipient Phone */}
+                      <PhoneNumberAndCountryField
+                        inputName="recipientPhoneNumber"
+                        selectName="recipientCountry"
+                        inputId="recipientPhoneNumber"
+                        selectId="recipientCountry"
+                        label="Recipient Phone Number"
+                        inputPlaceholder="Enter recipient's phone number"
+                        selectPlaceholder="+234"
+                        inputValue={personalInfo.recipientPhoneNumber || ""}
+                        selectValue={recipientCountry}
+                        inputOnChange={(event) => {
+                          const number = event.target.value.replace(/\D/g, "");
+                          handleInputChange("recipientPhoneNumber", number);
+                        }}
+                        selectOnChange={(value: string) => {
+                          const code = `+${getCountryCallingCode(value as any)}`;
+                          setRecipientCountry(value);
+                          setRecipientCountryCode(code);
+                        }}
+                        inputOnBlur={() => {}}
+                        selectOnBlur={() => {}}
+                        selectClassname="!w-[130px]"
+                        inputError=""
+                      />
                     </>
                   )}
 
+                  {/* Extra Details */}
                   <div>
                     <label className="block text-sm font-medium text-gray-900 mb-2">
                       Extra Details (Optional)
@@ -876,7 +895,7 @@ const ServicePricingCheckoutPage = () => {
                         <div className="flex items-center gap-2">
                           <FiClock className="w-4 h-4 text-blue-500" />
                           <span>
-                            <span className="font-medium">Time:</span>
+                            <span className="font-medium">Time:</span>{" "}
                             {format(new Date(trip.tripStartTime), "hh:mm a")}
                           </span>
                         </div>
@@ -919,6 +938,7 @@ const ServicePricingCheckoutPage = () => {
                     </div>
                   ))}
                 </div>
+
                 <div className="border-t border-gray-200 pt-4">
                   <h4 className="text-sm font-semibold text-gray-900 mb-4">
                     Cost Breakdown
@@ -962,7 +982,7 @@ const ServicePricingCheckoutPage = () => {
             </div>
           </div>
 
-          {/* Right Column - Payment/Action */}
+          {/* ── Right Column ── */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6 text-center border-b border-gray-200">
@@ -974,7 +994,6 @@ const ServicePricingCheckoutPage = () => {
 
               <div className="p-6">
                 {personalInfo.rideFor === "myself" ? (
-                  // Show payment methods for "myself"
                   <>
                     <h3 className="text-sm font-semibold mb-4 text-gray-700">
                       Select Payment Method
@@ -996,7 +1015,6 @@ const ServicePricingCheckoutPage = () => {
                             alt="Paystack"
                             className="h-8 w-auto object-contain"
                           />
-
                           {paymentGateway === "PAYSTACK" ? (
                             <FiCheckCircle
                               className="text-blue-600 min-w-[24px]"
@@ -1009,6 +1027,7 @@ const ServicePricingCheckoutPage = () => {
                             />
                           )}
                         </div>
+
                         <div
                           onClick={() => setPaymentGateway("MONNIFY")}
                           className={cn(
@@ -1023,7 +1042,6 @@ const ServicePricingCheckoutPage = () => {
                             alt="Monnify"
                             className="h-8 w-auto object-contain"
                           />
-
                           {paymentGateway === "MONNIFY" ? (
                             <FiCheckCircle
                               className="text-blue-600 min-w-[24px]"
@@ -1067,21 +1085,17 @@ const ServicePricingCheckoutPage = () => {
                             />
                           </svg>
                           Proceed to Payment (
-                          {paymentGateway === "MONNIFY"
-                            ? "Monnify"
-                            : "Paystack"}
+                          {paymentGateway === "MONNIFY" ? "Monnify" : "Paystack"}
                           )
                         </>
                       )}
                     </button>
                   </>
                 ) : (
-                  // Show action options for "others"
                   <>
                     <h3 className="text-lg font-semibold mb-2 text-gray-900 text-center">
                       Do you want to pay now or generate payment link?
                     </h3>
-
                     <p className="text-sm text-gray-600 mb-6 text-center">
                       Pay now if you want to make payment on behalf of the
                       person taking the ride, otherwise send booking and
@@ -1090,12 +1104,7 @@ const ServicePricingCheckoutPage = () => {
 
                     <div className="space-y-3">
                       <button
-                        onClick={() => {
-                          // For "pay now", show payment methods
-                          // This would need to toggle a state or show payment methods
-                          // For simplicity, we'll keep the current behavior
-                          handleBookNow();
-                        }}
+                        onClick={handleBookNow}
                         disabled={isCreatingBooking}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                       >
@@ -1104,53 +1113,7 @@ const ServicePricingCheckoutPage = () => {
                       </button>
 
                       <button
-                        onClick={async () => {
-                          const {
-                            fullName,
-                            email,
-                            phoneNumber,
-                            recipientEmail,
-                            recipientPhoneNumber,
-                            recipientFullName,
-                          } = personalInfo;
-                          if (!fullName || !email || !phoneNumber) {
-                            toast.error(
-                              "Please fill in all required personal information",
-                            );
-                            return;
-                          }
-                          if (
-                            !recipientFullName ||
-                            !recipientEmail ||
-                            !recipientPhoneNumber
-                          ) {
-                            toast.error(
-                              "Please fill in all recipient information",
-                            );
-                            return;
-                          }
-
-                          setIsCreatingBooking(true);
-                          try {
-                            const bookingId =
-                              existingBookingId || (await createNewBooking());
-                            setGeneratedBookingId(bookingId);
-
-                            sessionStorage.removeItem("servicePricingTrips");
-                            sessionStorage.removeItem("servicePricingEstimate");
-                            sessionStorage.removeItem("servicePricingId");
-                            sessionStorage.removeItem("yearRangeId");
-                            Cookies.remove("servicePricingBookingId");
-
-                            setShowPaymentLinkModal(true);
-                          } catch (error: any) {
-                            toast.error(
-                              error.message || "Failed to create booking",
-                            );
-                          } finally {
-                            setIsCreatingBooking(false);
-                          }
-                        }}
+                        onClick={handleGeneratePaymentLink}
                         disabled={isCreatingBooking}
                         className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                       >
@@ -1169,8 +1132,8 @@ const ServicePricingCheckoutPage = () => {
 
                 <p className="text-xs text-gray-500 text-center mt-4">
                   By clicking "
-                  {personalInfo.rideFor === "myself" ? "Pay Now" : "Continue"}",
-                  you agree to our{" "}
+                  {personalInfo.rideFor === "myself" ? "Pay Now" : "Continue"}
+                  ", you agree to our{" "}
                   <a href="#" className="text-blue-600 hover:underline">
                     Terms of Service
                   </a>{" "}
@@ -1189,7 +1152,6 @@ const ServicePricingCheckoutPage = () => {
       {showPaymentLinkModal && generatedBookingId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
-            {/* Success Icon */}
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
                 <FiCheckCircle className="w-8 h-8 text-green-600" />
@@ -1199,13 +1161,11 @@ const ServicePricingCheckoutPage = () => {
             <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
               Booking Created Successfully!
             </h2>
-
             <p className="text-sm text-gray-600 text-center mb-6">
               Please send the booking link below to the person expected to make
               the payment.
             </p>
 
-            {/* Payment Link Box */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
               <p className="text-xs text-gray-500 mb-1 font-medium">
                 Payment Link
@@ -1227,7 +1187,6 @@ const ServicePricingCheckoutPage = () => {
               </button>
             </div>
 
-            {/* Message Preview */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5 text-sm text-gray-700 leading-relaxed">
               <p className="font-semibold text-blue-800 mb-2">
                 Message to send:
@@ -1250,23 +1209,22 @@ const ServicePricingCheckoutPage = () => {
               </p>
             </div>
 
-            {/* Share Buttons */}
             <div className="mb-5">
               <p className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wide">
                 Share via
               </p>
               <div className="flex gap-3">
-                {/* WhatsApp */}
                 <button
                   onClick={() => {
                     const paymentLink = `${window.location.origin}/booking/success?bookingId=${generatedBookingId}`;
                     const message = `Hi, a booking has just been generated by ${personalInfo.fullName} on Muvment. Please click the link below to proceed with your payment.\n\n${paymentLink}\n\n⚠️ Please note: Only payments on muvment.ng are valid. Do not make any payment on any platform that is not Muvment, and please do not share your card details with anyone or any staff of Muvment for this payment.`;
-                    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-                    window.open(whatsappUrl, "_blank");
+                    window.open(
+                      `https://wa.me/?text=${encodeURIComponent(message)}`,
+                      "_blank",
+                    );
                   }}
                   className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition text-sm"
                 >
-                  {/* WhatsApp SVG Icon */}
                   <svg
                     viewBox="0 0 24 24"
                     className="w-5 h-5 fill-white"
@@ -1277,7 +1235,6 @@ const ServicePricingCheckoutPage = () => {
                   WhatsApp
                 </button>
 
-                {/* Email */}
                 <button
                   onClick={() => {
                     const paymentLink = `${window.location.origin}/booking/success?bookingId=${generatedBookingId}`;
@@ -1298,7 +1255,6 @@ const ServicePricingCheckoutPage = () => {
                   Email
                 </button>
 
-                {/* Copy */}
                 <button
                   onClick={() => {
                     const paymentLink = `${window.location.origin}/booking/success?bookingId=${generatedBookingId}`;
@@ -1314,7 +1270,6 @@ const ServicePricingCheckoutPage = () => {
               </div>
             </div>
 
-            {/* Close Button */}
             <button
               onClick={() => {
                 setShowPaymentLinkModal(false);
@@ -1327,11 +1282,10 @@ const ServicePricingCheckoutPage = () => {
           </div>
         </div>
       )}
+
       <Footer />
     </div>
   );
 };
 
 export default ServicePricingCheckoutPage;
-
-

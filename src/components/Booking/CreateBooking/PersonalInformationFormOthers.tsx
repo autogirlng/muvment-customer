@@ -16,9 +16,9 @@ type Props = {
 };
 
 export const replaceCharactersWithString = (str: string): string => {
-  return str.replace(/\D/g, "");
-};
+  return str.replace(/[^\d]/g, ""); 
 
+};
 const PersonalInformationFormOthers = ({
   steps,
   currentStep,
@@ -66,33 +66,28 @@ const PersonalInformationFormOthers = ({
     <Formik
       initialValues={initialValues}
       validationSchema={personalInformationOthersSchema}
-      onSubmit={(values, { setSubmitting }) => {
-        const stored = sessionStorage.getItem("userBookingInformation");
+     onSubmit={(values, { setSubmitting }) => {
+  const stored = sessionStorage.getItem("userBookingInformation");
+  let bookingInfomation = null;
+  if (stored) {
+    try { bookingInfomation = JSON.parse(stored); } 
+    catch (err) { console.error("Invalid sessionStorage JSON:", err); }
+  }
 
-        let bookingInfomation = null;
+  // ✅ Combine countryCode + phone number into E.164 format
+  const formattedValues = {
+    ...values,
+    recipientPhoneNumber: `${values.countryCode}${values.recipientPhoneNumber}`,
+  };
 
-        if (stored) {
-          try {
-            bookingInfomation = JSON.parse(stored);
-          } catch (err) {
-            console.error("Invalid sessionStorage JSON:", err);
-          }
-        }
+  const bookingData = bookingInfomation && typeof bookingInfomation === "object"
+    ? { ...bookingInfomation, ...formattedValues }
+    : formattedValues;
 
-        let bookingData = values;
-
-        if (bookingInfomation && typeof bookingInfomation === "object") {
-          bookingData = { ...bookingInfomation, ...values };
-        }
-
-        sessionStorage.setItem(
-          "userBookingInformation",
-          JSON.stringify(bookingData),
-        );
-
-        setCurrentStep(currentStep + 1);
-        setSubmitting(false);
-      }}
+  sessionStorage.setItem("userBookingInformation", JSON.stringify(bookingData));
+  setCurrentStep(currentStep + 1);
+  setSubmitting(false);
+}}
       enableReinitialize={true}
       validateOnChange={true}
       validateOnBlur={true}

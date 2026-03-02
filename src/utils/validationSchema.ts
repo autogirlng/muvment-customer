@@ -31,8 +31,18 @@ export const personalInformationMyselfSchema = object().shape({
   primaryPhoneNumber: string()
     .required("Please enter your phone number")
     .test("phoneNumber", "Invalid phone number", function (val) {
-      const { country } = this.parent;
-      return validatePhoneNumber(val, country);
+      const { country, countryCode } = this.parent;
+      return validatePhoneNumber(`${countryCode}${val}`, country);
+    }),
+  secondaryPhoneNumber: string()
+    .optional()
+    .test("secondaryPhoneNumber", "Invalid phone number", function (val) {
+      if (!val) return true;
+      const { secondaryCountry, secondaryCountryCode, country, countryCode } =
+        this.parent;
+      const resolvedCountry = secondaryCountry || country;
+      const resolvedCode = secondaryCountryCode || countryCode;
+      return validatePhoneNumber(`${resolvedCode}${val}`, resolvedCountry);
     }),
 });
 
@@ -45,8 +55,8 @@ export const personalInformationOthersSchema = object().shape({
   recipientPhoneNumber: string()
     .required("Please enter your phone number")
     .test("phoneNumber", "Invalid phone number", function (val) {
-      const { country } = this.parent;
-      return validatePhoneNumber(val, country);
+      const { country, countryCode } = this.parent;
+      return validatePhoneNumber(`${countryCode}${val}`, country);
     }),
   //  recipientSecondaryPhoneNumber: string()
   //     .notRequired()
