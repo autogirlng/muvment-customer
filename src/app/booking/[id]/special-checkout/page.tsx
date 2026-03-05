@@ -302,78 +302,68 @@ const ServicePricingCheckoutPage = () => {
     }
   };
 
-  const createNewBooking = async () => {
-    const savedTrips = sessionStorage.getItem("servicePricingTrips");
-    if (!savedTrips) throw new Error("Trip data not found. Please start over.");
+const createNewBooking = async () => {
+  const savedTrips = sessionStorage.getItem("servicePricingTrips");
+  if (!savedTrips) throw new Error("Trip data not found. Please start over.");
 
-    const tripsData: any[] = JSON.parse(savedTrips);
-    const firstTrip = tripsData[0]?.tripDetails;
-    if (!firstTrip) throw new Error("Trip details not found.");
+  const tripsData: any[] = JSON.parse(savedTrips);
+  if (!tripsData.length) throw new Error("Trip details not found.");
 
-    const formatDateForAPI = (dateString: string) =>
-      format(new Date(dateString), "yyyy-MM-dd");
-    const formatTimeForAPI = (timeString: string) =>
-      format(new Date(timeString), "HH:mm:ss");
+  const formatDateForAPI = (dateString: string) =>
+    format(new Date(dateString), "yyyy-MM-dd");
+  const formatTimeForAPI = (timeString: string) =>
+    format(new Date(timeString), "HH:mm:ss");
 
-    const {
-      fullName,
-      email,
-      phoneNumber,
-      rideFor,
-      recipientEmail,
-      recipientPhoneNumber,
-      recipientFullName,
-      secondaryPhoneNumber,
-      extraDetails,
-    } = personalInfo;
+  const {
+    fullName, email, phoneNumber, rideFor,
+    recipientEmail, recipientPhoneNumber, recipientFullName,
+    secondaryPhoneNumber, extraDetails,
+  } = personalInfo;
 
-    const bookingPayload = {
-      servicePricingId: id,
-      bookingTypeId:
-        firstTrip.bookingType || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      startDate: formatDateForAPI(
-        firstTrip.tripStartDate || new Date().toISOString(),
-      ),
-      startTime: formatTimeForAPI(
-        firstTrip.tripStartTime || new Date().toISOString(),
-      ),
-      pickupLocationString: firstTrip.pickupLocation || "string",
-      pickupLatitude: firstTrip.pickupCoordinates?.lat || 0.1,
-      pickupLongitude: firstTrip.pickupCoordinates?.lng || 0.1,
-      dropoffLocationString: firstTrip.dropoffLocation || "string",
-      dropoffLatitude: firstTrip.dropoffCoordinates?.lat || 0.1,
-      dropoffLongitude: firstTrip.dropoffCoordinates?.lng || 0.1,
-      // ✅ E.164 formatted phone numbers
-      primaryPhoneNumber: formatPhone(phoneNumber, primaryCountryCode),
-      secondaryPhoneNumber: secondaryPhoneNumber
-        ? formatPhone(secondaryPhoneNumber, secondaryCountryCode)
-        : formatPhone(phoneNumber, primaryCountryCode),
-      guestFullName: fullName,
-      guestEmail: email,
-      guestPhoneNumber: formatPhone(phoneNumber, primaryCountryCode),
-      isBookingForOthers: rideFor === "others",
-      recipientFullName:
-        rideFor === "others" ? recipientFullName || fullName : fullName,
-      recipientEmail: rideFor === "others" ? recipientEmail || email : email,
-      recipientPhoneNumber:
-        rideFor === "others"
-          ? formatPhone(
-              recipientPhoneNumber || phoneNumber,
-              recipientCountryCode,
-            )
-          : formatPhone(phoneNumber, primaryCountryCode),
-      purposeOfRide: extraDetails || "N/A",
-      extraDetails: extraDetails || "N/A",
-      channel: "WEBSITE",
-      paymentMethod: "ONLINE",
+  // Build the trips array for the API
+  const tripsPayload = tripsData.map((t: any) => {
+    const trip = t.tripDetails;
+    return {
+      bookingTypeId: trip.bookingType || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      startDate: formatDateForAPI(trip.tripStartDate || new Date().toISOString()),
+      startTime: formatTimeForAPI(trip.tripStartTime || new Date().toISOString()),
+      pickupLocationString: trip.pickupLocation || "string",
+      pickupLatitude: trip.pickupCoordinates?.lat || 0.1,
+      pickupLongitude: trip.pickupCoordinates?.lng || 0.1,
+      dropoffLocationString: trip.dropoffLocation || "string",
+      dropoffLatitude: trip.dropoffCoordinates?.lat || 0.1,
+      dropoffLongitude: trip.dropoffCoordinates?.lng || 0.1,
     };
+  });
 
-    const bookingResponse =
-      await BookingService.createSpecialBooking(bookingPayload);
-    const newBookingId = bookingResponse.data.data.bookingId;
-    Cookies.set("servicePricingBookingId", newBookingId, { expires: 1 });
-    return newBookingId;
+  const bookingPayload = {
+    servicePricingId: id,
+    trips: tripsPayload,
+    primaryPhoneNumber: formatPhone(phoneNumber, primaryCountryCode),
+    secondaryPhoneNumber: secondaryPhoneNumber
+      ? formatPhone(secondaryPhoneNumber, secondaryCountryCode)
+      : formatPhone(phoneNumber, primaryCountryCode),
+    guestFullName: fullName,
+    guestEmail: email,
+    guestPhoneNumber: formatPhone(phoneNumber, primaryCountryCode),
+    isBookingForOthers: rideFor === "others",
+    recipientFullName: rideFor === "others" ? recipientFullName || fullName : fullName,
+    recipientEmail: rideFor === "others" ? recipientEmail || email : email,
+    recipientPhoneNumber:
+      rideFor === "others"
+        ? formatPhone(recipientPhoneNumber || phoneNumber, recipientCountryCode)
+        : formatPhone(phoneNumber, primaryCountryCode),
+    purposeOfRide: extraDetails || "N/A",
+    extraDetails: extraDetails || "N/A",
+    channel: "WEBSITE",
+    paymentMethod: "ONLINE",
   };
+
+  const bookingResponse = await BookingService.createSpecialBooking(bookingPayload);
+  const newBookingId = bookingResponse.data.data.bookingId;
+  Cookies.set("servicePricingBookingId", newBookingId, { expires: 1 });
+  return newBookingId;
+};
 
   const handleBookNow = async () => {
     const {

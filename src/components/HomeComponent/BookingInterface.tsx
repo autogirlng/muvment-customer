@@ -301,10 +301,10 @@ export default function HeroBookingSection() {
         },
         bookingType,
         category,
-        fromDate,     // Date object
-        untilDate,    // Date object
-        fromTime,     // Time string "14:30"
-        untilTime,    // Time string "18:00"
+        fromDate,     
+        untilDate,   
+        fromTime,   
+        untilTime,    
       );
       console.log("Navigating to search URL:", searchUrl);
       router.push(searchUrl);
@@ -342,7 +342,7 @@ export default function HeroBookingSection() {
         </div>
 
         {/* Booking Form */}
-        <div className="w-full max-w-4xl">
+        <div className="w-full max-w-5xl">
           <div className="bg-white rounded-2xl shadow-2xl px-4 py-3 md:px-6 md:py-4">
             <div className="flex flex-col md:flex-row items-stretch gap-0">
               {/* Booking Type */}
@@ -439,7 +439,7 @@ export default function HeroBookingSection() {
                     options={categoryOptions}
                     selectedValue={category}
                     onSelect={(value: any) => setCategory(value)}
-                    placeholder="Select category"
+                    placeholder="Select"
                     isOpen={openDropdown === "category"}
                     onToggle={() => handleDropdownToggle("category")}
                   />

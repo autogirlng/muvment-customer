@@ -5,28 +5,27 @@ import { generatePageMetadata } from "@/helpers/metadata";
 interface PageProps {
   params: Promise<{
     yearRangeId: string;
-    servicePricingId: string;
+    id: string;
   }>;
 }
 
 export async function generateMetadata({ params }: PageProps) {
-  const { yearRangeId, servicePricingId } = await params;
-
+  const { yearRangeId, id } = await params;
+  const servicePricingId = id
   try {
     const pricingData =
       await ServicePricingService.getServicePricingById(servicePricingId);
-
     if (!pricingData) {
       return generatePageMetadata({
         title: "Service Pricing Not Found",
         description: "The requested service pricing could not be found.",
-        url: `/service-pricing/details/${yearRangeId}/${servicePricingId}`,
+        url: `/booking/special-pricing/${servicePricingId}`,
       });
     }
     const prices = Array.isArray(pricingData.prices) ? pricingData.prices : [];
 
-    const images = Array.isArray(pricingData.sampleImages)
-      ? pricingData.sampleImages
+    const images = Array.isArray(pricingData.imageUrl)
+      ? pricingData.imageUrl
       : [];
 
     const lowestPrice =

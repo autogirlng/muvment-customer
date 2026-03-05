@@ -32,6 +32,7 @@ export class ServicePricingService {
   ): Promise<ServicePricingShowcase | null> {
     try {
       const allPricing = await this.getServicePricingShowcase();
+
       const found = allPricing[0].data.find(
         (item: any) => item.servicePricingId === servicePricingId,
       );
