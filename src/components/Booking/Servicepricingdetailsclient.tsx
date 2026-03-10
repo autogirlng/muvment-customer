@@ -125,22 +125,22 @@ const ServicePricingBookingPage: React.FC = () => {
     router.back();
   };
 
-const addTrip = () => {
-  const newId = `trip-${trips.length}`;
-  const lastTrip = trips[trips.length - 1];
-  const prefilled: Partial<TripDetails> = lastTrip
-    ? {
-        bookingType: lastTrip.tripDetails.bookingType,
-        pickupLocation: lastTrip.tripDetails.pickupLocation,
-        pickupCoordinates: lastTrip.tripDetails.pickupCoordinates,
-        dropoffLocation: lastTrip.tripDetails.dropoffLocation,
-        dropoffCoordinates: lastTrip.tripDetails.dropoffCoordinates,
-        // tripStartDate and tripStartTime are intentionally left blank
-      }
-    : {};
-  setTrips([...trips, { id: newId, tripDetails: prefilled }]);
-  setOpenTripIds(new Set([...openTripIds, newId]));
-};
+  const addTrip = () => {
+    const newId = `trip-${trips.length}`;
+    const lastTrip = trips[trips.length - 1];
+    const prefilled: Partial<TripDetails> = lastTrip
+      ? {
+          bookingType: lastTrip.tripDetails.bookingType,
+          pickupLocation: lastTrip.tripDetails.pickupLocation,
+          pickupCoordinates: lastTrip.tripDetails.pickupCoordinates,
+          dropoffLocation: lastTrip.tripDetails.dropoffLocation,
+          dropoffCoordinates: lastTrip.tripDetails.dropoffCoordinates,
+          // tripStartDate and tripStartTime are intentionally left blank
+        }
+      : {};
+    setTrips([...trips, { id: newId, tripDetails: prefilled }]);
+    setOpenTripIds(new Set([...openTripIds, newId]));
+  };
 
   const deleteTrip = (id: string) => {
     if (trips.length === 1) return;
@@ -180,60 +180,69 @@ const addTrip = () => {
     setPriceEstimate(null);
   };
 
-const estimatePrice = async () => {
-  if (!canProceed) return;
+  const estimatePrice = async () => {
+    if (!canProceed) return;
 
-  setIsEstimating(true);
-  setError(null);
+    setIsEstimating(true);
+    setError(null);
 
-  try {
-    // Validate all trips have valid coordinates
-    for (let i = 0; i < trips.length; i++) {
-      const tripDetails = trips[i].tripDetails;
-      const pickupCoords = tripDetails.pickupCoordinates;
-      const dropoffCoords = tripDetails.dropoffCoordinates;
+    try {
+      // Validate all trips have valid coordinates
+      for (let i = 0; i < trips.length; i++) {
+        const tripDetails = trips[i].tripDetails;
+        const pickupCoords = tripDetails.pickupCoordinates;
+        const dropoffCoords = tripDetails.dropoffCoordinates;
 
-      if (!pickupCoords || (pickupCoords.lat === 0.1 && pickupCoords.lng === 0.1)) {
-        toast.error(`Trip ${i + 1}: Please select a valid pickup location`);
-        setIsEstimating(false);
-        return;
+        if (
+          !pickupCoords ||
+          (pickupCoords.lat === 0.1 && pickupCoords.lng === 0.1)
+        ) {
+          toast.error(`Trip ${i + 1}: Please select a valid pickup location`);
+          setIsEstimating(false);
+          return;
+        }
+
+        if (
+          !dropoffCoords ||
+          (dropoffCoords.lat === 0.1 && dropoffCoords.lng === 0.1)
+        ) {
+          toast.error(`Trip ${i + 1}: Please select a valid dropoff location`);
+          setIsEstimating(false);
+          return;
+        }
       }
 
-      if (!dropoffCoords || (dropoffCoords.lat === 0.1 && dropoffCoords.lng === 0.1)) {
-        toast.error(`Trip ${i + 1}: Please select a valid dropoff location`);
-        setIsEstimating(false);
+      const requestBody = {
+        servicePricingId: servicePricingId,
+        trips: trips.map((trip) => ({
+          bookingTypeId: trip.tripDetails.bookingType,
+          pickupLatitude: trip.tripDetails.pickupCoordinates?.lat || 0.1,
+          pickupLongitude: trip.tripDetails.pickupCoordinates?.lng || 0.1,
+          dropoffLatitude: trip.tripDetails.dropoffCoordinates?.lat || 0.1,
+          dropoffLongitude: trip.tripDetails.dropoffCoordinates?.lng || 0.1,
+        })),
+      };
+
+      const response =
+        await ServicePricingService.calulateSpecialBooking(requestBody);
+
+      if (!response) {
         return;
       }
+      const data = response.data;
+
+      setPriceEstimate(data);
+      toast.success("Price estimated successfully!");
+    } catch (error: any) {
+      console.error("Failed to estimate price:", error);
+      toast.error(
+        error.message || "Failed to estimate price. Please try again.",
+      );
+      setError(error.message);
+    } finally {
+      setIsEstimating(false);
     }
-
-    const requestBody = {
-      servicePricingId: servicePricingId,
-      trips: trips.map((trip) => ({
-        bookingTypeId: trip.tripDetails.bookingType,
-        pickupLatitude: trip.tripDetails.pickupCoordinates?.lat || 0.1,
-        pickupLongitude: trip.tripDetails.pickupCoordinates?.lng || 0.1,
-        dropoffLatitude: trip.tripDetails.dropoffCoordinates?.lat || 0.1,
-        dropoffLongitude: trip.tripDetails.dropoffCoordinates?.lng || 0.1,
-      })),
-    };
-
-    const response = await ServicePricingService.calulateSpecialBooking(requestBody);
-
-    if (!response) {
-      return toast.error("Unexpected Error");
-    }
-    const data = response.data;
-
-    setPriceEstimate(data);
-    toast.success("Price estimated successfully!");
-  } catch (error: any) {
-    console.error("Failed to estimate price:", error);
-    toast.error(error.message || "Failed to estimate price. Please try again.");
-    setError(error.message);
-  } finally {
-    setIsEstimating(false);
-  }
-};
+  };
 
   const proceedToCheckout = () => {
     if (!priceEstimate) return;
@@ -433,12 +442,12 @@ const estimatePrice = async () => {
                   ))}
 
                   <button
-  onClick={addTrip}
-  className="w-full mt-3 py-2.5 border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50 rounded-lg text-sm font-medium text-gray-500 hover:text-blue-600 transition-all flex items-center justify-center gap-2"
->
-  <FiPlus className="w-4 h-4" />
-  Add Another Trip
-</button>
+                    onClick={addTrip}
+                    className="w-full mt-3 py-2.5 border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50 rounded-lg text-sm font-medium text-gray-500 hover:text-blue-600 transition-all flex items-center justify-center gap-2"
+                  >
+                    <FiPlus className="w-4 h-4" />
+                    Add Another Trip
+                  </button>
                 </div>
 
                 {/* Price Estimate Section */}

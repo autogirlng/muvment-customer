@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { FiList, FiCalendar, FiSearch, FiShare2, FiPlus } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import {
@@ -29,7 +35,9 @@ const BookingHistoryPage = () => {
   const [selectedBookings, setSelectedBookings] = useState<Booking[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(0);
-  const [filters, setFilters] = useState<Omit<BookingFilters, "page" | "size">>({});
+  const [filters, setFilters] = useState<Omit<BookingFilters, "page" | "size">>(
+    {},
+  );
   const PAGE_SIZE = 10;
 
   const router = useRouter();
@@ -73,7 +81,9 @@ const BookingHistoryPage = () => {
         const totalPages: number = response.data.totalPages ?? 1;
         const transformed = content.map(transformItem);
 
-        setBookings((prev) => (reset ? transformed : [...prev, ...transformed]));
+        setBookings((prev) =>
+          reset ? transformed : [...prev, ...transformed],
+        );
         setHasMore(pageNumber + 1 < totalPages);
       } catch (error) {
         console.error("Error loading bookings:", error);
@@ -123,7 +133,9 @@ const BookingHistoryPage = () => {
   }, [loadingMore, hasMore]);
 
   const handleBookingClick = async (booking: Booking) => {
-    const result = await BookingService.getBookingById(booking?.bookingId as string);
+    const result = await BookingService.getBookingById(
+      booking?.bookingId as string,
+    );
     console.log(result);
     setSelectedBookings([booking]);
     setIsModalOpen(true);
@@ -277,7 +289,9 @@ const BookingHistoryPage = () => {
       <div className="mx-auto py-8 mt-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Bookings</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              My Bookings
+            </h1>
           </div>
 
           <button
@@ -326,7 +340,10 @@ const BookingHistoryPage = () => {
                 placeholder="Search bookings..."
                 className="w-full sm:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, searchTerm: e.target.value }))
+                  setFilters((prev) => ({
+                    ...prev,
+                    searchTerm: e.target.value,
+                  }))
                 }
               />
             </div>

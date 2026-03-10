@@ -145,10 +145,10 @@ const BookingTrackingPage = () => {
                     <span className="text-gray-600">Status</span>
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                        booking.bookingStatus
+                        booking.bookingStatus,
                       )}`}
                     >
-                      {booking.bookingStatus.replace(/_/g, " ")}
+                      {booking?.bookingStatus?.replace(/_/g, " ")}
                     </span>
                   </div>
 
@@ -188,7 +188,7 @@ const BookingTrackingPage = () => {
                     <span className="text-gray-600">Status</span>
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                        payment.paymentStatus
+                        payment.paymentStatus,
                       )}`}
                     >
                       {payment.paymentStatus}
