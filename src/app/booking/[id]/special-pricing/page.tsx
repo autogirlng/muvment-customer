@@ -23,7 +23,6 @@ export async function generateMetadata({ params }: PageProps) {
       });
     }
     const prices = Array.isArray(pricingData.prices) ? pricingData.prices : [];
-
     const images = Array.isArray(pricingData.imageUrl)
       ? pricingData.imageUrl
       : [];

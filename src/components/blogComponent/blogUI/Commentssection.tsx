@@ -20,7 +20,9 @@ export default function CommentsSection({
   isLoggedIn,
   onAuthRequired,
 }: CommentsSectionProps) {
-  const [comments, setComments] = useState<BlogComment[]>(initialComments.data);
+  const [comments, setComments] = useState<BlogComment[]>(
+    initialComments.data ?? []
+  );
   const [totalPages, setTotalPages] = useState(initialComments.totalPages);
   const [totalElements, setTotalElements] = useState(
     initialComments.totalElements
@@ -40,18 +42,16 @@ export default function CommentsSection({
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
-
   const loadMore = useCallback(async () => {
     if (loadingMore || page + 1 >= totalPages) return;
     setLoadingMore(true);
     try {
       const res = await BlogService.getCommentsByPost(postId, page + 1, 10);
-      console.log(res)
-      setComments((prev) => [...prev, ...res.data]);
+      setComments((prev) => [...prev, ...(res.data ?? [])]);
       setTotalPages(res.totalPages);
       setPage((p) => p + 1);
     } catch {
-      // silent
+      // silent — infinite scroll failures shouldn't disrupt the page
     } finally {
       setLoadingMore(false);
     }
@@ -70,10 +70,8 @@ export default function CommentsSection({
     return () => observer.disconnect();
   }, [loadMore]);
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
 
     if (!form.content.trim() || !form.name.trim() || !form.email.trim()) {
       setFormError("Please fill in all required fields.");
@@ -92,13 +90,22 @@ export default function CommentsSection({
         authorPhoneNumber: form.phone,
       });
 
-      setComments((prev) => [newComment, ...prev]);
-      setTotalElements((n:any) => n + 1);
+      // Only update state if we got a valid comment back
+      if (newComment) {
+        setComments((prev) => [newComment, ...prev]);
+        setTotalElements((n: any) => n + 1);
+      }
+
       setForm({ name: "", email: "", phone: "", content: "" });
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 3000);
-    } catch {
-      setFormError("Failed to post your comment. Please try again.");
+    } catch (err: any) {
+      // Show the server's actual error message (e.g. rate limit) if available
+      const serverMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Unexpected error — please try again later.";
+      setFormError(serverMessage);
     } finally {
       setSubmitting(false);
     }
@@ -204,8 +211,8 @@ export default function CommentsSection({
         </form>
       </div>
 
- 
-      {comments.length === 0 ? (
+      {/* ── Comments list ── */}
+      {comments.filter(Boolean).length === 0 ? (
         <div className="flex flex-col items-center justify-center py-14 text-center">
           <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
             <FiMessageCircle className="w-5 h-5 text-gray-300" />
@@ -216,13 +223,11 @@ export default function CommentsSection({
         </div>
       ) : (
         <div>
-          {comments.map((c:any, i) => (
-            <CommentItem key={i} comment={c || c.data} />
+          {comments.filter(Boolean).map((c: any, i) => (
+            <CommentItem key={c?.id ?? i} comment={c?.data ?? c} />
           ))}
         </div>
       )}
-
-      {/* ── Infinite scroll sentinel ── */}
       <div ref={loaderRef} className="py-6 flex justify-center">
         {loadingMore && (
           <div className="flex items-center gap-2 text-sm text-gray-400">

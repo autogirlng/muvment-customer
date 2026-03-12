@@ -194,7 +194,6 @@ function TimePicker({
     ? convertAvailableTimes(availableTimes)
     : allTimeOptions;
 
-  console.log(allTimeOptions);
 
   // Set initial selected time from value prop
   useEffect(() => {

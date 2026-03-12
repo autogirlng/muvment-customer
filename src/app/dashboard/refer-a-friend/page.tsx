@@ -11,11 +11,20 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FiCopy, FiShare2, FiUser } from "react-icons/fi";
 
 interface ReferralData {
-  id: number;
-  fullName: string;
-  referredAt: string;
+  id: string;
+  referee: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+    userType: string;
+    departmentName: string;
+    referredById: string;
+    active: boolean;
+  };
+  creditedAmount: number;
 }
-
 const PAGE_SIZE = 10;
 
 export default function ReferralPage() {
@@ -60,27 +69,26 @@ export default function ReferralPage() {
   }, []);
 
   // Fetch a page of referred users
-  const fetchReferralPage = useCallback(async (pageNumber: number, reset = false) => {
-    try {
-      reset ? setLoading(true) : setLoadingMore(true);
+const fetchReferralPage = useCallback(async (pageNumber: number, reset = false) => {
+  try {
+    reset ? setLoading(true) : setLoadingMore(true);
 
-      const getcode = await ReferralService.getReferralCode();
+    const result = await ReferralService.getMyReferees({ page: pageNumber, size: PAGE_SIZE });
+    const data = result?.data?.data ?? result?.data;
+    const content: ReferralData[] = data?.referees ?? [];
+    const totalPages: number = data?.totalPages ?? 1;
+    const totalElements: number = data?.totalElements ?? content.length;
 
-      const result = getcode?.data[0].data;
-      const content: ReferralData[] = result?.referredUsers?.content ?? [];
-      const totalPages: number = result?.referredUsers?.totalPages ?? 1;
-      const totalElements: number = result?.referredUsers?.totalElements ?? content.length;
-
-      setReferrals((prev) => (reset ? content : [...prev, ...content]));
-      setTotalReferrals(totalElements);
-      setHasMore(pageNumber + 1 < totalPages);
-    } catch (error) {
-      console.error("Error fetching referral data:", error);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, []);
+    setReferrals((prev) => (reset ? content : [...prev, ...content]));
+    setTotalReferrals(totalElements);
+    setHasMore(pageNumber + 1 < totalPages);
+  } catch (error) {
+    console.error("Error fetching referral data:", error);
+  } finally {
+    setLoading(false);
+    setLoadingMore(false);
+  }
+}, []);
 
   // Initial load
   useEffect(() => {
@@ -135,29 +143,28 @@ export default function ReferralPage() {
     }
   };
 
-  const columns: TableColumn<ReferralData>[] = [
-    {
-      key: "fullName",
-      label: "Name",
-      render: (value) => (
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-            <FiUser className="text-blue-600" />
-          </div>
-          <span className="font-medium">{value}</span>
-        </div>
-      ),
-    },
-    {
-      key: "referredAt",
-      label: "Date Joined",
-      render: (value) => (
-        <span className="text-sm text-gray-700">
-          {new Date(value).toLocaleDateString()}
-        </span>
-      ),
-    },
-  ];
+const columns: TableColumn<ReferralData>[] = [
+  {
+    key: "referee",
+    label: "First Name",
+    render: (value) => <span className="font-medium">{value.firstName}</span>,
+  },
+  {
+    key: "referee",
+    label: "Last Name",
+    render: (value) => <span className="font-medium">{value.lastName}</span>,
+  },
+  {
+    key: "referee",
+    label: "Email",
+    render: (value) => <span className="text-sm text-gray-700">{value.email}</span>,
+  },
+  {
+    key: "referee",
+    label: "Phone Number",
+    render: (value) => <span className="text-sm text-gray-700">{value.phoneNumber}</span>,
+  },
+];
 
   return (
     <div className="w-full min-h-screen">

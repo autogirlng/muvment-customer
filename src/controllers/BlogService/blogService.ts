@@ -116,14 +116,19 @@ export class BlogService {
     }
   }
 
-  static async createComment(body: CreateCommentBody): Promise<BlogComment> {
+  static async createComment(
+    body: CreateCommentBody,
+  ): Promise<BlogComment | null> {
     try {
       const response = await createData(this.BLOG_COMMENTS, body);
-
-      return response.data;
-    } catch (error) {
-      console.error("Error creating comment:", error);
-      throw new Error("Failed to post comment");
+      return response?.data ?? null;
+    } catch (error: any) {
+      const serverMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to post comment";
+      console.error("Error creating comment:", serverMessage);
+      throw new Error(serverMessage);
     }
   }
 
@@ -182,19 +187,25 @@ export class BlogService {
   }
 
   static formatDate(dateString: string): string {
+    if (!dateString) return "—";
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "—";
     return new Intl.DateTimeFormat("en-NG", {
       day: "2-digit",
       month: "short",
       year: "numeric",
-    }).format(new Date(dateString));
+    }).format(d);
   }
 
   static formatDateLong(dateString: string): string {
+    if (!dateString) return "—";
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "—";
     return new Intl.DateTimeFormat("en-NG", {
       day: "2-digit",
       month: "long",
       year: "numeric",
-    }).format(new Date(dateString));
+    }).format(d);
   }
 
   static estimateReadTime(content: string): number {

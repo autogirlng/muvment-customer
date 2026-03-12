@@ -111,4 +111,15 @@ export class ReferralService {
 
     return await getTableData(`${this.REFERRAL_BASE_URL}/history`, queryParams);
   }
+
+  static async getMyReferees(params?: { page?: number; size?: number }) {
+    const { page, size } = params || {};
+    const queryParams: Record<string, any> = {};
+    if (page !== undefined) queryParams.page = page;
+    if (size !== undefined) queryParams.size = size;
+    return await getTableData(
+      `${this.REFERRAL_BASE_URL}/my-referees`,
+      queryParams,
+    );
+  }
 }
