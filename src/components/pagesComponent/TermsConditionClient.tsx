@@ -1,4 +1,5 @@
 "use client";
+import { title } from "process";
 import { useState, useEffect } from "react";
 
 function TermsOfServiceClient() {
@@ -13,6 +14,7 @@ function TermsOfServiceClient() {
   const sections = [
     { id: "general-terms", label: "General Terms" },
     { id: "general-rental", label: "General Rentals" },
+    { id: "fuel-policy", label: "Fuel Policy" },
     { id: "cancellation-refunds", label: "Cancellation and Refunds" },
     { id: "complimentary-ride", label: "Complimentary Ride" },
     { id: "extra-charges", label: "Extra Charges" },
@@ -129,6 +131,22 @@ function TermsOfServiceClient() {
     {
       title:
         "Customers are solely responsible for any disputes, chargebacks, or reversals of transactions, and the Company is entitled to deduct such amounts from the payment due.",
+    },
+  ];
+
+  const fuelPolicy = [
+    {
+      content:
+        "Due to the recent fluctuations and erratic increases in fuel prices, all vehicle rentals will now be provided with a half tank of fuel by default.",
+    },
+    {
+      content:
+        "Customers who prefer to receive a full tank of fuel at the start of their journey may request this option at an additional cost:",
+      subItems: ["Sedans: ₦35,000 extra", "SUVs: ₦55,000 extra"],
+    },
+    {
+      content:
+        "By proceeding with the booking, customers acknowledge and accept this fuel policy.",
     },
   ];
 
@@ -431,6 +449,35 @@ function TermsOfServiceClient() {
                   <li key={index} className="text-sm text-gray-700">
                     {item.title}
                   </li>
+                ))}
+              </ol>
+            </section>
+
+            <section id="fuel-policy" className="mb-8 sm:mb-10">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                Fuel Policy
+              </h2>
+              <ol className="list-decimal pl-6 space-y-4">
+                {fuelPolicy.map((item, index) => (
+                  <>
+                    <li key={index} className="text-sm text-gray-700">
+                      {item.content}
+                    </li>
+                    <ul>
+                      {item.subItems && (
+                        <ul className="list-disc pl-6 mt-2 space-y-1">
+                          {item.subItems.map((subItem, subIndex) => (
+                            <li
+                              key={subIndex}
+                              className="text-gray-700 text-sm"
+                            >
+                              {subItem}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </ul>
+                  </>
                 ))}
               </ol>
             </section>
