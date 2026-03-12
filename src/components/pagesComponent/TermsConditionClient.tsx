@@ -96,14 +96,7 @@ function TermsOfServiceClient() {
       title:
         "Our general pricing applies within central city areas. Outskirts locations attract extra charges. Outskirts locations include but not limited to Sangotedo, Badagry, Amuwo Odofin, Festac Town, Alaba, Ikorodu Town, Agbara, Agege, Epe, Free Trade Zone, Igando, Akowonjo, Dopemu, Ajah, Agbado, Ojodu Berger, Ajegunle, Ibese, Iyana Ipaja, Alimoso, Ibeju Lekki.",
     },
-    {
-      title:
-        "We will provide 15 litres of fuel for your ride, in the event the fuel finishes during trips, you will be responsible for fueling an amount that can complete your ride.",
-    },
-    {
-      title:
-        "For travels, we only give a full tank, afterward, you will be responsible for fueling the car when the fuel finishes.",
-    },
+
     {
       title:
         "If you know you will be extending beyond your stated time, you will have to place the request and make payment before the expiration of those 12 hours.",
@@ -124,10 +117,7 @@ function TermsOfServiceClient() {
       title:
         "A journey beyond Lagos is a full-day booking, and the rental period does not extend after you are back in Lagos.",
     },
-    {
-      title:
-        "Fuel Purchase Requirement: For rentals requiring the customer to refuel/fuel the vehicle, there is a mandatory minimum fuel purchase to ensure the proper functioning and maintenance of our fuel pumps. Customers renting SUVs must purchase a minimum of ₦10,000 worth of fuel, while those renting Sedans are required to purchase at least ₦5,000 worth of fuel. This policy helps maintain the optimal operation of our vehicles and ensures that each is adequately fueled for performance and reliability.",
-    },
+
     {
       title:
         "Customers are solely responsible for any disputes, chargebacks, or reversals of transactions, and the Company is entitled to deduct such amounts from the payment due.",
@@ -136,17 +126,35 @@ function TermsOfServiceClient() {
 
   const fuelPolicy = [
     {
+      title: "Standard Fuel Provision",
       content:
-        "Due to the recent fluctuations and erratic increases in fuel prices, all vehicle rentals will now be provided with a half tank of fuel by default.",
+        "All bookings, including standard rentals and travel/journey bookings, will commence with a half tank of fuel. This applies to all vehicle types across all booking categories.",
     },
     {
+      title: "Full Tank Add-On",
       content:
-        "Customers who prefer to receive a full tank of fuel at the start of their journey may request this option at an additional cost:",
-      subItems: ["Sedans: ₦35,000 extra", "SUVs: ₦55,000 extra"],
+        "Customers who require a full tank of fuel at the start of their booking may request this as a paid add-on, subject to the following charges",
+      subItems: ["Sedan vehicles: +₦35,000", "SUV vehicles: +₦55,000"],
+      otherContent:
+        "This charge must be confirmed and paid prior to vehicle handover or departure. The add-on is available for both standard rentals and travel bookings.",
     },
+
     {
+      title: "Mid-Trip Refueling",
       content:
-        "By proceeding with the booking, customers acknowledge and accept this fuel policy.",
+        "If the fuel finishes during your trip, you are responsible for refueling to an amount sufficient to complete your journey. The following minimum purchase amounts apply per refuel",
+      subItems: [
+        "Sedan vehicles: minimum ₦12,000",
+        "SUV vehicles: minimum ₦20,000",
+      ],
+      otherContent:
+        "This minimum refuel requirement applies regardless of whether a full tank add-on was purchased at the start of the booking.",
+    },
+
+    {
+      title: "Customer Responsibility",
+      content:
+        "Vehicles must be returned with no less fuel than was provided at the start of the booking. Any shortfall will be charged at prevailing fuel rates.",
     },
   ];
 
@@ -461,22 +469,29 @@ function TermsOfServiceClient() {
                 {fuelPolicy.map((item, index) => (
                   <>
                     <li key={index} className="text-sm text-gray-700">
-                      {item.content}
-                    </li>
-                    <ul>
-                      {item.subItems && (
-                        <ul className="list-disc pl-6 mt-2 space-y-1">
-                          {item.subItems.map((subItem, subIndex) => (
-                            <li
-                              key={subIndex}
-                              className="text-gray-700 text-sm"
-                            >
-                              {subItem}
-                            </li>
-                          ))}
-                        </ul>
+                      {item.title && (
+                        <h4 className="text-sm font-semibold">{item.title}</h4>
                       )}
-                    </ul>
+                      {item.content}
+
+                      <ul>
+                        {item.subItems && (
+                          <ul className="list-disc pl-6 mt-2 space-y-1">
+                            {item.subItems.map((subItem, subIndex) => (
+                              <li
+                                key={subIndex}
+                                className="text-gray-700 text-sm"
+                              >
+                                {subItem}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </ul>
+                      {item.otherContent && (
+                        <p className="mt-2">{item.otherContent}</p>
+                      )}
+                    </li>
                   </>
                 ))}
               </ol>
