@@ -7,10 +7,9 @@ import {
   MdNotifications,
   MdAccountCircle,
   MdGroupAdd,
-  MdBookOnline,
   MdEventAvailable,
   MdQuestionMark,
-  MdHeadphones,
+  MdHandshake,
 } from "react-icons/md";
 import { FiLogIn, FiUserPlus } from "react-icons/fi";
 
@@ -18,30 +17,31 @@ export const menuItems = [
   { name: "Dashboard", link: "/dashboard", icon: MdDashboard },
   { name: "Explore", link: "/booking/search", icon: MdExplore },
   { name: "Payment", link: "/dashboard/payment", icon: MdPayment },
-
   {
     name: "My Bookings",
     link: "/dashboard/my-booking",
     icon: MdEventAvailable,
   },
-  // { name: "Favorites", link: "/dashboard/favorites", icon: MdFavorite },
   {
     name: "Account",
     link: "/dashboard/account/profile",
     icon: MdAccountCircle,
   },
-  // { name: "Settings", link: "/dashboard/settings", icon: MdSettings },
   {
     name: "Notifications",
     link: "/dashboard/notification",
     icon: MdNotifications,
   },
   { name: "Favourites", link: "/dashboard/favourites", icon: MdFavorite },
-
   {
     name: "Refer A Friend",
     link: "/dashboard/refer-a-friend",
     icon: MdGroupAdd,
+  },
+  {
+    name: "Settings",
+    link: "/dashboard/settings",
+    icon: MdSettings,
   },
   {
     name: "FAQ",
@@ -53,4 +53,9 @@ export const menuItems = [
 export const guestMenuItems = [
   { name: "Sign In", link: "/auth/login", icon: FiLogIn },
   { name: "Sign Up", link: "/auth/register", icon: FiUserPlus },
+  {
+    name: "Partner With Us",
+    link: "/partner-with-us",
+    icon: MdHandshake,
+  },
 ];
