@@ -353,7 +353,7 @@ export const ApiConfigurationTab = ({ orgId }: ApiConfigurationTabProps) => {
     <div className="space-y-5">
       <h3 className="text-base font-semibold text-gray-900">API Keys</h3>
 
-      {config && (
+      {config && environment === "PRODUCTION" && (
         <>
           KYC{" "}
           <span
