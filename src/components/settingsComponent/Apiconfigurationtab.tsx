@@ -1,6 +1,11 @@
 "use client";
 import { OrganizationService } from "@/controllers/organization/Organization.service";
-import { ApiKey } from "@/types/Organization.type";
+import {
+  ApiKey,
+  OrganizationKYC,
+  OrganizationKYCStatus,
+} from "@/types/Organization.type";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import {
   MdKey,
@@ -13,11 +18,28 @@ import {
   MdLock,
 } from "react-icons/md";
 
-
 interface KeyRevealModalProps {
   rawKey: string;
   onClose: () => void;
 }
+const STATUS_CONFIG = {
+  NOT_SUBMITTED: {
+    label: "Not Submitted",
+    classes: "bg-gray-100 text-gray-700 border-gray-200",
+  },
+  UNDER_REVIEW: {
+    label: "Under Review",
+    classes: "bg-blue-100 text-blue-700 border-blue-200",
+  },
+  APPROVED: {
+    label: "Approved",
+    classes: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  },
+  REJECTED: {
+    label: "Rejected",
+    classes: "bg-rose-100 text-rose-700 border-rose-200",
+  },
+};
 
 const KeyRevealModal = ({ rawKey, onClose }: KeyRevealModalProps) => {
   const [copied, setCopied] = useState(false);
@@ -104,7 +126,6 @@ const KeyRevealModal = ({ rawKey, onClose }: KeyRevealModalProps) => {
   );
 };
 
-
 const maskKey = (key: ApiKey) => `${key.prefix}${"*".repeat(24)}${key.last4}`;
 
 interface KeyRowProps {
@@ -113,6 +134,7 @@ interface KeyRowProps {
   apiKey: ApiKey | undefined;
   orgId: string;
   onKeyUpdate: (environment: "TEST" | "LIVE", newKey: ApiKey) => void;
+  kycStatus?: OrganizationKYCStatus;
 }
 
 const KeyRow = ({
@@ -121,6 +143,7 @@ const KeyRow = ({
   apiKey,
   orgId,
   onKeyUpdate,
+  kycStatus,
 }: KeyRowProps) => {
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -223,15 +246,30 @@ const KeyRow = ({
                 Regenerate
               </button>
             )
-          ) : (
+          ) : // generate api key if environment is testing
+          environment === "TEST" ? (
             <button
               onClick={handleGenerate}
               disabled={loading}
-              className="flex items-center gap-1.5 text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
+              className="flex items-center cursor-pointer gap-1.5 text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
             >
               <MdAdd className="w-3.5 h-3.5" />
               {loading ? "Generating..." : "Generate Key"}
             </button>
+          ) : (
+            <div>
+              {kycStatus !== "APPROVED" && (
+                <span className="text-red-400 text-xs">KYC Incomplete</span>
+              )}
+              <button
+                onClick={handleGenerate}
+                disabled={loading || kycStatus !== "APPROVED"}
+                className="flex items-center  text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
+              >
+                <MdAdd className="w-3.5 h-3.5" />
+                {loading ? "Generating..." : "Generate Key"}
+              </button>
+            </div>
           )}
         </div>
 
@@ -260,14 +298,15 @@ const KeyRow = ({
   );
 };
 
-
 interface ApiConfigurationTabProps {
   orgId: string;
 }
 
 export const ApiConfigurationTab = ({ orgId }: ApiConfigurationTabProps) => {
   const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [kyc, setKYC] = useState<OrganizationKYC>();
   const [loading, setLoading] = useState(true);
+  const environment = process.env.NEXT_PUBLIC_ENVIRONMENT;
 
   useEffect(() => {
     if (!orgId) return;
@@ -275,6 +314,12 @@ export const ApiConfigurationTab = ({ orgId }: ApiConfigurationTabProps) => {
       .then(setKeys)
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    OrganizationService.getMyOrganizationsKYC(orgId).then((data) => {
+      if (data) {
+        setKYC(data[0]);
+      }
+    });
   }, [orgId]);
 
   const handleKeyUpdate = (env: "TEST" | "LIVE", newKey: ApiKey) => {
@@ -283,6 +328,13 @@ export const ApiConfigurationTab = ({ orgId }: ApiConfigurationTabProps) => {
 
   const testKey = keys.find((k) => k.environment === "TEST" && k.active);
   const liveKey = keys.find((k) => k.environment === "LIVE" && k.active);
+
+  const currentStatus = kyc?.data.status;
+  let config;
+
+  if (currentStatus) {
+    config = STATUS_CONFIG[currentStatus];
+  }
 
   if (loading) {
     return (
@@ -299,31 +351,65 @@ export const ApiConfigurationTab = ({ orgId }: ApiConfigurationTabProps) => {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h3 className="text-base font-semibold text-gray-900 mb-1">
-          API Keys
-        </h3>
-        <p className="text-sm text-gray-500">
-          Use these keys to authenticate API requests. Test keys are for
-          development; live keys process real transactions.
-        </p>
-      </div>
+      <h3 className="text-base font-semibold text-gray-900">API Keys</h3>
 
-      <KeyRow
-        label="Test API Key"
-        environment="TEST"
-        apiKey={testKey}
-        orgId={orgId}
-        onKeyUpdate={handleKeyUpdate}
-      />
+      {config && (
+        <>
+          KYC{" "}
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.classes}`}
+          >
+            {config.label}
+          </span>
+          <div>
+            {kyc?.data.status === OrganizationKYCStatus.NOT_SUBMITTED && (
+              <Link
+                href={
+                  orgId
+                    ? `/dashboard/settings/submit-kyc?organizationId=${orgId}`
+                    : "#"
+                }
+                onClick={(e) => !orgId && e.preventDefault()} // Prevents navigation if no ID
+                aria-disabled={!orgId}
+                className={`text-xs px-3 py-1.5 rounded-lg transition-colors font-medium
+                  ${
+                    !orgId
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                      : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                  }`}
+              >
+                Submit KYC
+              </Link>
+            )}
+          </div>
+        </>
+      )}
+      <p className="text-sm text-gray-500">
+        Use these keys to authenticate API requests. Test keys are for
+        development; live keys process real transactions.
+      </p>
 
-      <KeyRow
-        label="Live API Key"
-        environment="LIVE"
-        apiKey={liveKey}
-        orgId={orgId}
-        onKeyUpdate={handleKeyUpdate}
-      />
+      {environment === "TEST" && (
+        <KeyRow
+          label="Test API Key"
+          environment="TEST"
+          apiKey={testKey}
+          orgId={orgId}
+          onKeyUpdate={handleKeyUpdate}
+          kycStatus={kyc?.data.status}
+        />
+      )}
+
+      {environment === "PRODUCTION" && (
+        <KeyRow
+          label="Live API Key"
+          environment="LIVE"
+          apiKey={liveKey}
+          orgId={orgId}
+          onKeyUpdate={handleKeyUpdate}
+          kycStatus={kyc?.data.status}
+        />
+      )}
     </div>
   );
 };

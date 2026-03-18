@@ -3,6 +3,7 @@ import {
   CreateApiKeyBody,
   CreateOrganizationBody,
   Organization,
+  OrganizationKYC,
 } from "@/types/Organization.type";
 import {
   createData,
@@ -40,6 +41,22 @@ export class OrganizationService {
       return [];
     } catch (error) {
       console.error("Error fetching organizations:", error);
+      return [];
+    }
+  }
+
+  static async getMyOrganizationsKYC(
+    organizationId: string,
+  ): Promise<OrganizationKYC[]> {
+    try {
+      const rawData = await getSingleData(
+        `${this.ORGANIZATIONS}/${organizationId}/kyc`,
+      );
+      const data = { ...rawData };
+      if (data?.data && Array.isArray(data.data)) return data.data;
+      return [];
+    } catch (error) {
+      console.error("Error fetching organizations kyc:", error);
       return [];
     }
   }
