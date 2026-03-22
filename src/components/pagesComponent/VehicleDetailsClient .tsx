@@ -32,6 +32,8 @@ import {
 import { BookingService } from "@/controllers/booking/bookingService";
 import { trackPaymentClick } from "@/services/analytics";
 import Footer from "../HomeComponent/Footer";
+import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicleservice";
+import LoginPromptModal from "../Booking/Loginpromptmodal";
 
 const VehicleDetailsClient: React.FC = () => {
   const router = useRouter();
@@ -47,6 +49,9 @@ const VehicleDetailsClient: React.FC = () => {
   const [continueBooking, setContinueBooking] = useState<boolean>(false);
   const [bookRideModal, setBookRideModal] = useState<boolean>(false);
   const [couponCode, setCouponCode] = useState<string>("");
+  const [isFavorited, setIsFavorited] = useState(false);
+const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+const [showLoginModal, setShowLoginModal] = useState(false);
   const {
     setTrips,
     trips,
@@ -91,6 +96,17 @@ const VehicleDetailsClient: React.FC = () => {
     setTrips([{ id: "trip-0", tripDetails: {} }]);
   }, []);
 
+  const check = async()=>{
+    const result = await FavouriteVehicleService.checkIsFavourite(vehicle.id)
+    setIsFavorited(result)
+ 
+  }
+
+  useEffect(() => {
+  if (!vehicle || !isAuthenticated) return;
+  check()
+
+}, [vehicle, isAuthenticated]);
   useEffect(() => {
     const fetchVehicleDetails = async () => {
       try {
@@ -110,6 +126,20 @@ const VehicleDetailsClient: React.FC = () => {
     }
   }, [id]);
 
+
+  const handleToggleFavourite = async () => {
+  if (!isAuthenticated) { setShowLoginModal(true); return; }
+  setIsFavoriteLoading(true);
+  try {
+    const current = isFavorited ? [vehicle.id] : [];
+    const { isFavourited } = await FavouriteVehicleService.toggleFavourite(vehicle.id, current);
+    setIsFavorited(isFavourited);
+  } catch (e) {
+    console.error("Failed to toggle favourite", e);
+  } finally {
+    setIsFavoriteLoading(false);
+  }
+};
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -154,7 +184,7 @@ const VehicleDetailsClient: React.FC = () => {
         try {
           areaOfUseCoordinates = JSON.parse(`${details?.areaOfUseCoordinates}`);
         } catch (e) {
-          console.error("Error parsing area of use", e);
+          // console.error("Error parsing area of use", e);
         }
       }
 
@@ -209,6 +239,7 @@ const VehicleDetailsClient: React.FC = () => {
 
   return (
     <>
+    <LoginPromptModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
       <Navbar />
       <div className="min-h-screen w-full bg-gray-50 mt-15">
         <div className="min-h-screen bg-gray-50 p-0 sm:p-3 flex items-center justify-center flex-col">
@@ -229,12 +260,17 @@ const VehicleDetailsClient: React.FC = () => {
                 <div className="flex flex-row items-center space-x-2 xs:space-x-3 self-end sm:self-auto">
                   <SocialShareButton />
 
-                  <IconButton
-                    className="bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer p-2 sm:p-2.5 rounded-full"
-                    onClick={() => {}}
-                  >
-                    <FiHeart size={16} className="sm:size-[18px]" />
-                  </IconButton>
+                 <button
+  onClick={handleToggleFavourite}
+  disabled={isFavoriteLoading}
+  className={`p-2 sm:p-2.5 rounded-full transition duration-150 cursor-pointer
+    ${isFavorited ? "bg-red-100 text-red-600" : "bg-red-50 hover:bg-red-100 text-red-600"}
+    ${isFavoriteLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+>
+  {isFavoriteLoading
+    ? <span className="block w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+    : <FiHeart size={16} className={`sm:size-[18px] ${isFavorited ? "fill-red-500" : ""}`} />}
+</button>
                 </div>
               </header>
 

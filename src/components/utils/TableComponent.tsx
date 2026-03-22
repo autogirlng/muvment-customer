@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { TbDots } from "react-icons/tb";
 
 export interface TableColumn<T> {
@@ -21,14 +21,144 @@ interface DataTableProps<T> {
   height?: string;
   title?: string;
   seeMoreData?: SeeMoreData[];
-  /** Called when the sentinel enters the viewport and more data is available */
   onLoadMore?: () => void;
-  /** Whether there are more pages to fetch from the server */
   hasMore?: boolean;
-  /** Whether a fetch is currently in-flight */
   loadingMore?: boolean;
 }
 
+// ─── ActionMenu ───────────────────────────────────────────────────────────────
+function ActionMenu({ row, actions }: { row: any; actions: SeeMoreData[] }) {
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  // Track whether a menu-item interaction is in progress so we don't
+  // accidentally close the menu before the action fires.
+  const interactingRef = useRef(false);
+
+  const openMenu = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const menuWidth = 176;
+    const left =
+      window.innerWidth - rect.right >= menuWidth
+        ? rect.left
+        : rect.right - menuWidth;
+    setCoords({ top: rect.bottom + 4, left });
+    setOpen(true);
+  }, []);
+
+  // Close when tapping/clicking outside — but only if not interacting with a menu item
+  useEffect(() => {
+    if (!open) return;
+
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
+      // If a menu item interaction is in progress, skip this close handler
+      if (interactingRef.current) return;
+      const target = e.target as Node;
+      if (menuRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+
+    const handleScroll = () => setOpen(false);
+
+    // Use capture phase so we catch it before any stopPropagation in children
+    document.addEventListener("touchstart", handleOutside, { passive: true });
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      document.removeEventListener("touchstart", handleOutside);
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [open]);
+
+  const handleActionClick = useCallback(
+    (action: SeeMoreData) => {
+      setOpen(false);
+      action.handleAction?.(row);
+    },
+    [row],
+  );
+
+  return (
+    <>
+      {/* Trigger */}
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label="More actions"
+        aria-expanded={open}
+        onTouchEnd={(e) => {
+          e.preventDefault(); // prevent ghost click
+          e.stopPropagation();
+          open ? setOpen(false) : openMenu();
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          // onClick fires on desktop; on mobile onTouchEnd already handled it
+          if (!("ontouchstart" in window)) {
+            open ? setOpen(false) : openMenu();
+          }
+        }}
+        className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-md text-gray-700 touch-manipulation select-none"
+      >
+        <TbDots className="text-xl" />
+      </button>
+
+      {/* Floating menu — position:fixed so it's never clipped */}
+      {open && coords && (
+        <div
+          ref={menuRef}
+          style={{
+            position: "fixed",
+            top: coords.top,
+            left: coords.left,
+            zIndex: 9999,
+          }}
+          className="w-44 bg-white shadow-xl border border-gray-200 rounded-lg p-1"
+        >
+          {actions.map((action, i) => (
+            <button
+              key={i}
+              type="button"
+              className="w-full flex items-center gap-2 px-3 py-3 cursor-pointer hover:bg-gray-100 active:bg-gray-200 rounded-md touch-manipulation select-none text-left"
+              // Mark interaction start — prevents the outside handler from
+              // closing the menu before the action fires on touch devices
+              onTouchStart={() => {
+                interactingRef.current = true;
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                interactingRef.current = false;
+                handleActionClick(action);
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                // Only handle on non-touch (touch is handled by onTouchEnd)
+                if (!("ontouchstart" in window)) {
+                  handleActionClick(action);
+                }
+              }}
+            >
+              <action.icon className="text-base text-gray-600 flex-shrink-0" />
+              <span className="text-sm text-gray-700 whitespace-nowrap">
+                {action.name}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── DataTable ────────────────────────────────────────────────────────────────
 export default function DataTable<T extends { id: string | number }>({
   columns,
   data,
@@ -39,11 +169,8 @@ export default function DataTable<T extends { id: string | number }>({
   hasMore = false,
   loadingMore = false,
 }: DataTableProps<T>): React.ReactElement {
-  const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const popupRef = useRef<HTMLDivElement>(null);
 
-  // Deduplicate by id
   const uniqueRows = useMemo(() => {
     const seen = new Set<string | number>();
     return data.filter((item) => {
@@ -53,71 +180,17 @@ export default function DataTable<T extends { id: string | number }>({
     });
   }, [data]);
 
-  // Observe sentinel to trigger server-side load more
   useEffect(() => {
     if (!onLoadMore) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore) {
-          onLoadMore();
-        }
+        if (entries[0].isIntersecting && hasMore && !loadingMore) onLoadMore();
       },
       { threshold: 0.1 },
     );
-
     if (sentinelRef.current) observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, [onLoadMore, hasMore, loadingMore]);
-
-  // Close popup when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
-        setExpandedRow(null);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const renderActions = (row: T, index: number) =>
-    seeMoreData ? (
-      <div className="relative">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setExpandedRow(expandedRow === index ? null : index);
-          }}
-          className="p-2 hover:bg-gray-100 rounded-md text-gray-700"
-        >
-          <TbDots className="text-xl" />
-        </button>
-
-        {expandedRow === index && (
-          <div
-            ref={popupRef}
-            className="absolute right-0 mt-2 min-w-40 bg-white shadow-lg border rounded-lg p-2 z-20"
-          >
-            {seeMoreData.map((action, i) => (
-              <div
-                key={i}
-                onClick={() => {
-                  action.handleAction?.(row);
-                  setExpandedRow(null);
-                }}
-                className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-gray-100 rounded-md"
-              >
-                <action.icon className="text-base text-gray-600" />
-                <span className="text-sm text-gray-700 truncate whitespace-nowrap max-w-[120px]">
-                  {action.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    ) : null;
 
   const loadingRow = (
     <div className="flex justify-center items-center py-4 gap-2 text-gray-500 text-sm">
@@ -145,41 +218,40 @@ export default function DataTable<T extends { id: string | number }>({
         {uniqueRows.length === 0 ? (
           <div className="text-center text-gray-500 text-sm py-6">No data found</div>
         ) : (
-          uniqueRows.map((row, index) => (
+          uniqueRows.map((row) => (
             <div
               key={row.id}
-              className="bg-white border border-gray-200 rounded-lg px-4 mb-3 shadow-sm hover:shadow-md transition-shadow"
+              className="bg-white border border-gray-200 rounded-lg px-4 mb-3 shadow-sm"
             >
-              <div className="flex justify-end items-center">
-                {renderActions(row, index)}
-              </div>
-
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex-1 space-y-3">
-                  {columns.map((column, colIndex) => (
-                    <div
-                      key={String(column.key)}
-                      className={`flex justify-between items-center pb-3 ${
-                        colIndex < columns.length - 1 ? "border-b border-gray-200" : ""
-                      }`}
-                    >
-                      <span className="text-xs font-semibold text-gray-600 uppercase">
-                        {column.label}
-                      </span>
-                      <span className="text-sm text-gray-900 font-medium ml-4 text-right">
-                        {column.render
-                          ? column.render(row[column.key], row)
-                          : (row[column.key] as React.ReactNode)}
-                      </span>
-                    </div>
-                  ))}
+              {seeMoreData && (
+                <div className="flex justify-end items-center pt-1">
+                  <ActionMenu row={row} actions={seeMoreData} />
                 </div>
+              )}
+
+              <div className="flex-1 space-y-3 mb-2">
+                {columns.map((column, colIndex) => (
+                  <div
+                    key={String(column.key)}
+                    className={`flex justify-between items-center pb-3 ${
+                      colIndex < columns.length - 1 ? "border-b border-gray-200" : ""
+                    }`}
+                  >
+                    <span className="text-xs font-semibold text-gray-600 uppercase">
+                      {column.label}
+                    </span>
+                    <span className="text-sm text-gray-900 font-medium ml-4 text-right">
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : (row[column.key] as React.ReactNode)}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           ))
         )}
 
-        {/* Sentinel */}
         <div ref={sentinelRef} className="h-1" />
         {loadingMore && loadingRow}
         {!hasMore && uniqueRows.length > 0 && endMessage}
@@ -217,11 +289,8 @@ export default function DataTable<T extends { id: string | number }>({
                 </td>
               </tr>
             ) : (
-              uniqueRows.map((row, index) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-gray-50 transition-colors text-sm"
-                >
+              uniqueRows.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50 transition-colors text-sm">
                   {columns.map((column) => (
                     <td
                       key={String(column.key)}
@@ -232,10 +301,9 @@ export default function DataTable<T extends { id: string | number }>({
                         : (row[column.key] as React.ReactNode)}
                     </td>
                   ))}
-
                   {seeMoreData && (
-                    <td className="relative px-4 py-3 text-right">
-                      {renderActions(row, index)}
+                    <td className="px-4 py-3">
+                      <ActionMenu row={row} actions={seeMoreData} />
                     </td>
                   )}
                 </tr>
@@ -244,7 +312,6 @@ export default function DataTable<T extends { id: string | number }>({
           </tbody>
         </table>
 
-        {/* Sentinel sits inside the scrollable container so it fires when user nears the bottom */}
         <div ref={sentinelRef} className="h-1" />
         {loadingMore && (
           <div className="flex justify-center items-center py-4 gap-2 text-gray-500 text-sm">

@@ -46,6 +46,7 @@ export interface BlogPost {
   blogCategory: BlogCategory;
   tags: string[];
   metrics: BlogMetrics;
+  coverImage?: string;
 }
 
 export interface BlogComment {

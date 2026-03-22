@@ -306,7 +306,7 @@ export default function HeroBookingSection() {
         fromTime,   
         untilTime,    
       );
-      console.log("Navigating to search URL:", searchUrl);
+      // console.log("Navigating to search URL:", searchUrl);
       router.push(searchUrl);
     } catch (error) {
       setErrorMessage("Failed to search vehicles. Please try again.");

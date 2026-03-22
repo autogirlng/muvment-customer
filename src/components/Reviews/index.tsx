@@ -111,12 +111,7 @@ const Reviews = ({ vehicleId, pageType }: ReviewsProps) => {
                     )
                 }) : <p className="text-xs font-light">No reviews yet</p>
             }
-
-            {/* Show see more reviews link if number of reviews is greater or equal to 10 */}
             {reviewData[0]?.data?.content?.length >= 10 && pageType != "review" && <Link href={`/Booking/details/${vehicleId}/reviews`}>See all reviews</Link>}
-
-
-            {/* Don't show bottom navigation if page is not reviews */}
             {pageType === "review" && <nav className="flex items-center justify-center space-x-2 py-4 mt-auto">
                 <button
                     onClick={goToPrevPage}

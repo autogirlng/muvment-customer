@@ -308,7 +308,6 @@ export const getSingleData = async (path: string, params?: any) => {
   return NetworkService.handleApiResponse([data]);
 };
 
-// Mutation functions (with loading wrapper for standalone use)
 export const deleteData = async (path: string, id?: string) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
@@ -412,7 +411,7 @@ export const updateMapper = async (path: string, body: any) => {
 
 export const patchWithoutParams = async (
   path: string,
-  data: Record<string, any> = {}
+  data: Record<string, any> = {},
 ) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
@@ -432,19 +431,19 @@ export const patchData = async (
   id: string,
   extraPath: string = "",
   data: Record<string, any> = {},
-  queryParams?: Record<string, any>
+  queryParams?: Record<string, any>,
 ) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
 
     const query = queryParams
       ? "?" +
-      Object.entries(queryParams)
-        .map(
-          ([key, val]) =>
-            `${encodeURIComponent(key)}=${encodeURIComponent(val)}`
-        )
-        .join("&")
+        Object.entries(queryParams)
+          .map(
+            ([key, val]) =>
+              `${encodeURIComponent(key)}=${encodeURIComponent(val)}`,
+          )
+          .join("&")
       : "";
 
     const url = `${path}/${id}${extraPath}${query}`;
@@ -491,7 +490,7 @@ export const updateData = async (path: string, id: string, body: any) => {
 export const updateDataNotification = async (
   path: string,
   id: string,
-  read: boolean
+  read: boolean,
 ) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
@@ -509,7 +508,7 @@ export const updateDataNotification = async (
 export const updateDataFormWithIDParams = async (
   path: string,
   id: string,
-  body: any
+  body: any,
 ) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
@@ -548,7 +547,7 @@ export const updateDataFormWithNoIDPath = async (path: string, body: any) => {
 
 export const updateDataFormWithNoIDPathNew = async (
   path: string,
-  body: any
+  body: any,
 ) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
@@ -668,7 +667,7 @@ export const validateDataInput = (data: Record<string, any>) => {
 export const AuthController = async (
   path: string,
   body?: any,
-  requireAuth: boolean = false
+  requireAuth: boolean = false,
 ) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
@@ -686,7 +685,7 @@ export const AuthController = async (
 
 export const AuthForgotPasswordController = async (
   path: string,
-  requireAuth: boolean = false
+  requireAuth: boolean = false,
 ) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");

@@ -2,23 +2,162 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { BiSearch, BiChevronRight, BiX, BiCategory } from "react-icons/bi";
+import { BiSearch, BiX, BiCategory } from "react-icons/bi";
 import { BlogCategory, BlogPost, PaginatedResponse } from "@/types/blog.type";
 import { BlogService } from "@/controllers/BlogService/blogService";
 import PostCardSkeleton from "./blogUI/Postcardskeleton";
-import FeaturedCard from "./blogUI/Featuredcard";
-import PostCard from "./blogUI/Postcard";
 import { Navbar } from "../Navbar";
 import Footer from "../HomeComponent/Footer";
+import { format } from "date-fns";
 
 interface BlogLandingClientProps {
   initialPosts: PaginatedResponse<BlogPost>;
   initialSearch: string;
-  initialCategory: string; // this is the category ID (or empty string for "All")
+  initialCategory: string;
   categories: BlogCategory[];
 }
 
 const MAX_VISIBLE_TABS = 5;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getInitials(name: string) {
+  return (name || "A")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function DateBadge({ dateStr }: { dateStr: string }) {
+  try {
+    const d = new Date(dateStr);
+    return (
+      <div className="absolute top-3 right-3 bg-white rounded-lg px-3 py-1.5 text-center shadow-sm min-w-[64px]">
+        <p className="text-[10px] text-gray-400 font-medium leading-none mb-0.5">
+          {format(d, "EEE")}
+        </p>
+        <p className="text-2xl font-bold text-gray-900 leading-none">
+          {format(d, "dd")}
+        </p>
+        <p className="text-[10px] text-gray-400 font-medium leading-none mt-0.5">
+          {format(d, "MMM yyyy")}
+        </p>
+      </div>
+    );
+  } catch {
+    return null;
+  }
+}
+
+// ─── Featured dark card ───────────────────────────────────────────────────────
+
+function HeroFeaturedCard({ post }: { post: BlogPost }) {
+  const router = useRouter();
+  const authorName = post.authAuthorName || post.authorName || "Author";
+  const dateLabel = post.createdAt
+    ? format(new Date(post.createdAt), "dd MMMM yyyy")
+    : "";
+
+  return (
+    <article
+      className="relative bg-[#0d1f35] rounded-2xl overflow-hidden p-8 md:p-10 cursor-pointer group"
+      onClick={() => router.push(`/blog/${post.slug || post.id}`)}
+    >
+      {post.blogCategory?.name && (
+        <div className="flex items-center gap-3 mb-5">
+          <span className="inline-block bg-blue-500/20 text-blue-300 text-[10px] font-semibold tracking-widest uppercase px-3 py-1 rounded-full">
+            {post.blogCategory.name}
+          </span>
+        </div>
+      )}
+
+      <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-4 group-hover:text-blue-300 transition-colors max-w-3xl">
+        {post.title}
+      </h2>
+
+      {post.excerpt && (
+        <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-2xl line-clamp-4">
+          {post.excerpt}
+        </p>
+      )}
+
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+          {getInitials(authorName)}
+        </div>
+        <span className="text-sm text-gray-300">
+          {authorName}
+          {dateLabel && (
+            <span className="text-gray-500"> · {dateLabel}</span>
+          )}
+        </span>
+      </div>
+    </article>
+  );
+}
+
+// ─── Grid post card ───────────────────────────────────────────────────────────
+
+function GridPostCard({ post }: { post: BlogPost }) {
+  const router = useRouter();
+  const authorName = post.authAuthorName || post.authorName || "Author";
+  const dateLabel = post.createdAt
+    ? format(new Date(post.createdAt), "dd MMMM yyyy")
+    : "";
+
+  return (
+    <article
+      className="flex flex-col cursor-pointer group"
+      onClick={() => router.push(`/blog/${post.id}`)}
+    >
+      {/* Image */}
+   <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-200 mb-4">
+  {post.coverImage ? (
+    <img
+      src={post.coverImage}
+      alt={post.title}
+      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+    />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center bg-gray-200">
+      <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24">
+        <path stroke="currentColor" strokeWidth="1.5" d="M4 16l4-4 4 4 4-6 4 6" />
+        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    </div>
+  )}
+  <DateBadge dateStr={post.createdAt || ""} />
+</div>
+
+      {/* Text */}
+      <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+        {post.title}
+      </h3>
+      {post.excerpt && (
+        <p className="text-sm text-gray-500 line-clamp-2 mb-3 leading-relaxed">
+          {post.excerpt}
+        </p>
+      )}
+
+      {/* Author */}
+      <div className="flex items-center gap-2 mt-auto pt-2">
+        <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+          {getInitials(authorName)}
+        </div>
+        <span className="text-xs text-gray-500">
+          {authorName}
+          {dateLabel && (
+            <span className="text-gray-400"> · {dateLabel}</span>
+          )}
+        </span>
+      </div>
+    </article>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function BlogLandingClient({
   initialPosts,
@@ -34,7 +173,6 @@ export default function BlogLandingClient({
   const [totalElements, setTotalElements] = useState(initialPosts.totalElements);
   const [currentPage, setCurrentPage] = useState(0);
   const [search, setSearch] = useState(initialSearch);
-  // categoryId: empty string = All
   const [categoryId, setCategoryId] = useState(initialCategory);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -42,8 +180,9 @@ export default function BlogLandingClient({
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Derived: find the name of the selected category (for URL display purposes)
-  const selectedCategory = categories.find((c) => String(c.id) === String(categoryId));
+  const selectedCategory = categories.find(
+    (c) => String(c.id) === String(categoryId)
+  );
 
   const updateUrl = useCallback(
     (s: string, catId: string) => {
@@ -67,27 +206,23 @@ export default function BlogLandingClient({
     }) => {
       if (opts.append) setLoadingMore(true);
       else setLoading(true);
-      
       try {
         const result = await BlogService.getPosts({
           page: opts.page,
           size: 9,
           search: opts.search || undefined,
-          // Pass undefined when "All" so API returns all posts
           category: opts.categoryId || undefined,
         });
-
         if (opts.append) {
           setPosts((prev) => [...prev, ...result.data]);
         } else {
           setPosts(result.data);
         }
-
         setTotalPages(result.totalPages);
         setTotalElements(result.totalElements);
         setCurrentPage(opts.page);
       } catch {
-        // handle silently
+        // silent
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -121,74 +256,53 @@ export default function BlogLandingClient({
 
   const isFeaturedLayout = !search && !categoryId && currentPage === 0;
   const featuredPost = isFeaturedLayout ? posts[0] : null;
-  const gridPosts = isFeaturedLayout ? posts : posts;
+  const gridPosts =
+    isFeaturedLayout && posts.length > 1 ? posts.slice(1) : posts;
 
   const visibleCategories = categories.slice(0, MAX_VISIBLE_TABS);
   const hasMore = categories.length > MAX_VISIBLE_TABS;
 
+
+  console.log(gridPosts)
   return (
     <>
       <Navbar />
 
-      {/* Hero */}
-      <section className="relative bg-[#0d1f35] text-white overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage:
-              "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)",
-            backgroundSize: "64px 64px",
-          }}
-        />
-        <div className="relative max-w-4xl mx-auto px-4 pt-24 pb-20 text-center">
-          <p className="text-blue-400 tracking-[0.35em] text-xs font-semibold uppercase mb-5">
-            Our Journal
-          </p>
-          <h1 className="font-serif text-5xl md:text-7xl font-bold leading-[1.08] mb-6">
-            Ideas Worth{" "}
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
-              Exploring
-            </span>
+      {/* ── Hero ────────────────────────────────────────────────────────── */}
+      <section className="bg-[#0d1f35] text-white">
+        <div className="max-w-4xl mx-auto px-4 pt-28 pb-20 text-center">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+            Blog
           </h1>
-          <p className="text-gray-400 text-lg max-w-md mx-auto mb-10">
-            Stories, insights, and perspectives from our community.
+          <p className="text-gray-400 text-base max-w-md mx-auto mb-10">
+            Ideas worth Exploring Stories, insights, and perspectives from our
+            community.
           </p>
-
-          {/* Search */}
           <div className="relative max-w-lg mx-auto">
-            <BiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+            <BiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <input
               type="search"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search articles…"
-              aria-label="Search blog articles"
-              className="w-full pl-11 pr-4 py-4 rounded-xl bg-white/[0.08] border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.12] transition-all duration-200"
+              placeholder="Search articles..."
+              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
           </div>
         </div>
       </section>
-
-      {/* Category Tabs */}
-      <nav
-        className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm"
-        aria-label="Blog categories"
-      >
+      <nav className="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center gap-1.5 overflow-x-auto py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {/* All tab */}
             <button
               onClick={() => handleCategory(null)}
               className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 ${
                 !categoryId
-                  ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                  ? "bg-blue-600 text-white"
                   : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
               }`}
             >
               All
             </button>
-
-            {/* Visible category tabs */}
             {visibleCategories.map((cat) => {
               const isActive = String(cat.id) === String(categoryId);
               return (
@@ -197,7 +311,7 @@ export default function BlogLandingClient({
                   onClick={() => handleCategory(cat)}
                   className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 ${
                     isActive
-                      ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                      ? "bg-blue-600 text-white"
                       : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
                   }`}
                 >
@@ -205,27 +319,25 @@ export default function BlogLandingClient({
                 </button>
               );
             })}
-
-            {/* See all categories button */}
             {hasMore && (
               <button
                 onClick={() => setShowCategoryModal(true)}
                 className="whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-blue-600 border border-blue-200 hover:bg-blue-50 transition-all duration-150 flex items-center gap-1.5"
               >
                 <BiCategory className="w-3.5 h-3.5" />
-                See all categories
+                See all
               </button>
             )}
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
+      {/* ── Main Content ─────────────────────────────────────────────────── */}
       <main className="max-w-6xl mx-auto px-4 py-12">
         {loading ? (
           <>
-            <div className="h-[420px] bg-gray-100 rounded-2xl animate-pulse mb-10" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="h-[340px] bg-gray-100 rounded-2xl animate-pulse mb-10" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {Array.from({ length: 6 }).map((_, i) => (
                 <PostCardSkeleton key={i} />
               ))}
@@ -250,42 +362,59 @@ export default function BlogLandingClient({
                 {totalElements.toLocaleString()} result
                 {totalElements !== 1 ? "s" : ""}
                 {search && ` for "${search}"`}
-                {categoryId && selectedCategory && ` in ${selectedCategory.name}`}
+                {categoryId &&
+                  selectedCategory &&
+                  ` in ${selectedCategory.name}`}
               </p>
             )}
 
+            {/* Featured card */}
             {featuredPost && (
               <div className="mb-10">
-                <FeaturedCard post={featuredPost} />
+                <HeroFeaturedCard post={featuredPost} />
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {gridPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
+                <GridPostCard key={post.id} post={post} />
               ))}
             </div>
 
+            {/* Load more */}
             {currentPage + 1 < totalPages && (
               <div className="flex justify-center mt-12">
                 <button
                   onClick={handleLoadMore}
                   disabled={loadingMore}
-                  className="flex items-center gap-2 px-8 py-3.5 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-blue-100"
+                  className="flex items-center gap-2 px-8 py-3 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-all duration-200"
                 >
                   {loadingMore ? (
                     <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      <svg
+                        className="w-4 h-4 animate-spin"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        />
                       </svg>
                       Loading…
                     </>
                   ) : (
-                    <>
-                      Load more articles
-                      <BiChevronRight className="w-4 h-4" />
-                    </>
+                    "View all"
                   )}
                 </button>
               </div>
@@ -296,7 +425,7 @@ export default function BlogLandingClient({
 
       <Footer />
 
-      {/* All Categories Modal */}
+      {/* ── Categories Modal ─────────────────────────────────────────────── */}
       {showCategoryModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
@@ -305,9 +434,10 @@ export default function BlogLandingClient({
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
-            {/* Modal header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">All Categories</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                All Categories
+              </h2>
               <button
                 onClick={() => setShowCategoryModal(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
@@ -315,10 +445,7 @@ export default function BlogLandingClient({
                 <BiX className="w-5 h-5" />
               </button>
             </div>
-
-            {/* Modal body */}
             <div className="overflow-y-auto p-6">
-              {/* All option inside modal */}
               <button
                 onClick={() => handleCategory(null)}
                 className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 mb-2 ${
@@ -329,7 +456,6 @@ export default function BlogLandingClient({
               >
                 All Articles
               </button>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {categories.map((cat) => {
                   const isActive = String(cat.id) === String(categoryId);

@@ -55,8 +55,6 @@ export async function generateMetadata({ params }: PageProps) {
     });
   } catch (error) {
     console.error("Error generating metadata:", error);
-
-    // Use the already awaited id here too
     return generatePageMetadata({
       title: "Vehicle Details",
       description: "View detailed information about this rental vehicle.",

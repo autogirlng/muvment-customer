@@ -32,7 +32,7 @@ const VehicleCategories: React.FC = () => {
     }));
     setCategory(transformedOptions);
   };
-  console.log(category);
+  // console.log(category);
   useEffect(() => {
     getvechileType();
   }, []);
