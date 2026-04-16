@@ -467,6 +467,12 @@ const ServicePricingBookingPage: React.FC = () => {
                           value={priceEstimate.platformFeeAmount}
                         />
                       )}
+                      {priceEstimate.logisticsFee > 0 && (
+                        <PriceRow
+                          label="Logistics Fee"
+                          value={priceEstimate.logisticsFee}
+                        />
+                      )}
                       {priceEstimate.vatAmount &&
                         priceEstimate.vatAmount > 0 && (
                           <PriceRow
