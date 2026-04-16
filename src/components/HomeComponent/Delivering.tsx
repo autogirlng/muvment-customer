@@ -258,7 +258,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Carousel Container */}
         <div className="relative">
           {/* Slider Track */}
           <div
