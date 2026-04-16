@@ -14,6 +14,7 @@ import { getBookingOption } from "@/context/Constarain";
 import { useState } from "react";
 import { BookingOption } from "@/types/booking";
 import { ServicePricingShowcaseList } from "@/components/HomeComponent/Servicepricingshowcaselist";
+import Delivery from "@/components/HomeComponent/Delivering";
 function page() {
   const [bookingTypeID, setBookingTypeID] = useState<string | undefined>(
     undefined,
@@ -38,6 +39,7 @@ function page() {
       <BookingInterface />
       <ServicePricingShowcaseList />
       <TopRateing bookingId={bookingTypeID} />
+      <Delivery/>
       <PremiumCarRental />
       <ExploreCities bookingTypeId={bookingTypeID} />
       <VehicleCategories />

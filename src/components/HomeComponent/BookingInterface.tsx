@@ -13,6 +13,7 @@ import { getBookingOption } from "@/context/Constarain";
 import { GoogleMapsService } from "@/context/googleMapConnector";
 import { trackCategoryClick, trackVehicleSearch } from "@/services/analytics";
 import TimePicker from "../Booking/BookingTimePicker";
+import BackgroundCarousel from "./Backgroundcarousel";
 
 const DEFAULT_LOCATION = {
   name: "Lagos, Nigeria",
@@ -315,19 +316,22 @@ export default function HeroBookingSection() {
     }
   };
 
+const HERO_IMAGES = [
+  "/images/landing/hero.jpg",
+  "/images/landing/hero1.png",
+  "/images/landing/hero2.png",
+
+];
+
+
   return (
     <div className="relative w-full h-screen overflow-hidden mt-[5rem] md:mt-0">
-      {/* Background with overlay */}
-      <div className="absolute inset-0">
-        <Image
-          src="/images/landing/hero.jpg"
-          alt="Hero background"
-          fill
-          className="object-cover w-full h-full"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-900/70 via-gray-800/50 to-gray-900/30"></div>
-      </div>
+     
+       <BackgroundCarousel 
+        images={HERO_IMAGES} 
+        interval={3000}
+        overlay="bg-gradient-to-r from-gray-900/70 via-gray-800/50 to-gray-900/30"
+      />
 
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-12 lg:px-20 xl:px-32">
