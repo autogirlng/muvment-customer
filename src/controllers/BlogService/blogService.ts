@@ -121,7 +121,9 @@ export class BlogService {
   ): Promise<BlogComment | null> {
     try {
       const response = await createData(this.BLOG_COMMENTS, body);
-      return response?.data ?? null;
+      // createData wraps response as { data: rawApiJson } (no array)
+      // rawApiJson shape: { status, message, data: BlogCommentDto }
+      return response?.data?.data ?? null;
     } catch (error: any) {
       const serverMessage =
         error?.response?.data?.message ||

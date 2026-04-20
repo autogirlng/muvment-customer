@@ -82,7 +82,7 @@ export default function CommentsSection({
     setFormError("");
 
     try {
-      const newComment = await BlogService.createComment({
+      await BlogService.createComment({
         content: form.content,
         post: { id: postId },
         authorName: form.name,
@@ -90,11 +90,11 @@ export default function CommentsSection({
         authorPhoneNumber: form.phone,
       });
 
-      // Only update state if we got a valid comment back
-      if (newComment) {
-        setComments((prev) => [newComment, ...prev]);
-        setTotalElements((n: any) => n + 1);
-      }
+      const refreshed = await BlogService.getCommentsByPost(postId, 0, 10);
+      setComments(refreshed.data ?? []);
+      setTotalElements(refreshed.totalElements);
+      setTotalPages(refreshed.totalPages);
+      setPage(0);
 
       setForm({ name: "", email: "", phone: "", content: "" });
       setSubmitted(true);
@@ -223,8 +223,8 @@ export default function CommentsSection({
         </div>
       ) : (
         <div>
-          {comments.filter(Boolean).map((c: any, i) => (
-            <CommentItem key={c?.id ?? i} comment={c?.data ?? c} />
+          {comments.filter(Boolean).map((c, i) => (
+            <CommentItem key={c.id ?? i} comment={c} />
           ))}
         </div>
       )}
