@@ -13,6 +13,7 @@ import { FiLoader } from "react-icons/fi";
 import Link from "next/link";
 import { CiLocationOn } from "react-icons/ci";
 import { BiHeart, BiSolidHeart } from "react-icons/bi";
+import Slider, { SlideItem } from "../utils/UtilitySlider";
 
 export default function FavouritesVehiclesClient() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -68,6 +69,34 @@ export default function FavouritesVehiclesClient() {
   useEffect(() => {
     getFavouriteVehicles();
   }, []);
+
+  const slides: SlideItem[] = [
+  {
+    image: "/images/r5.png",
+    title: "Inspired by your favorites",
+    text: "Discover more options similar to what you've saved.",
+  },
+  {
+   image: "/images/r6.png",
+    title: "Complete Your Plan",
+    text: "Turn your saved ideas into a confirmed booking.",
+  },
+  {
+   image: "/images/r7.png",
+    title: "Upgrade your experience",
+    text: "Explore premium options for a more comfortable ride.",
+  },
+  {
+    image: "/images/r8.png",
+    title: "Don't miss out",
+    text: "Your saved rides are in high demand, book before they're gone.",
+  },
+  {
+    image: "/images/r9.png",
+    title: "Explore more options",
+    text: "Find new rides and experiences tailored to your lifestyle.",
+  },
+];
 
   if (loading) {
     return (
@@ -200,6 +229,7 @@ export default function FavouritesVehiclesClient() {
           </main>
         </div>
       </div>
+       <Slider slides={slides} automatic seconds={4} />
       <Footer />
     </div>
   );
