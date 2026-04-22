@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { BiChevronDown } from "react-icons/bi";
 import { Navbar } from "@/components/Navbar";
+import Slider, { SlideItem } from "@/components/utils/UtilitySlider";
 
 function FAQPageClient() {
   const [activeSection, setActiveSection] = useState("booking-account");
@@ -132,11 +133,39 @@ function FAQPageClient() {
     ],
   };
 
+  const slides: SlideItem[] = [
+  {
+    image: "/images/r.png",
+    title: "24/7 Support",
+    text: "We're always here to assist you anytime.",
+  },
+  {
+     image: "/images/r1.png",
+    title: "Easy Booking",
+    text: "Book your ride in just a few simple steps.",
+  },
+  {
+     image: "/images/r2.png",
+    title: "Secure Payments",
+    text: "Safe and transparent payment options you can trust.",
+  },
+  {
+     image: "/images/r3.png",
+    title: "Reliable Pickups",
+    text: "On-time service, exactly when you need it.",
+  },
+  {
+     image: "/images/r4.png",
+    title: "Safety First",
+    text: "Well-maintained cars and trusted drivers.",
+  },
+];
+
   return (
     <>
       <Navbar />
       <div className="min-h-screen pt-16 lg:pt-20">
-        {/* Header Section with Logo Background */}
+        
         <div className="relative h-64 lg:h-[70vh] w-full bg-[#0673FF] overflow-hidden">
           {/* Logo Pattern Background */}
           <div className="absolute inset-0 opacity-10">
@@ -171,7 +200,7 @@ function FAQPageClient() {
         <div className="flex justify-start  items-center px-6 pt-6">
           <button onClick={() => router.push("/")}> BACK HOME</button>
         </div>
-        {/* Mobile Navigation */}
+    
         <div className="lg:hidden sticky top-0 z-30 bg-white shadow-sm">
           <div className="overflow-x-auto py-3 scrollbar-hide">
             <div className="flex space-x-4 px-4 min-w-max">
@@ -192,7 +221,7 @@ function FAQPageClient() {
           </div>
         </div>
 
-        {/* Main Content */}
+      
         <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
           <div className="flex gap-8">
             {/* Desktop Navigation Sidebar */}
@@ -415,6 +444,8 @@ function FAQPageClient() {
             </div>
           </div>
         </div>
+
+         <Slider slides={slides} automatic seconds={4} />
         <Footer />
       </div>
     </>

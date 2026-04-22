@@ -1,6 +1,7 @@
 "use client";
 
 import { Navbar } from "@/components/Navbar";
+import Slider, { SlideItem } from "@/components/utils/UtilitySlider";
 import {
   NotificationService,
   Notification,
@@ -154,6 +155,35 @@ const NotificationsPage = () => {
   };
 
   const groupedNotifications = groupNotificationsByDate(notifications);
+
+
+  const slides: SlideItem[] = [
+  {
+     image: "/images/r10.png",
+    title: "Stay updated",
+    text: "Get real-time updates on your bookings, payments, and activities.",
+  },
+  {
+     image: "/images/r11.png",
+    title: "Track your bookings",
+    text: "Receive timely updates from booking confirmation to trip completion.",
+  },
+  {
+     image: "/images/r12.png",
+    title: "Payment notifications",
+    text: "Stay informed on all transactions with instant alerts and receipts.",
+  },
+  {
+     image: "/images/r13.png",
+    title: "Never miss a ride",
+    text: "Get reminders before your scheduled trips and important updates.",
+  },
+  {
+    image: "/images/r14.png",
+    title: "Secure notifications",
+    text: "Receive alerts for account activity and important security updates.",
+  },
+];
 
   const DeleteConfirmModal = () => (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -354,6 +384,7 @@ const NotificationsPage = () => {
           </div>
         )}
       </div>
+      <Slider slides={slides} automatic seconds={4} />
     </div>
   );
 };
