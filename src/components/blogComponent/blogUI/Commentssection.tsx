@@ -129,7 +129,7 @@ export default function CommentsSection({
         {submitted && (
           <div className="flex items-center gap-2 mb-5 p-3.5 rounded-xl bg-green-50 border border-green-100 text-green-700 text-sm">
             <BiCheck className="w-4 h-4 flex-shrink-0" />
-            Your comment has been posted!
+            Your comment has been posted
           </div>
         )}
 
