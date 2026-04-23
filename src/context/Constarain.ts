@@ -79,4 +79,4 @@ export const DEFAULT_LOCATION_SUGGESTIONS: PlacePrediction[] = [
 
 export const GOOGLE_MAPS_DEBOUNCE_DELAY = 300;
 export const MAX_GOOGLE_PLACES_RESULTS = 5;
-export const GOOGLE_PLACES_COUNTRY_RESTRICTION = "ng";
+export const GOOGLE_PLACES_COUNTRY_RESTRICTION = ["ng", "bj"];
