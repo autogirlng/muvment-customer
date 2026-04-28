@@ -353,7 +353,7 @@ const createNewBooking = async () => {
       rideFor === "others"
         ? formatPhone(recipientPhoneNumber || phoneNumber, recipientCountryCode)
         : formatPhone(phoneNumber, primaryCountryCode),
-    purposeOfRide: extraDetails || "N/A",
+    purposeOfRide: "N/A",
     extraDetails: extraDetails || "N/A",
     channel: "WEBSITE",
     paymentMethod: "ONLINE",
