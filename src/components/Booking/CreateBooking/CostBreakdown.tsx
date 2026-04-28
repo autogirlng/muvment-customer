@@ -139,7 +139,7 @@ const CostBreakdown = ({
           "",
         extraDetails: userBookingInfo.extraDetails || "N/A",
         isBookingForOthers: userBookingInfo.isBookingForOthers,
-        purposeOfRide: "N/A",
+        purposeOfRide: userBookingInfo.purposeOfRide || "N/A",
         channel: "WEBSITE",
         paymentMethod: "ONLINE",
         discountAmount: pricing?.data.data.discountAmount,
@@ -226,37 +226,48 @@ const CostBreakdown = ({
           <section>
             <h2 className="font-bold">Cost Breakdown</h2>
             <div className="border-b border-grey-200 pb-4">
-              <div className="w-full text-sm flex text-black justify-between mt-3">
-                <span>Base Price</span>
-                <span>
-                  NGN{" "}
-                  {(pricing?.data?.data?.basePrice || 0) +
-                    (pricing?.data?.data?.platformFeeAmount || 0)}
-                </span>
-              </div>
+              {((pricing?.data?.data?.basePrice || 0) + (pricing?.data?.data?.platformFeeAmount || 0)) > 0 && (
+                <div className="w-full text-sm flex text-black justify-between mt-3">
+                  <span>Base Price</span>
+                  <span>
+                    NGN{" "}
+                    {(pricing?.data?.data?.basePrice || 0) +
+                      (pricing?.data?.data?.platformFeeAmount || 0)}
+                  </span>
+                </div>
+              )}
 
-              {pricing?.data?.data?.vatAmount ? (
+              {(pricing?.data?.data?.geofenceSurcharge || 0) > 0 && (
                 <div className="w-full text-sm flex justify-between mt-4">
-                  <span>VAT Charge</span>
+                  <span>Geofence Surcharge</span>
+                  <span>NGN {pricing?.data?.data?.geofenceSurcharge}</span>
+                </div>
+              )}
+
+              {(pricing?.data?.data?.vatAmount || 0) > 0 && (
+                <div className="w-full text-sm flex justify-between mt-4">
+                  <span>
+                    VAT{pricing?.data?.data?.vatPercentage ? ` (${pricing.data.data.vatPercentage}%)` : ""}
+                  </span>
                   <span>NGN {pricing?.data?.data?.vatAmount}</span>
                 </div>
-              ) : null}
+              )}
 
-              {pricing?.data?.data?.discountAmount ? (
+              {(pricing?.data?.data?.discountAmount || 0) > 0 && (
                 <div className="w-full text-sm flex justify-between mt-4 text-green-600">
                   <span>Duration Discount</span>
                   <span>- NGN {pricing?.data?.data?.discountAmount}</span>
                 </div>
-              ) : null}
+              )}
 
-              {pricing?.data?.data?.couponDiscountAmount ? (
+              {(pricing?.data?.data?.couponDiscountAmount || 0) > 0 && (
                 <div className="w-full text-sm flex justify-between mt-4 text-green-600">
                   <span>
-                    Coupon Discount ({pricing.data?.data?.appliedCouponCode})
+                    Coupon Discount ({pricing?.data?.data?.appliedCouponCode})
                   </span>
                   <span>- NGN {pricing?.data?.data?.couponDiscountAmount}</span>
                 </div>
-              ) : null}
+              )}
             </div>
             <div className="w-full text-sm flex justify-between mt-4 mb-6">
               <span>Total</span>

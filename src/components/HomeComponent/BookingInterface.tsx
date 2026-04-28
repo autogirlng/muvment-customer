@@ -341,7 +341,7 @@ const HERO_IMAGES = [
             Find your perfect ride
           </h1>
           <p className="text-base md:text-lg text-gray-200">
-            Browse and book cars effortlessly from our wide selection
+            Browse and book cars with drivers effortlessly from our wide selection.
           </p>
         </div>
 

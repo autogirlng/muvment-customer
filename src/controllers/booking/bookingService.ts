@@ -67,7 +67,7 @@ export class BookingService {
   ): Promise<BookingResponse> {
     try {
       const response = await getTableData(
-        `${this.BASE_URL}/my-segments`,
+        `${this.BASE_URL}`,
         filters,
       );
       if (response) {

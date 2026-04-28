@@ -1,6 +1,7 @@
 // app/page.tsx
 'use client';
 
+import { useRouter } from 'next/navigation';
 import React, { useState, useRef, useEffect } from 'react';
 
 // Define the structure of a carousel item
@@ -14,6 +15,39 @@ interface CarouselItem {
 }
 
 const carouselData: CarouselItem[] = [
+   {
+    id: 4,
+    title: "Airport Pickups",
+    description: "Enjoy seamless arrivals and departures with reliable, on-time airport transfer services. Travel stress free with comfort and convenience from pickup to drop-off.",
+    buttonText: "Book Now",
+    backgroundImage: "/images/s4.png"
+  },
+    {
+    id: 5,
+    title: "Convoys for special occasions",
+    description: "Make a statement with coordinated convoy services perfect for weddings, celebrations, and VIP events. Arrive together in style with well organized, premium vehicles.",
+    buttonText: "Book Now",
+    isHighlighted: true,
+    backgroundImage: "/images/s5.png"
+  },
+
+  {
+    id: 5,
+    title: "Interstate Travel",
+    description: "Enjoy seamless inter-state travel with spacious, well-maintained vehicles built for comfort and convenience.",
+    buttonText: "Book Now",
+    isHighlighted: true,
+    backgroundImage: "/images/s5.png"
+  },
+
+  {
+    id: 6,
+    title: "Night Life",
+    description: "Experience the city after dark with safe, stylish rides for your nights out. Move freely between spots without worrying about driving or parking.",
+    buttonText: "Book Now",
+    backgroundImage: "/images/s6.png"
+  },
+
   {
     id: 1,
     title: "Wide Selection Of Vehicles",
@@ -35,28 +69,8 @@ const carouselData: CarouselItem[] = [
     buttonText: "Book Now",
     backgroundImage: "/images/s3.png"
   },
-  {
-    id: 4,
-    title: "Airport Pickups",
-    description: "Enjoy seamless arrivals and departures with reliable, on-time airport transfer services. Travel stress free with comfort and convenience from pickup to drop-off.",
-    buttonText: "Book Now",
-    backgroundImage: "/images/s4.png"
-  },
-  {
-    id: 5,
-    title: "Convoys for special occasions",
-    description: "Make a statement with coordinated convoy services perfect for weddings, celebrations, and VIP events. Arrive together in style with well organized, premium vehicles.",
-    buttonText: "Book Now",
-    isHighlighted: true,
-    backgroundImage: "/images/s5.png"
-  },
-  {
-    id: 6,
-    title: "Night Life",
-    description: "Experience the city after dark with safe, stylish rides for your nights out. Move freely between spots without worrying about driving or parking.",
-    buttonText: "Book Now",
-    backgroundImage: "/images/s6.png"
-  },
+ 
+
   {
     id: 7,
     title: "Personal use",
@@ -79,7 +93,7 @@ export default function Home() {
   const [dragStartTranslate, setDragStartTranslate] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
-
+  const router = useRouter()
   // Calculate cards per view based on screen width
   useEffect(() => {
     const updateCardsPerView = () => {
@@ -245,6 +259,9 @@ export default function Home() {
     handleDragEnd();
   };
 
+  const handleroute = () => {
+    router.push("/booking/search");
+  };
   return (
     <main className="min-h-screen  py-12 px-4 ">
       <div className="max-w-7xl mx-auto">
@@ -311,6 +328,7 @@ export default function Home() {
                         </p>
                         <div className="pt-3 pb-1">
                           <button
+                          onClick={handleroute}
                             className={`group bg-blue-600/90 backdrop-blur-sm hover:bg-blue-700 px-5 py-2.5 rounded-lg inline-flex items-center gap-2 font-semibold transition-all duration-200 text-white shadow-md`}
                           >
                             {item.buttonText}
