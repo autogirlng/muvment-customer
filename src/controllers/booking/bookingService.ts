@@ -33,10 +33,12 @@ export interface BookingResponse {
   errorCode: string;
   data: {
     content: Booking[];
-    currentPage: number;
-    pageSize: number;
-    totalItems: number;
+    page: number;
+    size: number;
+    totalElements: number;
     totalPages: number;
+    last: boolean;
+    first: boolean;
   };
   timestamp: string;
 }
@@ -45,6 +47,7 @@ export interface BookingFilters {
   page?: number;
   size?: number;
   bookingStatus?: string;
+  bookingTypeId?: string;
   startDate?: string;
   endDate?: string;
   searchTerm?: string;
@@ -52,6 +55,7 @@ export interface BookingFilters {
 
 export class BookingService {
   private static readonly BASE_URL = "/api/v1/bookings";
+  private static readonly MY_SEGMENTS_URL = "/api/v1/bookings/my-segments";
   private static readonly BASE_URL_SPECIAL_BOOKING =
     "/api/v1/bookings/service-pricing";
   private static readonly BOOKINGS_URL = "/api/v1/public/bookings";
@@ -67,7 +71,7 @@ export class BookingService {
   ): Promise<BookingResponse> {
     try {
       const response = await getTableData(
-        `${this.BASE_URL}`,
+        `${this.MY_SEGMENTS_URL}`,
         filters,
       );
       if (response) {
@@ -91,24 +95,14 @@ export class BookingService {
     }
   }
 
-  static async getDashboardCounts(): Promise<{
-    bookings: number;
-    payments: number;
-  }> {
+  static async getDashboardCounts(): Promise<{ payments: number }> {
     try {
-      const [bookingRes, paymentRes] = await Promise.all([
-        getSingleData(`${this.BASE_URL}/my-segments`),
-        getSingleData(`${this.PAYMENT_URL}`),
-      ]);
-
-      const bookingResData = bookingRes?.data[0].data;
+      const paymentRes = await getSingleData(`${this.PAYMENT_URL}`);
       const paymentResData = paymentRes?.data[0].data;
-      const bookings = bookingResData.totalItems ?? 0;
-      const payments = paymentResData.totalItems ?? 0;
-
-      return { bookings, payments };
+      const payments = paymentResData?.totalElements ?? 0;
+      return { payments };
     } catch (error) {
-      console.error("Error fetching counts:", error);
+      console.error("Error fetching payment count:", error);
       throw error;
     }
   }

@@ -73,7 +73,7 @@ export default function Dashboard(): React.ReactElement {
   const [errorMessage, setErrorMessage] = useState("");
   const [categoryOptions, setcategoryOptions] = useState([]);
   const [bookingOptions, setBookingOptions] = useState<any[]>([]);
-  const [statictis, setStatictis] = useState<{
+  const [stats, setStats] = useState<{
     bookings: number;
     payments: number;
   }>({
@@ -232,10 +232,7 @@ export default function Dashboard(): React.ReactElement {
   const handleDashboardLoad = async () => {
     try {
       const response = await BookingService.getDashboardCounts();
-      setStatictis({
-        bookings: response.bookings,
-        payments: response.payments,
-      });
+      setStats((prev) => ({ ...prev, payments: response.payments }));
     } catch (error) {
       console.error("Error loading dashboard data:", error);
     }
@@ -277,21 +274,21 @@ export default function Dashboard(): React.ReactElement {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
           <StatCard
             title="Total Bookings"
-            value={statictis.bookings}
+            value={stats.bookings}
             icon={<FiBook className="w-6 h-6 text-blue-600" />}
             iconBgColor="bg-blue-100"
             onViewDetails={() => handleViewMore("/dashboard/my-booking")}
           />
           <StatCard
             title="Payments"
-            value={statictis.payments}
+            value={stats.payments}
             icon={<FiCreditCard className="w-6 h-6 text-blue-600" />}
             iconBgColor="bg-blue-100"
             onViewDetails={() => handleViewMore("/dashboard/payment")}
           />
           {/* <StatCard
             title="Pending Actions"
-            value={statictis.bookings}
+            value={stats.bookings}
             icon={<FiCalendar className="w-6 h-6 text-blue-600" />}
             iconBgColor="bg-blue-100"
             onViewDetails={() => handleViewMore("/dashboard/pending")}
@@ -416,7 +413,13 @@ export default function Dashboard(): React.ReactElement {
         </div> */}
 
         {/* Booking Log */}
-        <BookingHistoryComponent showHeader={false} limit={4} />
+        <BookingHistoryComponent
+          showHeader={false}
+          limit={4}
+          onTotalCountChange={(total) =>
+            setStats((prev) => ({ ...prev, bookings: total }))
+          }
+        />
       </div>
     </div>
   );
