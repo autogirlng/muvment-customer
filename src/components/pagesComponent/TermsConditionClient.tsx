@@ -254,7 +254,7 @@ function TermsOfServiceClient() {
     {
       title: "Additional Fees:",
       content:
-        "All airport tolls and parking fees incurred during the service are the responsibility of the client.",
+        "All airport tolls and parking fees are the sole responsibility of the client. Lagos International Airport parking is currently charged at the following rates: ₦3,500 per hour for saloon cars; ₦4,000 per hour for SUVs and buses; ₦2,500 for each subsequent hour; ₦50,000 for overnight parking (0-24 hours); and ₦25,000 for lost or damaged parking tickets. These rates are set by the airport authority and are subject to change without notice. Any increase in tariff at the time of service will be borne by the client.",
     },
     {
       title: "Overtime Charges:",
