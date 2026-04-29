@@ -25,6 +25,7 @@ import { toast } from "react-toastify";
 interface BookingHistoryComponentProps {
   showHeader?: boolean;
   limit?: number;
+  onTotalCountChange?: (total: number) => void;
 }
 
 const PAGE_SIZE = 10;
@@ -54,6 +55,7 @@ const transformItem = (item: any) => ({
 const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   showHeader = true,
   limit,
+  onTotalCountChange,
 }) => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +71,7 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isFirstRender = useRef(true);
 
   const fetchPage = useCallback(
     async (pageNumber: number, reset = false) => {
@@ -80,10 +83,15 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           page: pageNumber,
           size: PAGE_SIZE,
         });
-
+        console.log("Fetched bookings page:", response);
         const content = response.data.content;
         const totalPages: number = response.data.totalPages ?? 1;
+        const totalElements: number = response.data.totalElements ?? 0;
         let transformed = content.map(transformItem);
+
+        if (reset && onTotalCountChange) {
+          onTotalCountChange(totalElements);
+        }
 
         // If a limit is set (e.g. dashboard widget), cap results and disable further loading
         if (limit) {
@@ -99,12 +107,13 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
       } catch (error) {
         console.error("Error loading bookings:", error);
         toast.error("Failed to load bookings.");
+        setHasMore(false);
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     },
-    [filters, limit],
+    [filters, limit, onTotalCountChange],
   );
 
   // Reset on status filter change
@@ -115,8 +124,12 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.bookingStatus]);
 
-  // Debounced search
+  // Debounced search — skip the initial mount so only one fetch fires on load
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
       setPage(0);
@@ -138,10 +151,10 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   }, [page]);
 
   const handleLoadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
+    if (!loading && !loadingMore && hasMore) {
       setPage((prev) => prev + 1);
     }
-  }, [loadingMore, hasMore]);
+  }, [loading, loadingMore, hasMore]);
 
   const handleBookingClick = (booking: any) => {
     setSelectedBookings([booking]);
