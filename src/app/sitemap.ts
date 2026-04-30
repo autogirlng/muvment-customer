@@ -4,9 +4,101 @@ const APP_URL = process.env.NEXT_PUBLIC_VERCEL_URL;
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  if (APP_URL !== "https://muvment.ng") {
+  const isProduction = APP_URL === "https://muvment.ng";
+
+  if (!isProduction) {
+    console.log(
+      "Sitemap generation blocked: Non-production environment detected.",
+    );
     return [];
   }
+
+  const staticRoutes: MetadataRoute.Sitemap = [
+    {
+      url: `${APP_URL}/`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 1.0,
+    },
+    {
+      url: `${APP_URL}/about-us`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.5,
+    },
+    {
+      url: `${APP_URL}/auth/forgot-password`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.4,
+    },
+    {
+      url: `${APP_URL}/auth/login`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
+      url: `${APP_URL}/auth/register`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
+      url: `${APP_URL}/blog`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.7,
+    },
+    {
+      url: `${APP_URL}/booking/explore`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: `${APP_URL}/booking/search`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.8,
+    },
+    {
+      url: `${APP_URL}/contact-us`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.5,
+    },
+    {
+      url: `${APP_URL}/explore`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 1.0,
+    },
+    {
+      url: `${APP_URL}/faq`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${APP_URL}/partner-with-us`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${APP_URL}/policy/privacy-policy`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+    {
+      url: `${APP_URL}/policy/terms-conditions`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+  ];
 
   try {
     const [blogsRes, vehiclesRes] = await Promise.all([
@@ -16,17 +108,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
     ]);
 
-    const blogsData = await blogsRes.json();
-    const vehiclesData = await vehiclesRes.json();
+    const blogsJson =
+      blogsRes.ok &&
+      blogsRes.headers.get("content-type")?.includes("application/json")
+        ? await blogsRes.json()
+        : null;
 
-    const blogEntries = (blogsData.data?.content || []).map((post: any) => ({
+    const vehiclesJson =
+      vehiclesRes.ok &&
+      vehiclesRes.headers.get("content-type")?.includes("application/json")
+        ? await vehiclesRes.json()
+        : null;
+
+    const blogEntries = (blogsJson?.data?.content || []).map((post: any) => ({
       url: `${APP_URL}/blog/${post.id}`,
       lastModified: new Date(post.updatedAt || post.createdAt),
       changeFrequency: "weekly" as const,
       priority: 0.7,
     }));
 
-    const vehicleEntries = (vehiclesData.data?.content || []).flatMap(
+    const vehicleEntries = (vehiclesJson?.data?.content || []).flatMap(
       (v: any) => [
         {
           url: `${APP_URL}/booking/details/${v.id}`,
@@ -43,66 +144,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ],
     );
 
-    const staticRoutes: MetadataRoute.Sitemap = [
-      { url: `${APP_URL}/about-us`, changeFrequency: "yearly", priority: 0.5 },
-      {
-        url: `${APP_URL}/auth/forgot-password`,
-        changeFrequency: "monthly",
-        priority: 0.4,
-      },
-      {
-        url: `${APP_URL}/auth/login`,
-        changeFrequency: "monthly",
-        priority: 0.5,
-      },
-      {
-        url: `${APP_URL}/auth/register`,
-        changeFrequency: "monthly",
-        priority: 0.5,
-      },
-      {
-        url: `${APP_URL}/auth/reset-password`,
-        changeFrequency: "monthly",
-        priority: 0.4,
-      },
-      { url: `${APP_URL}/blog`, changeFrequency: "daily", priority: 0.7 },
-      {
-        url: `${APP_URL}/booking/explore`,
-        changeFrequency: "daily",
-        priority: 0.9,
-      },
-      {
-        url: `${APP_URL}/booking/search`,
-        changeFrequency: "daily",
-        priority: 0.8,
-      },
-      {
-        url: `${APP_URL}/contact-us`,
-        changeFrequency: "yearly",
-        priority: 0.5,
-      },
-      { url: `${APP_URL}/explore`, changeFrequency: "daily", priority: 1.0 },
-      { url: `${APP_URL}/faq`, changeFrequency: "monthly", priority: 0.6 },
-      {
-        url: `${APP_URL}/partner-with-us`,
-        changeFrequency: "monthly",
-        priority: 0.6,
-      },
-      {
-        url: `${APP_URL}/policy/privacy-policy`,
-        changeFrequency: "monthly",
-        priority: 0.3,
-      },
-      {
-        url: `${APP_URL}/policy/terms-conditions`,
-        changeFrequency: "monthly",
-        priority: 0.3,
-      },
-    ];
-
     return [...staticRoutes, ...blogEntries, ...vehicleEntries];
   } catch (error) {
-    console.error("Sitemap generation failed:", error);
-    return [{ url: APP_URL, lastModified: new Date() }];
+    return staticRoutes;
   }
 }

@@ -1,9 +1,10 @@
 import { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  const isProd = process.env.NEXT_PUBLIC_VERCEL_URL === "https://muvment.ng";
+  const APP_URL = process.env.NEXT_PUBLIC_VERCEL_URL;
+  const isProduction = APP_URL === "https://muvment.ng";
 
-  if (!isProd) {
+  if (!isProduction) {
     return {
       rules: {
         userAgent: "*",
@@ -29,6 +30,6 @@ export default function robots(): MetadataRoute.Robots {
         "/review/",
       ],
     },
-    sitemap: `${process.env.NEXT_PUBLIC_VERCEL_URL}/sitemap.xml`,
+    sitemap: `${APP_URL}/sitemap.xml`,
   };
 }
