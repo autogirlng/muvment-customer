@@ -102,10 +102,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const [blogsRes, vehiclesRes, showcaseRes] = await Promise.all([
-      fetch(`${API_URL}/blog-posts?page=0&size=100`, {
+      fetch(`${API_URL}/blog-posts?page=0&size=2000`, {
         next: { revalidate: 3600 },
       }),
-      fetch(`${API_URL}/public/vehicles/search?page=0&size=100`, {
+      fetch(`${API_URL}/public/vehicles/search?page=0&size=2000`, {
         next: { revalidate: 3600 },
       }),
       fetch(`${API_URL}/public/service-pricing-showcase`, {
