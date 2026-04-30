@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 const APP_URL = process.env.NEXT_PUBLIC_VERCEL_URL;
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = "https://api-muvment-prod.up.railway.app/api/v1";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const isProduction = APP_URL === "https://muvment.ng";
