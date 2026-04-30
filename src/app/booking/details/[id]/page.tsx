@@ -33,9 +33,7 @@ export async function generateMetadata({
       vehicle.city
     }. ${vehicle.vehicleTypeName?.replaceAll("_", " ")} with ${
       vehicle.numberOfSeats
-    } seats. ${
-      features ? `Features: ${features}.` : ""
-    } Book instantly with flexible pricing.`;
+    } seats. Book instantly with flexible pricing.`;
 
     return generatePageMetadata({
       title,
@@ -44,7 +42,6 @@ export async function generateMetadata({
         vehicle.vehicleMakeName,
         vehicle.vehicleModelName,
         `${vehicle.name} rental`,
-        `rent ${vehicle.vehicleTypeName?.replaceAll("_", " ")}`,
         vehicle.city,
         "car rental Nigeria",
       ],
@@ -78,7 +75,42 @@ export default async function VehicleDetailsPage({ params }: PageProps) {
       );
     }
 
-    return <VehicleDetailsClient initialVehicleData={vehicle} />;
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Car",
+      name: vehicle.name,
+      description:
+        vehicle.description || `Rent a ${vehicle.name} in ${vehicle.city}`,
+      image: vehicle.photos?.map((photo: any) => photo.cloudinaryUrl) || [],
+      vehicleModelDate: vehicle.year,
+      manufacturer: {
+        "@type": "Organization",
+        name: vehicle.vehicleMakeName,
+      },
+      seatingCapacity: vehicle.numberOfSeats,
+      offers: {
+        "@type": "Offer",
+        priceCurrency: "NGN",
+        price:
+          vehicle.allPricingOptions?.length > 0
+            ? Math.min(
+                ...vehicle.allPricingOptions.map((opt: any) => opt.price),
+              )
+            : 0,
+        availability: "https://schema.org/InStock",
+        url: `https://www.muvment.ng/booking/details/${id}`,
+      },
+    };
+
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <VehicleDetailsClient initialVehicleData={vehicle} />
+      </>
+    );
   } catch (error) {
     console.error("Error generating page:", error);
     return (

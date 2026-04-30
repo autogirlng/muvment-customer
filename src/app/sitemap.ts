@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 
-const APP_URL = process.env.NEXT_PUBLIC_VERCEL_URL;
+const APP_URL = process.env.NEXT_PUBLIC_VERCEL_URL || "https://muvment.ng";
 const API_URL = "https://api-muvment-prod.up.railway.app/api/v1";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -101,9 +101,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const [blogsRes, vehiclesRes] = await Promise.all([
-      fetch(`${API_URL}/blog-posts`, { next: { revalidate: 3600 } }),
+    const [blogsRes, vehiclesRes, showcaseRes] = await Promise.all([
+      fetch(`${API_URL}/blog-posts?page=0&size=100`, {
+        next: { revalidate: 3600 },
+      }),
       fetch(`${API_URL}/public/vehicles/search?page=0&size=100`, {
+        next: { revalidate: 3600 },
+      }),
+      fetch(`${API_URL}/public/service-pricing-showcase`, {
         next: { revalidate: 3600 },
       }),
     ]);
@@ -120,6 +125,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         ? await vehiclesRes.json()
         : null;
 
+    const showcaseJson =
+      showcaseRes.ok &&
+      showcaseRes.headers.get("content-type")?.includes("application/json")
+        ? await showcaseRes.json()
+        : null;
+
     const blogEntries = (blogsJson?.data?.content || []).map((post: any) => ({
       url: `${APP_URL}/blog/${post.id}`,
       lastModified: new Date(post.updatedAt || post.createdAt),
@@ -127,25 +138,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    const vehicleEntries = (vehiclesJson?.data?.content || []).flatMap(
-      (v: any) => [
-        {
-          url: `${APP_URL}/booking/details/${v.id}`,
-          lastModified: new Date(),
-          changeFrequency: "daily" as const,
-          priority: 0.8,
-        },
-        {
-          url: `${APP_URL}/booking/${v.id}/special-pricing`,
-          lastModified: new Date(),
-          changeFrequency: "daily" as const,
-          priority: 0.6,
-        },
-      ],
+    const vehicleEntries = (vehiclesJson?.data?.content || []).map(
+      (v: any) => ({
+        url: `${APP_URL}/booking/details/${v.id}`,
+        lastModified: new Date(),
+        changeFrequency: "daily" as const,
+        priority: 0.8,
+      }),
     );
 
-    return [...staticRoutes, ...blogEntries, ...vehicleEntries];
+    const showcaseEntries = (showcaseJson?.data || []).map((item: any) => ({
+      url: `${APP_URL}/booking/${item.servicePricingId}/special-pricing`,
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.6,
+    }));
+
+    return [
+      ...staticRoutes,
+      ...blogEntries,
+      ...vehicleEntries,
+      ...showcaseEntries,
+    ];
   } catch (error) {
+    console.error("Sitemap error:", error);
     return staticRoutes;
   }
 }
