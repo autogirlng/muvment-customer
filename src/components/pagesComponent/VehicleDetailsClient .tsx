@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createData } from "@/controllers/connnector/app.callers";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import Modal from "@/components/general/modal";
@@ -12,20 +11,16 @@ import {
   FiLoader,
   FiArrowLeft,
   FiBell,
-  FiShare2,
   FiTag,
   FiInfo,
-  FiClock,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import { SocialShareButton } from "@/components/general/share";
-import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { Carousel } from "@/components/utils/Carousel";
 import { TripAccordion } from "@/components/Booking/TripAccordion";
 import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
 import { Reviews } from "@/components/Reviews";
 import {
-  VehicleDetailsPageProps,
   VehicleBookingOptions,
   EstimatedBookingPrice,
 } from "@/types/vehicleDetails";
@@ -35,13 +30,21 @@ import Footer from "../HomeComponent/Footer";
 import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicleservice";
 import LoginPromptModal from "../Booking/Loginpromptmodal";
 
-const VehicleDetailsClient: React.FC = () => {
+interface VehicleDetailsClientProps {
+  initialVehicleData: any;
+}
+
+const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
+  initialVehicleData,
+}) => {
   const router = useRouter();
   const { id } = useParams();
   const { isAuthenticated } = useAuth();
-  const [vehicle, setVehicle] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+
+  const [vehicle, setVehicle] = useState<any>(initialVehicleData);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [bookingOptions, setBookingOptions] = useState<
     { option: string; value: string }[]
   >([]);
@@ -50,8 +53,9 @@ const VehicleDetailsClient: React.FC = () => {
   const [bookRideModal, setBookRideModal] = useState<boolean>(false);
   const [couponCode, setCouponCode] = useState<string>("");
   const [isFavorited, setIsFavorited] = useState(false);
-const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
-const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   const {
     setTrips,
     trips,
@@ -86,8 +90,10 @@ const [showLoginModal, setShowLoginModal] = useState(false);
   };
 
   useEffect(() => {
-    const options = generateBookingOptions();
-    setBookingOptions(options);
+    if (vehicle) {
+      const options = generateBookingOptions();
+      setBookingOptions(options);
+    }
   }, [vehicle]);
 
   useEffect(() => {
@@ -96,50 +102,41 @@ const [showLoginModal, setShowLoginModal] = useState(false);
     setTrips([{ id: "trip-0", tripDetails: {} }]);
   }, []);
 
-  const check = async()=>{
-    const result = await FavouriteVehicleService.checkIsFavourite(vehicle.id)
-    setIsFavorited(result)
- 
-  }
-
-  useEffect(() => {
-  if (!vehicle || !isAuthenticated) return;
-  check()
-
-}, [vehicle, isAuthenticated]);
-  useEffect(() => {
-    const fetchVehicleDetails = async () => {
-      try {
-        setLoading(true);
-        const data = await VehicleSearchService.getVehicleById(id as string);
-        setVehicle(data[0].data);
-        setError(null);
-      } catch (err) {
-        setError("Failed to load vehicle details");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchVehicleDetails();
+  const check = async () => {
+    if (!vehicle?.id) return;
+    try {
+      const result = await FavouriteVehicleService.checkIsFavourite(vehicle.id);
+      setIsFavorited(result);
+    } catch (e) {
+      console.error("Failed to check favourite status", e);
     }
-  }, [id]);
+  };
 
+  useEffect(() => {
+    if (!vehicle || !isAuthenticated) return;
+    check();
+  }, [vehicle, isAuthenticated]);
 
   const handleToggleFavourite = async () => {
-  if (!isAuthenticated) { setShowLoginModal(true); return; }
-  setIsFavoriteLoading(true);
-  try {
-    const current = isFavorited ? [vehicle.id] : [];
-    const { isFavourited } = await FavouriteVehicleService.toggleFavourite(vehicle.id, current);
-    setIsFavorited(isFavourited);
-  } catch (e) {
-    console.error("Failed to toggle favourite", e);
-  } finally {
-    setIsFavoriteLoading(false);
-  }
-};
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+    setIsFavoriteLoading(true);
+    try {
+      const current = isFavorited ? [vehicle.id] : [];
+      const { isFavourited } = await FavouriteVehicleService.toggleFavourite(
+        vehicle.id,
+        current,
+      );
+      setIsFavorited(isFavourited);
+    } catch (e) {
+      console.error("Failed to toggle favourite", e);
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -184,7 +181,7 @@ const [showLoginModal, setShowLoginModal] = useState(false);
         try {
           areaOfUseCoordinates = JSON.parse(`${details?.areaOfUseCoordinates}`);
         } catch (e) {
-          // console.error("Error parsing area of use", e);
+          console.error("Error parsing area of use", e);
         }
       }
 
@@ -239,7 +236,10 @@ const [showLoginModal, setShowLoginModal] = useState(false);
 
   return (
     <>
-    <LoginPromptModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
+      <LoginPromptModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
       <Navbar />
       <div className="min-h-screen w-full bg-gray-50 mt-15">
         <div className="min-h-screen bg-gray-50 p-0 sm:p-3 flex items-center justify-center flex-col">
@@ -260,52 +260,42 @@ const [showLoginModal, setShowLoginModal] = useState(false);
                 <div className="flex flex-row items-center space-x-2 xs:space-x-3 self-end sm:self-auto">
                   <SocialShareButton />
 
-                 <button
-  onClick={handleToggleFavourite}
-  disabled={isFavoriteLoading}
-  className={`p-2 sm:p-2.5 rounded-full transition duration-150 cursor-pointer
-    ${isFavorited ? "bg-red-100 text-red-600" : "bg-red-50 hover:bg-red-100 text-red-600"}
-    ${isFavoriteLoading ? "opacity-60 cursor-not-allowed" : ""}`}
->
-  {isFavoriteLoading
-    ? <span className="block w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
-    : <FiHeart size={16} className={`sm:size-[18px] ${isFavorited ? "fill-red-500" : ""}`} />}
-</button>
+                  <button
+                    onClick={handleToggleFavourite}
+                    disabled={isFavoriteLoading}
+                    className={`p-2 sm:p-2.5 rounded-full transition duration-150 cursor-pointer
+                    ${isFavorited ? "bg-red-100 text-red-600" : "bg-red-50 hover:bg-red-100 text-red-600"}
+                    ${isFavoriteLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+                  >
+                    {isFavoriteLoading ? (
+                      <span className="block w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                    ) : (
+                      <FiHeart
+                        size={16}
+                        className={`sm:size-[18px] ${isFavorited ? "fill-red-500" : ""}`}
+                      />
+                    )}
+                  </button>
                 </div>
               </header>
 
               <Carousel
-                urls={vehicle.photos.map((photo: any) => {
-                  return photo.cloudinaryUrl;
-                })}
+                urls={
+                  vehicle.photos?.map((photo: any) => photo.cloudinaryUrl) || []
+                }
               />
             </div>
 
             <div className="bg-[#F7F9FC] py-4 w-full px-4 rounded-t-xl space-y-3">
-              {/* Advance Notice */}
               <div className="flex items-center space-x-3">
                 <FiBell
                   size={30}
-                  // color="#F38218"
                   className="p-2 bg-[#FBE2B7] rounded-lg border border-[#F38218] flex-shrink-0"
                 />
                 <span className="text-sm font-medium text-gray-800">
                   1 day advance notice required before booking
                 </span>
               </div>
-
-              {/* Delivery Time */}
-              {/* <div className="flex items-center space-x-3">
-                <FiClock
-                  size={30}
-                  // color="#10B981"
-                  className="p-2 bg-[#D1FAE5] rounded-lg border border-[#10B981] flex-shrink-0"
-                />
-                <span className="text-sm font-medium text-gray-800">
-                  Your vehicle will arrive within 1-2 hours of booking,
-                  regardless of where it's currently located
-                </span>
-              </div> */}
             </div>
 
             <div className="p-6 md:p-8 flex flex-col md:flex-row gap-8">
@@ -356,7 +346,7 @@ const [showLoginModal, setShowLoginModal] = useState(false);
                 <div className="space-y-2">
                   <h2 className="text-lg text-gray-800">Features</h2>
                   <div className="flex flex-wrap gap-2">
-                    {vehicle.vehicleFeatures.length > 0 &&
+                    {vehicle.vehicleFeatures?.length > 0 &&
                       vehicle.vehicleFeatures.map((feature: string) => {
                         return (
                           <FeatureTag key={feature}>{feature} </FeatureTag>
@@ -489,7 +479,6 @@ const [showLoginModal, setShowLoginModal] = useState(false);
                   )}
                 </div>
 
-                {/* Added Important Disclaimer */}
                 <div className="mt-6 mb-4 rounded-xl bg-orange-50 border border-orange-100 p-4 flex items-start gap-3 transition-all hover:bg-orange-100/50">
                   <FiInfo
                     className="text-orange-500 shrink-0 mt-0.5"
@@ -532,21 +521,19 @@ const [showLoginModal, setShowLoginModal] = useState(false);
                   </button>
                 )}
 
-                {/* Discounts Section */}
-                {vehicle?.discounts.length > 0 && (
+                {vehicle?.discounts?.length > 0 && (
                   <div className="space-y-3 pt-4">
                     <h3 className="text-lg font-bold text-gray-800">
                       Discounts
                     </h3>
-                    {vehicle.discounts.length > 0 &&
-                      vehicle.discounts.map((discount: any, index: number) => (
-                        <DiscountRow
-                          key={index}
-                          days={discount.durationName + " trips"}
-                          discount={discount.percentage + "% off"}
-                          color={"text-[#0aaf24]"}
-                        />
-                      ))}
+                    {vehicle.discounts.map((discount: any, index: number) => (
+                      <DiscountRow
+                        key={index}
+                        days={discount.durationName + " trips"}
+                        discount={discount.percentage + "% off"}
+                        color={"text-[#0aaf24]"}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -656,7 +643,7 @@ const VehicleDetailsChip = ({
   value,
 }: {
   label: string;
-  value: string;
+  value: string | number;
 }) => (
   <div className="flex items-center space-x-1 px-3 font-medium text-gray-900 py-2 rounded-lg text-sm bg-[#F0F2F5]">
     <span>{label}:</span>
@@ -684,4 +671,5 @@ const DiscountRow = ({
     <span className={`text-sm font-bold ${color}`}>{discount}</span>
   </div>
 );
+
 export default VehicleDetailsClient;

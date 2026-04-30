@@ -1,6 +1,7 @@
 import VehicleDetailsClient from "@/components/pagesComponent/VehicleDetailsClient ";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { generatePageMetadata } from "@/helpers/metadata";
+import type { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{
@@ -8,13 +9,13 @@ interface PageProps {
   }>;
 }
 
-export async function generateMetadata({ params }: PageProps) {
-  // AWAIT params FIRST before accessing any properties
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
   const id = resolvedParams.id;
 
   try {
-    // Now use the awaited id
     const vehicleData = await VehicleSearchService.getVehicleById(id);
     const vehicle = vehicleData[0]?.data;
 
@@ -26,9 +27,7 @@ export async function generateMetadata({ params }: PageProps) {
       });
     }
 
-    // Build dynamic title and description
     const title = `${vehicle.name} - Rent in ${vehicle.city || "Nigeria"}`;
-
     const features = vehicle.vehicleFeatures?.slice(0, 3).join(", ") || "";
     const description = `Rent ${vehicle.name} (${vehicle.year}) in ${
       vehicle.city
@@ -63,6 +62,31 @@ export async function generateMetadata({ params }: PageProps) {
   }
 }
 
-export default function VehicleDetailsPage() {
-  return <VehicleDetailsClient />;
+export default async function VehicleDetailsPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
+
+  try {
+    const vehicleData = await VehicleSearchService.getVehicleById(id);
+    const vehicle = vehicleData[0]?.data;
+
+    if (!vehicle) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+          <p className="text-xl text-red-600 mb-4">Vehicle not found</p>
+        </div>
+      );
+    }
+
+    return <VehicleDetailsClient initialVehicleData={vehicle} />;
+  } catch (error) {
+    console.error("Error generating page:", error);
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <p className="text-xl text-red-600 mb-4">
+          Failed to load vehicle details
+        </p>
+      </div>
+    );
+  }
 }
