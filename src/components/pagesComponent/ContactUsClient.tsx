@@ -8,6 +8,7 @@ import {
   FaWhatsapp,
   FaLinkedinIn,
   FaEnvelope,
+  FaMapMarkerAlt,
 
 } from "react-icons/fa";
 import { createData } from "@/controllers/connnector/app.callers";
@@ -147,15 +148,15 @@ const ContactUsClient: React.FC = () => {
           {/* Contact Info Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
             {/* Address */}
-            {/* <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                 <FaMapMarkerAlt className="text-blue-600" />
               </div>
               <h3 className="text-gray-900 font-semibold mb-2">Address</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
-                16 Bankole Street, Oregun, Ikeja, Lagos State, Nigeria
+                10 ANUOLUWAPO close, opebi, ikeja
               </p>
-            </div> */}
+            </div>
 
             {/* Email */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
