@@ -294,9 +294,9 @@ export default function Home() {
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              {carouselData.map((item) => (
+              {carouselData.map((item, id) => (
                 <div
-                  key={item.id}
+                  key={id}
                   className="flex-shrink-0 px-3 h-[60vh]"
                   style={{ width: `${cardWidth}px` }}
                 >
