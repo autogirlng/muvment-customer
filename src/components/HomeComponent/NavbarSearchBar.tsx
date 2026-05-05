@@ -32,7 +32,7 @@ export const NavbarSearchBar = () => {
     lng: number | null;
   } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [categoryOptions, setcategoryOptions] = useState([]);
+  const [categoryOptions, setcategoryOptions] = useState<{ value: any; label: string }[]>([]);
   const [bookingOptions, setBookingOptions] = useState<any[]>([]);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -83,7 +83,7 @@ export const NavbarSearchBar = () => {
 
   const getvechileType = async () => {
     const result = await VehicleSearchService.getVechielType();
-    const data = result[0].data;
+    const data = result;
     const transformedOptions = data.map((item: any) => ({
       value: item.id,
       label: item.name.replace("_", " "),

@@ -43,7 +43,10 @@ export default function HeroBookingSection() {
   } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [categoryOptions, setcategoryOptions] = useState([]);
+  const [categoryOptions, setcategoryOptions] = useState<{
+    value: any;
+    label: string;
+  }[]>([]);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -232,7 +235,9 @@ export default function HeroBookingSection() {
 
   const getvechileType = async () => {
     const result = await VehicleSearchService.getVechielType();
-    const data = result[0].data;
+  
+    const data = result;
+  
     const transformedOptions = data.map((item: any) => ({
       value: item.id,
       label: item.name.replace("_", " "),

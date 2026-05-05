@@ -72,7 +72,7 @@ export function generatePageMetadata({
     title: fullTitle,
     description,
     keywords: allKeywords,
-    authors: SEO_DEFAULTS.authors,
+    authors: [...SEO_DEFAULTS.authors],
     creator,
     publisher,
 
