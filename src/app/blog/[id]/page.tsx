@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { generatePageMetadata } from "@/helpers/metadata";
+import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 import { BlogService } from "@/controllers/BlogService/blogService";
 import BlogDetailsClient from "@/components/blogComponent/Blogdetailsclient";
 
@@ -17,7 +18,6 @@ export async function generateMetadata({
     const post = await BlogService.getPostBySlug(id);
     if (!post) return { title: "Post Not Found | Blog" };
 
-    const author = post.authAuthorName || post.authorName;
     const description =
       post.excerpt || post.content?.replace(/<[^>]+>/g, "").slice(0, 160);
 
@@ -25,7 +25,10 @@ export async function generateMetadata({
       title: `${post.title} | Blog`,
       description,
       url: `/blog/${post.slug}`,
-    
+      image: post.coverImage || undefined,
+      keywords: post.tags ?? [],
+      type: "article",
+      section: post.blogCategory?.name,
     });
   } catch {
     return { title: "Blog Post | Blog" };
@@ -51,69 +54,9 @@ export default async function BlogPostPage({ params }: PageProps) {
     })),
   ]);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: post.title,
-    description:
-      post.excerpt || post.content?.replace(/<[^>]+>/g, "").slice(0, 160),
-    author: {
-      "@type": "Person",
-      name: post.authAuthorName || post.authorName,
-      email: post.authAuthorEmail || post.authorEmail,
-    },
-    datePublished: post.approvedAt || post.createdAt,
-    dateModified: post.updatedAt,
-    articleSection: post.blogCategory?.name,
-    keywords: (post.tags ?? []).join(", "),
-    interactionStatistic: [
-      {
-        "@type": "InteractionCounter",
-        interactionType: "https://schema.org/LikeAction",
-        userInteractionCount: post.metrics?.likes ?? 0,
-      },
-      {
-        "@type": "InteractionCounter",
-        interactionType: "https://schema.org/CommentAction",
-        userInteractionCount: post.metrics?.commentCount ?? 0,
-      },
-      {
-        "@type": "InteractionCounter",
-        interactionType: "https://schema.org/WatchAction",
-        userInteractionCount: post.metrics?.views ?? 0,
-      },
-    ],
-    breadcrumb: {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: "/" },
-        { "@type": "ListItem", position: 2, name: "Blog", item: "/blog" },
-        ...(post.blogCategory
-          ? [
-              {
-                "@type": "ListItem",
-                position: 3,
-                name: post.blogCategory.name,
-                item: `/blog?category=${encodeURIComponent(post.blogCategory.name)}`,
-              },
-            ]
-          : []),
-        {
-          "@type": "ListItem",
-          position: post.blogCategory ? 4 : 3,
-          name: post.title,
-          item: `/blog/${post.slug}`,
-        },
-      ],
-    },
-  };
-
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd schema={SchemaBuilder.article(post)} />
       <BlogDetailsClient
         post={post}
         relatedPosts={relatedPosts}

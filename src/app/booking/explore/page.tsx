@@ -56,6 +56,8 @@ export default async function Page({ searchParams }: PageProps) {
     VehicleSearchService.getVehicleFeatures().catch(() => []),
   ]);
 
+
+
   const searchArgs: VehicleSearchParams = {
     page: 0,
     size: 20,
@@ -106,15 +108,16 @@ export default async function Page({ searchParams }: PageProps) {
     console.error("Failed to fetch vehicles on server:", err);
   }
 
+
   return (
     <ExploreVehiclesClient
       initialVehicles={initialVehicles}
       initialTotalCount={totalCount}
       initialRecommended={recommendedVehicles}
-      initialVehicleTypes={typesRes?.data || typesRes || []}
-      initialMakes={makesRes?.data || makesRes || []}
-      initialModels={modelsRes?.data || modelsRes || []}
-      initialFeatures={featuresRes?.data || featuresRes || []}
+      initialVehicleTypes={typesRes || []}
+      initialMakes={makesRes || []}
+      initialModels={modelsRes || []}
+      initialFeatures={featuresRes || []}
     />
   );
 }

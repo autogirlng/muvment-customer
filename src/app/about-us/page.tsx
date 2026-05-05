@@ -1,5 +1,6 @@
 import AboutUsClient from "@/components/pagesComponent/AboutUsClient";
 import { generatePageMetadata } from "@/helpers/metadata";
+import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 
 export const metadata = generatePageMetadata({
   title: "About Us",
@@ -19,5 +20,10 @@ export const metadata = generatePageMetadata({
 });
 
 export default function AboutUsPage() {
-  return <AboutUsClient />;
+  return (
+    <>
+      <JsonLd schema={SchemaBuilder.aboutPage()} />
+      <AboutUsClient />
+    </>
+  );
 }

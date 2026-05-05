@@ -12,7 +12,7 @@ export default function PostCard({ post }: PostCardProps) {
  
   return (
     <Link
-      href={BlogService.buildPostUrl(post.id)}
+      href={BlogService.buildPostUrl(post.slug)}
       className="group block h-full"
     >
       <article className="flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50 transition-all duration-300">

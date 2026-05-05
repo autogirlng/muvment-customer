@@ -24,11 +24,12 @@ export class VehicleSearchService {
   private static readonly VEHICLE_DETAILS = "/api/v1/public/vehicles";
 
   private static readonly VEHICLES_MODELS = "/api/v1/public/vehicle-models";
+  private static readonly VEHICLE_DETAILS_SLUG = "/api/v1/public/vehicles/slug";
 
-  static async getVehicleModels(): Promise<any> {
+  static async getVehicleModels(): Promise<any[]> {
     try {
       const response = await getSingleData(this.VEHICLES_MODELS);
-      return response?.data || [];
+      return response?.data?.[0]?.data || [];
     } catch (error) {
       console.error("Error fetching vehicle models:", error);
       return [];
@@ -80,6 +81,18 @@ export class VehicleSearchService {
       return response?.data || null;
     } catch (error) {
       console.error("Error fetching vehicle details:", error);
+      throw error;
+    }
+  }
+
+  static async getVehicleBySlug(slug: string): Promise<any> {
+    try {
+      const response = await getSingleData(
+        `${this.VEHICLE_DETAILS_SLUG}/${slug}`,
+      );
+      return response?.data?.[0]?.data || null;
+    } catch (error) {
+      console.error("Error fetching vehicle details by slug:", error);
       throw error;
     }
   }
@@ -166,10 +179,12 @@ export class VehicleSearchService {
     return `/booking/search?${params.toString()}`;
   }
 
-  static async getVehicleTypes(): Promise<any> {
+  static async getVehicleTypes(): Promise<any[]> {
     try {
       const response = await getSingleData(this.VEHICLES_TYPE);
-      return response?.data || [];
+      // handleApiResponse wraps the body in an array: [{status, data:[...]}]
+      // so the actual items live at response.data[0].data
+      return response?.data?.[0]?.data || [];
     } catch (error) {
       console.error("Error fetching vehicle types:", error);
       return [];
@@ -186,20 +201,20 @@ export class VehicleSearchService {
     }
   }
 
-  static async getVehicleMakes(): Promise<any> {
+  static async getVehicleMakes(): Promise<any[]> {
     try {
       const response = await getSingleData(this.VEHICLES_MAKE);
-      return response?.data || [];
+      return response?.data?.[0]?.data || [];
     } catch (error) {
       console.error("Error fetching vehicle makes:", error);
       return [];
     }
   }
 
-  static async getVehicleFeatures(): Promise<any> {
+  static async getVehicleFeatures(): Promise<any[]> {
     try {
       const response = await getSingleData(this.VEHICLES_FEATURES);
-      return response?.data || [];
+      return response?.data?.[0]?.data || [];
     } catch (error) {
       console.error("Error fetching vehicle features:", error);
       return [];

@@ -1,5 +1,6 @@
 import ExploreVehiclesClient from "@/components/pagesComponent/ExploreVehiclesClient";
 import { generatePageMetadata } from "@/helpers/metadata";
+import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { VehicleSearchParams } from "@/types/vehicle";
 
@@ -102,15 +103,20 @@ export default async function Page({ searchParams }: PageProps) {
     console.error("Failed to fetch vehicles on server:", err);
   }
 
+  const city = params.city || params.location || "Lagos";
+
   return (
-    <ExploreVehiclesClient
-      initialVehicles={initialVehicles}
-      initialTotalCount={totalCount}
-      initialRecommended={recommendedVehicles}
-      initialVehicleTypes={typesRes?.data || typesRes || []}
-      initialMakes={makesRes?.data || makesRes || []}
-      initialModels={modelsRes?.data || modelsRes || []}
-      initialFeatures={featuresRes?.data || featuresRes || []}
-    />
+    <>
+      <JsonLd schema={SchemaBuilder.searchResultsPage({ city, category: params.category })} />
+      <ExploreVehiclesClient
+        initialVehicles={initialVehicles}
+        initialTotalCount={totalCount}
+        initialRecommended={recommendedVehicles}
+        initialVehicleTypes={typesRes || []}
+        initialMakes={makesRes || []}
+        initialModels={modelsRes || []}
+        initialFeatures={featuresRes || []}
+      />
+    </>
   );
 }

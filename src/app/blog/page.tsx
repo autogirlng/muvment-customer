@@ -32,6 +32,14 @@ export async function generateMetadata({
     title,
     description,
     url: `/blog${params.category ? `?category=${params.category}` : ""}`,
+    keywords: [
+      "Muvment blog",
+      "Car rental tips Nigeria",
+      "Autogirl articles",
+      "Nigeria driving guides",
+      "Car hire advice",
+      ...(params.category ? [params.category] : []),
+    ],
   });
 }
 

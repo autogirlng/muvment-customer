@@ -13,7 +13,7 @@ export default function FeaturedCard({ post }: FeaturedCardProps) {
 
 
   return (
-    <Link href={BlogService.buildPostUrl(post.id)} className="group block">
+    <Link href={BlogService.buildPostUrl(post.slug)} className="group block">
       <article className="relative overflow-hidden rounded-2xl bg-[#0d1f35] min-h-[420px] flex items-end">
     
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1f35] via-[#0d1f3580] to-transparent z-10" />

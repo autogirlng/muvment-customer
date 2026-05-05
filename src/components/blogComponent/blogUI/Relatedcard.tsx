@@ -10,7 +10,7 @@ interface RelatedCardProps {
 export default function RelatedCard({ post }: RelatedCardProps) {
   return (
     <Link
-      href={BlogService.buildPostUrl(post.id)}
+      href={BlogService.buildPostUrl(post.slug)}
       className="group flex gap-3 py-4 border-b border-gray-50 last:border-0"
     >
       <div className="w-20 h-16 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex-shrink-0 flex items-center justify-center">

@@ -16,6 +16,7 @@ import { BookingOption } from "@/types/booking";
 import { ServicePricingShowcaseList } from "@/components/HomeComponent/Servicepricingshowcaselist";
 import Delivery from "@/components/HomeComponent/Delivering";
 import BeninRepublicTravel from "@/components/HomeComponent/BeninRepublicTravel";
+import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 function page() {
   const [bookingTypeID, setBookingTypeID] = useState<string | undefined>(
     undefined,
@@ -36,6 +37,7 @@ function page() {
 
   return (
     <div>
+      <JsonLd schema={SchemaBuilder.homePage()} />
       <Navbar showAnnouncementBar={true} />
       <BookingInterface />
       <ServicePricingShowcaseList />

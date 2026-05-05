@@ -1,10 +1,15 @@
 import { MetadataRoute } from "next";
+import { SEO_DEFAULTS } from "@/helpers/metadata";
 
-const APP_URL = process.env.NEXT_PUBLIC_VERCEL_URL || "https://muvment.ng";
+// Always use the canonical www URL for sitemap entries
+const APP_URL = SEO_DEFAULTS.baseUrl; // https://www.muvment.ng
 const API_URL = "https://api-muvment-prod.up.railway.app/api/v1";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const isProduction = APP_URL === "https://muvment.ng";
+  const env = process.env.NEXT_PUBLIC_VERCEL_URL || "";
+  const isProduction =
+    env.includes("muvment.ng") ||
+    process.env.NODE_ENV === "production";
 
   if (!isProduction) {
     console.log(
@@ -131,21 +136,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         ? await showcaseRes.json()
         : null;
 
-    const blogEntries = (blogsJson?.data?.content || []).map((post: any) => ({
-      url: `${APP_URL}/blog/${post.id}`,
-      lastModified: new Date(post.updatedAt || post.createdAt),
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
+    const blogEntries = (blogsJson?.data?.content || [])
+      .filter((post: any) => post.slug)
+      .map((post: any) => ({
+        url: `${APP_URL}/blog/${post.slug}`,
+        lastModified: new Date(post.updatedAt || post.createdAt),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }));
 
-    const vehicleEntries = (vehiclesJson?.data?.content || []).map(
-      (v: any) => ({
-        url: `${APP_URL}/booking/details/${v.id}`,
+    const vehicleEntries = (vehiclesJson?.data?.content || [])
+      .filter((v: any) => v.slug)
+      .map((v: any) => ({
+        url: `${APP_URL}/booking/details/${v.slug}`,
         lastModified: new Date(),
         changeFrequency: "daily" as const,
         priority: 0.8,
-      }),
-    );
+      }));
 
     const showcaseEntries = (showcaseJson?.data || []).map((item: any) => ({
       url: `${APP_URL}/booking/${item.servicePricingId}/special-pricing`,

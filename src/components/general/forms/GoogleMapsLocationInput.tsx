@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import cn from "classnames";
+import { GOOGLE_PLACES_COUNTRY_RESTRICTION } from "@/context/Constarain";
 
 // --- HOOK ---
 export function useGoogleMaps(apiKey: string) {
@@ -130,7 +131,7 @@ export const GoogleMapsLocationInput: React.FC<
 
     const request = {
       input,
-      componentRestrictions: { country: "ng" }, // Kept your country restriction
+      componentRestrictions: { country: GOOGLE_PLACES_COUNTRY_RESTRICTION },
       types: ["establishment", "geocode"],
     };
 

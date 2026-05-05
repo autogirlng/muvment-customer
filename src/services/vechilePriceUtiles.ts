@@ -24,11 +24,11 @@ export const getDisplayPrice = (
     return allPricingOptions[0].price;
   }
 
-  const bookingTypeOption = bookingOptions.find(
-    (opt) => opt.value === bookingType,
-  );
+  // Match directly by bookingTypeId — reliable since both come from the same API.
+  // The previous name-based lookup (bookingOptions.label → bookingTypeName) broke
+  // whenever the two endpoints returned slightly different name strings.
   const bookingTypePrice = allPricingOptions.find(
-    (bt) => bt.bookingTypeName === bookingTypeOption?.label,
+    (bt) => bt.bookingTypeId === bookingType,
   );
 
   return bookingTypePrice ? bookingTypePrice.price : allPricingOptions[0].price;
