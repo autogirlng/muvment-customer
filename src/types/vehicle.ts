@@ -195,6 +195,7 @@ export interface PaymentInitiationResponse {
 }
 export interface VehicleCardProps {
   id: string;
+  slug?: string;
   name: string;
   city: string;
   vehicleTypeName: string;
@@ -228,6 +229,7 @@ interface PricingOption {
 
 export interface TopVehicle {
   id: string;
+  slug?: string;
   vehicleIdentifier: string;
   name: string;
   photos: Photo[];

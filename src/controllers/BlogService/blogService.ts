@@ -68,7 +68,7 @@ export class BlogService {
 
   static async getPostBySlug(slug: string): Promise<BlogPost | null> {
     try {
-      const rawData = await getSingleData(`${this.BLOG_POSTS}/${slug}`);
+      const rawData = await getSingleData(`${this.BLOG_POSTS}/slug/${slug}`);
       const data = { ...rawData };
       if (data?.data) return data.data[0].data as BlogPost;
       return null;

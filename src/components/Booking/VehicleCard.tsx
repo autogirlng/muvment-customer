@@ -23,6 +23,7 @@ interface VehicleCardPropsExtended extends VehicleCardProps {
 
 const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   id,
+  slug,
   name,
   city,
   vehicleTypeName,
@@ -135,7 +136,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       price: getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
     });
     router.push(
-      `/booking/details/${id}?vehicleType=${encodeURIComponent(
+      `/booking/details/${slug || id}?vehicleType=${encodeURIComponent(
         vehicleTypeName,
       )}&bookingType=${bookingType}`,
     );

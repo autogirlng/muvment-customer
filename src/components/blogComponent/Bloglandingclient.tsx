@@ -63,7 +63,7 @@ function HeroFeaturedCard({ post }: { post: BlogPost }) {
   return (
     <article
       className="relative bg-[#0d1f35] rounded-2xl overflow-hidden p-8 md:p-10 cursor-pointer group"
-      onClick={() => router.push(`/blog/${post.slug || post.id}`)}
+      onClick={() => router.push(`/blog/${post.slug}`)}
     >
       {post.blogCategory?.name && (
         <div className="flex items-center gap-3 mb-5">
@@ -110,7 +110,7 @@ function GridPostCard({ post }: { post: BlogPost }) {
   return (
     <article
       className="flex flex-col cursor-pointer group"
-      onClick={() => router.push(`/blog/${post.id}`)}
+      onClick={() => router.push(`/blog/${post.slug}`)}
     >
       {/* Image */}
    <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-200 mb-4">
@@ -342,6 +342,7 @@ export default function BlogLandingClient({
                 <PostCardSkeleton key={i} />
               ))}
             </div>
+          
           </>
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-28 text-center">

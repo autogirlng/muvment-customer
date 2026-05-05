@@ -1,5 +1,6 @@
 import ContactUsClient from "@/components/pagesComponent/ContactUsClient";
 import { generatePageMetadata } from "@/helpers/metadata";
+import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 
 export const metadata = generatePageMetadata({
   title: "Contact Us",
@@ -17,5 +18,10 @@ export const metadata = generatePageMetadata({
 });
 
 export default function ContactUsPage() {
-  return <ContactUsClient />;
+  return (
+    <>
+      <JsonLd schema={SchemaBuilder.contactPage()} />
+      <ContactUsClient />
+    </>
+  );
 }

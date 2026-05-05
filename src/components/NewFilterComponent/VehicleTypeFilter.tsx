@@ -4,7 +4,7 @@ interface VehicleTypeFilterProps {
   value?: string[];
   onChange: (value?: string[] | undefined) => void;
   vehicleTypes: any[];
-  onClose: () => void;
+  onClose?: () => void;
   compact?: boolean;
 }
 
@@ -51,7 +51,7 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
                     className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
                   />
                   <span className="ml-2 text-sm font-medium text-gray-900 truncate">
-                    {type.name.split("_").join(" ")}
+                    {(type.name ?? "").split("_").join(" ")}
                   </span>
                 </div>
               </label>
