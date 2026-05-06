@@ -52,7 +52,7 @@ export const menuItems = [
 ];
 
 export const guestMenuItems = [
- 
+  
   { name: "Sign In", link: "/auth/login", icon: FiLogIn },
   { name: "Sign Up", link: "/auth/register", icon: FiUserPlus },
   {
@@ -60,5 +60,6 @@ export const guestMenuItems = [
     link: "/partner-with-us",
     icon: MdHandshake,
   },
+  { name: "Impact", link: "/impact", icon: MdExplore },
    { name: "Become a Driver", link: "https://host.muvment.ng/earn", icon: GiMassDriver },
 ];
