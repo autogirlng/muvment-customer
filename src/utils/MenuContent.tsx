@@ -61,5 +61,5 @@ export const guestMenuItems = [
     icon: MdHandshake,
   },
   { name: "Impact", link: "/impact", icon: MdExplore },
-   { name: "Become a Driver", link: "https://host.muvment.ng/earn", icon: GiMassDriver },
+  { name: "Become a Driver", link: "https://host.muvment.ng/earn", icon: GiMassDriver },
 ];
