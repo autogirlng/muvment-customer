@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { FiSearch, FiShare2 } from "react-icons/fi";
+import { FiSearch, FiShare2, FiChevronLeft } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import {
   Payment,
@@ -27,6 +27,7 @@ const PAGE_SIZE = 10;
 
 const PaymentHistoryPage = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [totalElements, setTotalElements] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -52,6 +53,7 @@ const PaymentHistoryPage = () => {
         const totalPages: number = response.data.totalPages ?? 1;
 
         setPayments((prev) => (reset ? content : [...prev, ...content]));
+        if (reset) setTotalElements(response.data.totalItems ?? null);
         setHasMore(pageNumber + 1 < totalPages);
       } catch (error) {
         console.error("Error loading payments:", error);
@@ -232,11 +234,70 @@ const PaymentHistoryPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="mx-auto py-8 mt-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Payment History</h1>
-          <p className="text-gray-600">View and download your payment receipts</p>
+
+      {/* Hero Banner */}
+      <div
+        className="relative overflow-hidden h-40 sm:h-52"
+        style={{ background: "linear-gradient(135deg, #93c5fd 0%, #3b82f6 45%, #0ea5e9 100%)" }}
+      >
+        {/* Decorative card — back-right */}
+        <div className="absolute top-[-10%] right-[5%] w-52 sm:w-64 h-32 sm:h-40 rounded-2xl border border-white/30 bg-white/10 backdrop-blur-sm rotate-15" />
+        {/* Decorative card — front-right */}
+        <div className="absolute top-[10%] right-[12%] w-48 sm:w-60 h-28 sm:h-36 rounded-2xl border border-white/40 bg-white/20 backdrop-blur-sm rotate-6 shadow-xl">
+          {/* Chip */}
+          <div className="absolute top-4 left-4 w-8 h-6 rounded bg-white/40 grid grid-cols-2 gap-0.5 p-0.5">
+            <div className="bg-white/60 rounded-sm" />
+            <div className="bg-white/60 rounded-sm" />
+            <div className="bg-white/60 rounded-sm" />
+            <div className="bg-white/60 rounded-sm" />
+          </div>
+          {/* Card lines */}
+          <div className="absolute bottom-5 left-4 right-4 space-y-1.5">
+            <div className="h-1.5 bg-white/30 rounded-full w-3/4" />
+            <div className="h-1.5 bg-white/30 rounded-full w-1/2" />
+          </div>
+          {/* Toggle pill */}
+          <div className="absolute bottom-4 right-4 flex items-center gap-1">
+            <div className="w-5 h-5 rounded-full bg-white/40" />
+            <div className="w-5 h-5 rounded-full bg-white/60 -ml-2" />
+          </div>
         </div>
+
+        {/* Flowing arrow lines */}
+        <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 800 200" preserveAspectRatio="none">
+          <path d="M0,120 Q200,60 400,100 T800,80" stroke="white" strokeWidth="2" fill="none" />
+          <path d="M0,160 Q200,100 400,140 T800,120" stroke="white" strokeWidth="1.5" fill="none" />
+          <path d="M200,0 Q300,80 250,160" stroke="white" strokeWidth="1" fill="none" />
+        </svg>
+
+        {/* Back button */}
+        <div className="relative z-10 px-6 sm:px-10 pt-4">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1 text-white/90 hover:text-white text-sm font-medium transition"
+          >
+            <FiChevronLeft className="w-4 h-4" />
+            Back
+          </button>
+        </div>
+
+        {/* Title */}
+        <div className="relative z-10 px-6 sm:px-10 mt-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">My Payments</h1>
+        </div>
+      </div>
+
+      {/* Stat Card */}
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 -mt-1">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-6 py-4 inline-block min-w-55">
+          <p className="text-xs text-gray-500 mb-1">Total Number Of Rides Booked</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {totalElements !== null ? totalElements : "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="mx-auto py-8 px-4 sm:px-6 lg:px-8">
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="relative w-full sm:w-1/2">
