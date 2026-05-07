@@ -7,6 +7,7 @@ import React, {
   useRef,
   useCallback,
 } from "react";
+import Image from "next/image";
 import { FiList, FiCalendar, FiSearch, FiShare2, FiPlus } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import {
@@ -155,7 +156,7 @@ const BookingHistoryPage = () => {
     }
   };
 
-  const handleDateClick = (date: Date, dateBookings: Booking[]) => {
+  const handleDateClick = (_date: Date, dateBookings: Booking[]) => {
     if (dateBookings.length > 0) {
       setSelectedBookings(dateBookings);
       setIsModalOpen(true);
@@ -283,25 +284,38 @@ const BookingHistoryPage = () => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="mx-auto py-8 mt-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              My Bookings
-            </h1>
-          </div>
+      {/* Hero Banner */}
+      <div className="relative overflow-hidden h-36 sm:h-44">
+        {/* Full background image */}
+        <Image
+          src="/images/my-bookings-hero.png"
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+        />
 
-          <button
-            onClick={() => router.push("/booking/search")}
-            className="w-full sm:w-auto cursor-pointer px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors inline-flex items-center gap-1"
-          >
-            <FiPlus className="w-4 h-4" />
-            <span>New Booking</span>
-          </button>
+        {/* Content */}
+        <div className="relative z-10 h-full flex flex-col justify-end px-6 sm:px-10 pb-5">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            My Bookings
+          </h1>
         </div>
+
+        {/* New Booking button — top right */}
+        <button
+          onClick={() => router.push("/booking/search")}
+          className="absolute z-10 top-4 right-4 sm:top-5 sm:right-6 cursor-pointer px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5 shadow-sm"
+        >
+          <FiPlus className="w-4 h-4" />
+          <span>New Booking</span>
+        </button>
+      </div>
+
+      <div className="mx-auto py-8 px-4 sm:px-6 lg:px-8">
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

@@ -10,6 +10,7 @@ import {
   MdEventAvailable,
   MdQuestionMark,
   MdHandshake,
+  MdOutlineAppBlocking,
 } from "react-icons/md";
 import { FiLogIn, FiUserPlus } from "react-icons/fi";
 import { GiMassDriver } from "react-icons/gi";
@@ -49,6 +50,8 @@ export const menuItems = [
     link: "/faq",
     icon: MdQuestionMark,
   },
+   { name: "Impact", link: "/impact", icon: MdExplore },
+  { name: "Blog", link: "/blog", icon:MdOutlineAppBlocking },
 ];
 
 export const guestMenuItems = [
@@ -61,5 +64,6 @@ export const guestMenuItems = [
     icon: MdHandshake,
   },
   { name: "Impact", link: "/impact", icon: MdExplore },
+  { name: "Blog", link: "/blog", icon:MdOutlineAppBlocking },
   { name: "Become a Driver", link: "https://host.muvment.ng/earn", icon: GiMassDriver },
 ];

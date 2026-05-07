@@ -2,7 +2,42 @@
 
 import { Navbar } from "@/components/Navbar";
 import Footer from "@/components/HomeComponent/Footer";
+import Image from "next/image";
 import { useEffect } from "react";
+
+const impactStories = [
+  {
+    eyebrow: "Partnership & grants",
+    title: "AutoWomen Empowerment Grant",
+    body: "We celebrated women advancing in mobility. Three recipients each received ₦250,000 toward their goals, surrounded by teammates including representatives from our electric vehicle driver programme.",
+    caption: "Grant presentation · Lagos",
+    imageSrc: "/images/autowomen_empowerment_grant.png",
+    imageAlt:
+      "Group celebrating AutoWomen Empowerment Grant cheques with Access Bank and AutoGIRL branding",
+    accentBar: "bg-[#C8963E]",
+    reverse: false,
+  },
+  {
+    eyebrow: "Fleet & livelihoods",
+    title: "Electric vehicle drivers",
+    body: "Uniformed drivers stand with Nigeria's first large-scale EV fleet on ride-hailing platforms — a visible commitment to professional earnings, lower running costs, and clean kilometres across Lagos.",
+    caption: "Muvment EV fleet · driver rollout",
+    imageSrc: "/images/electric_vehicle_drivers.png",
+    imageAlt: "Professional drivers in uniform beside a row of white electric vehicles",
+    accentBar: "bg-[#1A6B47]",
+    reverse: true,
+  },
+  {
+    eyebrow: "Skills & hands-on training",
+    title: "Women at the workshop",
+    body: "Through the Autowomen Empowerment Programme, women train alongside our partners in active workshops, gaining technical confidence and employable skills.",
+    caption: "Autowomen trainees · workshop placement",
+    imageSrc: "/images/women_at_workshop.png",
+    imageAlt: "Group of smiling women posing inside an automotive repair workshop",
+    accentBar: "bg-[#C4522A]",
+    reverse: false,
+  },
+] as const;
 
 const metricCards = [
   {
@@ -226,6 +261,59 @@ export default function ImpactPageClient() {
                       </span>
                     ))}
                   </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#FAFAF7] border-y border-[#E8E6DE] px-4 md:px-10 lg:px-16 py-20 lg:py-24">
+        <div className="max-w-6xl mx-auto">
+          <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-[#6B6B5E] mb-3">
+            Impact in focus
+          </p>
+          <h2 className="impact-reveal impact-delay-1 font-[var(--font-impact-playfair)] text-3xl lg:text-5xl leading-tight mb-4 max-w-3xl">
+            Stories from the <em className="italic text-[#1A4B7A]">ground</em>
+          </h2>
+          <p className="impact-reveal impact-delay-2 text-[#6B6B5E] max-w-2xl leading-8">
+            Grants, electric fleets, and workshop training — each programme shows up in real rooms,
+            on real roads, with people we are proud to stand beside.
+          </p>
+
+          <div className="mt-14 lg:mt-20 space-y-20 lg:space-y-28">
+            {impactStories.map((story, index) => (
+              <article
+                key={story.title}
+                className={`impact-reveal grid lg:grid-cols-2 gap-10 lg:gap-16 items-center ${index === 1 ? "impact-delay-2" : index === 2 ? "impact-delay-3" : ""}`}
+              >
+                <div
+                  className={`relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[#EAE8E2] shadow-[0_28px_64px_-16px_rgba(28,28,28,0.35)] ring-1 ring-black/6 ${story.reverse ? "lg:order-2" : ""}`}
+                >
+                  <Image
+                    src={story.imageSrc}
+                    alt={story.imageAlt}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover object-center"
+                    priority={index === 0}
+                  />
+                </div>
+                <div
+                  className={`space-y-5 ${story.reverse ? "lg:order-1 lg:pr-6" : "lg:pl-2"}`}
+                >
+                  <span
+                    className={`inline-block h-1 w-14 rounded-full ${story.accentBar}`}
+                    aria-hidden
+                  />
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-[#6B6B5E]">
+                    {story.eyebrow}
+                  </p>
+                  <h3 className="font-[var(--font-impact-playfair)] text-3xl lg:text-[2.125rem] leading-tight text-[#1C1C1C]">
+                    {story.title}
+                  </h3>
+                  <p className="text-[#5C5C54] leading-8 text-sm lg:text-[15px]">{story.body}</p>
+                  <p className="text-xs text-[#9C9A8F] tracking-wide">{story.caption}</p>
                 </div>
               </article>
             ))}
