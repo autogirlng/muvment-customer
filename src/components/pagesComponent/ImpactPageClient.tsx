@@ -3,7 +3,7 @@
 import { Navbar } from "@/components/Navbar";
 import Footer from "@/components/HomeComponent/Footer";
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const impactStories = [
   {
@@ -164,17 +164,106 @@ const testimonials = [
   },
 ];
 
-const pressMentions = [
-  "CNN Africa",
-  "The Guardian Nigeria",
-  "TechCabal × 3",
-  "Vanguard News",
-  "Tribune Online",
-  "Aurora Tech Awards — Top 100 Globally 2026",
-  "ELOY Awards — Young Innovative Entrepreneur 2024",
-  "Grey UpGreyed Her Grant 2024",
-  "GET Accelerator Top 3 · 2024",
-  "25 Under 25 · 2024",
+const defaultMentions = [
+  {
+    label: "CNN Africa",
+    href: "https://www.cnn.com/world/africa/nigerian-company-autogirl-airbnb-cars-spc/index.html",
+  },
+  {
+    label: "The Guardian Nigeria",
+    href: "https://guardian.ng/news/autogirl-ltd-pioneers-future-of-mobility-for-expatriates-businesses-in-africa/",
+  },
+  {
+    label: "TechCabal × 3",
+    href: "https://techcabal.com/2026/01/17/day-1-1000-muvment/",
+  },
+  {
+    label: "Vanguard News",
+    href: "https://www.vanguardngr.com/2024/09/autogirl-launches-initiative-to-increase-gender-inclusion-in-automotive-industry/",
+  },
+  {
+    label: "Tribune Online",
+    href: "https://tribuneonlineng.com/autogirl-launches-empowerment-initiative-for-gender-inclusion-in-automotive-industry/",
+  },
+  {
+    label: "Aurora Tech Awards — Top 100 Globally 2026",
+    href: "https://www.auroratechaward.com/2026-top-100",
+  },
+  {
+    label: "ELOY Awards — Young Innovative Entrepreneur 2023",
+    href: "https://www.eloyawards.com/past-recipients/",
+  },
+  {
+    label: "Grey UpGreyed Her Grant 2024",
+    href: "https://grey.co/blog/how-autogirl-breaks-gender-stereotypes-and-thrives-in-nigerias-difficult-transport-industry",
+  },
+  {
+    label: "GET Accelerator Top 5 · 2024",
+    href: "https://techcabal.com/2025/01/11/get-accelerated-cohort-3-awards-n55-million-equity-free-funding-to-startups/",
+  },
+  {
+    label: "25 Under 25 · 2024",
+    href: "https://25under25.org/2024-winners/",
+  },
+];
+
+const moreMentions = [
+  {
+    label: "BusinessDay",
+    href: "https://businessday.ng/interview/enterpreneur/article/arinze-chinazom-succeeding-where-peers-fear-to-tread/",
+  },
+  {
+    label: "Nairametrics",
+    href: "https://nairametrics.com/2022/06/01/how-auto-girl-is-providing-unique-services-in-the-automobile-boat-and-private-jet-sector-in-nigeria-chinazom-arinze-founder-auto-girl/",
+  },
+  {
+    label: "TC Insights — The Baobab Model",
+    href: "https://insights.techcabal.com/the-baobab-model-how-women-are-scaling-impact-in-africas-tech-economy/",
+  },
+  {
+    label: "TechCabal — Female Founders & Funders",
+    href: "https://techcabal.com/2025/07/25/female-founders-and-funders/",
+  },
+  {
+    label: "Premium Times",
+    href: "https://www.premiumtimesng.com/entertainment/naija-fashion/866413-entrepreneurs-champion-womens-economic-empowerment-at-west-africa-business-summit.html",
+  },
+  {
+    label: "Technext — Top 10 Female Tech Founders 2026",
+    href: "https://technext24.com/2026/02/13/top-10-nigerian-female-tech-founders/",
+  },
+  {
+    label: "THISDAY — GET Accelerator",
+    href: "https://www.thisdaylive.com/index.php/2025/01/10/get-accelerated-cohort-3-awards-n55m-equity-free-funding-to-startups/",
+  },
+  {
+    label: "THISDAY — Grey UpGreyed Her",
+    href: "https://www.thisdaylive.com/2024/05/08/y-combinator-backed-fintech-grey-announces-recipients-of-2024-upgreyed-her-grants-programme/",
+  },
+  {
+    label: "BellaNaija — ELOY Awards",
+    href: "https://www.bellanaija.com/2023/12/15th-eloy-awards-2023/",
+  },
+  {
+    label: "The Benchmark",
+    href: "https://thebenchmark.com.ng/chinazom-arinze-is-reshaping-car-rentals-in-nigeria-through-autogirl/",
+  },
+  {
+    label: "The Stack Journal",
+    href: "https://www.thestackjournal.com/posts/startup-spotlight-autogirl",
+  },
+  {
+    label: "Tony Elumelu Foundation",
+    href: "https://www.tonyelumelufoundation.org/",
+  },
+  {
+    label: "Seedstars Accelerator",
+    href: "https://www.seedstars.com/",
+  },
+  {
+    label: "Future Females Business School",
+    href: "https://www.futurefemales.co/",
+  },
 ];
 
 function PillarIcon({ id }: { id: string }) {
@@ -206,6 +295,74 @@ function PillarIcon({ id }: { id: string }) {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
+  );
+}
+
+function PressSection() {
+  const [showMore, setShowMore] = useState(false);
+
+  const pillClass =
+    "text-[13px] px-5 py-2 rounded-full border border-gray-200 text-gray-600 bg-white transition-all duration-200 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50 no-underline";
+
+  return (
+    <section className="bg-gray-50 px-6 md:px-10 lg:px-16 py-20">
+      <div className="max-w-6xl mx-auto">
+        <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-blue-500 mb-3">
+          As seen in
+        </p>
+        <h2 className="impact-reveal impact-delay-1 text-[2rem] font-bold leading-[1.15] text-[#2c3e50] mb-8">
+          Press & recognition
+        </h2>
+
+        <div className="flex flex-wrap gap-3">
+          {defaultMentions.map((mention) => (
+            <a
+              key={mention.label}
+              href={mention.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={pillClass}
+            >
+              {mention.label}
+            </a>
+          ))}
+
+          {showMore &&
+            moreMentions.map((mention) => (
+              <a
+                key={mention.label}
+                href={mention.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${pillClass} animate-[fadeIn_0.3s_ease_both]`}
+              >
+                {mention.label}
+              </a>
+            ))}
+        </div>
+
+        <button
+          onClick={() => setShowMore((prev) => !prev)}
+          className="mt-6 flex items-center gap-2 text-[13px] font-medium text-blue-600 hover:text-blue-700 transition-colors"
+        >
+          {showMore ? (
+            <>
+              Show less
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 15l-6-6-6 6" />
+              </svg>
+            </>
+          ) : (
+            <>
+              See {moreMentions.length} more
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </>
+          )}
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -258,9 +415,9 @@ export default function ImpactPageClient() {
       <Navbar />
 
       {/* HERO */}
-      <section className="min-h-screen bg-[#1D2739] pt-28 pb-20 px-6 md:px-10 lg:px-16 flex items-end relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_80%_30%,rgba(6,115,255,0.2),transparent_70%),radial-gradient(ellipse_40%_60%_at_10%_70%,rgba(26,107,71,0.15),transparent_70%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+      <section className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-[#1D2739] pt-28 pb-20 px-6 md:px-10 lg:px-16 flex items-end relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_85%_20%,rgba(255,255,255,0.12),transparent_65%),radial-gradient(ellipse_50%_50%_at_5%_80%,rgba(255,255,255,0.06),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
         <div className="hidden lg:flex absolute top-28 right-10 flex-col gap-2 impact-reveal impact-delay-3">
           <span className="text-[10px] font-medium tracking-[0.1em] px-3 py-1 rounded-full uppercase text-right bg-white/10 text-white/80 border border-white/20">
@@ -334,13 +491,13 @@ export default function ImpactPageClient() {
             {metricCards.map((metric) => (
               <div
                 key={metric.value}
-                className="p-8 lg:p-10 border-r last:border-r-0 border-b lg:border-b-0 border-gray-200 relative bg-white"
+                className="p-6 border-r last:border-r-0 border-b lg:border-b-0 border-gray-200 relative bg-white flex flex-col justify-between min-h-[160px]"
               >
                 <span className={`absolute left-0 top-0 h-[3px] w-full ${metric.color}`} />
-                <p className="text-[2.6rem] font-bold leading-none mb-3 text-[#2c3e50]">
+                <p className="text-[1.75rem] font-bold leading-tight mb-3 text-[#2c3e50] break-words">
                   {metric.value}
                 </p>
-                <p className="text-[13px] leading-6 text-gray-600 font-light">{metric.label}</p>
+                <p className="text-[12px] leading-5 text-gray-500 font-normal">{metric.label}</p>
               </div>
             ))}
           </div>
@@ -617,26 +774,7 @@ export default function ImpactPageClient() {
       </section>
 
       {/* PRESS & RECOGNITION */}
-      <section className="bg-gray-50 px-6 md:px-10 lg:px-16 py-20">
-        <div className="max-w-6xl mx-auto">
-          <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-blue-500 mb-3">
-            As seen in
-          </p>
-          <h2 className="impact-reveal impact-delay-1 text-[2rem] font-bold leading-[1.15] text-[#2c3e50] mb-8">
-            Press & recognition
-          </h2>
-          <div className="impact-reveal flex flex-wrap gap-3">
-            {pressMentions.map((mention) => (
-              <span
-                key={mention}
-                className="text-[13px] px-5 py-2 rounded-full border border-gray-200 text-gray-600 bg-white transition-all duration-200 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50 cursor-default"
-              >
-                {mention}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PressSection />
 
       <Footer />
 

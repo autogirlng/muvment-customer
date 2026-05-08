@@ -50,7 +50,7 @@ export const menuItems = [
     link: "/faq",
     icon: MdQuestionMark,
   },
-   { name: "Impact", link: "/impact", icon: MdExplore },
+   { name: "Our Impact", link: "/impact", icon: MdExplore },
   { name: "Blog", link: "/blog", icon:MdOutlineAppBlocking },
 ];
 
@@ -63,7 +63,7 @@ export const guestMenuItems = [
     link: "/partner-with-us",
     icon: MdHandshake,
   },
-  { name: "Impact", link: "/impact", icon: MdExplore },
+  { name: "Our Impact", link: "/impact", icon: MdExplore },
   { name: "Blog", link: "/blog", icon:MdOutlineAppBlocking },
   { name: "Become a Driver", link: "https://host.muvment.ng/earn", icon: GiMassDriver },
 ];
