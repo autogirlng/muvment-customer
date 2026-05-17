@@ -16,6 +16,8 @@ import LocationPrompt from "../Booking/LocationPrompt";
 import Footer from "../HomeComponent/Footer";
 import Slider, { SlideItem } from "../utils/UtilitySlider";
 
+import { TravelState } from "@/types/state";
+
 interface ExploreVehiclesClientProps {
   initialVehicles: any[];
   initialTotalCount: number;
@@ -24,6 +26,7 @@ interface ExploreVehiclesClientProps {
   initialMakes: any[];
   initialModels: any[];
   initialFeatures: any[];
+  initialStates?: TravelState[];
 }
 
 export default function ExploreVehiclesClient({
@@ -34,6 +37,7 @@ export default function ExploreVehiclesClient({
   initialMakes,
   initialModels,
   initialFeatures,
+  initialStates = [],
 }: ExploreVehiclesClientProps) {
   const searchParams = useSearchParams();
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -414,6 +418,7 @@ export default function ExploreVehiclesClient({
               totalCount={childCount as number}
               maxPrice={dynamicMaxPrice}
               minPrice={dynamicMinPrice}
+              states={initialStates}
             />
           </div>
 
