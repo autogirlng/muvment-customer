@@ -1,27 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { FiMapPin, FiShield, FiUsers } from "react-icons/fi";
-
-const highlights = [
-  {
-    icon: <FiMapPin className="w-5 h-5 text-blue-400" />,
-    text: "Door-to-door service — Lagos to Cotonou",
-  },
-  {
-    icon: <FiShield className="w-5 h-5 text-blue-400" />,
-    text: "Vetted, professional drivers",
-  },
-  {
-    icon: <FiUsers className="w-5 h-5 text-blue-400" />,
-    text: "Private — no shared rides",
-  },
-];
+import { FiMapPin } from "react-icons/fi";
+import StatePickerModal from "@/components/Booking/StatePickerModal";
 
 export default function BeninRepublicTravel() {
-  const router = useRouter();
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
     <section className="w-full my-12 px-4 md:px-8">
@@ -59,14 +44,16 @@ export default function BeninRepublicTravel() {
           </ul> */}
 
           <button
-            onClick={() => router.push("/booking/search")}
+            type="button"
+            onClick={() => setPickerOpen(true)}
             className="group inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold px-7 py-3.5 rounded-xl shadow-lg shadow-blue-700/40 transition-all duration-200 w-fit text-sm"
           >
-            Book This Trip
+            Choose Destination
             <span className="transition-transform duration-200 group-hover:translate-x-1 text-base">
               →
             </span>
           </button>
+
         </div>
 
         {/* Right — image */}
@@ -88,6 +75,13 @@ export default function BeninRepublicTravel() {
         <div className="absolute top-0 left-0 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none" />
       </div>
+
+      <StatePickerModal
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title="Where are you traveling?"
+        subtitle="Pick a state to see available private cars and SUVs"
+      />
     </section>
   );
 }

@@ -14,6 +14,7 @@ import {
 
 export class VehicleSearchService {
   private static readonly SEARCH_BASE_URL = "/api/v1/public/vehicles/search";
+  private static readonly STATES_URL = "/api/v1/public/states";
   private static readonly VEHICLES_TYPE = "/api/v1/public/vehicle-types";
   private static readonly VEHICLES_MAKE = "/api/v1/public/vehicle-makes";
   private static readonly VEHICLES_FEATURES = "/api/v1/public/vehicle-features";
@@ -35,6 +36,40 @@ export class VehicleSearchService {
       return [];
     }
   }
+  static async getStates(): Promise<
+    { stateId: string; stateName: string; countryName: string }[]
+  > {
+    try {
+      const response = await getSingleData(this.STATES_URL);
+      return response?.data?.[0]?.data || [];
+    } catch (error) {
+      console.error("Error fetching states:", error);
+      return [];
+    }
+  }
+
+  static async searchVehiclesByState(
+    stateId: string,
+    page: number = 0,
+    size: number = 20,
+  ): Promise<any> {
+    try {
+      const response = await getTableData(
+        `${this.SEARCH_BASE_URL}/${stateId}`,
+        { page, size },
+      );
+
+      if (!response || !response.data || response.data.length === 0) {
+        return { data: [], totalCount: 0, totalPages: 1 };
+      }
+
+      return response;
+    } catch (error) {
+      console.error("State vehicle search error:", error);
+      throw error;
+    }
+  }
+
   static async searchVehicles(params?: VehicleSearchParams): Promise<any> {
     try {
       const filteredParams = Object.fromEntries(
