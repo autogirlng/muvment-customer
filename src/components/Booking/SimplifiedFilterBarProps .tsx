@@ -22,6 +22,8 @@ import {
   getSelectedModelName,
   PriceRangeformatPrice,
 } from "@/services/vechilePriceUtiles";
+import StateFilter, { StateFilterButton } from "./StateFilter";
+import { TravelState } from "@/types/state";
 
 interface SimplifiedFilterBarProps {
   filterState: FilterState;
@@ -34,6 +36,7 @@ interface SimplifiedFilterBarProps {
   totalCount: number;
   maxPrice?: number;
   minPrice?: number;
+  states?: TravelState[];
 }
 
 export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
@@ -47,6 +50,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   totalCount,
   maxPrice,
   minPrice,
+  states = [],
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -174,6 +178,10 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
       {/* Desktop & Tablet View */}
       <div className="hidden md:block space-y-4" ref={dropdownRef}>
         <div className="flex flex-wrap gap-3 items-center bg-white ">
+          {states.length > 0 && (
+            <StateFilterButton states={states} label="Travel destination" />
+          )}
+
           <FilterButton
             id="price"
             label="Daily price"
@@ -355,6 +363,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
           totalCount={totalCount}
           maxPrice={maxPrice}
           minPrice={minPrice}
+          states={states}
         />
       )}
     </>
@@ -376,6 +385,7 @@ const MobileFilterDrawer: React.FC<
   totalCount,
   maxPrice,
   minPrice,
+  states = [],
 }) => {
   const [tempFilterState, setTempFilterState] =
     useState<FilterState>(filterState);
@@ -450,6 +460,15 @@ const MobileFilterDrawer: React.FC<
 
         {/* Filter Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {states.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Travel destination
+              </h3>
+              <StateFilter states={states} onClose={onClose} compact />
+            </div>
+          )}
+
           {/* Price Range */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
