@@ -415,10 +415,8 @@ export default function ImpactPageClient() {
       <Navbar />
 
       {/* HERO */}
-      <section className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-[#1D2739] pt-28 pb-20 px-6 md:px-10 lg:px-16 flex items-end relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_85%_20%,rgba(255,255,255,0.12),transparent_65%),radial-gradient(ellipse_50%_50%_at_5%_80%,rgba(255,255,255,0.06),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:60px_60px]" />
-
+      <section className="min-h-screen bg-[#0e1728] pt-28 pb-16 px-6 md:px-10 lg:px-16 flex flex-col justify-center items-center relative overflow-hidden">
+        {/* SDG tags — top right */}
         <div className="hidden lg:flex absolute top-28 right-10 flex-col gap-2 impact-reveal impact-delay-3">
           <span className="text-[10px] font-medium tracking-[0.1em] px-3 py-1 rounded-full uppercase text-right bg-white/10 text-white/80 border border-white/20">
             SDG 5 — Gender equality
@@ -426,7 +424,7 @@ export default function ImpactPageClient() {
           <span className="text-[10px] font-medium tracking-[0.1em] px-3 py-1 rounded-full uppercase text-right bg-white/10 text-white/80 border border-white/20">
             SDG 8 — Decent work
           </span>
-          <span className="text-[10px] font-medium tracking-[0.1em] px-3 py-1 rounded-full uppercase text-right bg-blue-600/20 text-blue-300 border border-blue-500/30">
+          <span className="text-[10px] font-medium tracking-[0.1em] px-3 py-1 rounded-full uppercase text-right bg-blue-600/30 text-blue-300 border border-blue-500/40">
             SDG 11 — Sustainable cities
           </span>
           <span className="text-[10px] font-medium tracking-[0.1em] px-3 py-1 rounded-full uppercase text-right bg-white/10 text-white/80 border border-white/20">
@@ -434,53 +432,43 @@ export default function ImpactPageClient() {
           </span>
         </div>
 
-        <div className="relative max-w-6xl w-full mx-auto">
-          <p className="impact-reveal text-[11px] uppercase tracking-[0.18em] font-medium text-blue-400 mb-6">
+        {/* Centered text content */}
+        <div className="relative text-center max-w-3xl mx-auto mb-14">
+          <span className="impact-reveal inline-block mb-6 px-5 py-2 rounded-full border border-white/25 text-white/90 text-[12px] tracking-[0.12em] uppercase font-medium">
             Driving change across Nigeria
-          </p>
-          <h1 className="impact-reveal impact-delay-1 text-white text-4xl lg:text-[5.5rem] font-bold leading-[1.05] max-w-4xl mb-6">
+          </span>
+
+          <h1 className="impact-reveal impact-delay-1 text-white text-4xl md:text-5xl lg:text-[3.75rem] font-bold leading-[1.1] mb-6">
             Mobility that{" "}
             <em className="not-italic text-blue-400">lifts people</em>
             <br />
             and protects the planet.
           </h1>
-          <p className="impact-reveal impact-delay-2 text-white/80 max-w-[520px] text-[17px] font-light leading-[1.75] mb-10">
+
+          <p className="impact-reveal impact-delay-2 text-white/70 text-[15px] md:text-[17px] font-light leading-[1.75] max-w-[560px] mx-auto">
             We believe every journey should create opportunity — for drivers, for
             women, and for communities. Here is the impact Muvment by Autogirl
             is building.
           </p>
-
-          <div className="impact-reveal impact-delay-3 flex flex-wrap gap-8 lg:gap-10">
-            <div>
-              <p className="text-[2.2rem] font-bold text-white leading-none">60+</p>
-              <p className="text-xs text-white/50 mt-1 font-light">Women trained free</p>
-            </div>
-            <div className="hidden sm:block w-px bg-white/10 self-stretch" />
-            <div>
-              <p className="text-[2.2rem] font-bold text-white leading-none">567%</p>
-              <p className="text-xs text-white/50 mt-1 font-light">Driver income growth</p>
-            </div>
-            <div className="hidden sm:block w-px bg-white/10 self-stretch" />
-            <div>
-              <p className="text-[2.2rem] font-bold text-white leading-none">200+</p>
-              <p className="text-xs text-white/50 mt-1 font-light">Drivers empowered</p>
-            </div>
-            <div className="hidden sm:block w-px bg-white/10 self-stretch" />
-            <div>
-              <p className="text-[2.2rem] font-bold text-white leading-none">#1</p>
-              <p className="text-xs text-white/50 mt-1 font-light">EV fleet on ride-hailing in Nigeria</p>
-            </div>
-            <div className="hidden sm:block w-px bg-white/10 self-stretch" />
-            <div>
-              <p className="text-[2.2rem] font-bold text-white leading-none">7</p>
-              <p className="text-xs text-white/50 mt-1 font-light">SDGs addressed</p>
-            </div>
-          </div>
         </div>
 
-        <div className="absolute bottom-8 right-10 hidden lg:flex items-center gap-2 text-[11px] tracking-[0.1em] uppercase text-white/30">
-          <span className="w-10 h-px bg-white/30" />
-          Scroll to explore
+        {/* Stat cards row */}
+        <div className="impact-reveal impact-delay-3 relative w-full max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {[
+            { value: "60+", label: "Women trained free" },
+            { value: "567%", label: "Driver income growth" },
+            { value: "200+", label: "Drivers empowered" },
+            { value: "7", label: "SDGs addressed" },
+            { value: "#1", label: "EV fleet on ride-hailing in Nigeria" },
+          ].map((stat) => (
+            <div
+              key={stat.value}
+              className="bg-white rounded-2xl px-5 py-5 flex flex-col justify-between min-h-[110px]"
+            >
+              <p className="text-[2rem] font-bold text-[#0e1728] leading-none">{stat.value}</p>
+              <p className="text-[11px] text-gray-500 font-normal mt-2 leading-[1.4]">{stat.label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
