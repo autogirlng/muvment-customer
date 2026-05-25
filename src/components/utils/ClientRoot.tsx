@@ -26,16 +26,13 @@ export default function ClientRoot({
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />
-      {!isAppReady ? (
-        <ScreenLoader />
-      ) : (
-        <>
-          <AuthProvider>
-            <RouteTracker />
-            {children}
-          </AuthProvider>
-        </>
-      )}
+      {!isAppReady && <ScreenLoader />}
+      <div style={!isAppReady ? { visibility: "hidden" } : undefined}>
+        <AuthProvider>
+          <RouteTracker />
+          {children}
+        </AuthProvider>
+      </div>
     </>
   );
 }
