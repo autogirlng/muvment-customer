@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { FilterState } from "@/types/filters";
@@ -29,7 +29,7 @@ interface ExploreVehiclesClientProps {
   initialStates?: TravelState[];
 }
 
-export default function ExploreVehiclesClient({
+function ExploreVehiclesClientContent({
   initialVehicles,
   initialTotalCount,
   initialRecommended,
@@ -500,5 +500,13 @@ export default function ExploreVehiclesClient({
       <Slider slides={slides} automatic seconds={4} />
       <Footer />
     </div>
+  );
+}
+
+export default function ExploreVehiclesClient(props: ExploreVehiclesClientProps) {
+  return (
+    <Suspense fallback={null}>
+      <ExploreVehiclesClientContent {...props} />
+    </Suspense>
   );
 }

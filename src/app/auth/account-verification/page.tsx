@@ -1,12 +1,12 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { AuthService } from "@/controllers/auth/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import Button from "@/components/utils/Button";
 import OtpInput from "@/components/AuthComponent/OTPInput";
 
-export default function VerifyAccountComponent() {
+function VerifyAccountContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailFromUrl = searchParams.get("email") || "";
@@ -262,5 +262,13 @@ export default function VerifyAccountComponent() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyAccountComponent() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyAccountContent />
+    </Suspense>
   );
 }

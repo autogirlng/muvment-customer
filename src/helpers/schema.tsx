@@ -31,6 +31,9 @@ export class SchemaBuilder {
       "@id": `${BASE}/#organization`,
       name: SEO_DEFAULTS.siteName,
       url: BASE,
+      description:
+        "Muvment by Autogirl helps you rent cars for business, trips, events and daily mobility across Nigeria.",
+      foundingLocation: "Lagos, Nigeria",
       logo: {
         "@type": "ImageObject",
         url: `${BASE}${SEO_DEFAULTS.defaultImage}`,
@@ -48,6 +51,7 @@ export class SchemaBuilder {
       sameAs: [
         "https://twitter.com/autogirl_ng",
         "https://www.instagram.com/autogirl_ng",
+        "https://www.linkedin.com/company/autogirl",
       ],
     };
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
@@ -85,7 +85,7 @@ interface BookingResponse {
   discounted: boolean;
 }
 
-const BookingSuccessPage = () => {
+const BookingSuccessContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
@@ -675,5 +675,11 @@ const BookingSuccessPage = () => {
     </div>
   );
 };
+
+const BookingSuccessPage = () => (
+  <Suspense fallback={null}>
+    <BookingSuccessContent />
+  </Suspense>
+);
 
 export default BookingSuccessPage;

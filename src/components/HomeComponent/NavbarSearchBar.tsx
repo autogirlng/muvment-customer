@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Dropdown from "../utils/DropdownCustom";
 import Calendar from "../utils/Calender";
@@ -9,7 +9,7 @@ import LocationDropdown from "../utils/LocationDropdown";
 import { getBookingOption } from "@/context/Constarain";
 import { trackCategoryClick, trackVehicleSearch } from "@/services/analytics";
 
-export const NavbarSearchBar = () => {
+const NavbarSearchBarContent = () => {
   const router = useRouter();
 
 
@@ -297,3 +297,9 @@ export const NavbarSearchBar = () => {
     </div>
   );
 };
+
+export const NavbarSearchBar = () => (
+  <Suspense fallback={null}>
+    <NavbarSearchBarContent />
+  </Suspense>
+);

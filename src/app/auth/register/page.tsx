@@ -3,7 +3,7 @@ import Button from "@/components/utils/Button";
 import { AuthService } from "@/controllers/auth/auth";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { JSX, useState } from "react";
+import { JSX, useState, Suspense } from "react";
 import { toast } from "react-toastify";
 
 interface SignupFormValues {
@@ -97,7 +97,7 @@ const INITIAL_VALUES: SignupFormValues = {
   },
 };
 
-export default function SignupComponent() {
+function SignupContent() {
   const [formValues, setFormValues] =
     useState<SignupFormValues>(INITIAL_VALUES);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -624,5 +624,13 @@ export default function SignupComponent() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignupComponent() {
+  return (
+    <Suspense fallback={null}>
+      <SignupContent />
+    </Suspense>
   );
 }
