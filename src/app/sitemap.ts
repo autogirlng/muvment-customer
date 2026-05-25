@@ -1,8 +1,7 @@
 import { MetadataRoute } from "next";
 import { SEO_DEFAULTS } from "@/helpers/metadata";
 
-// Always use the canonical www URL for sitemap entries
-const APP_URL = SEO_DEFAULTS.baseUrl; // https://www.muvment.ng
+const APP_URL = SEO_DEFAULTS.baseUrl; 
 const API_URL = "https://api-muvment-prod.up.railway.app/api/v1";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

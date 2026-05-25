@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { usePathname, useRouter, useParams, useSearchParams } from "next/navigation";
 import {
   FiStar,
@@ -31,7 +31,7 @@ interface BookingDetails {
   };
 }
 
-const ReviewPage = () => {
+const ReviewContent = () => {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -459,5 +459,11 @@ const ReviewPage = () => {
     </div>
   );
 };
+
+const ReviewPage = () => (
+  <Suspense fallback={null}>
+    <ReviewContent />
+  </Suspense>
+);
 
 export default ReviewPage;

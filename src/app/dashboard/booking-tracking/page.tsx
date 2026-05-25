@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   FiMapPin,
@@ -13,7 +13,7 @@ import {
 import { Navbar } from "@/components/Navbar";
 import { BookingService } from "@/controllers/booking/bookingService";
 
-const BookingTrackingPage = () => {
+const BookingTrackingContent = () => {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
   const paymentId = searchParams.get("paymentId");
@@ -297,5 +297,11 @@ const BookingTrackingPage = () => {
     </div>
   );
 };
+
+const BookingTrackingPage = () => (
+  <Suspense fallback={null}>
+    <BookingTrackingContent />
+  </Suspense>
+);
 
 export default BookingTrackingPage;

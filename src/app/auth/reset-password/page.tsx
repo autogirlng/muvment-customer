@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthService } from "@/controllers/auth/auth";
@@ -7,7 +7,7 @@ import OtpInput from "@/components/AuthComponent/OTPInput";
 import Input from "@/components/utils/InputComponent";
 import { toast } from "react-toastify";
 
-export default function ResetPasswordComponent() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailFromUrl = searchParams.get("email") || "";
@@ -408,5 +408,13 @@ export default function ResetPasswordComponent() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordComponent() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
