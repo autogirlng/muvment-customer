@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { ToastContainer } from "react-toastify";
 import ScreenLoader from "@/components/utils/ScreenLoader";
 import { AuthProvider } from "@/context/AuthContext";
@@ -29,7 +29,9 @@ export default function ClientRoot({
       {!isAppReady && <ScreenLoader />}
       <div style={!isAppReady ? { visibility: "hidden" } : undefined}>
         <AuthProvider>
-          <RouteTracker />
+          <Suspense fallback={null}>
+            <RouteTracker />
+          </Suspense>
           {children}
         </AuthProvider>
       </div>

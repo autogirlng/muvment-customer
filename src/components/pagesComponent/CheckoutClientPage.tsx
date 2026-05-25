@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Cookies from "js-cookie";
@@ -37,7 +37,7 @@ interface PersonalInfo {
   phone?: string;
 }
 
-const CheckoutClientPage = () => {
+const CheckoutClientPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { id } = useParams();
@@ -837,5 +837,11 @@ const CheckoutClientPage = () => {
     </div>
   );
 };
+
+const CheckoutClientPage = () => (
+  <Suspense fallback={null}>
+    <CheckoutClientPageContent />
+  </Suspense>
+);
 
 export default CheckoutClientPage;

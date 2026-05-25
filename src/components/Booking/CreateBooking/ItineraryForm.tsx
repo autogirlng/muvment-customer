@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, Suspense } from "react";
 import { Formik, Form } from "formik";
 import { StepperNavigation } from "./stepper";
 import { ItineraryInformationValues } from "@/types/booking";
@@ -19,7 +19,7 @@ import SelectInput from "@/components/general/forms/select";
 import { RIDE_PURPOSES } from "@/helpers/metadata";
 import AutocompleteSelect from "@/components/general/forms/AutoCompleteSelect";
 
-const ItineraryForm = ({
+const ItineraryFormContent = ({
   steps,
   currentStep,
   setCurrentStep,
@@ -238,5 +238,15 @@ const ItineraryForm = ({
     </>
   );
 };
+
+const ItineraryForm = (props: {
+  steps: string[];
+  currentStep: number;
+  setCurrentStep: (step: number) => void;
+}) => (
+  <Suspense fallback={null}>
+    <ItineraryFormContent {...props} />
+  </Suspense>
+);
 
 export default ItineraryForm;

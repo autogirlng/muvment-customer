@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import {
   notFound,
   useParams,
@@ -20,7 +20,7 @@ export const ORGANIZATION_SIZE = [
   { label: "5,000+ employees", value: "5000+" },
 ];
 
-export const SubmitKYCPage = () => {
+const SubmitKYCPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [form, setForm] = useState({
@@ -209,3 +209,9 @@ export const SubmitKYCPage = () => {
     </div>
   );
 };
+
+export const SubmitKYCPage = () => (
+  <Suspense fallback={null}>
+    <SubmitKYCPageContent />
+  </Suspense>
+);
