@@ -1,8 +1,8 @@
 import { MetadataRoute } from "next";
 import { SEO_DEFAULTS } from "@/helpers/metadata";
 
-const APP_URL = SEO_DEFAULTS.baseUrl; 
-const API_URL = "https://api-muvment-prod.up.railway.app/api/v1";
+const APP_URL = SEO_DEFAULTS.baseUrl;
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "https://api-muvment.up.railway.app"}/api/v1`;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const env = process.env.NEXT_PUBLIC_VERCEL_URL || "";
@@ -117,6 +117,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
     ]);
 
+    if (!blogsRes.ok) console.error(`Sitemap: blogs fetch failed ${blogsRes.status}`);
+    if (!vehiclesRes.ok) console.error(`Sitemap: vehicles fetch failed ${vehiclesRes.status}`);
+    if (!showcaseRes.ok) console.error(`Sitemap: showcase fetch failed ${showcaseRes.status}`);
+
     const blogsJson =
       blogsRes.ok &&
       blogsRes.headers.get("content-type")?.includes("application/json")
@@ -167,7 +171,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...showcaseEntries,
     ];
   } catch (error) {
-    console.error("Sitemap error:", error);
+    console.error("[Sitemap] Unexpected error:", error);
     return staticRoutes;
   }
 }
