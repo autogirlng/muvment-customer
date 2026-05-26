@@ -59,6 +59,9 @@ export const metadata: Metadata = {
 
   alternates: {
     canonical: "https://www.muvment.ng",
+    types: {
+      "application/xml": "https://www.muvment.ng/sitemap.xml",
+    },
   },
 
   openGraph: {
