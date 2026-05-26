@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import {
   FaStar,
   FaHeart,
@@ -32,6 +32,11 @@ export interface SaveBigCardProps {
   isFavorited: boolean;
   onCardClick: (id: string) => void;
 }
+
+const optimizeCloudinaryUrl = (url: string) => {
+  if (!url || !url.includes("res.cloudinary.com")) return url;
+  return url.replace("/upload/", "/upload/f_auto,q_auto,w_600/");
+};
 
 const SaveBigCard: React.FC<SaveBigCardProps> = ({
   vehicle,
@@ -85,12 +90,12 @@ const SaveBigCard: React.FC<SaveBigCardProps> = ({
       <div className="md:hidden">
         <div className="relative h-48 rounded-t-xl overflow-hidden">
           <img
-            src={
-              displayPhotos[currentImageIndex]?.cloudinaryUrl ||
-              "/placeholder.jpg"
-            }
+            src={optimizeCloudinaryUrl(
+              displayPhotos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"
+            )}
             alt={vehicle.name}
             className="w-full h-full object-cover"
+            loading="lazy"
           />
 
           {displayPhotos.length > 1 && (
@@ -211,12 +216,12 @@ const SaveBigCard: React.FC<SaveBigCardProps> = ({
         {/* Image Section - Left Side */}
         <div className="relative w-[280px] h-[220px] flex-shrink-0">
           <img
-            src={
-              displayPhotos[currentImageIndex]?.cloudinaryUrl ||
-              "/placeholder.jpg"
-            }
+            src={optimizeCloudinaryUrl(
+              displayPhotos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"
+            )}
             alt={vehicle.name}
             className="w-full h-full object-cover rounded-l-xl"
+            loading="lazy"
           />
 
           {/* Image Navigation */}

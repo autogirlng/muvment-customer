@@ -150,9 +150,11 @@ export default function HeroBookingSection() {
     );
   };
 
-  const getLocationInformation = () => {
+  const getLocationInformation = async () => {
     setUserLocation("Detecting Location...");
-    if (typeof window === "undefined" || !window.google) return;
+    if (typeof window === "undefined") return;
+    await initGoogleMaps();
+    if (!window.google) return;
 
     if (location.lat == null && location.lng == null) {
       getLongitudeLatitude();
@@ -249,7 +251,6 @@ export default function HeroBookingSection() {
     getvechileType();
     getLongitudeLatitude();
     getBookingOptions();
-    initGoogleMaps();
   }, []);
 
   const handleDropdownToggle = (dropdownId: string) => {
@@ -322,7 +323,7 @@ export default function HeroBookingSection() {
   };
 
 const HERO_IMAGES = [
-  "/images/landing/hero.jpg",
+  "/images/landing/hero.png",
   "/images/landing/hero1.png",
   "/images/landing/hero2.png",
 ];

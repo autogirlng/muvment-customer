@@ -1,21 +1,23 @@
 "use client";
+import dynamic from "next/dynamic";
 import BookingInterface from "@/components/HomeComponent/BookingInterface";
-import ExploreCities from "@/components/HomeComponent/ExploreCities";
-import FAQ from "@/components/HomeComponent/FAQ";
-import FindNewListings from "@/components/HomeComponent/FindNewListing";
-import Footer from "@/components/HomeComponent/Footer";
-import PremiumCarRental from "@/components/HomeComponent/PremiumCarRentals";
-import Steps from "@/components/HomeComponent/Steps";
-import TopRateing from "@/components/HomeComponent/TopRating";
-import VehicleCategories from "@/components/HomeComponent/VechileCategories";
 import { Navbar } from "@/components/Navbar";
 import React, { useEffect } from "react";
 import { getBookingOption } from "@/context/Constarain";
 import { useState } from "react";
 import { BookingOption } from "@/types/booking";
 import { ServicePricingShowcaseList } from "@/components/HomeComponent/Servicepricingshowcaselist";
-import Delivery from "@/components/HomeComponent/Delivering";
-import BeninRepublicTravel from "@/components/HomeComponent/BeninRepublicTravel";
+
+const BeninRepublicTravel = dynamic(() => import("@/components/HomeComponent/BeninRepublicTravel"));
+const TopRateing = dynamic(() => import("@/components/HomeComponent/TopRating"));
+const Delivery = dynamic(() => import("@/components/HomeComponent/Delivering"));
+const PremiumCarRental = dynamic(() => import("@/components/HomeComponent/PremiumCarRentals"));
+const ExploreCities = dynamic(() => import("@/components/HomeComponent/ExploreCities"));
+const VehicleCategories = dynamic(() => import("@/components/HomeComponent/VechileCategories"));
+const FindNewListings = dynamic(() => import("@/components/HomeComponent/FindNewListing"));
+const Steps = dynamic(() => import("@/components/HomeComponent/Steps"));
+const FAQ = dynamic(() => import("@/components/HomeComponent/FAQ"));
+const Footer = dynamic(() => import("@/components/HomeComponent/Footer"));
 
 export default function HomePage() {
   const [bookingTypeID, setBookingTypeID] = useState<string | undefined>(

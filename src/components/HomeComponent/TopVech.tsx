@@ -71,6 +71,11 @@ const FavouriteButton: React.FC<{
   </button>
 );
 
+const optimizeCloudinaryUrl = (url: string) => {
+  if (!url || !url.includes("res.cloudinary.com")) return url;
+  return url.replace("/upload/", "/upload/f_auto,q_auto,w_600/");
+};
+
 // ─── Main card ────────────────────────────────────────────────────────────────
 const TopRating: React.FC<TopRatingProps> = ({
   vehicle,
@@ -112,9 +117,12 @@ const TopRating: React.FC<TopRatingProps> = ({
       <div className="md:hidden">
         <div className="relative h-48 rounded-t-xl overflow-hidden">
           <img
-            src={vehicle.photos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"}
+            src={optimizeCloudinaryUrl(
+              vehicle.photos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"
+            )}
             alt={vehicle.name}
             className="w-full h-full object-cover"
+            loading="lazy"
           />
 
           {vehicle.photos.length > 1 && (
@@ -208,9 +216,12 @@ const TopRating: React.FC<TopRatingProps> = ({
         {/* Image - Left */}
         <div className="relative w-[280px] h-[220px] flex-shrink-0">
           <img
-            src={vehicle.photos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"}
+            src={optimizeCloudinaryUrl(
+              vehicle.photos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"
+            )}
             alt={vehicle.name}
             className="w-full h-full object-cover rounded-l-xl"
+            loading="lazy"
           />
 
           {vehicle.photos.length > 1 && (
