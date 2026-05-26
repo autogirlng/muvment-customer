@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
-import { usePathname, useRouter, useParams, useSearchParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
   FiStar,
   FiCheckCircle,
   FiArrowRight,
-  FiMessageSquare,
   FiHeart,
   FiLoader,
   FiAlertCircle,
@@ -37,7 +36,7 @@ const ReviewContent = () => {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const bookingId = params.id || "";
-  const entityType = searchParams.get("entityType") || ""
+  const entityType = searchParams.get("entityType") || "Booking"
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,18 +69,18 @@ const ReviewContent = () => {
       }
 
 
-      // Fetch booking details if no review exists
-      const bookingRes = await getSingleData(
-        `/api/v1/public/bookings/${bookingId}`
-      );
-      const bookingData = bookingRes?.data[0]?.data;
-
-
-      if (!bookingData) {
-        throw new Error("Booking data is missing or invalid.");
+      // Fetch booking details if no review exists — failure is non-fatal,
+      // the form still works without vehicle info.
+      try {
+        const bookingRes = await getSingleData(
+          `/api/v1/public/bookings/${bookingId}`
+        );
+        console.log("Fetched booking details:", bookingRes);
+        const bookingData = bookingRes?.data[0]?.data;
+        if (bookingData) setBooking(bookingData);
+      } catch (err) {
+        console.error("Could not load booking details:", err);
       }
-
-      setBooking(bookingData);
     } catch (err: any) {
       console.error("Error fetching booking:", err);
       setError(err.message || "Failed to load booking details.");
@@ -125,10 +124,6 @@ const ReviewContent = () => {
       setSubmitting(false);
     }
   };
-
-  if (!!user?.id) {
-    router.push("/auth/login")
-  }
 
   // Loading State
   if (loading) {
@@ -210,7 +205,7 @@ const ReviewContent = () => {
     );
   }
   // Error State
-  if (error && !booking || !entityType) {
+  if (!entityType || (error && !booking)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
         <Navbar />

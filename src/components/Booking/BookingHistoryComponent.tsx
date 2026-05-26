@@ -32,7 +32,8 @@ const PAGE_SIZE = 10;
 
 // Transform raw API item into a flat booking object (same as BookingHistoryPage)
 const transformItem = (item: any) => ({
-  bookingId: item.id,
+  bookingId: item.booking.bookingId,
+  segmentId: item.id,
   bookingStatus: item.booking.bookingStatus,
   invoiceNumber: item.booking.invoiceNumber,
   paymentMethod: item.booking.paymentMethod,
@@ -157,6 +158,7 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   }, [loading, loadingMore, hasMore]);
 
   const handleBookingClick = (booking: any) => {
+    console.log(booking)
     setSelectedBookings([booking]);
     setIsModalOpen(true);
   };
