@@ -76,11 +76,61 @@ export class SchemaBuilder {
 
   // ── Page schemas ─────────────────────────────────────────────────────────────
 
-  /** Homepage: WebSite (with SearchAction) + Organization */
+  static webPage() {
+    return {
+      "@type": "WebPage",
+      "@id": `${BASE}/#webpage`,
+      url: BASE,
+      name: SEO_DEFAULTS.defaultTitle,
+      description: SEO_DEFAULTS.defaultDescription,
+      inLanguage: "en-NG",
+      isPartOf: { "@id": `${BASE}/#website` },
+      about: { "@id": `${BASE}/#organization` },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: BASE },
+        ],
+      },
+    };
+  }
+
+  static localBusiness() {
+    return {
+      "@type": "LocalBusiness",
+      "@id": `${BASE}/#localbusiness`,
+      name: SEO_DEFAULTS.siteName,
+      url: BASE,
+      image: `${BASE}${SEO_DEFAULTS.defaultImage}`,
+      email: "info@muvment.ng",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Victoria Island",
+        addressRegion: "Lagos",
+        addressCountry: "NG",
+      },
+      geo: { "@type": "GeoCoordinates", latitude: 6.4281, longitude: 3.4219 },
+      openingHoursSpecification: {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: [
+          "Monday", "Tuesday", "Wednesday",
+          "Thursday", "Friday", "Saturday", "Sunday",
+        ],
+        opens: "00:00",
+        closes: "23:59",
+      },
+      areaServed: { "@type": "Country", name: "Nigeria" },
+      priceRange: "₦₦",
+    };
+  }
+
+  /** Homepage: WebSite (with SearchAction) + Organization + WebPage + LocalBusiness */
   static homePage() {
     return SchemaBuilder.graph([
       SchemaBuilder.webSite(),
       SchemaBuilder.organization(),
+      SchemaBuilder.webPage(),
+      SchemaBuilder.localBusiness(),
     ]);
   }
 

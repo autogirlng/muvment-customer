@@ -69,7 +69,7 @@ export function generatePageMetadata({
   const allKeywords = [...new Set([...keywords, ...SEO_DEFAULTS.keywords])];
 
   return {
-    title: fullTitle,
+    title: { absolute: fullTitle },
     description,
     keywords: allKeywords,
     authors: [...SEO_DEFAULTS.authors],
