@@ -71,7 +71,10 @@ export default function Dashboard(): React.ReactElement {
   } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [categoryOptions, setcategoryOptions] = useState([]);
+  const [categoryOptions, setcategoryOptions] = useState<{
+    value: any;
+    label: string;
+  }[]>([]);
   const [bookingOptions, setBookingOptions] = useState<any[]>([]);
   const [stats, setStats] = useState<{
     bookings: number;
@@ -101,8 +104,7 @@ export default function Dashboard(): React.ReactElement {
 
   const getvechileType = async () => {
     const result = await VehicleSearchService.getVechielType();
-    const data = result[0].data;
-    const transformedOptions = data.map((item: any) => ({
+    const transformedOptions = result.map((item: any) => ({
       value: item.id,
       label: item.name.replace("_", " "),
     }));

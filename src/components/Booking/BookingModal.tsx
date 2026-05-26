@@ -61,7 +61,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   }, [isOpen, bookings]);
 
   const handleRateBooking = (bookingId: string) => {
-    router.push(`/review/${bookingId}`);
+    router.push(`/review/${bookingId}?entityType=Booking`);
   };
 
   if (!isOpen || !bookings || bookings.length === 0) return null;
@@ -104,7 +104,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const selectedDate = bookings[0]?.createdAt
     ? formatDate(bookings[0].createdAt)
     : "";
-
+   console.log(bookings);
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
