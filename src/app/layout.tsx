@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     siteName: "Muvment by Autogirl",
     title: "Muvment by Autogirl | Rent Cars Anywhere in Nigeria",
     description:
-      "Book verified vehicles for business, travel and everyday movement across Nigeria.",
+      "Muvment by Autogirl helps you rent cars easily for business, trips, events, and daily mobility across Nigeria. Flexible pricing. Verified cars. Fast booking.",
     url: "https://www.muvment.ng",
     locale: "en_NG",
     images: [
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
     creator: "@autogirl_ng",
     title: "Muvment by Autogirl | Rent Cars Anywhere in Nigeria",
     description:
-      "Book reliable vehicles instantly for trips, business, events and everyday rides.",
+      "Muvment by Autogirl helps you rent cars easily for business, trips, events, and daily mobility across Nigeria. Flexible pricing. Verified cars. Fast booking.",
     images: ["/images/image1.png"],
   },
 

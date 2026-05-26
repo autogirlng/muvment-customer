@@ -192,6 +192,7 @@ They come with a professional chauffeur and fueling.
           <button
             onClick={handlePrev}
             disabled={isPrevDisabled}
+            aria-label="Previous pricing"
             className={`hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${
               isPrevDisabled
                 ? "opacity-50 cursor-not-allowed"
@@ -230,6 +231,7 @@ They come with a professional chauffeur and fueling.
           <button
             onClick={handleNext}
             disabled={isNextDisabled}
+            aria-label="Next pricing"
             className={`hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${
               isNextDisabled
                 ? "opacity-50 cursor-not-allowed"
@@ -252,6 +254,7 @@ They come with a professional chauffeur and fueling.
               <button
                 key={i}
                 onClick={() => handleDotClick(i)}
+                aria-label={`Go to page ${i + 1}`}
                 className={`w-2 h-2 rounded-full transition-all ${
                   i === getActiveDot()
                     ? "bg-blue-600 w-8"

@@ -24,18 +24,9 @@ export const useLocationSearch = () => {
   const googleMapsService = useRef<GoogleMapsService>(new GoogleMapsService());
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    const initialize = async () => {
-      const loadedRecentSearches = getRecentSearches();
-      setRecentSearches(loadedRecentSearches);
-      setLocationSuggestions(loadedRecentSearches);
-      try {
-        await googleMapsService.current.initialize();
-      } catch (error) {
-        console.error("Failed to initialize Google Maps service:", error);
-        setSearchError("Location search is currently unavailable.");
-      }
-    };
-    initialize();
+    const loadedRecentSearches = getRecentSearches();
+    setRecentSearches(loadedRecentSearches);
+    setLocationSuggestions(loadedRecentSearches);
   }, []);
 
   const searchGooglePlaces = useCallback(

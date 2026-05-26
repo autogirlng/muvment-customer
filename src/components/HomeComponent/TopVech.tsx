@@ -71,6 +71,11 @@ const FavouriteButton: React.FC<{
   </button>
 );
 
+const optimizeCloudinaryUrl = (url: string) => {
+  if (!url || !url.includes("res.cloudinary.com")) return url;
+  return url.replace("/upload/", "/upload/f_auto,q_auto,w_600/");
+};
+
 // ─── Main card ────────────────────────────────────────────────────────────────
 const TopRating: React.FC<TopRatingProps> = ({
   vehicle,
@@ -112,21 +117,26 @@ const TopRating: React.FC<TopRatingProps> = ({
       <div className="md:hidden">
         <div className="relative h-48 rounded-t-xl overflow-hidden">
           <img
-            src={vehicle.photos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"}
+            src={optimizeCloudinaryUrl(
+              vehicle.photos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"
+            )}
             alt={vehicle.name}
             className="w-full h-full object-cover"
+            loading="lazy"
           />
 
           {vehicle.photos.length > 1 && (
             <>
               <button
                 onClick={prevImage}
+                aria-label="Previous image"
                 className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
               >
                 <FaChevronLeft className="w-3 h-3 text-gray-700" />
               </button>
               <button
                 onClick={nextImage}
+                aria-label="Next image"
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
               >
                 <FaChevronRight className="w-3 h-3 text-gray-700" />
@@ -136,6 +146,7 @@ const TopRating: React.FC<TopRatingProps> = ({
                   <button
                     key={index}
                     onClick={() => goToImage(index)}
+                    aria-label={`Go to image ${index + 1}`}
                     className={`w-1.5 h-1.5 rounded-full transition-all ${
                       index === currentImageIndex ? "bg-white w-4" : "bg-white/50"
                     }`}
@@ -205,21 +216,26 @@ const TopRating: React.FC<TopRatingProps> = ({
         {/* Image - Left */}
         <div className="relative w-[280px] h-[220px] flex-shrink-0">
           <img
-            src={vehicle.photos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"}
+            src={optimizeCloudinaryUrl(
+              vehicle.photos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"
+            )}
             alt={vehicle.name}
             className="w-full h-full object-cover rounded-l-xl"
+            loading="lazy"
           />
 
           {vehicle.photos.length > 1 && (
             <>
               <button
                 onClick={prevImage}
+                aria-label="Previous image"
                 className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
               >
                 <FaChevronLeft className="w-3 h-3 text-white" />
               </button>
               <button
                 onClick={nextImage}
+                aria-label="Next image"
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
               >
                 <FaChevronRight className="w-3 h-3 text-white" />
@@ -229,6 +245,7 @@ const TopRating: React.FC<TopRatingProps> = ({
                   <button
                     key={index}
                     onClick={() => goToImage(index)}
+                    aria-label={`Go to image ${index + 1}`}
                     className={`w-1.5 h-1.5 rounded-full transition-all ${
                       index === currentImageIndex ? "bg-white w-4" : "bg-white/50"
                     }`}

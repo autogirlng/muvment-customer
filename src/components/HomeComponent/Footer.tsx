@@ -216,7 +216,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                       ) : navLink.type === "link" ? (
                         <Link
                           href={`${navLink.link}${
-                            bookingType && `&bookingType=${bookingType}`
+                            bookingType ? `&bookingType=${bookingType}` : ""
                           }`}
                           className="hover:text-primary-500"
                         >
@@ -264,6 +264,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                 <Link
                   href="https://www.instagram.com/autogirlng"
                   target="_blank"
+                  aria-label="Muvment on Instagram"
                   className="hover:text-primary-500"
                 >
                   <FaInstagram />
@@ -271,6 +272,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                 <Link
                   href="https://twitter.com/autogirlng"
                   target="_blank"
+                  aria-label="Muvment on Twitter"
                   className="hover:text-primary-500"
                 >
                   <FaTwitter />
@@ -278,6 +280,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                 <Link
                   href="https://www.tiktok.com/@autogirl.ng"
                   target="_blank"
+                  aria-label="Muvment on TikTok"
                   className="hover:text-primary-500"
                 >
                   <FaTiktok />
@@ -285,6 +288,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                 <Link
                   href="https://web.facebook.com/autogirlng"
                   target="_blank"
+                  aria-label="Muvment on Facebook"
                   className="hover:text-primary-500"
                 >
                   <FaFacebook />
@@ -292,6 +296,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                 <Link
                   href="https://www.linkedin.com/company/autogirl/"
                   target="_blank"
+                  aria-label="Muvment on LinkedIn"
                   className="hover:text-primary-500"
                 >
                   <FaLinkedin />

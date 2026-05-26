@@ -151,6 +151,7 @@ const FindNewListings: React.FC = () => {
                             e.stopPropagation();
                             toggleFavorite(vehicle.id);
                           }}
+                          aria-label={favorites.has(vehicle.id) ? "Remove from favourites" : "Add to favourites"}
                           className="absolute top-3 right-3 bg-white/10 p-2 rounded-full hover:bg-white/20"
                         >
                           {favorites.has(vehicle.id) ? (
