@@ -4,12 +4,14 @@ import Image from "next/image";
 
 interface BackgroundCarouselProps {
   images: string[];
-  interval?: number; 
+  alts?: string[];
+  interval?: number;
   overlay?: string;
 }
 
 export default function BackgroundCarousel({
   images,
+  alts = [],
   interval = 3000,
   overlay = "bg-gradient-to-r from-gray-900/70 via-gray-800/50 to-gray-900/30",
 }: BackgroundCarouselProps) {
@@ -36,11 +38,12 @@ export default function BackgroundCarousel({
         >
           <Image
             src={image}
-            alt={`Hero background ${index + 1}`}
+            alt={alts[index] ?? ""}
             fill
             className="object-cover w-full h-full"
             priority={index === 0}
-            quality={90}
+            quality={75}
+            sizes="100vw"
           />
         </div>
       ))}

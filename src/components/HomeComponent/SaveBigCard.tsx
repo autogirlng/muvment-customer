@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import {
   FaStar,
   FaHeart,
@@ -32,6 +32,11 @@ export interface SaveBigCardProps {
   isFavorited: boolean;
   onCardClick: (id: string) => void;
 }
+
+const optimizeCloudinaryUrl = (url: string) => {
+  if (!url || !url.includes("res.cloudinary.com")) return url;
+  return url.replace("/upload/", "/upload/f_auto,q_auto,w_600/");
+};
 
 const SaveBigCard: React.FC<SaveBigCardProps> = ({
   vehicle,
@@ -85,24 +90,26 @@ const SaveBigCard: React.FC<SaveBigCardProps> = ({
       <div className="md:hidden">
         <div className="relative h-48 rounded-t-xl overflow-hidden">
           <img
-            src={
-              displayPhotos[currentImageIndex]?.cloudinaryUrl ||
-              "/placeholder.jpg"
-            }
+            src={optimizeCloudinaryUrl(
+              displayPhotos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"
+            )}
             alt={vehicle.name}
             className="w-full h-full object-cover"
+            loading="lazy"
           />
 
           {displayPhotos.length > 1 && (
             <>
               <button
                 onClick={prevImage}
+                aria-label="Previous image"
                 className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
               >
                 <FaChevronLeft className="w-3 h-3 text-gray-700" />
               </button>
               <button
                 onClick={nextImage}
+                aria-label="Next image"
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
               >
                 <FaChevronRight className="w-3 h-3 text-gray-700" />
@@ -113,6 +120,7 @@ const SaveBigCard: React.FC<SaveBigCardProps> = ({
                   <button
                     key={index}
                     onClick={() => goToImage(index)}
+                    aria-label={`Go to image ${index + 1}`}
                     className={`w-1.5 h-1.5 rounded-full transition-all ${
                       index === currentImageIndex
                         ? "bg-white w-4"
@@ -137,6 +145,7 @@ const SaveBigCard: React.FC<SaveBigCardProps> = ({
           {/* Favorite Button */}
           <button
             onClick={onFavorite}
+            aria-label={isFavorited ? "Remove from favourites" : "Add to favourites"}
             className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
           >
             {isFavorited ? (
@@ -207,12 +216,12 @@ const SaveBigCard: React.FC<SaveBigCardProps> = ({
         {/* Image Section - Left Side */}
         <div className="relative w-[280px] h-[220px] flex-shrink-0">
           <img
-            src={
-              displayPhotos[currentImageIndex]?.cloudinaryUrl ||
-              "/placeholder.jpg"
-            }
+            src={optimizeCloudinaryUrl(
+              displayPhotos[currentImageIndex]?.cloudinaryUrl || "/placeholder.jpg"
+            )}
             alt={vehicle.name}
             className="w-full h-full object-cover rounded-l-xl"
+            loading="lazy"
           />
 
           {/* Image Navigation */}
@@ -220,12 +229,14 @@ const SaveBigCard: React.FC<SaveBigCardProps> = ({
             <>
               <button
                 onClick={prevImage}
+                aria-label="Previous image"
                 className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
               >
                 <FaChevronLeft className="w-3 h-3 text-white" />
               </button>
               <button
                 onClick={nextImage}
+                aria-label="Next image"
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
               >
                 <FaChevronRight className="w-3 h-3 text-white" />
@@ -237,6 +248,7 @@ const SaveBigCard: React.FC<SaveBigCardProps> = ({
                   <button
                     key={index}
                     onClick={() => goToImage(index)}
+                    aria-label={`Go to image ${index + 1}`}
                     className={`w-1.5 h-1.5 rounded-full transition-all ${
                       index === currentImageIndex
                         ? "bg-white w-4"

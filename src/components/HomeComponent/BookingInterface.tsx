@@ -150,9 +150,11 @@ export default function HeroBookingSection() {
     );
   };
 
-  const getLocationInformation = () => {
+  const getLocationInformation = async () => {
     setUserLocation("Detecting Location...");
-    if (typeof window === "undefined" || !window.google) return;
+    if (typeof window === "undefined") return;
+    await initGoogleMaps();
+    if (!window.google) return;
 
     if (location.lat == null && location.lng == null) {
       getLongitudeLatitude();
@@ -249,7 +251,6 @@ export default function HeroBookingSection() {
     getvechileType();
     getLongitudeLatitude();
     getBookingOptions();
-    initGoogleMaps();
   }, []);
 
   const handleDropdownToggle = (dropdownId: string) => {
@@ -322,18 +323,23 @@ export default function HeroBookingSection() {
   };
 
 const HERO_IMAGES = [
-  "/images/landing/hero.jpg",
+  "/images/landing/hero.png",
   "/images/landing/hero1.png",
   "/images/landing/hero2.png",
-
 ];
 
+const HERO_ALTS = [
+  "Rent a car in Nigeria with Muvment by Autogirl",
+  "Affordable car hire for trips and events across Lagos and Abuja",
+  "Self-drive and chauffeur car rentals available across Nigeria",
+];
 
   return (
     <div className="relative w-full h-screen overflow-hidden mt-[5rem] md:mt-0">
-     
-       <BackgroundCarousel 
-        images={HERO_IMAGES} 
+
+       <BackgroundCarousel
+        images={HERO_IMAGES}
+        alts={HERO_ALTS}
         interval={3000}
         overlay="bg-gradient-to-r from-gray-900/70 via-gray-800/50 to-gray-900/30"
       />
@@ -356,7 +362,7 @@ const HERO_IMAGES = [
             <div className="flex flex-col md:flex-row items-stretch gap-0">
               {/* Booking Type */}
               <div className="flex-1 min-w-0 py-2 md:py-0 md:pr-4 border-b md:border-b-0 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
                   Booking Type
                 </label>
                 <div className="relative">
@@ -373,7 +379,7 @@ const HERO_IMAGES = [
 
               {/* Location Input */}
               <div className="flex-1 min-w-0 py-2 md:py-0 md:px-4 border-b md:border-b-0 md:border-r border-gray-200 relative">
-                <label className="block text-xs font-medium text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
                   Where
                 </label>
                 <div className="flex items-center relative">
@@ -402,7 +408,7 @@ const HERO_IMAGES = [
 
               {/* From Date & Time */}
               <div className="flex-shrink-0 w-full md:w-auto py-2 md:py-0 md:px-4 border-b md:border-b-0 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
                   From
                 </label>
                 <div className="flex items-center gap-2">
@@ -420,7 +426,7 @@ const HERO_IMAGES = [
 
               {/* Until Date & Time */}
               <div className="flex-shrink-0 w-full md:w-auto py-2 md:py-0 md:px-4 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
                   Until
                 </label>
                 <div className="flex items-center gap-2">
@@ -440,7 +446,7 @@ const HERO_IMAGES = [
 
               {/* Category */}
               <div className="flex-1 w-full md:w-auto py-2 md:py-0 md:px-4 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
                   Category
                 </label>
                 <div className="relative">

@@ -154,6 +154,8 @@ export const Navbar = ({
             <div className="relative" ref={desktopMenuRef}>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Open navigation menu"
+                aria-expanded={isMenuOpen}
                 className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-full hover:shadow-md transition-shadow"
               >
                 <HiMenuAlt3 className="w-5 h-5 text-gray-600" />
@@ -223,6 +225,8 @@ export const Navbar = ({
           <button
             ref={mobileButtonRef}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Open navigation menu"
+            aria-expanded={isMenuOpen}
             className="md:hidden flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-full hover:shadow-md transition-shadow"
           >
             <HiMenuAlt3 className="w-5 h-5 text-gray-600" />
