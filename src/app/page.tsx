@@ -1,61 +1,20 @@
-"use client";
-import BookingInterface from "@/components/HomeComponent/BookingInterface";
-import ExploreCities from "@/components/HomeComponent/ExploreCities";
-import FAQ from "@/components/HomeComponent/FAQ";
-import FindNewListings from "@/components/HomeComponent/FindNewListing";
-import Footer from "@/components/HomeComponent/Footer";
-import PremiumCarRental from "@/components/HomeComponent/PremiumCarRentals";
-import Steps from "@/components/HomeComponent/Steps";
-import TopRateing from "@/components/HomeComponent/TopRating";
-import VehicleCategories from "@/components/HomeComponent/VechileCategories";
-import { Navbar } from "@/components/Navbar";
-import React, { useEffect } from "react";
-import { getBookingOption } from "@/context/Constarain";
-import { useState } from "react";
-import { BookingOption } from "@/types/booking";
-import { ServicePricingShowcaseList } from "@/components/HomeComponent/Servicepricingshowcaselist";
-import Delivery from "@/components/HomeComponent/Delivering";
-import BeninRepublicTravel from "@/components/HomeComponent/BeninRepublicTravel";
+import type { Metadata } from "next";
+import { generatePageMetadata } from "@/helpers/metadata";
 import { JsonLd, SchemaBuilder } from "@/helpers/schema";
-function page() {
-  const [bookingTypeID, setBookingTypeID] = useState<string | undefined>(
-    undefined,
-  );
-  const [_, setBookingOptions] = useState<BookingOption[]>([]);
+import HomePage from "@/components/HomeComponent/HomePage";
 
-  const getBookingOptions = async () => {
-    const data = await getBookingOption();
-    setBookingOptions(data.dropdownOptions);
-    if (data.dropdownOptions?.length > 0) {
-      setBookingTypeID(data.dropdownOptions[0].value);
-    }
-  };
+export const metadata: Metadata = generatePageMetadata({
+  title: "Rent a Car Anywhere in Nigeria",
+  description:
+    "Muvment by Autogirl helps you rent cars easily for business, trips, events, and daily mobility across Nigeria. Flexible pricing. Verified cars. Fast booking.",
+  url: "/",
+});
 
-  useEffect(() => {
-    getBookingOptions();
-  }, []);
-
+export default function Page() {
   return (
-    <div>
+    <>
       <JsonLd schema={SchemaBuilder.homePage()} />
-      <Navbar showAnnouncementBar={true} />
-      <BookingInterface />
-      <ServicePricingShowcaseList />
-      <BeninRepublicTravel />
-      <TopRateing bookingId={bookingTypeID} />
-      <Delivery/>
-      <PremiumCarRental />
-      <ExploreCities bookingTypeId={bookingTypeID} />
-      <VehicleCategories />
-      <FindNewListings />
-      <Steps />
-      <FAQ />
-      {/* <SaveBigRentals /> */}
-      {/* <RideSection /> */}
-      {/* <TopVehiclesSection />*/}
-      <Footer bookingTypeID={bookingTypeID} />
-    </div>
+      <HomePage />
+    </>
   );
 }
-
-export default page;

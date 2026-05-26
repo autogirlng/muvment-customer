@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Muvment by Autogirl",
-    title: "Muvment by Autogirl | Smart Car Booking in Nigeria",
+    title: "Muvment by Autogirl | Rent Cars Anywhere in Nigeria",
     description:
       "Book verified vehicles for business, travel and everyday movement across Nigeria.",
     url: "https://www.muvment.ng",
@@ -83,14 +83,17 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@autogirl_ng",
     creator: "@autogirl_ng",
-    title: "Muvment by Autogirl",
+    title: "Muvment by Autogirl | Rent Cars Anywhere in Nigeria",
     description:
       "Book reliable vehicles instantly for trips, business, events and everyday rides.",
     images: ["/images/image1.png"],
   },
 
   icons: {
-    icon: "/images/image1.png",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
     apple: "/apple-touch-icon.png",
   },
 
@@ -110,20 +113,6 @@ export default function RootLayout({
           <ClientRoot>{children}</ClientRoot>
           <ToastContainer position="top-right" autoClose={3000} />
         </QueryProvider>
-        <Script id="clarity-script" strategy="afterInteractive">
-          {`
-            (function(c,l,a,r,i,t,y){
-                c[a]=c[a]||function(){
-                  (c[a].q=c[a].q||[]).push(arguments)
-                };
-                t=l.createElement(r);t.async=1;
-                t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];
-                y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", "uih9lxpegu");
-          `}
-        </Script>
-        {/* Microsoft Clarity Integration */}
         {CLARITY_PROJECT_ID && (
           <Script id="microsoft-clarity" strategy="afterInteractive">
             {`

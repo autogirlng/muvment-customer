@@ -343,7 +343,7 @@ const HERO_IMAGES = [
         {/* Header */}
         <div className="mb-8 max-w-2xl">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 leading-tight">
-            Find your perfect ride
+            Rent a Car Anywhere in Nigeria
           </h1>
           <p className="text-base md:text-lg text-gray-200">
             Browse and book cars with drivers effortlessly from our wide selection.
