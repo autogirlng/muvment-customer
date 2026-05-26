@@ -31,7 +31,7 @@ const HowItWorks: React.FC = () => {
 
               {/* Card */}
               <div className="w-full lg:w-5/12 lg:pl-8 bg-gray-100 shadow-sm p-5 sm:p-6 rounded-2xl text-center lg:text-left">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">
                   Step 1
                 </p>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
@@ -51,7 +51,7 @@ const HowItWorks: React.FC = () => {
             <div className="flex flex-col lg:flex-row items-center lg:justify-start lg:pl-8">
               {/* Card */}
               <div className="w-full lg:w-5/12 lg:pr-8 bg-gray-100 shadow-sm p-5 sm:p-6 rounded-2xl text-center lg:text-right">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">
                   Step 2
                 </p>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
@@ -81,7 +81,7 @@ const HowItWorks: React.FC = () => {
 
               {/* Card */}
               <div className="w-full lg:w-5/12 lg:pl-8 bg-gray-100 shadow-sm p-5 sm:p-6 rounded-2xl text-center lg:text-left">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">
                   Step 3
                 </p>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
@@ -100,7 +100,7 @@ const HowItWorks: React.FC = () => {
             <div className="flex flex-col lg:flex-row items-center lg:justify-start lg:pl-8">
               {/* Card */}
               <div className="w-full lg:w-5/12 lg:pr-8 bg-gray-100 shadow-sm p-5 sm:p-6 rounded-2xl text-center lg:text-right">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">
                   Step 4
                 </p>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">

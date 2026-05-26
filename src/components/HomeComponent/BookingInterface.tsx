@@ -361,7 +361,7 @@ const HERO_ALTS = [
             <div className="flex flex-col md:flex-row items-stretch gap-0">
               {/* Booking Type */}
               <div className="flex-1 min-w-0 py-2 md:py-0 md:pr-4 border-b md:border-b-0 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
                   Booking Type
                 </label>
                 <div className="relative">
@@ -378,7 +378,7 @@ const HERO_ALTS = [
 
               {/* Location Input */}
               <div className="flex-1 min-w-0 py-2 md:py-0 md:px-4 border-b md:border-b-0 md:border-r border-gray-200 relative">
-                <label className="block text-xs font-medium text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
                   Where
                 </label>
                 <div className="flex items-center relative">
@@ -407,7 +407,7 @@ const HERO_ALTS = [
 
               {/* From Date & Time */}
               <div className="flex-shrink-0 w-full md:w-auto py-2 md:py-0 md:px-4 border-b md:border-b-0 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
                   From
                 </label>
                 <div className="flex items-center gap-2">
@@ -425,7 +425,7 @@ const HERO_ALTS = [
 
               {/* Until Date & Time */}
               <div className="flex-shrink-0 w-full md:w-auto py-2 md:py-0 md:px-4 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
                   Until
                 </label>
                 <div className="flex items-center gap-2">
@@ -445,7 +445,7 @@ const HERO_ALTS = [
 
               {/* Category */}
               <div className="flex-1 w-full md:w-auto py-2 md:py-0 md:px-4 md:border-r border-gray-200">
-                <label className="block text-xs font-medium text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
                   Category
                 </label>
                 <div className="relative">
