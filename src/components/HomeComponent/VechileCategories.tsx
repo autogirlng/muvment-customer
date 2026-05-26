@@ -11,7 +11,7 @@ interface VehicleCategory {
 
 const VehicleCategories: React.FC = () => {
   const router = useRouter();
-  const [category, setCategory] = useState([]);
+  const [category, setCategory] = useState<{ value: string; label: string }[]>([]);
   const categories: VehicleCategory[] = [
     { name: "Sedan", image: "/images/vehicles/sedan.png", id: "sedan-id" },
     { name: "Truck", image: "/images/vehicles/truck.png", id: "truck-id" },
@@ -25,8 +25,10 @@ const VehicleCategories: React.FC = () => {
 
   const getvechileType = async () => {
     const result = await VehicleSearchService.getVechielType();
-    const data = result[0].data;
-    const transformedOptions = data.map((item: any) => ({
+    if (!Array.isArray(result) || result.length === 0) {
+      return;
+    }
+    const transformedOptions = result.map((item: any) => ({
       value: item.id,
       label: item.name.replace("_", " "),
     }));

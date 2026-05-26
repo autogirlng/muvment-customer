@@ -7,9 +7,9 @@ const HowItWorks: React.FC = () => {
       <div className="max-w-3xl w-full">
         {/* Title */}
         <div className="text-center mb-8 sm:mb-12">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
             How it works
-          </h1>
+          </h2>
           <p className="text-gray-600 text-sm sm:text-base max-w-md mx-auto">
             Monthly getaway or long-term rental? Get the best rates on premium
             vehicles with our exclusive deals.
