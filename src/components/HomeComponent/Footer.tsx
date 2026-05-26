@@ -216,7 +216,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                       ) : navLink.type === "link" ? (
                         <Link
                           href={`${navLink.link}${
-                            bookingType && `&bookingType=${bookingType}`
+                            bookingType ? `&bookingType=${bookingType}` : ""
                           }`}
                           className="hover:text-primary-500"
                         >

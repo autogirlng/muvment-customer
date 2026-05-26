@@ -325,15 +325,20 @@ const HERO_IMAGES = [
   "/images/landing/hero.jpg",
   "/images/landing/hero1.png",
   "/images/landing/hero2.png",
-
 ];
 
+const HERO_ALTS = [
+  "Rent a car in Nigeria with Muvment by Autogirl",
+  "Affordable car hire for trips and events across Lagos and Abuja",
+  "Self-drive and chauffeur car rentals available across Nigeria",
+];
 
   return (
     <div className="relative w-full h-screen overflow-hidden mt-[5rem] md:mt-0">
-     
-       <BackgroundCarousel 
-        images={HERO_IMAGES} 
+
+       <BackgroundCarousel
+        images={HERO_IMAGES}
+        alts={HERO_ALTS}
         interval={3000}
         overlay="bg-gradient-to-r from-gray-900/70 via-gray-800/50 to-gray-900/30"
       />
