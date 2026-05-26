@@ -53,7 +53,7 @@ const ScreenLoader: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
         >
-          <h1 className="text-5xl font-black tracking-tight">
+          <p className="text-5xl font-black tracking-tight" aria-hidden="true">
             {["M", "u", "v", "m", "e", "n", "t"].map((letter, i) => (
               <motion.span
                 key={i}
@@ -65,7 +65,7 @@ const ScreenLoader: React.FC = () => {
                 {letter}
               </motion.span>
             ))}
-          </h1>
+          </p>
         </motion.div>
 
         {/* Loading text with dots */}

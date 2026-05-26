@@ -28,7 +28,7 @@ export const SEO_DEFAULTS = {
     "Corporate car hire Nigeria",
     "Abuja car rental",
   ],
-  defaultTitle: "Muvment by Autogirl | Rent Cars Anywhere in Nigeria",
+  defaultTitle: "Rent a Car Anywhere in Nigeria | Muvment by Autogirl",
   titleTemplate: "%s | Muvment by Autogirl",
   defaultDescription:
     "Muvment by Autogirl helps you rent cars easily for business, trips, events, and daily mobility across Nigeria. Flexible pricing. Verified cars. Fast booking.",

@@ -9,7 +9,7 @@ const CarRentalFeatures: React.FC = () => {
       icon: <IoFileTrayFullOutline className="w-8 h-8 text-blue-500" />,
       title: "Wide Selection Of Vehicles",
       description:
-        "Whether you need a compact car for city driving, a spacious SUV for a family trip, or a luxury car for a special occasion, Movment has you covered.",
+        "Whether you need a compact car for city driving, a spacious SUV for a family trip, or a luxury car for a special occasion, Muvment has you covered.",
     },
     {
       icon: <BsPiggyBank className="w-8 h-8  text-blue-500" />,

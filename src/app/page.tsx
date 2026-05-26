@@ -14,6 +14,7 @@ export default function Page() {
   return (
     <>
       <JsonLd schema={SchemaBuilder.homePage()} />
+      <JsonLd schema={SchemaBuilder.faqPage()} />
       <HomePage />
     </>
   );

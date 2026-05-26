@@ -11,9 +11,11 @@ export default function ClientRoot({
 }: {
   children: React.ReactNode;
 }) {
+  const [isMounted, setIsMounted] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const handleReady = () => setIsAppReady(true);
     if (document.readyState === "complete") {
       handleReady();
@@ -23,11 +25,15 @@ export default function ClientRoot({
     return () => window.removeEventListener("load", handleReady);
   }, []);
 
+  // Only show the spinner after client-side mount so SSR HTML never contains
+  // the loader or visibility:hidden — keeps the real page content crawlable.
+  const showSpinner = isMounted && !isAppReady;
+
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />
-      {!isAppReady && <ScreenLoader />}
-      <div style={!isAppReady ? { visibility: "hidden" } : undefined}>
+      {showSpinner && <ScreenLoader />}
+      <div style={showSpinner ? { visibility: "hidden" } : undefined}>
         <AuthProvider>
           <Suspense fallback={null}>
             <RouteTracker />

@@ -51,7 +51,7 @@ const carouselData: CarouselItem[] = [
   {
     id: 1,
     title: "Wide Selection Of Vehicles",
-    description: "Whether you need a compact car for city driving, a spacious SUV for family trips, or a luxury car for a special occasion, Muviment has you covered.",
+    description: "Whether you need a compact car for city driving, a spacious SUV for family trips, or a luxury car for a special occasion, Muvment has you covered.",
     buttonText: "Book Now",
     backgroundImage: "/images/s1.png"
   },
