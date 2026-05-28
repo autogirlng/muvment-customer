@@ -23,6 +23,7 @@ function TermsOfServiceClient() {
       label: "Airport PickUp And Drop Off",
     },
     { id: "monthly-booking", label: "Monthly Booking" },
+    { id: "interstate-trip", label: "Interstate Trip" },
     {
       id: "acceptance-of-terms-through-payment",
       label: "Acceptance Of Terms through Payment",
@@ -121,6 +122,21 @@ function TermsOfServiceClient() {
     {
       title:
         "Customers are solely responsible for any disputes, chargebacks, or reversals of transactions, and the Company is entitled to deduct such amounts from the payment due.",
+    },
+  ];
+
+  const interstateTripItems = [
+    {
+      title:
+        "Accomodation MUST be provided by the customer for an interstate trip. We reserve the right to cancel the reservation if we find out that the client did not provide accomodation for the driver.",
+    },
+    {
+      title:
+        "A full tank of fuel is given on interstate trip and once it finishes, the client will have to fuel from there.",
+    },
+    {
+      title:
+        "We do not allow night travel for interstate trips. All interstate trips must be scheduled for during the day for the safety of the customer, our driver and the vehicle",
     },
   ];
 
@@ -639,6 +655,20 @@ function TermsOfServiceClient() {
                         {item.content}
                       </p>
                     )}
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            {/* Interstate Trip */}
+            <section id="interstate-trip" className="mb-8 sm:mb-10">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                Interstate Trip
+              </h2>
+              <ol className="list-decimal pl-6 space-y-4">
+                {interstateTripItems.map((item, index) => (
+                  <li key={index} className="text-sm text-gray-700">
+                    {item.title}
                   </li>
                 ))}
               </ol>
