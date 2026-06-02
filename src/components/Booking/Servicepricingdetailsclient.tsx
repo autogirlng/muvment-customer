@@ -518,24 +518,33 @@ const ServicePricingBookingPage: React.FC = () => {
                 {/* Action Buttons */}
                 <div className="mt-6 space-y-3">
                   {!priceEstimate ? (
-                    <button
-                      onClick={estimatePrice}
-                      disabled={!canProceed || isEstimating}
-                      className={`w-full py-3.5 rounded-lg font-semibold text-sm transition-all ${
-                        canProceed && !isEstimating
-                          ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                          : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      }`}
+                    <div
+                      onClick={() => {
+                        if (!canProceed && !isEstimating)
+                          toast.warning(
+                            "Please complete all trip details. Make sure to select your locations from the dropdown suggestions.",
+                          );
+                      }}
                     >
-                      {isEstimating ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Estimating Price...
-                        </div>
-                      ) : (
-                        "Estimate Price"
-                      )}
-                    </button>
+                      <button
+                        onClick={estimatePrice}
+                        disabled={!canProceed || isEstimating}
+                        className={`w-full py-3.5 rounded-lg font-semibold text-sm transition-all ${
+                          canProceed && !isEstimating
+                            ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        }`}
+                      >
+                        {isEstimating ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Estimating Price...
+                          </div>
+                        ) : (
+                          "Estimate Price"
+                        )}
+                      </button>
+                    </div>
                   ) : (
                     <button
                       onClick={proceedToCheckout}

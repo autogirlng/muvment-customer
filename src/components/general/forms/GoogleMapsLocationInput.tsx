@@ -84,6 +84,14 @@ export const GoogleMapsLocationInput: React.FC<
     null
   );
   const debounceRef = useRef<NodeJS.Timeout>(null);
+  const selectionMadeRef = useRef(false);
+  const hasInteractedRef = useRef(false);
+  const currentValueRef = useRef(value);
+  const [selectionError, setSelectionError] = useState("");
+
+  useEffect(() => {
+    currentValueRef.current = value;
+  }, [value]);
 
   // Initialize once API is ready
   useEffect(() => {
@@ -101,6 +109,9 @@ export const GoogleMapsLocationInput: React.FC<
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = event.target.value;
     onChange(inputValue);
+    hasInteractedRef.current = true;
+    selectionMadeRef.current = false;
+    setSelectionError("");
 
     if (!apiLoaded) {
       console.warn("Google Maps API not loaded");
@@ -178,6 +189,8 @@ export const GoogleMapsLocationInput: React.FC<
           place.formatted_address || place.name || prediction.description;
 
         onChange(selectedAddress);
+        selectionMadeRef.current = true;
+        setSelectionError("");
         setShowDropdown(false);
         setPredictions([]);
       }
@@ -185,10 +198,21 @@ export const GoogleMapsLocationInput: React.FC<
   };
 
   const handleBlur = () => {
-    // Delay hiding dropdown to allow for selection click
     setTimeout(() => {
       setShowDropdown(false);
     }, 200);
+    // Longer delay to let the async getDetails call complete before checking
+    setTimeout(() => {
+      if (
+        hasInteractedRef.current &&
+        !selectionMadeRef.current &&
+        currentValueRef.current.trim()
+      ) {
+        setSelectionError(
+          "Please select a location from the dropdown suggestions."
+        );
+      }
+    }, 400);
   };
 
   return (
@@ -208,7 +232,7 @@ export const GoogleMapsLocationInput: React.FC<
           className={cn(
             "w-full rounded-[12px] pl-4 pr-4 text-sm h-[45px] outline-none transition-all duration-200 ease-in-out",
             "disabled:bg-[#e4e7ec] disabled:text-grey-400 disabled:cursor-not-allowed disabled:border-grey-300",
-            error
+            error || selectionError
               ? "border border-error-500 focus:ring-2 focus:ring-error-500/20"
               : "bg-white text-grey-900 border border-[#e4e7ec] hover:border-primary-500"
           )}
@@ -296,7 +320,9 @@ export const GoogleMapsLocationInput: React.FC<
         </div>
       )}
 
-      {error && <p className="text-error-500 text-sm mt-1">{error}</p>}
+      {(selectionError || error) && (
+        <p className="text-red-500 text-xs mt-1">{selectionError || error}</p>
+      )}
     </div>
   );
 };

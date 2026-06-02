@@ -263,7 +263,6 @@ export default function BlogLandingClient({
   const hasMore = categories.length > MAX_VISIBLE_TABS;
 
 
-  console.log(gridPosts)
   return (
     <>
       <Navbar />

@@ -84,7 +84,6 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           page: pageNumber,
           size: PAGE_SIZE,
         });
-        console.log("Fetched bookings page:", response);
         const content = response.data.content;
         const totalPages: number = response.data.totalPages ?? 1;
         const totalElements: number = response.data.totalElements ?? 0;
@@ -158,7 +157,6 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   }, [loading, loadingMore, hasMore]);
 
   const handleBookingClick = (booking: any) => {
-    console.log(booking)
     setSelectedBookings([booking]);
     setIsModalOpen(true);
   };
