@@ -41,7 +41,8 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
 
   const images = useMemo(() => {
     if (!photos || photos.length === 0) return [];
-    return photos
+    return [...photos]
+      .sort((a, b) => (b?.isPrimary ? 1 : 0) - (a?.isPrimary ? 1 : 0))
       .map((p) => p?.cloudinaryUrl)
       .filter(
         (url) =>
