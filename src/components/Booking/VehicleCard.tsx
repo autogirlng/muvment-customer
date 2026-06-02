@@ -105,7 +105,6 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
         }
       }
     } catch (e) {
-      console.log(e);
     } finally {
       setLoadingFavouriteStatus(false);
     }

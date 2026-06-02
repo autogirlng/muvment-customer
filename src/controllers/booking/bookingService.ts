@@ -172,7 +172,6 @@ export class BookingService {
       } else {
         paymentURL = this.INITIATE_PAYMENT;
       }
-      console.log(paymentURL);
       const response = await createData(paymentURL, paymentData);
       if (!response || !response.data)
         throw new Error("Failed to initiate payment");

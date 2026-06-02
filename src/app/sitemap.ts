@@ -11,9 +11,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     process.env.NODE_ENV === "production";
 
   if (!isProduction) {
-    console.log(
-      "Sitemap generation blocked: Non-production environment detected.",
-    );
     return [];
   }
 

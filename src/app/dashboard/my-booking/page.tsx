@@ -137,7 +137,6 @@ const BookingHistoryPage = () => {
     const result = await BookingService.getBookingById(
       booking?.bookingId as string,
     );
-    console.log(result);
     setSelectedBookings([booking]);
     setIsModalOpen(true);
   };

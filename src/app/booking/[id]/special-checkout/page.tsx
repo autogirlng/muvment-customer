@@ -57,8 +57,6 @@ const ServicePricingCheckoutPage = () => {
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
 
-  console.log(user);
-
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
     fullName: "",
     email: "",

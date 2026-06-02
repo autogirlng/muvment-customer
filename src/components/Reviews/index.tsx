@@ -28,7 +28,6 @@ const Reviews = ({ vehicleId, pageType }: ReviewsProps) => {
             setReviewData(reviews);
             setPages(reviews[0]?.data?.totalPages ?? 1)
         }
-        console.log(data)
     }
 
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { toast } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
 import Modal from "@/components/general/modal";
 
@@ -496,29 +497,56 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                 </div>
 
                 {!continueBooking || !isTripFormsComplete ? (
-                  <button
-                    className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
-                    disabled={!isTripFormsComplete}
-                    onClick={estimatePrice}
+                  <div
+                    onClick={() => {
+                      if (!isTripFormsComplete)
+                        toast.warning(
+                          "Please complete all trip details. Make sure to select your locations from the dropdown suggestions.",
+                        );
+                    }}
                   >
-                    Estimate Price
-                  </button>
+                    <button
+                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                      disabled={!isTripFormsComplete}
+                      onClick={estimatePrice}
+                    >
+                      Estimate Price
+                    </button>
+                  </div>
                 ) : !isAuthenticated ? (
-                  <button
-                    className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
-                    disabled={!isTripFormsComplete}
-                    onClick={() => setBookRideModal(true)}
+                  <div
+                    onClick={() => {
+                      if (!isTripFormsComplete)
+                        toast.warning(
+                          "Please complete all trip details. Make sure to select your locations from the dropdown suggestions.",
+                        );
+                    }}
                   >
-                    Continue Booking
-                  </button>
+                    <button
+                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                      disabled={!isTripFormsComplete}
+                      onClick={() => setBookRideModal(true)}
+                    >
+                      Continue Booking
+                    </button>
+                  </div>
                 ) : (
-                  <button
-                    className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
-                    disabled={!isTripFormsComplete}
-                    onClick={() => router.push(`/booking/create/${vehicle.id}`)}
+                  <div
+                    onClick={() => {
+                      if (!isTripFormsComplete)
+                        toast.warning(
+                          "Please complete all trip details. Make sure to select your locations from the dropdown suggestions.",
+                        );
+                    }}
                   >
-                    Continue Booking
-                  </button>
+                    <button
+                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                      disabled={!isTripFormsComplete}
+                      onClick={() => router.push(`/booking/create/${vehicle.id}`)}
+                    >
+                      Continue Booking
+                    </button>
+                  </div>
                 )}
 
                 {vehicle?.discounts?.length > 0 && (
