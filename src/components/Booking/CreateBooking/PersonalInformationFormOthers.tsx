@@ -52,7 +52,6 @@ const PersonalInformationFormOthers = ({
         const userBookingValues = JSON.parse(
           stored,
         ) as PersonalInformationOthersValues;
-        console.log(userBookingValues);
         if (userBookingValues?.isBookingForOthers) {
           setBookingInformationValues(userBookingValues);
         }

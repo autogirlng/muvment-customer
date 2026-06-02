@@ -174,7 +174,6 @@ export class GoogleMapsService {
 
       this.placesService!.getDetails(request, (place, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && place) {
-          console.log(status);
           resolve(place);
         } else {
           reject(new Error(`Failed to get place details. Status: ${status}`));

@@ -75,7 +75,6 @@ const ReviewContent = () => {
         const bookingRes = await getSingleData(
           `/api/v1/public/bookings/${bookingId}`
         );
-        console.log("Fetched booking details:", bookingRes);
         const bookingData = bookingRes?.data[0]?.data;
         if (bookingData) setBooking(bookingData);
       } catch (err) {
