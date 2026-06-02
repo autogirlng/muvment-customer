@@ -532,7 +532,7 @@ const ServicePricingBookingPage: React.FC = () => {
                         className={`w-full py-3.5 rounded-lg font-semibold text-sm transition-all ${
                           canProceed && !isEstimating
                             ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed pointer-events-none"
                         }`}
                       >
                         {isEstimating ? (

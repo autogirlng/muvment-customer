@@ -506,7 +506,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     }}
                   >
                     <button
-                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
                       disabled={!isTripFormsComplete}
                       onClick={estimatePrice}
                     >
@@ -523,7 +523,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     }}
                   >
                     <button
-                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
                       disabled={!isTripFormsComplete}
                       onClick={() => setBookRideModal(true)}
                     >
@@ -540,7 +540,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     }}
                   >
                     <button
-                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
+                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
                       disabled={!isTripFormsComplete}
                       onClick={() => router.push(`/booking/create/${vehicle.id}`)}
                     >
