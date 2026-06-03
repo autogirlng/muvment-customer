@@ -3,8 +3,8 @@ export type VehicleSearchOrderBy = "LOW_HIGH" | "HIGH_LOW";
 export const DEFAULT_VEHICLE_ORDER_BY: VehicleSearchOrderBy = "LOW_HIGH";
 
 export const VEHICLE_ORDER_BY_LABELS: Record<VehicleSearchOrderBy, string> = {
-  LOW_HIGH: "Cheapest first",
-  HIGH_LOW: "Most expensive first",
+  LOW_HIGH: "Lowest to highest",
+  HIGH_LOW: "Highest to lowest",
 };
 
 export function parseVehicleOrderBy(
