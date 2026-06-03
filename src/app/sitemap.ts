@@ -118,8 +118,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         ? await showcaseRes.json()
         : null;
 
+    // Exclude posts whose slug is a UUID (unpublished or legacy posts without a proper slug)
+    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
     const blogEntries = (blogsJson?.data?.content || [])
-      .filter((post: any) => post.slug)
+      .filter((post: any) => post.slug && !UUID_PATTERN.test(post.slug))
       .map((post: any) => ({
         url: `${APP_URL}/blog/${post.slug}`,
         lastModified: new Date(post.updatedAt || post.createdAt),
