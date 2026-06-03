@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { FiX } from "react-icons/fi";
 import { FilterState } from "@/types/filters";
 import PriceRangeFilter from "../NewFilterComponent/PriceRangeFilter";
+import PriceSortFilter from "../NewFilterComponent/PriceSortFilter";
+import {
+  DEFAULT_VEHICLE_ORDER_BY,
+  VEHICLE_ORDER_BY_LABELS,
+} from "@/constants/vehicleSearchOrder";
 import VehicleTypeFilter from "../NewFilterComponent/VehicleTypeFilter";
 import YearsFilter from "../NewFilterComponent/YearsFilter";
 import SeatsFilter from "../NewFilterComponent/SeatFilter";
@@ -83,6 +88,8 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
     };
   }, [openDropdown]);
 
+  const currentOrderBy = filterState.orderBy ?? DEFAULT_VEHICLE_ORDER_BY;
+  const isSortActive = currentOrderBy === "HIGH_LOW";
   const isPriceActive = filterState.priceRange !== undefined;
   const isTypeActive = filterState.selectedVehicleTypes !== undefined;
   const isMakeActive = filterState.selectedMakes !== undefined;
@@ -92,6 +99,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   const isFeaturesActive = filterState.selectedFeatures !== undefined;
 
   const hasActiveFilters =
+    isSortActive ||
     isPriceActive ||
     isTypeActive ||
     isMakeActive ||
@@ -178,13 +186,9 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
       {/* Desktop & Tablet View */}
       <div className="hidden md:block space-y-4" ref={dropdownRef}>
         <div className="flex flex-wrap gap-3 items-center bg-white ">
-          {states.length > 0 && (
-            <StateFilterButton states={states} label="Travel destination" />
-          )}
-
           <FilterButton
             id="price"
-            label="Daily price"
+            label="Price range"
             selectedLabel={
               isPriceActive
                 ? `₦${PriceRangeformatPrice(filterState.priceRange?.[0] || 0)}-${PriceRangeformatPrice(filterState.priceRange?.[1] || 0)}`
@@ -211,6 +215,30 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
               />
             )}
           </FilterButton>
+
+          <FilterButton
+            id="sort"
+            label="Order by price"
+            selectedLabel={
+              isSortActive
+                ? VEHICLE_ORDER_BY_LABELS[currentOrderBy]
+                : undefined
+            }
+            count={isSortActive ? 1 : 0}
+            isActive={isSortActive}
+          >
+            {openDropdown === "sort" && (
+              <PriceSortFilter
+                value={currentOrderBy}
+                onChange={(value) => onFilterChange("orderBy", value)}
+                onClose={closeAllDropdowns}
+              />
+            )}
+          </FilterButton>
+
+          {states.length > 0 && (
+            <StateFilterButton states={states} label="Travel destination" />
+          )}
 
           <FilterButton
             id="type"
@@ -334,6 +362,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
                 {
                   [
                     isPriceActive,
+                    isSortActive,
                     isTypeActive,
                     isMakeActive,
                     isModelActive,
@@ -390,6 +419,8 @@ const MobileFilterDrawer: React.FC<
   const [tempFilterState, setTempFilterState] =
     useState<FilterState>(filterState);
 
+  const tempOrderBy = tempFilterState.orderBy ?? DEFAULT_VEHICLE_ORDER_BY;
+  const isSortActive = tempOrderBy === "HIGH_LOW";
   const isPriceActive = tempFilterState.priceRange !== undefined;
   const isTypeActive = tempFilterState.selectedVehicleTypes !== undefined;
   const isMakeActive = tempFilterState.selectedMakes !== undefined;
@@ -399,6 +430,7 @@ const MobileFilterDrawer: React.FC<
   const isFeaturesActive = tempFilterState.selectedFeatures !== undefined;
 
   const hasActiveFilters =
+    isSortActive ||
     isPriceActive ||
     isTypeActive ||
     isMakeActive ||
@@ -427,6 +459,7 @@ const MobileFilterDrawer: React.FC<
 
   const handleClearAll = () => {
     const emptyState: FilterState = {
+      orderBy: DEFAULT_VEHICLE_ORDER_BY,
       priceRange: [minPrice || 25000, maxPrice || 10000000],
       selectedVehicleTypes: undefined,
       selectedMakes: undefined,
@@ -460,15 +493,6 @@ const MobileFilterDrawer: React.FC<
 
         {/* Filter Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {states.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-900">
-                Travel destination
-              </h3>
-              <StateFilter states={states} onClose={onClose} compact />
-            </div>
-          )}
-
           {/* Price Range */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -498,6 +522,40 @@ const MobileFilterDrawer: React.FC<
               compact={true}
             />
           </div>
+
+          {/* Order by price */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Order by price
+              </h3>
+              {isSortActive && (
+                <button
+                  onClick={() =>
+                    handleTempFilterChange("orderBy", DEFAULT_VEHICLE_ORDER_BY)
+                  }
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <PriceSortFilter
+              value={tempOrderBy}
+              onChange={(value) => handleTempFilterChange("orderBy", value)}
+              onClose={onClose}
+              compact={true}
+            />
+          </div>
+
+          {states.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Travel destination
+              </h3>
+              <StateFilter states={states} onClose={onClose} compact />
+            </div>
+          )}
 
           {/* Vehicle Type */}
           <div className="space-y-3">

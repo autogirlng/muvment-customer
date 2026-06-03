@@ -12,7 +12,10 @@ export interface FilterConfig {
   gridCols?: number;
 }
 
+import type { VehicleSearchOrderBy } from "@/constants/vehicleSearchOrder";
+
 export interface FilterState {
+  orderBy?: VehicleSearchOrderBy;
   priceRange?: [number, number];
   selectedVehicleTypes?: string[];
   selectedModels?: string[];
