@@ -49,7 +49,7 @@ export default function RideSection() {
                     <div className="relative w-48 h-56 sm:w-56 sm:h-64 rounded-3xl overflow-hidden shadow-2xl z-30 bg-gradient-to-br from-orange-200 to-amber-200 transform -rotate-6 transition-transform duration-500 hover:rotate-0 hover:scale-105">
                       <Image
                         src="/images/landing/10.png"
-                        alt="Premium Electric Car"
+                        alt="Premium electric chauffeured car rental in Lagos"
                         fill
                         className="object-cover"
                         sizes="(max-width: 640px) 192px, 224px"
@@ -60,7 +60,7 @@ export default function RideSection() {
                     <div className="absolute w-48 h-56 sm:w-56 sm:h-64 rounded-3xl overflow-hidden shadow-2xl z-20 bg-gradient-to-br from-orange-300 to-amber-300 transform -rotate-3 top-4 left-12 transition-transform duration-500 hover:rotate-0 hover:scale-105">
                       <Image
                         src="/images/landing/9.png"
-                        alt="Luxury EV Interior"
+                        alt="Luxury electric vehicle interior with leather seating"
                         fill
                         className="object-cover"
                         sizes="(max-width: 640px) 192px, 224px"
@@ -71,7 +71,7 @@ export default function RideSection() {
                     <div className="absolute w-48 h-56 sm:w-56 sm:h-64 rounded-3xl overflow-hidden shadow-2xl z-10 bg-gradient-to-br from-orange-400 to-amber-400 transform rotate-2 top-8 left-24 transition-transform duration-500 hover:rotate-0 hover:scale-105">
                       <Image
                         src="/images/landing/8.png"
-                        alt="Fast Charging"
+                        alt="Fast-charging electric vehicle in Muvment Nigeria rental fleet"
                         fill
                         className="object-cover"
                         sizes="(max-width: 640px) 192px, 224px"

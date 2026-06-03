@@ -51,7 +51,7 @@ const OurStory = () => {
             {/* Author */}
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center overflow-hidden">
-                <img src="/images/image9.png" alt="Founder" />
+                <img src="/images/image9.png" alt="Chinazom Arinze, CEO and co-founder of Muvment by Autogirl" />
               </div>
               <div className="text-left">
                 <p className="text-[#2c3e50] text-[14px] font-bold">
