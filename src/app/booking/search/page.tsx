@@ -2,6 +2,7 @@ import ExploreVehiclesClient from "@/components/pagesComponent/ExploreVehiclesCl
 import { generatePageMetadata } from "@/helpers/metadata";
 import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
+import { parseVehicleOrderBy } from "@/constants/vehicleSearchOrder";
 import { VehicleSearchParams } from "@/types/vehicle";
 
 interface PageProps {
@@ -55,9 +56,14 @@ export default async function Page({ searchParams }: PageProps) {
       VehicleSearchService.getStates().catch(() => []),
     ]);
 
+  const orderByParam = Array.isArray(params.orderBy)
+    ? params.orderBy[0]
+    : params.orderBy;
+
   const searchArgs: VehicleSearchParams = {
     page: 0,
     size: 20,
+    orderBy: parseVehicleOrderBy(orderByParam),
     city: params.city || params.location,
     vehicleTypeId: params.category,
     latitude: params.lat ? parseFloat(params.lat) : undefined,
@@ -98,6 +104,7 @@ export default async function Page({ searchParams }: PageProps) {
         page: 0,
         size: 6,
         bookingTypeId: params.bookingType,
+        orderBy: searchArgs.orderBy,
       });
       recommendedVehicles = recResponse?.data?.data?.content || [];
     }
