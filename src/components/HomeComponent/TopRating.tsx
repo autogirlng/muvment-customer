@@ -1,8 +1,7 @@
 "use client";
-// components/TopRatedVehicles.tsx
 
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
-import { TopVehicle } from "@/types/vehicle";
+import type { TopVehicle } from "./TopVech";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { TbMedal2 } from "react-icons/tb";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
@@ -29,9 +28,10 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
   const [hasMore, setHasMore] = useState(true);
   const [visibleCards, setVisibleCards] = useState(cardsPerSlide);
 
-  // --- Favourite state ---
   const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set());
-  const [favouriteLoading, setFavouriteLoading] = useState<Set<string>>(new Set());
+  const [favouriteLoading, setFavouriteLoading] = useState<Set<string>>(
+    new Set(),
+  );
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const { isAuthenticated } = useAuth();
@@ -53,7 +53,6 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
     return () => window.removeEventListener("resize", updateCards);
   }, []);
 
-
   const loadVehicles = useCallback(
     async (page: number) => {
       if (loading) return;
@@ -61,17 +60,17 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
       try {
         const response = await VehicleSearchService.fetchFeaturedVehicles(
           page,
-          ITEMS_PER_PAGE
+          ITEMS_PER_PAGE,
         );
         const dataResponse = response[0]?.data?.content;
         if (dataResponse) {
           setVehicles((prev) =>
-            page === 0 ? dataResponse : [...prev, ...dataResponse]
+            page === 0 ? dataResponse : [...prev, ...dataResponse],
           );
           setCurrentPage(response[0]?.data?.currentPage || 0);
           setHasMore(
             (response[0]?.data?.currentPage || 0) <
-              (response[0]?.data?.totalPages || 1) - 1
+              (response[0]?.data?.totalPages || 1) - 1,
           );
         }
       } catch (error) {
@@ -80,7 +79,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
         setLoading(false);
       }
     },
-    [loading]
+    [loading],
   );
 
   useEffect(() => {
@@ -94,16 +93,14 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
       try {
         const data = await FavouriteVehicleService.getFavourites();
         const ids = new Set(
-          (data?.vehicles ?? []).map((v: { id: string }) => v.id)
+          (data?.vehicles ?? []).map((v: { id: string }) => v.id),
         );
         setFavouriteIds(ids);
-      } catch {
-      }
+      } catch {}
     };
 
     loadFavourites();
   }, [isAuthenticated]);
-
 
   const handleToggleFavourite = async (vehicleId: string) => {
     if (!isAuthenticated) {
@@ -122,13 +119,10 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
 
     try {
       const currentList = Array.from(favouriteIds);
-      const { updatedFavouriteIds } = await FavouriteVehicleService.toggleFavourite(
-        vehicleId,
-        currentList
-      );
+      const { updatedFavouriteIds } =
+        await FavouriteVehicleService.toggleFavourite(vehicleId, currentList);
       setFavouriteIds(new Set(updatedFavouriteIds));
     } catch (error) {
-    
       setFavouriteIds((prev) => {
         const next = new Set(prev);
         if (next.has(vehicleId)) next.delete(vehicleId);
@@ -164,7 +158,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
   const handleDotClick = (dotIndex: number) => {
     const targetIndex = Math.min(
       dotIndex * visibleCards,
-      vehicles.length - visibleCards
+      vehicles.length - visibleCards,
     );
     setCurrentIndex(targetIndex);
   };
@@ -206,20 +200,20 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
   };
 
   const handleRoute = () => {
-    router.push(`/booking/search${bookingId ? `?bookingType=${bookingId}` : ""}`);
+    router.push(
+      `/booking/search${bookingId ? `?bookingType=${bookingId}` : ""}`,
+    );
   };
 
   return (
     <>
-      {/* Login prompt modal */}
       <LoginPromptModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
       />
 
       <div className="w-full py-6 my-[50px]">
-        <div className="">
-          {/* Header */}
+        <div>
           <div className="flex items-center justify-between mb-6 max-w-[95%] ml-auto px-6">
             <div className="text-center md:text-start">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-2 w-full">
@@ -242,10 +236,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
               See All
             </button>
           </div>
-
-          {/* Carousel */}
           <div className="relative">
-            {/* Left Arrow */}
             <button
               onClick={handlePrev}
               disabled={isPrevDisabled}
@@ -258,8 +249,6 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
             >
               <FaChevronLeft className="w-4 h-4 text-gray-700" />
             </button>
-
-            {/* Cards */}
             <div
               className="relative px-4 md:px-16"
               onTouchStart={handleTouchStart}
@@ -287,8 +276,6 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
                 </div>
               )}
             </div>
-
-            {/* Right Arrow */}
             <button
               onClick={handleNext}
               disabled={isNextDisabled}
@@ -302,13 +289,11 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
               <FaChevronRight className="w-4 h-4 text-gray-700" />
             </button>
           </div>
-
-          {/* Dots */}
           <div className="flex justify-center gap-2 mt-6">
             {Array.from({
               length: Math.min(
                 Math.ceil(vehicles.length / visibleCards),
-                MAX_DOTS
+                MAX_DOTS,
               ),
             }).map((_, i) => (
               <button
