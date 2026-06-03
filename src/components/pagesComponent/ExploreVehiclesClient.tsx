@@ -3,6 +3,10 @@ import React, { useState, useEffect, useCallback, useRef, Suspense } from "react
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { FilterState } from "@/types/filters";
+import {
+  DEFAULT_VEHICLE_ORDER_BY,
+  parseVehicleOrderBy,
+} from "@/constants/vehicleSearchOrder";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import VehicleCard from "@/components/Booking/VehicleCard";
 import { VehicleSearchParams } from "@/types/vehicle";
@@ -47,6 +51,7 @@ function ExploreVehiclesClientContent({
 
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [filterState, setFilterState] = useState<FilterState>({
+    orderBy: DEFAULT_VEHICLE_ORDER_BY,
     priceRange: undefined,
     selectedVehicleTypes: undefined,
     selectedMakes: undefined,
@@ -108,6 +113,7 @@ function ExploreVehiclesClientContent({
     const featuresList = searchParams.getAll("features");
 
     return {
+      orderBy: parseVehicleOrderBy(searchParams.get("orderBy")),
       priceRange:
         minPriceParam && maxPriceParam
           ? [parseInt(minPriceParam), parseInt(maxPriceParam)]
@@ -220,6 +226,8 @@ function ExploreVehiclesClientContent({
         params.maxPrice = filters.priceRange[1];
       }
 
+      params.orderBy = filters.orderBy ?? DEFAULT_VEHICLE_ORDER_BY;
+
       clarityEvent("vehicle_search", {
         location: searchParams.get("city") || location,
         lat: currentLat,
@@ -272,6 +280,7 @@ function ExploreVehiclesClientContent({
         page: 0,
         size: 6,
         bookingTypeId: bookingType ?? "",
+        orderBy: filterState.orderBy ?? DEFAULT_VEHICLE_ORDER_BY,
       });
       setRecommendedVehicles(response.data?.data?.content || []);
     } catch (err) {
@@ -285,6 +294,7 @@ function ExploreVehiclesClientContent({
 
   const handleClearAll = () => {
     setFilterState({
+      orderBy: DEFAULT_VEHICLE_ORDER_BY,
       priceRange: undefined,
       selectedVehicleTypes: undefined,
       selectedMakes: undefined,

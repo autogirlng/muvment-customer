@@ -1,3 +1,5 @@
+import type { VehicleSearchOrderBy } from "@/constants/vehicleSearchOrder";
+
 export interface VehicleSearchParams {
   latitude?: number;
   longitude?: number;
@@ -22,6 +24,7 @@ export interface VehicleSearchParams {
   city?: string;
   startTime?: string;
   endTime?: string;
+  orderBy?: VehicleSearchOrderBy;
 }
 
 export interface Vehicle {
