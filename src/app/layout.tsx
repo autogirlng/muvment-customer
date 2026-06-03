@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     "Vehicle hire",
     "Chauffeur service Nigeria",
     "Luxury car hire",
-    "Self drive car rental",
+    "Monthly car rental Lagos",
     "Daily car rental",
     "Autogirl",
     "Muvment",

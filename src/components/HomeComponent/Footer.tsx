@@ -90,7 +90,10 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
       if (!bookingTypeID) {
         const data = await getBookingOption();
         if (data.dropdownOptions?.length > 0) {
-          setBookingType(data.dropdownOptions[0].value);
+          const value = data.dropdownOptions[0].value;
+          if (value && value !== "undefined") {
+            setBookingType(value);
+          }
         }
       }
     };
@@ -216,7 +219,9 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                       ) : navLink.type === "link" ? (
                         <Link
                           href={`${navLink.link}${
-                            bookingType ? `&bookingType=${bookingType}` : ""
+                            bookingType && bookingType !== "undefined"
+                              ? `&bookingType=${bookingType}`
+                              : ""
                           }`}
                           className="hover:text-primary-500"
                         >

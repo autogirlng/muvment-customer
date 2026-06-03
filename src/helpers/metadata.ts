@@ -19,7 +19,7 @@ export const SEO_DEFAULTS = {
     "Rent a car Lagos",
     "Chauffeur service Nigeria",
     "Luxury car hire Lagos",
-    "Self drive car rental Nigeria",
+    "Monthly car rental Lagos",
     "Daily car rental Lagos",
     "Airport transfer Lagos",
     "Hourly car rental Nigeria",

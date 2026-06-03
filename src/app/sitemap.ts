@@ -28,24 +28,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
     {
-      url: `${APP_URL}/auth/forgot-password`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.4,
-    },
-    {
-      url: `${APP_URL}/auth/login`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${APP_URL}/auth/register`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
       url: `${APP_URL}/blog`,
       lastModified: new Date(),
       changeFrequency: "daily",
@@ -149,7 +131,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .filter((v: any) => v.slug)
       .map((v: any) => ({
         url: `${APP_URL}/booking/details/${v.slug}`,
-        lastModified: new Date(),
+        lastModified: new Date(v.updatedAt || v.createdAt || Date.now()),
         changeFrequency: "daily" as const,
         priority: 0.8,
       }));

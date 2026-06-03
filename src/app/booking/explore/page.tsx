@@ -1,5 +1,6 @@
 import ExploreVehiclesClient from "@/components/pagesComponent/ExploreVehiclesClient";
 import { generatePageMetadata } from "@/helpers/metadata";
+import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { parseVehicleOrderBy } from "@/constants/vehicleSearchOrder";
 import { VehicleSearchParams } from "@/types/vehicle";
@@ -49,6 +50,7 @@ export async function generateMetadata({ searchParams }: PageProps) {
 
 export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
+  const city = params.city || params.location || "Lagos";
 
   const [typesRes, makesRes, modelsRes, featuresRes] = await Promise.all([
     VehicleSearchService.getVehicleTypes().catch(() => []),
@@ -117,14 +119,23 @@ export default async function Page({ searchParams }: PageProps) {
 
 
   return (
-    <ExploreVehiclesClient
-      initialVehicles={initialVehicles}
-      initialTotalCount={totalCount}
-      initialRecommended={recommendedVehicles}
-      initialVehicleTypes={typesRes || []}
-      initialMakes={makesRes || []}
-      initialModels={modelsRes || []}
-      initialFeatures={featuresRes || []}
-    />
+    <>
+      <JsonLd
+        schema={SchemaBuilder.searchResultsPage({
+          city,
+          category: params.category,
+          path: "/booking/explore",
+        })}
+      />
+      <ExploreVehiclesClient
+        initialVehicles={initialVehicles}
+        initialTotalCount={totalCount}
+        initialRecommended={recommendedVehicles}
+        initialVehicleTypes={typesRes || []}
+        initialMakes={makesRes || []}
+        initialModels={modelsRes || []}
+        initialFeatures={featuresRes || []}
+      />
+    </>
   );
 }

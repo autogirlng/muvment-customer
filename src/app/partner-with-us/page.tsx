@@ -1,6 +1,7 @@
 
 import { PartnerWithUs } from "@/components/partnerwithUs/Main";
 import { generatePageMetadata } from "@/helpers/metadata";
+import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 
 export const metadata = generatePageMetadata({
   title: "Partner With Us",
@@ -15,9 +16,21 @@ export const metadata = generatePageMetadata({
     "fleet management Nigeria",
     "corporate travel solutions",
   ],
-  url: "/partner",
+  url: "/partner-with-us",
 });
 
 export default function PartnerWithUsPage() {
-  return <PartnerWithUs />;
+  return (
+    <>
+      <JsonLd
+        schema={SchemaBuilder.genericWebPage({
+          path: "/partner-with-us",
+          name: "Partner With Us",
+          description:
+            "Partner with Muvment by Autogirl. API access, dedicated virtual accounts, corporate booking management for businesses across Nigeria.",
+        })}
+      />
+      <PartnerWithUs />
+    </>
+  );
 }

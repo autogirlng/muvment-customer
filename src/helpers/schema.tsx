@@ -43,6 +43,7 @@ export class SchemaBuilder {
       contactPoint: {
         "@type": "ContactPoint",
         contactType: "customer service",
+        telephone: "+2348167474165",
         email: "info@muvment.ng",
         areaServed: "NG",
         availableLanguage: "English",
@@ -103,13 +104,16 @@ export class SchemaBuilder {
       url: BASE,
       image: `${BASE}${SEO_DEFAULTS.defaultImage}`,
       email: "info@muvment.ng",
+      telephone: "+2348167474165",
       address: {
         "@type": "PostalAddress",
-        addressLocality: "Victoria Island",
+        streetAddress: "10 Anuoluwapo Close, Opebi",
+        addressLocality: "Ikeja",
         addressRegion: "Lagos",
+        postalCode: "100281",
         addressCountry: "NG",
       },
-      geo: { "@type": "GeoCoordinates", latitude: 6.4281, longitude: 3.4219 },
+      geo: { "@type": "GeoCoordinates", latitude: 6.5836, longitude: 3.3528 },
       openingHoursSpecification: {
         "@type": "OpeningHoursSpecification",
         dayOfWeek: [
@@ -206,6 +210,54 @@ export class SchemaBuilder {
     };
   }
 
+  /** /blog (blog index page) */
+  static blogIndex() {
+    return {
+      "@context": "https://schema.org",
+      "@type": "Blog",
+      "@id": `${BASE}/blog`,
+      name: "Muvment Blog",
+      url: `${BASE}/blog`,
+      description:
+        "Insights, guides, and stories about car rental, mobility, and travel across Nigeria. Practical advice from the Muvment team.",
+      inLanguage: "en-NG",
+      isPartOf: { "@id": `${BASE}/#website` },
+      publisher: {
+        "@id": `${BASE}/#organization`,
+      },
+      breadcrumb: buildBreadcrumb([
+        { name: "Home", url: BASE },
+        { name: "Blog", url: `${BASE}/blog` },
+      ]),
+    };
+  }
+
+  /** Generic WebPage schema for content pages without a more specific type */
+  static genericWebPage({
+    path,
+    name,
+    description,
+  }: {
+    path: string;
+    name: string;
+    description: string;
+  }) {
+    return {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": `${BASE}${path}`,
+      name,
+      url: `${BASE}${path}`,
+      description,
+      inLanguage: "en-NG",
+      isPartOf: { "@id": `${BASE}/#website` },
+      breadcrumb: buildBreadcrumb([
+        { name: "Home", url: BASE },
+        { name, url: `${BASE}${path}` },
+      ]),
+    };
+  }
+
   /** /contact-us */
   static contactPage() {
     return {
@@ -215,7 +267,7 @@ export class SchemaBuilder {
       name: `Contact ${SEO_DEFAULTS.siteName}`,
       url: `${BASE}/contact-us`,
       description:
-        "Get in touch with Muvment by Autogirl. Reach us via phone, email, or visit us in Victoria Island, Lagos.",
+        "Get in touch with Muvment by Autogirl. Reach us via phone, email, or visit us at 10 Anuoluwapo Close, Opebi, Ikeja, Lagos.",
       breadcrumb: buildBreadcrumb([
         { name: "Home", url: BASE },
         { name: "Contact Us", url: `${BASE}/contact-us` },
@@ -227,13 +279,16 @@ export class SchemaBuilder {
         url: BASE,
         image: `${BASE}${SEO_DEFAULTS.defaultImage}`,
         email: "info@muvment.ng",
+        telephone: "+2348167474165",
         address: {
           "@type": "PostalAddress",
-          addressLocality: "Victoria Island",
+          streetAddress: "10 Anuoluwapo Close, Opebi",
+          addressLocality: "Ikeja",
           addressRegion: "Lagos",
+          postalCode: "100281",
           addressCountry: "NG",
         },
-        geo: { "@type": "GeoCoordinates", latitude: 6.4281, longitude: 3.4219 },
+        geo: { "@type": "GeoCoordinates", latitude: 6.5836, longitude: 3.3528 },
         openingHoursSpecification: {
           "@type": "OpeningHoursSpecification",
           dayOfWeek: [

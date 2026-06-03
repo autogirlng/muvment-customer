@@ -1,5 +1,6 @@
 import ImpactPageClient from "@/components/pagesComponent/ImpactPageClient";
 import { generatePageMetadata } from "@/helpers/metadata";
+import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 
 export const metadata = generatePageMetadata({
   title: "Our Impact",
@@ -18,5 +19,17 @@ export const metadata = generatePageMetadata({
 });
 
 export default function ImpactPage() {
-  return <ImpactPageClient />;
+  return (
+    <>
+      <JsonLd
+        schema={SchemaBuilder.genericWebPage({
+          path: "/impact",
+          name: "Our Impact",
+          description:
+            "How Muvment by Autogirl drives social and environmental impact through mobility: lifting driver incomes, training women, and leading Nigeria's EV fleet.",
+        })}
+      />
+      <ImpactPageClient />
+    </>
+  );
 }

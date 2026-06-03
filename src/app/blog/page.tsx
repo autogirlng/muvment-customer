@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { generatePageMetadata } from "@/helpers/metadata";
+import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 import { BlogService } from "@/controllers/BlogService/blogService";
 import BlogLandingClient from "@/components/blogComponent/Bloglandingclient";
 
@@ -64,11 +65,14 @@ export default async function BlogPage({ searchParams }: PageProps) {
 
 
   return (
-    <BlogLandingClient
-      initialPosts={initialPosts}
-      initialSearch={params.search ?? ""}
-      initialCategory={params.category ?? ""}
-      categories={categories}
-    />
+    <>
+      <JsonLd schema={SchemaBuilder.blogIndex()} />
+      <BlogLandingClient
+        initialPosts={initialPosts}
+        initialSearch={params.search ?? ""}
+        initialCategory={params.category ?? ""}
+        categories={categories}
+      />
+    </>
   );
 }

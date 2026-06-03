@@ -21,7 +21,7 @@ class ApiClient {
     }
   ): Promise<[any, string]> {
     if (!this.BaseURL) {
-      throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
+      throw new Error("NEXT_PUBLIC_API_URL is not defined");
     }
 
     let token: string | undefined;
@@ -83,7 +83,7 @@ class ApiClient {
     params?: Record<string, unknown>
   ): Promise<void> {
     if (!this.BaseURL) {
-      throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
+      throw new Error("NEXT_PUBLIC_API_URL is not defined");
     }
 
     let token: string | undefined;
