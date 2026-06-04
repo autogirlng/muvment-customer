@@ -5,7 +5,7 @@ import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 export const metadata = generatePageMetadata({
   title: "Our Impact",
   description:
-    "See how Muvment by Autogirl lifts driver incomes, trains women in mobility careers, and leads Nigeria's EV ride-hailing fleet — mapped to the UN Sustainable Development Goals.",
+    "See how Muvment by Autogirl raises driver incomes, trains women for mobility careers, and leads Nigeria's EV ride-hailing fleet, mapped to the UN SDGs.",
   keywords: [
     "Muvment impact",
     "Autogirl social impact",

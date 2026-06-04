@@ -22,7 +22,7 @@ export async function generateMetadata({
 
   if (params.category) {
     title = `${params.category} Articles | Blog`;
-    description = `Read the latest ${params.category} articles, insights and guides from our expert contributors.`;
+    description = `Read the latest ${params.category} articles from Muvment. Practical guides, pricing breakdowns, and travel tips on car rental and mobility across Nigeria.`;
   }
 
   if (params.search) {

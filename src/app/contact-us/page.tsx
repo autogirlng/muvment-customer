@@ -5,7 +5,7 @@ import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 export const metadata = generatePageMetadata({
   title: "Contact Us",
   description:
-    "Get in touch with Muvment by Autogirl. We're here to help with your car rental needs. Visit us at 10 Anuoluwapo Close, Opebi, Ikeja, Lagos or reach out via phone, email, or social media.",
+    "Get in touch with Muvment by Autogirl for your car rental needs. Visit us at 10 Anuoluwapo Close, Opebi, Ikeja, Lagos, or reach us by phone, email, or social.",
   keywords: [
     "contact Autogirl",
     "Muvment contact",
