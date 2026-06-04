@@ -37,13 +37,13 @@ function DateBadge({ dateStr }: { dateStr: string }) {
     const d = new Date(dateStr);
     return (
       <div className="absolute top-3 right-3 bg-white rounded-lg px-3 py-1.5 text-center shadow-sm min-w-[64px]">
-        <p className="text-[10px] text-gray-400 font-medium leading-none mb-0.5">
+        <p className="text-[10px] text-gray-500 font-medium leading-none mb-0.5">
           {format(d, "EEE")}
         </p>
         <p className="text-2xl font-bold text-gray-900 leading-none">
           {format(d, "dd")}
         </p>
-        <p className="text-[10px] text-gray-400 font-medium leading-none mt-0.5">
+        <p className="text-[10px] text-gray-500 font-medium leading-none mt-0.5">
           {format(d, "MMM yyyy")}
         </p>
       </div>
@@ -184,14 +184,20 @@ export default function BlogLandingClient({
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!showCategoryModal) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    modalRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setShowCategoryModal(false);
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      previouslyFocused?.focus();
+    };
   }, [showCategoryModal]);
 
   const selectedCategory = categories.find(
@@ -365,14 +371,14 @@ export default function BlogLandingClient({
             <h2 className="text-lg font-semibold text-gray-700 mb-2">
               No articles found
             </h2>
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-500 text-sm">
               Try a different search term or category.
             </p>
           </div>
         ) : (
           <>
             {(search || categoryId) && (
-              <p className="text-sm text-gray-400 mb-6">
+              <p className="text-sm text-gray-500 mb-6">
                 {totalElements.toLocaleString()} result
                 {totalElements !== 1 ? "s" : ""}
                 {search && ` for "${search}"`}
@@ -448,10 +454,12 @@ export default function BlogLandingClient({
           }}
         >
           <div
+            ref={modalRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-label="All Categories"
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col focus:outline-none"
           >
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">

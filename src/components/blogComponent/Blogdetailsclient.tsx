@@ -13,7 +13,7 @@ import ShareButton from "./blogUI/Sharebutton";
 import CommentsSection from "./blogUI/Commentssection";
 import Footer from "../HomeComponent/Footer";
 import { Navbar } from "../Navbar";
-import parse, { Element } from "html-react-parser";
+import parse, { Element, attributesToProps } from "html-react-parser";
 
 // Strip a leading heading from the CMS body when it merely repeats the post
 // title, so the title does not render twice (once in the header, once at the
@@ -33,7 +33,25 @@ function renderBody(html: string, title: string) {
   let decided = false;
   return parse(html || "", {
     replace: (node) => {
-      if (!decided && node instanceof Element && /^h[1-6]$/.test(node.name)) {
+      if (!(node instanceof Element)) return undefined;
+
+      // Optimize and lazy-load images embedded in the article body.
+      if (node.name === "img") {
+        const props = attributesToProps(node.attribs);
+        const rawSrc = typeof props.src === "string" ? props.src : "";
+        return (
+          <img
+            {...props}
+            src={rawSrc ? optimizeCloudinaryUrl(rawSrc, 1200) : undefined}
+            loading="lazy"
+            decoding="async"
+            alt={typeof props.alt === "string" ? props.alt : ""}
+          />
+        );
+      }
+
+      // Remove a leading heading that just repeats the post title.
+      if (!decided && /^h[1-6]$/.test(node.name)) {
         decided = true;
         if (target && norm(getText(node.children)) === target) {
           return <></>;
@@ -106,7 +124,7 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
               <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
             </svg>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <span className="font-medium text-gray-600">{authorName}</span>
             <span>•</span>
             <time>{BlogService.formatDate(post.approvedAt || post.createdAt)}</time>
@@ -169,7 +187,7 @@ export default function BlogDetailsClient({
       <Navbar />
       {/* ── Breadcrumb ─────────────────────────────────────────────────── */}
       <nav aria-label="Breadcrumb" className="max-w-3xl mx-auto px-4 pt-28 pb-2">
-        <ol className="flex items-center gap-1.5 text-xs text-gray-400 flex-wrap">
+        <ol className="flex items-center gap-1.5 text-xs text-gray-500 flex-wrap">
           <li>
             <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
           </li>
@@ -247,7 +265,7 @@ export default function BlogDetailsClient({
                 <p className="font-semibold text-gray-900 text-sm" itemProp="author">
                   {author}
                 </p>
-                <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
                   <time dateTime={post.approvedAt || post.createdAt} itemProp="datePublished">
                     {BlogService.formatDateLong(post.approvedAt || post.createdAt)}
                   </time>
@@ -314,7 +332,7 @@ export default function BlogDetailsClient({
 
         {/* ── Enwhsdgagement bar ── */}
         <div className="flex items-center justify-between flex-wrap gap-4 py-5 border-y border-gray-200 mt-6 mb-10">
-          <div className="flex items-center gap-5 text-sm text-gray-400">
+          <div className="flex items-center gap-5 text-sm text-gray-500">
             <span className="flex items-center gap-1.5">
               <BsEye className="w-4 h-4" />
               {(post.metrics?.views ?? 0).toLocaleString()} views
@@ -352,13 +370,13 @@ export default function BlogDetailsClient({
       {relatedPosts.length > 0 && (
         <section className="bg-gray-50 border-t border-gray-100 py-20 px-4 text-center">
           <div className="max-w-5xl mx-auto">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">
               Blog
             </p>
             <h2 className="text-3xl font-bold text-[#0d1f35] mb-3 tracking-tight">
               Related posts
             </h2>
-            <p className="text-sm text-gray-400 mb-12 max-w-md mx-auto font-light">
+            <p className="text-sm text-gray-500 mb-12 max-w-md mx-auto font-light">
               {post.excerpt || "More articles you might enjoy."}
             </p>
 
