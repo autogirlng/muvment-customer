@@ -20,7 +20,6 @@ export const ServicePricingShowcaseList: React.FC = () => {
 
   const MAX_DOTS = 5;
 
-  // Update cards on resize
   useEffect(() => {
     const updateCards = () => {
       if (window.innerWidth < 640) setVisibleCards(1);
@@ -43,8 +42,7 @@ export const ServicePricingShowcaseList: React.FC = () => {
       setError(null);
 
       const data = await ServicePricingService.getServicePricingShowcase();
-   
-      // Updated to handle flat array structure
+
       setPricingData(data[0].data);
     } catch (err) {
       setError(
@@ -55,23 +53,19 @@ export const ServicePricingShowcaseList: React.FC = () => {
     }
   };
 
-  // Move next (1 card at a time for smooth peek effect)
   const handleNext = () => {
     const maxIndex = Math.max(pricingData.length - visibleCards, 0);
     const newIndex = Math.min(currentIndex + 1, maxIndex);
     setCurrentIndex(newIndex);
   };
 
-  // Move previous (1 card at a time)
   const handlePrev = () => {
     setCurrentIndex(Math.max(currentIndex - 1, 0));
   };
 
-  // Check if arrows should be disabled
   const isPrevDisabled = currentIndex === 0;
   const isNextDisabled = currentIndex >= pricingData.length - visibleCards;
 
-  // Handle dots
   const handleDotClick = (dotIndex: number) => {
     const totalCards = pricingData.length;
     const targetIndex = Math.min(
@@ -81,7 +75,6 @@ export const ServicePricingShowcaseList: React.FC = () => {
     setCurrentIndex(targetIndex);
   };
 
-  // Active dot logic
   const getActiveDot = () => {
     const totalCards = pricingData.length;
     const slidesCount = Math.ceil(totalCards / visibleCards);
@@ -89,7 +82,6 @@ export const ServicePricingShowcaseList: React.FC = () => {
     return Math.min(active, slidesCount - 1, MAX_DOTS - 1);
   };
 
-  // Smooth scroll logic
   useEffect(() => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
@@ -107,7 +99,6 @@ export const ServicePricingShowcaseList: React.FC = () => {
     }
   }, [currentIndex]);
 
-  // Swipe gestures
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -172,23 +163,19 @@ export const ServicePricingShowcaseList: React.FC = () => {
 
   return (
     <div className="w-full py-6 my-[50px]">
-      <div className="">
-        {/* Header */}
+      <div>
         <div className="flex items-center justify-between mb-6 max-w-[95%] ml-auto px-6">
           <div className="text-center md:text-start">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Short term Hourly Car Rentals
             </h2>
             <p className="text-gray-600">
-              Explore our range of vehicles for hourly rent starting from 3 hours.
-They come with a professional chauffeur and fueling.
+              Explore our range of vehicles for hourly rent starting from 3
+              hours. They come with a professional chauffeur and fueling.
             </p>
           </div>
         </div>
-
-        {/* Carousel with Navigation Arrows */}
         <div className="relative">
-          {/* Left Arrow - Desktop */}
           <button
             onClick={handlePrev}
             disabled={isPrevDisabled}
@@ -201,8 +188,6 @@ They come with a professional chauffeur and fueling.
           >
             <FaChevronLeft className="w-4 h-4 text-gray-700" />
           </button>
-
-          {/* Carousel Container */}
           <div
             className="relative px-4 md:px-16"
             onTouchStart={handleTouchStart}
@@ -226,8 +211,6 @@ They come with a professional chauffeur and fueling.
               ))}
             </div>
           </div>
-
-          {/* Right Arrow - Desktop */}
           <button
             onClick={handleNext}
             disabled={isNextDisabled}
@@ -241,8 +224,6 @@ They come with a professional chauffeur and fueling.
             <FaChevronRight className="w-4 h-4 text-gray-700" />
           </button>
         </div>
-
-        {/* Dots */}
         {pricingData.length > visibleCards && (
           <div className="flex justify-center gap-2 mt-6">
             {Array.from({

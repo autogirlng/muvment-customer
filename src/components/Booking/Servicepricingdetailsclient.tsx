@@ -47,8 +47,8 @@ interface Trip {
 const ServicePricingBookingPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
-  const yearRangeId = params?.yearRangeId as string;
-  const servicePricingId = params?.id as string;
+  console.log("Available Route Params:", params);
+  const slug = params?.id as string;
 
   const [pricing, setPricing] = useState<ServicePricingShowcase | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,8 +64,10 @@ const ServicePricingBookingPage: React.FC = () => {
   const [canProceed, setCanProceed] = useState(false);
 
   useEffect(() => {
-    fetchPricingData();
-  }, [yearRangeId, servicePricingId]);
+    if (slug) {
+      fetchPricingData();
+    }
+  }, [slug]);
 
   useEffect(() => {
     const allTripsComplete = trips.every((trip) => {
@@ -91,24 +93,20 @@ const ServicePricingBookingPage: React.FC = () => {
 
       const storedData: any = ServicePricingStorage.getFromStorage();
 
-      if (
-        storedData &&
-        storedData.yearRangeId === yearRangeId &&
-        storedData.servicePricingId === servicePricingId
-      ) {
-        setPricing(storedData.data[0]);
+      if (storedData && storedData.slug === slug) {
+        setPricing(storedData);
         setLoading(false);
         return;
       }
 
-      const data =
-        await ServicePricingService.getServicePricingById(servicePricingId);
+      const data = await ServicePricingService.getServicePricingBySlug(slug);
 
       if (!data) {
         setError("Service pricing not found");
         setLoading(false);
         return;
       }
+
       setPricing(data);
       ServicePricingStorage.saveToStorage(data);
     } catch (err) {
@@ -181,7 +179,7 @@ const ServicePricingBookingPage: React.FC = () => {
   };
 
   const estimatePrice = async () => {
-    if (!canProceed) return;
+    if (!canProceed || !pricing) return;
 
     setIsEstimating(true);
     setError(null);
@@ -213,7 +211,7 @@ const ServicePricingBookingPage: React.FC = () => {
       }
 
       const requestBody = {
-        servicePricingId: servicePricingId,
+        servicePricingId: pricing.servicePricingId,
         trips: trips.map((trip) => ({
           bookingTypeId: trip.tripDetails.bookingType,
           pickupLatitude: trip.tripDetails.pickupCoordinates?.lat || 0.1,
@@ -245,17 +243,16 @@ const ServicePricingBookingPage: React.FC = () => {
   };
 
   const proceedToCheckout = () => {
-    if (!priceEstimate) return;
+    if (!priceEstimate || !pricing) return;
 
     sessionStorage.setItem("servicePricingTrips", JSON.stringify(trips));
     sessionStorage.setItem(
       "servicePricingEstimate",
       JSON.stringify(priceEstimate),
     );
-    sessionStorage.setItem("servicePricingId", servicePricingId);
-    sessionStorage.setItem("yearRangeId", yearRangeId);
-
-    router.push(`/booking/${servicePricingId}/special-checkout`);
+    sessionStorage.setItem("servicePricingId", pricing.servicePricingId);
+    sessionStorage.setItem("yearRangeId", pricing.yearRangeId);
+    router.push(`/booking/${pricing.servicePricingId}/special-checkout`);
   };
 
   if (loading) {

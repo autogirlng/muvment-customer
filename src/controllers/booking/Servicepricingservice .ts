@@ -61,4 +61,19 @@ export class ServicePricingService {
       return error.messag;
     }
   }
+
+  static async getServicePricingBySlug(
+    slug: string,
+  ): Promise<ServicePricingShowcase | null> {
+    try {
+      const allPricing = await this.getServicePricingShowcase();
+      const found = allPricing[0]?.data?.find(
+        (item: any) => item.slug === slug,
+      );
+      return found || null;
+    } catch (error) {
+      console.error("Error fetching service pricing by slug:", error);
+      throw new Error("Failed to load service pricing details");
+    }
+  }
 }

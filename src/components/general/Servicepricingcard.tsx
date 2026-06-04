@@ -43,7 +43,6 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
 
   return (
     <div className="relative bg-white rounded-xl border border-gray-200 overflow-visible hover:shadow-lg transition-shadow duration-300">
-   
       <div className="absolute top-3 left-3 z-10">
         <span
           className={`${getBadgeColor()} text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide`}
@@ -52,22 +51,23 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
         </span>
       </div>
 
-      <div className=" flex items-center justify-center overflow-hidden"
-           style={{ height: "280px" }}>
+      <div
+        className=" flex items-center justify-center overflow-hidden"
+        style={{ height: "280px" }}
+      >
         <div className="relative w-full h-full">
           <Image
             src={getVehicleImage()}
             alt={data.servicePricingName}
             fill
             className="object-contain p-2"
-             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             unoptimized={data.imageUrl?.includes("cloudinary")}
           />
         </div>
       </div>
 
       <div className="p-4 space-y-2">
-     
         <h3 className="text-lg font-bold text-gray-900 uppercase tracking-wide">
           {data.servicePricingName}
         </h3>
@@ -91,9 +91,7 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
           </div>
 
           <button
-            onClick={() =>
-              router.push(`/booking/${data.servicePricingId}/special-pricing`)
-            }
+            onClick={() => router.push(`/booking/${data.slug}/special-pricing`)}
             className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2 group"
           >
             <span>Book Now</span>

@@ -12,6 +12,7 @@ export interface ServicePricingShowcase {
   maxYear: number;
   imageUrl: string;
   servicePricingId: string;
+  slug: string;
   servicePricingName: string;
   rideType: string;
   id?: string;
@@ -30,4 +31,5 @@ export interface ServicePricingResponse {
 export interface ServicePricingDetailsProps {
   yearRangeId: string;
   servicePricingId: string;
+  slug: string;
 }

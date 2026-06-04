@@ -208,11 +208,7 @@ const ServicePricingCheckoutPage = () => {
         recipientEmail: prev.email,
       }));
     }
-  }, [
-    personalInfo.rideFor,
-    personalInfo.fullName,
-    personalInfo.email,
-  ]);
+  }, [personalInfo.rideFor, personalInfo.fullName, personalInfo.email]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleInputChange = (field: keyof PersonalInfo, value: string) => {
@@ -300,68 +296,84 @@ const ServicePricingCheckoutPage = () => {
     }
   };
 
-const createNewBooking = async () => {
-  const savedTrips = sessionStorage.getItem("servicePricingTrips");
-  if (!savedTrips) throw new Error("Trip data not found. Please start over.");
+  const createNewBooking = async () => {
+    const savedTrips = sessionStorage.getItem("servicePricingTrips");
+    if (!savedTrips) throw new Error("Trip data not found. Please start over.");
 
-  const tripsData: any[] = JSON.parse(savedTrips);
-  if (!tripsData.length) throw new Error("Trip details not found.");
+    const tripsData: any[] = JSON.parse(savedTrips);
+    if (!tripsData.length) throw new Error("Trip details not found.");
 
-  const formatDateForAPI = (dateString: string) =>
-    format(new Date(dateString), "yyyy-MM-dd");
-  const formatTimeForAPI = (timeString: string) =>
-    format(new Date(timeString), "HH:mm:ss");
+    const formatDateForAPI = (dateString: string) =>
+      format(new Date(dateString), "yyyy-MM-dd");
+    const formatTimeForAPI = (timeString: string) =>
+      format(new Date(timeString), "HH:mm:ss");
 
-  const {
-    fullName, email, phoneNumber, rideFor,
-    recipientEmail, recipientPhoneNumber, recipientFullName,
-    secondaryPhoneNumber, extraDetails,
-  } = personalInfo;
+    const {
+      fullName,
+      email,
+      phoneNumber,
+      rideFor,
+      recipientEmail,
+      recipientPhoneNumber,
+      recipientFullName,
+      secondaryPhoneNumber,
+      extraDetails,
+    } = personalInfo;
 
-  // Build the trips array for the API
-  const tripsPayload = tripsData.map((t: any) => {
-    const trip = t.tripDetails;
-    return {
-      bookingTypeId: trip.bookingType || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      startDate: formatDateForAPI(trip.tripStartDate || new Date().toISOString()),
-      startTime: formatTimeForAPI(trip.tripStartTime || new Date().toISOString()),
-      pickupLocationString: trip.pickupLocation || "string",
-      pickupLatitude: trip.pickupCoordinates?.lat || 0.1,
-      pickupLongitude: trip.pickupCoordinates?.lng || 0.1,
-      dropoffLocationString: trip.dropoffLocation || "string",
-      dropoffLatitude: trip.dropoffCoordinates?.lat || 0.1,
-      dropoffLongitude: trip.dropoffCoordinates?.lng || 0.1,
-    };
-  });
+    // Build the trips array for the API
+    const tripsPayload = tripsData.map((t: any) => {
+      const trip = t.tripDetails;
+      return {
+        bookingTypeId:
+          trip.bookingType || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        startDate: formatDateForAPI(
+          trip.tripStartDate || new Date().toISOString(),
+        ),
+        startTime: formatTimeForAPI(
+          trip.tripStartTime || new Date().toISOString(),
+        ),
+        pickupLocationString: trip.pickupLocation || "string",
+        pickupLatitude: trip.pickupCoordinates?.lat || 0.1,
+        pickupLongitude: trip.pickupCoordinates?.lng || 0.1,
+        dropoffLocationString: trip.dropoffLocation || "string",
+        dropoffLatitude: trip.dropoffCoordinates?.lat || 0.1,
+        dropoffLongitude: trip.dropoffCoordinates?.lng || 0.1,
+      };
+    });
 
-  const bookingPayload = {
-    servicePricingId: id,
-    trips: tripsPayload,
-    primaryPhoneNumber: formatPhone(phoneNumber, primaryCountryCode),
-    secondaryPhoneNumber: secondaryPhoneNumber
-      ? formatPhone(secondaryPhoneNumber, secondaryCountryCode)
-      : formatPhone(phoneNumber, primaryCountryCode),
-    guestFullName: fullName,
-    guestEmail: email,
-    guestPhoneNumber: formatPhone(phoneNumber, primaryCountryCode),
-    isBookingForOthers: rideFor === "others",
-    recipientFullName: rideFor === "others" ? recipientFullName || fullName : fullName,
-    recipientEmail: rideFor === "others" ? recipientEmail || email : email,
-    recipientPhoneNumber:
-      rideFor === "others"
-        ? formatPhone(recipientPhoneNumber || phoneNumber, recipientCountryCode)
+    const bookingPayload = {
+      servicePricingId: id,
+      trips: tripsPayload,
+      primaryPhoneNumber: formatPhone(phoneNumber, primaryCountryCode),
+      secondaryPhoneNumber: secondaryPhoneNumber
+        ? formatPhone(secondaryPhoneNumber, secondaryCountryCode)
         : formatPhone(phoneNumber, primaryCountryCode),
-    purposeOfRide: "N/A",
-    extraDetails: extraDetails || "N/A",
-    channel: "WEBSITE",
-    paymentMethod: "ONLINE",
-  };
+      guestFullName: fullName,
+      guestEmail: email,
+      guestPhoneNumber: formatPhone(phoneNumber, primaryCountryCode),
+      isBookingForOthers: rideFor === "others",
+      recipientFullName:
+        rideFor === "others" ? recipientFullName || fullName : fullName,
+      recipientEmail: rideFor === "others" ? recipientEmail || email : email,
+      recipientPhoneNumber:
+        rideFor === "others"
+          ? formatPhone(
+              recipientPhoneNumber || phoneNumber,
+              recipientCountryCode,
+            )
+          : formatPhone(phoneNumber, primaryCountryCode),
+      purposeOfRide: "N/A",
+      extraDetails: extraDetails || "N/A",
+      channel: "WEBSITE",
+      paymentMethod: "ONLINE",
+    };
 
-  const bookingResponse = await BookingService.createSpecialBooking(bookingPayload);
-  const newBookingId = bookingResponse.data.data.bookingId;
-  Cookies.set("servicePricingBookingId", newBookingId, { expires: 1 });
-  return newBookingId;
-};
+    const bookingResponse =
+      await BookingService.createSpecialBooking(bookingPayload);
+    const newBookingId = bookingResponse.data.data.bookingId;
+    Cookies.set("servicePricingBookingId", newBookingId, { expires: 1 });
+    return newBookingId;
+  };
 
   const handleBookNow = async () => {
     const {
@@ -414,7 +426,11 @@ const createNewBooking = async () => {
         return;
       }
       if (
-        !validatePhone(recipientPhoneNumber, recipientCountry, recipientCountryCode)
+        !validatePhone(
+          recipientPhoneNumber,
+          recipientCountry,
+          recipientCountryCode,
+        )
       ) {
         toast.error("Invalid recipient phone number");
         return;
@@ -496,7 +512,11 @@ const createNewBooking = async () => {
       return;
     }
     if (
-      !validatePhone(recipientPhoneNumber, recipientCountry, recipientCountryCode)
+      !validatePhone(
+        recipientPhoneNumber,
+        recipientCountry,
+        recipientCountryCode,
+      )
     ) {
       toast.error("Invalid recipient phone number");
       return;
@@ -580,7 +600,9 @@ const createNewBooking = async () => {
               <div className="px-6 py-4 bg-gray-100">
                 <div className="flex items-center gap-2 text-gray-900">
                   <FiUser className="w-5 h-5" />
-                  <h2 className="text-lg font-semibold">Personal Information</h2>
+                  <h2 className="text-lg font-semibold">
+                    Personal Information
+                  </h2>
                 </div>
               </div>
 
@@ -595,7 +617,8 @@ const createNewBooking = async () => {
                           Using your account information
                         </p>
                         <p className="text-xs text-orange-700 mt-1">
-                          Your personal details are pre-filled from your account.
+                          Your personal details are pre-filled from your
+                          account.
                         </p>
                       </div>
                     </div>
@@ -765,7 +788,10 @@ const createNewBooking = async () => {
                           type="text"
                           value={personalInfo.recipientFullName || ""}
                           onChange={(e) =>
-                            handleInputChange("recipientFullName", e.target.value)
+                            handleInputChange(
+                              "recipientFullName",
+                              e.target.value,
+                            )
                           }
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                           placeholder="Enter recipient's full name"
@@ -1073,7 +1099,9 @@ const createNewBooking = async () => {
                             />
                           </svg>
                           Proceed to Payment (
-                          {paymentGateway === "MONNIFY" ? "Monnify" : "Paystack"}
+                          {paymentGateway === "MONNIFY"
+                            ? "Monnify"
+                            : "Paystack"}
                           )
                         </>
                       )}
