@@ -5,11 +5,7 @@ import { TopVehicle } from "@/types/vehicle";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { VscSparkle } from "react-icons/vsc";
-
-const optimizeCloudinaryUrl = (url: string) => {
-  if (!url || !url.includes("res.cloudinary.com")) return url;
-  return url.replace("/upload/", "/upload/f_auto,q_auto,w_600/");
-};
+import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
 
 const FindNewListings: React.FC = () => {
   const [vehicles, setVehicles] = useState<TopVehicle[]>([]);

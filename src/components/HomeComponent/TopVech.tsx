@@ -13,6 +13,7 @@ import {
   FaChevronLeft,
 } from "react-icons/fa";
 import { MdLocationOn } from "react-icons/md";
+import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
 
 export interface TopVehicle {
   photos: Array<{
@@ -77,11 +78,6 @@ const FavouriteButton: React.FC<{
     )}
   </button>
 );
-
-const optimizeCloudinaryUrl = (url: string) => {
-  if (!url || !url.includes("res.cloudinary.com")) return url;
-  return url.replace("/upload/", "/upload/f_auto,q_auto,w_600/");
-};
 
 const TopRating: React.FC<TopRatingProps> = ({
   vehicle,
