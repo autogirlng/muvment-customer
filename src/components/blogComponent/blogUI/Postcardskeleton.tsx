@@ -1,7 +1,7 @@
 export default function PostCardSkeleton() {
   return (
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 animate-pulse">
-      <div className="aspect-[16/9] bg-gray-100" />
+      <div className="aspect-[4/3] bg-gray-100" />
       <div className="p-5 space-y-3">
         <div className="h-3 bg-gray-100 rounded-full w-1/4" />
         <div className="h-5 bg-gray-100 rounded-full w-full" />
