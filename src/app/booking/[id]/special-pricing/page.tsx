@@ -4,33 +4,42 @@ import { generatePageMetadata } from "@/helpers/metadata";
 
 interface PageProps {
   params: Promise<{
+    yearRangeId: string;
     id: string;
   }>;
 }
 
 export async function generateMetadata({ params }: PageProps) {
-  const { id } = await params;
-
+  const { yearRangeId, id } = await params;
+  const servicePricingId = id
   try {
-    const pricingData = await ServicePricingService.getServicePricingBySlug(id);
-
+    const pricingData =
+      await ServicePricingService.getServicePricingById(servicePricingId);
     if (!pricingData) {
       return generatePageMetadata({
         title: "Service Pricing Not Found",
-        description: "The requested service pricing could not be found.",
-        url: `/booking/${id}/special-pricing`,
+        description:
+          "This service pricing is no longer available. Explore Muvment's verified rental cars with professional chauffeurs and current rates for hourly, daily, and monthly hire.",
+        url: `/booking/special-pricing/${servicePricingId}`,
       });
     }
-
     const prices = Array.isArray(pricingData.prices) ? pricingData.prices : [];
     const images = Array.isArray(pricingData.imageUrl)
       ? pricingData.imageUrl
       : [];
+
     const lowestPrice =
       prices.length > 0 ? Math.min(...prices.map((p) => p.price)) : 0;
 
     const title = `${pricingData.servicePricingName} - ${pricingData.minYear}-${pricingData.maxYear}`;
-    const description = `${pricingData.name} - ${pricingData.rideType} service for vehicles from ${pricingData.minYear} to ${pricingData.maxYear}. Starting from NGN ${lowestPrice.toLocaleString()}. ${prices.length} pricing option${prices.length > 1 ? "s" : ""} available.`;
+
+    const description = `${pricingData.name} - ${
+      pricingData.rideType
+    } service for vehicles from ${pricingData.minYear} to ${
+      pricingData.maxYear
+    }. Starting from NGN ${lowestPrice.toLocaleString()}. ${
+      prices.length
+    } pricing option${prices.length > 1 ? "s" : ""} available.`;
 
     return generatePageMetadata({
       title,
@@ -43,17 +52,18 @@ export async function generateMetadata({ params }: PageProps) {
         "vehicle rental",
         "booking options",
       ],
-      url: `/booking/${id}/special-pricing`,
+      url: `/service-pricing/details/${yearRangeId}/${servicePricingId}`,
       image: images[0] || "/images/image1.png",
       type: "website",
     });
   } catch (error) {
     console.error("Error generating metadata:", error);
+
     return generatePageMetadata({
       title: "Service Pricing Details",
       description:
-        "View detailed information about this service pricing option.",
-      url: `/booking/${id}/special-pricing`,
+        "We couldn't load this service pricing right now. Explore Muvment's verified rental cars with professional chauffeurs and rates for hourly, daily, and monthly hire.",
+      url: `/service-pricing/details/${yearRangeId}/${servicePricingId}`,
     });
   }
 }

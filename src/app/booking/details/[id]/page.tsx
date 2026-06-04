@@ -28,7 +28,7 @@ export async function generateMetadata({
     }
 
     const title = `${vehicle.name} - Rent in ${vehicle.city || "Nigeria"}`;
-    const description = `Rent ${vehicle.name} (${vehicle.year}) in ${
+    const description = `Rent ${vehicle.name} in ${
       vehicle.city || "Nigeria"
     } with a professional chauffeur. ${vehicle.vehicleTypeName?.replaceAll(
       "_",

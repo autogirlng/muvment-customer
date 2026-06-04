@@ -34,6 +34,24 @@ export const SEO_DEFAULTS = {
     "Muvment by Autogirl helps you rent cars easily for business, trips, events, and daily mobility across Nigeria. Flexible pricing. Verified cars. Fast booking.",
 } as const;
 
+// ─── Meta description length guard ────────────────────────────────────────────
+// Search engines truncate descriptions past roughly 160 characters, and audits
+// flag anything longer. We clamp every description to a safe ceiling at a word
+// boundary so no page can ship an over-length tag, whatever the source text.
+export const META_DESCRIPTION_MAX = 158;
+
+export function clampMetaDescription(
+  input: string,
+  max = META_DESCRIPTION_MAX
+): string {
+  const text = (input || "").replace(/\s+/g, " ").trim();
+  if (text.length <= max) return text;
+  const slice = text.slice(0, max - 1); // reserve one char for the ellipsis
+  const lastSpace = slice.lastIndexOf(" ");
+  const trimmed = lastSpace > max * 0.6 ? slice.slice(0, lastSpace) : slice;
+  return trimmed.replace(/[\s.,;:!?-]+$/, "") + "…";
+}
+
 // ─── Config interface ─────────────────────────────────────────────────────────
 interface PageMetadataConfig {
   title: string;
@@ -71,9 +89,11 @@ export function generatePageMetadata({
 
   const allKeywords = [...new Set([...keywords, ...SEO_DEFAULTS.keywords])];
 
+  const safeDescription = clampMetaDescription(description);
+
   return {
     title: titleAbsolute ? { absolute: title } : title,
-    description,
+    description: safeDescription,
     keywords: allKeywords,
     authors: [...SEO_DEFAULTS.authors],
     creator,
@@ -99,7 +119,7 @@ export function generatePageMetadata({
       type,
       siteName,
       title: fullTitle,
-      description,
+      description: safeDescription,
       url: fullUrl,
       locale,
       images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
@@ -110,7 +130,7 @@ export function generatePageMetadata({
       site: twitterHandle,
       creator: twitterHandle,
       title: fullTitle,
-      description,
+      description: safeDescription,
       images: [imageUrl],
     },
 

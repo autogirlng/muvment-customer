@@ -5,7 +5,7 @@ import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 export const metadata = generatePageMetadata({
   title: "About Us",
   description:
-    "Learn about Muvment by Autogirl - Nigeria's premier car rental service. Discover our mission to provide exceptional vehicle rental experiences with quality cars, transparent pricing, and outstanding customer service in Lagos and beyond.",
+    "Learn about Muvment by Autogirl, Nigeria's premier car rental service, our mission, and how we deliver quality cars, transparent pricing, and great service.",
   keywords: [
     "about Autogirl",
     "Muvment car rental",

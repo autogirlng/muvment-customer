@@ -4,7 +4,7 @@ import { generatePageMetadata } from "@/helpers/metadata";
 export const metadata = generatePageMetadata({
   title: "Terms of Service",
   description:
-    "Read Muvment by Autogirl's terms and conditions for car rental services in Nigeria. Learn about booking policies, cancellation rules, refunds, extra charges, self-drive terms, and monthly rental agreements.",
+    "Read Muvment by Autogirl's terms for car rental in Nigeria: booking, cancellations, refunds, extra charges, self-drive terms, and monthly rental agreements.",
   keywords: [
     "car rental terms Nigeria",
     "Muvment terms and conditions",
