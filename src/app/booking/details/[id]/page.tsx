@@ -39,6 +39,7 @@ export async function generateMetadata({
 
     return generatePageMetadata({
       title,
+      titleAbsolute: true,
       description,
       keywords: [
         vehicle.vehicleMakeName,
