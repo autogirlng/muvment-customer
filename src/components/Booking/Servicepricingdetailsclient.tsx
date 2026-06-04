@@ -47,7 +47,6 @@ interface Trip {
 const ServicePricingBookingPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
-  console.log("Available Route Params:", params);
   const slug = params?.id as string;
 
   const [pricing, setPricing] = useState<ServicePricingShowcase | null>(null);
