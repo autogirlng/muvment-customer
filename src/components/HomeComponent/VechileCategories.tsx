@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 
 interface VehicleCategory {
@@ -13,10 +14,10 @@ const VehicleCategories: React.FC = () => {
   const router = useRouter();
   const [category, setCategory] = useState<{ value: string; label: string }[]>([]);
   const categories: VehicleCategory[] = [
-    { name: "Sedan", image: "/images/vehicles/sedan.png", id: "sedan-id" },
-    { name: "Truck", image: "/images/vehicles/truck.png", id: "truck-id" },
-    { name: "SUV", image: "/images/vehicles/suv.png", id: "suv-id" },
-    { name: "Bus", image: "/images/vehicles/bus.png", id: "bus-id" },
+    { name: "Sedan", image: "/images/vehicles/sedan.webp", id: "sedan-id" },
+    { name: "Truck", image: "/images/vehicles/truck.webp", id: "truck-id" },
+    { name: "SUV", image: "/images/vehicles/suv.webp", id: "suv-id" },
+    { name: "Bus", image: "/images/vehicles/bus.webp", id: "bus-id" },
   ];
 
   const handleCategoryClick = (categoryId: string) => {
@@ -34,7 +35,7 @@ const VehicleCategories: React.FC = () => {
     }));
     setCategory(transformedOptions);
   };
-  // console.log(category);
+
   useEffect(() => {
     getvechileType();
   }, []);
@@ -48,20 +49,25 @@ const VehicleCategories: React.FC = () => {
 
         <div className="flex flex-wrap justify-center sm:justify-between w-full gap-10">
           {categories.map((category, index) => (
-            <div
+            <button
               key={index}
+              type="button"
               onClick={() => handleCategoryClick(category.id)}
-              className="flex flex-col items-center text-center space-y-2 cursor-pointer hover:opacity-80 transition-opacity"
+              className="flex flex-col items-center text-center space-y-2 cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-0 p-0"
+              aria-label={`Browse ${category.name} rentals`}
             >
-              <img
+              <Image
                 src={category.image}
-                alt={category.name}
+                alt={`${category.name} car rental category`}
+                width={252}
+                height={144}
                 className="w-36 h-24 object-contain"
+                loading="lazy"
               />
               <p className="text-sm font-medium text-gray-800">
                 {category.name}
               </p>
-            </div>
+            </button>
           ))}
         </div>
       </div>

@@ -323,9 +323,9 @@ export default function HeroBookingSection() {
   };
 
 const HERO_IMAGES = [
-  "/images/landing/hero.png",
-  "/images/landing/hero1.png",
-  "/images/landing/hero2.png",
+  "/images/landing/hero.webp",
+  "/images/landing/hero1.webp",
+  "/images/landing/hero2.webp",
 ];
 
 const HERO_ALTS = [

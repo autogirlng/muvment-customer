@@ -55,7 +55,7 @@ const SaveBigRentals: React.FC<SaveBigRentalsProps> = ({
           rating: 4.8,
           numberOfSeats: 5,
           photos: [
-            { isPrimary: true, cloudinaryUrl: "/images/vehicles/2.png" },
+            { isPrimary: true, cloudinaryUrl: "/images/vehicles/2.webp" },
           ],
           allPricingOptions: [
             { bookingTypeName: "Monthly", price: 420000 },
@@ -70,7 +70,7 @@ const SaveBigRentals: React.FC<SaveBigRentalsProps> = ({
           rating: 4.9,
           numberOfSeats: 7,
           photos: [
-            { isPrimary: true, cloudinaryUrl: "/images/vehicles/3.png" },
+            { isPrimary: true, cloudinaryUrl: "/images/vehicles/3.webp" },
           ],
           allPricingOptions: [
             { bookingTypeName: "Monthly", price: 520000 },
@@ -85,7 +85,7 @@ const SaveBigRentals: React.FC<SaveBigRentalsProps> = ({
           rating: 4.9,
           numberOfSeats: 7,
           photos: [
-            { isPrimary: true, cloudinaryUrl: "/images/vehicles/1.png" },
+            { isPrimary: true, cloudinaryUrl: "/images/vehicles/1.webp" },
           ],
           allPricingOptions: [
             { bookingTypeName: "Monthly", price: 520000 },
@@ -101,7 +101,7 @@ const SaveBigRentals: React.FC<SaveBigRentalsProps> = ({
           rating: 4.9,
           numberOfSeats: 7,
           photos: [
-            { isPrimary: true, cloudinaryUrl: "/images/vehicles/3.png" },
+            { isPrimary: true, cloudinaryUrl: "/images/vehicles/3.webp" },
           ],
           allPricingOptions: [
             { bookingTypeName: "Monthly", price: 520000 },
@@ -255,13 +255,21 @@ const SaveBigRentals: React.FC<SaveBigRentalsProps> = ({
           }).map((_, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => handleDotClick(i)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === getActiveDot()
-                  ? "bg-blue-600 w-8"
-                  : "bg-gray-300 hover:bg-gray-400"
-              }`}
-            />
+              aria-label={`Go to deal ${i + 1}`}
+              aria-current={i === getActiveDot() ? "true" : undefined}
+              className="p-2 -m-2 flex items-center justify-center"
+            >
+              <span
+                className={`block rounded-full transition-all ${
+                  i === getActiveDot()
+                    ? "bg-blue-600 w-8 h-2"
+                    : "bg-gray-300 hover:bg-gray-400 w-2 h-2"
+                }`}
+                aria-hidden="true"
+              />
+            </button>
           ))}
         </div>
       </div>

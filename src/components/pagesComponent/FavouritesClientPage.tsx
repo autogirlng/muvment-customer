@@ -72,27 +72,27 @@ export default function FavouritesVehiclesClient() {
 
   const slides: SlideItem[] = [
   {
-    image: "/images/r5.png",
+    image: "/images/r5.webp",
     title: "Inspired by your favorites",
     text: "Discover more options similar to what you've saved.",
   },
   {
-   image: "/images/r6.png",
+   image: "/images/r6.webp",
     title: "Complete Your Plan",
     text: "Turn your saved ideas into a confirmed booking.",
   },
   {
-   image: "/images/r7.png",
+   image: "/images/r7.webp",
     title: "Upgrade your experience",
     text: "Explore premium options for a more comfortable ride.",
   },
   {
-    image: "/images/r8.png",
+    image: "/images/r8.webp",
     title: "Don't miss out",
     text: "Your saved rides are in high demand, book before they're gone.",
   },
   {
-    image: "/images/r9.png",
+    image: "/images/r9.webp",
     title: "Explore more options",
     text: "Find new rides and experiences tailored to your lifestyle.",
   },
