@@ -20,7 +20,7 @@ const carouselData: CarouselItem[] = [
     title: "Airport Pickups",
     description: "Enjoy seamless arrivals and departures with reliable, on-time airport transfer services. Travel stress free with comfort and convenience from pickup to drop-off.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s4.png"
+    backgroundImage: "/images/s4.webp"
   },
     {
     id: 5,
@@ -28,7 +28,7 @@ const carouselData: CarouselItem[] = [
     description: "Make a statement with coordinated convoy services perfect for weddings, celebrations, and VIP events. Arrive together in style with well organized, premium vehicles.",
     buttonText: "Book Now",
     isHighlighted: true,
-    backgroundImage: "/images/s5.png"
+    backgroundImage: "/images/s5.webp"
   },
 
   {
@@ -37,7 +37,7 @@ const carouselData: CarouselItem[] = [
     description: "Enjoy seamless inter-state travel with spacious, well-maintained vehicles built for comfort and convenience.",
     buttonText: "Book Now",
     isHighlighted: true,
-    backgroundImage: "/images/s5.png"
+    backgroundImage: "/images/s5.webp"
   },
 
   {
@@ -45,7 +45,7 @@ const carouselData: CarouselItem[] = [
     title: "Night Life",
     description: "Experience the city after dark with safe, stylish rides for your nights out. Move freely between spots without worrying about driving or parking.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s6.png"
+    backgroundImage: "/images/s6.webp"
   },
 
   {
@@ -53,21 +53,21 @@ const carouselData: CarouselItem[] = [
     title: "Wide Selection Of Vehicles",
     description: "Whether you need a compact car for city driving, a spacious SUV for family trips, or a luxury car for a special occasion, Muvment has you covered.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s1.png"
+    backgroundImage: "/images/s1.webp"
   },
   {
     id: 2,
     title: "Affordable Pricing",
     description: "We offer competitive rates and transparent pricing, with no hidden fees. Enjoy the best value for your money.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s2.png"
+    backgroundImage: "/images/s2.webp"
   },
   {
     id: 3,
     title: "Flexible Rental Periods",
     description: "Rent by the hour, day, week, or month. Whatever your needs, we have a rental plan that fits.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s3.png"
+    backgroundImage: "/images/s3.webp"
   },
  
 
@@ -76,7 +76,7 @@ const carouselData: CarouselItem[] = [
     title: "Personal use",
     description: "Get a car that fits your everyday needs, whether it’s errands, meetings, or casual outings. Flexible options designed for comfort, convenience, and independence.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s7.png"
+    backgroundImage: "/images/s7.webp"
   }
 ];
 

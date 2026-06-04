@@ -290,7 +290,7 @@ const BookingHistoryPage = () => {
       <div className="relative overflow-hidden h-36 sm:h-44">
         {/* Full background image */}
         <Image
-          src="/images/my-bookings-hero.png"
+          src="/images/my-bookings-hero.webp"
           alt=""
           fill
           className="object-cover object-center"

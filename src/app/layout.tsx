@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     "Vehicle hire",
     "Chauffeur service Nigeria",
     "Luxury car hire",
-    "Monthly car rental Lagos",
+    "Monthly car rental",
     "Daily car rental",
     "Autogirl",
     "Muvment",
@@ -110,6 +110,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <link rel="preconnect" href="https://www.clarity.ms" />
+        <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
+      </head>
       <body className={inter.className}>
         {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
         <QueryProvider>

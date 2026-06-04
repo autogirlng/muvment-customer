@@ -126,7 +126,7 @@ export default function LoginComponent() {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: "url('/images/auth/login_bg.png')",
+              backgroundImage: "url('/images/auth/login_bg.webp')",
             }}
           >
             <div className="absolute inset-0 bg-black/50"></div>

@@ -54,14 +54,21 @@ export default function BackgroundCarousel({
           {images.map((_, index) => (
             <button
               key={index}
+              type="button"
               onClick={() => setCurrentIndex(index)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? "bg-white w-8"
-                  : "bg-white/50 hover:bg-white/75"
-              }`}
               aria-label={`Go to slide ${index + 1}`}
-            />
+              aria-current={index === currentIndex ? "true" : undefined}
+              className="p-2 -m-2 flex items-center justify-center"
+            >
+              <span
+                className={`block rounded-full transition-all duration-300 ${
+                  index === currentIndex
+                    ? "bg-white w-8 h-2"
+                    : "bg-white/50 hover:bg-white/75 w-2 h-2"
+                }`}
+                aria-hidden="true"
+              />
+            </button>
           ))}
         </div>
       )}
