@@ -33,7 +33,10 @@ export class SchemaBuilder {
       url: BASE,
       description:
         "Muvment by Autogirl helps you rent cars for business, trips, events and daily mobility across Nigeria.",
-      foundingLocation: "Lagos, Nigeria",
+      foundingLocation: {
+        "@type": "Place",
+        name: "Lagos, Nigeria",
+      },
       logo: {
         "@type": "ImageObject",
         url: `${BASE}${SEO_DEFAULTS.defaultImage}`,
@@ -212,24 +215,25 @@ export class SchemaBuilder {
 
   /** /blog (blog index page) */
   static blogIndex() {
-    return {
-      "@context": "https://schema.org",
-      "@type": "Blog",
-      "@id": `${BASE}/blog`,
-      name: "Muvment Blog",
-      url: `${BASE}/blog`,
-      description:
-        "Insights, guides, and stories about car rental, mobility, and travel across Nigeria. Practical advice from the Muvment team.",
-      inLanguage: "en-NG",
-      isPartOf: { "@id": `${BASE}/#website` },
-      publisher: {
-        "@id": `${BASE}/#organization`,
+    return SchemaBuilder.graph([
+      {
+        "@type": "Blog",
+        "@id": `${BASE}/blog`,
+        name: "Muvment Blog",
+        url: `${BASE}/blog`,
+        description:
+          "Insights, guides, and stories about car rental, mobility, and travel across Nigeria. Practical advice from the Muvment team.",
+        inLanguage: "en-NG",
+        isPartOf: { "@id": `${BASE}/#website` },
+        publisher: {
+          "@id": `${BASE}/#organization`,
+        },
       },
-      breadcrumb: buildBreadcrumb([
+      buildBreadcrumb([
         { name: "Home", url: BASE },
         { name: "Blog", url: `${BASE}/blog` },
       ]),
-    };
+    ]);
   }
 
   /** Generic WebPage schema for content pages without a more specific type */
@@ -371,44 +375,45 @@ export class SchemaBuilder {
     const description =
       post.excerpt || post.content?.replace(/<[^>]+>/g, "").slice(0, 160);
 
-    return {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      headline: post.title,
-      description,
-      ...(post.coverImage && { image: post.coverImage }),
-      author: {
-        "@type": "Person",
-        name: post.authAuthorName || post.authorName,
-        email: post.authAuthorEmail || post.authorEmail,
+    return SchemaBuilder.graph([
+      {
+        "@type": "Article",
+        headline: post.title,
+        description,
+        ...(post.coverImage && { image: post.coverImage }),
+        author: {
+          "@type": "Person",
+          name: post.authAuthorName || post.authorName,
+          email: post.authAuthorEmail || post.authorEmail,
+        },
+        publisher: {
+          "@type": "Organization",
+          "@id": `${BASE}/#organization`,
+          name: SEO_DEFAULTS.siteName,
+        },
+        datePublished: post.approvedAt || post.createdAt,
+        dateModified: post.updatedAt,
+        articleSection: post.blogCategory?.name,
+        keywords: (post.tags ?? []).join(", "),
+        interactionStatistic: [
+          {
+            "@type": "InteractionCounter",
+            interactionType: { "@type": "LikeAction" },
+            userInteractionCount: post.metrics?.likes ?? 0,
+          },
+          {
+            "@type": "InteractionCounter",
+            interactionType: { "@type": "CommentAction" },
+            userInteractionCount: post.metrics?.commentCount ?? 0,
+          },
+          {
+            "@type": "InteractionCounter",
+            interactionType: { "@type": "WatchAction" },
+            userInteractionCount: post.metrics?.views ?? 0,
+          },
+        ],
       },
-      publisher: {
-        "@type": "Organization",
-        "@id": `${BASE}/#organization`,
-        name: SEO_DEFAULTS.siteName,
-      },
-      datePublished: post.approvedAt || post.createdAt,
-      dateModified: post.updatedAt,
-      articleSection: post.blogCategory?.name,
-      keywords: (post.tags ?? []).join(", "),
-      interactionStatistic: [
-        {
-          "@type": "InteractionCounter",
-          interactionType: "https://schema.org/LikeAction",
-          userInteractionCount: post.metrics?.likes ?? 0,
-        },
-        {
-          "@type": "InteractionCounter",
-          interactionType: "https://schema.org/CommentAction",
-          userInteractionCount: post.metrics?.commentCount ?? 0,
-        },
-        {
-          "@type": "InteractionCounter",
-          interactionType: "https://schema.org/WatchAction",
-          userInteractionCount: post.metrics?.views ?? 0,
-        },
-      ],
-      breadcrumb: buildBreadcrumb([
+      buildBreadcrumb([
         { name: "Home", url: BASE },
         { name: "Blog", url: `${BASE}/blog` },
         ...(post.blogCategory
@@ -421,7 +426,7 @@ export class SchemaBuilder {
           : []),
         { name: post.title, url: `${BASE}/blog/${post.slug}` },
       ]),
-    };
+    ]);
   }
 
   /**
@@ -453,7 +458,7 @@ export class SchemaBuilder {
       description:
         vehicle.description || `Rent a ${vehicle.name} in ${vehicle.city}`,
       image: vehicle.photos?.map((p) => p.cloudinaryUrl) || [],
-      vehicleModelDate: vehicle.year,
+      vehicleModelDate: vehicle.year ? `${vehicle.year}-01-01` : undefined,
       manufacturer: {
         "@type": "Organization",
         name: vehicle.vehicleMakeName,

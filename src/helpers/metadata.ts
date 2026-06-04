@@ -44,6 +44,8 @@ interface PageMetadataConfig {
   type?: "website" | "article" | "profile";
   section?: string;
   noIndex?: boolean;
+  /** When true, the title is used as-is without the " | Muvment by Autogirl" template suffix. */
+  titleAbsolute?: boolean;
   /** Optional JSON-LD structured data object (will be serialized as script tag via your layout) */
   structuredData?: Record<string, unknown>;
 }
@@ -58,6 +60,7 @@ export function generatePageMetadata({
   type = "website",
   section,
   noIndex = false,
+  titleAbsolute = false,
 }: PageMetadataConfig): Metadata {
   const { siteName, baseUrl, twitterHandle, locale, creator, publisher } =
     SEO_DEFAULTS;
@@ -69,7 +72,7 @@ export function generatePageMetadata({
   const allKeywords = [...new Set([...keywords, ...SEO_DEFAULTS.keywords])];
 
   return {
-    title,
+    title: titleAbsolute ? { absolute: title } : title,
     description,
     keywords: allKeywords,
     authors: [...SEO_DEFAULTS.authors],
