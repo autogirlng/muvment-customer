@@ -115,9 +115,6 @@ function HeroFeaturedCard({ post }: { post: BlogPost }) {
 
 function GridPostCard({ post }: { post: BlogPost }) {
   const authorName = post.authAuthorName || post.authorName || "Author";
-  const dateLabel = post.createdAt
-    ? format(new Date(post.createdAt), "dd MMMM yyyy")
-    : "";
   const cover = post.coverImage
     ? optimizeCloudinaryUrl(post.coverImage, 600)
     : "";
@@ -145,11 +142,11 @@ function GridPostCard({ post }: { post: BlogPost }) {
       </div>
 
       {/* Text */}
-      <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+      <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
         {post.title}
       </h3>
       {post.excerpt && (
-        <p className="text-sm text-gray-500 line-clamp-2 mb-3 leading-relaxed">
+        <p className="text-[15px] text-gray-500 line-clamp-2 mb-3 leading-relaxed">
           {post.excerpt}
         </p>
       )}
@@ -159,12 +156,7 @@ function GridPostCard({ post }: { post: BlogPost }) {
         <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
           {getInitials(authorName)}
         </div>
-        <span className="text-xs text-gray-500">
-          {authorName}
-          {dateLabel && (
-            <span className="text-gray-400"> · {dateLabel}</span>
-          )}
-        </span>
+        <span className="text-xs text-gray-500">{authorName}</span>
       </div>
     </Link>
   );
