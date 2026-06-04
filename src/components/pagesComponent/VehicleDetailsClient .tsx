@@ -365,7 +365,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 
               <div className="w-full md:w-2/5 border-1 py-5 px-3 rounded-xl border-[#E4E7EC]">
                 <div>
-                  <h1 className="font-bold text-[17px]">Add Booking Details</h1>
+                  <h2 className="font-bold text-[17px]">Add Booking Details</h2>
                   <p className="text-sm my-4">Daily Itinerary</p>
 
                   {trips?.map((key, index) => {

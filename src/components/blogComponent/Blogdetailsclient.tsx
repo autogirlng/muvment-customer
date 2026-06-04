@@ -138,9 +138,9 @@ export default function BlogDetailsClient({
       <Navbar />
 <section className="bg-[#0d1f35] text-white">
         <div className="max-w-4xl mx-auto px-4 pt-28 pb-20 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+          <span className="block text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
             Blog
-          </h1>
+          </span>
           <p className="text-gray-400 text-base max-w-md mx-auto mb-10">
             Ideas worth Exploring Stories, insights, and perspectives from our
             community.

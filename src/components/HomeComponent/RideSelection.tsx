@@ -92,7 +92,7 @@ export default function RideSection() {
               {/* CTA Button */}
               <div className="flex justify-center lg:justify-start">
                 <Link
-                  href="/explore/categories?type=SUVElectric"
+                  href="/explore?category=Electric"
                   className="group bg-gradient-to-r from-emerald-600 to-green-500 text-white font-semibold py-4 px-8 rounded-2xl hover:from-emerald-700 hover:to-green-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 inline-flex items-center gap-3"
                 >
                   Explore Electric Cars
