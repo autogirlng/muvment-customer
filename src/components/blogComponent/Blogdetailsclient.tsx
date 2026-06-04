@@ -13,7 +13,36 @@ import ShareButton from "./blogUI/Sharebutton";
 import CommentsSection from "./blogUI/Commentssection";
 import Footer from "../HomeComponent/Footer";
 import { Navbar } from "../Navbar";
-import parse from "html-react-parser";
+import parse, { Element } from "html-react-parser";
+
+// Strip a leading heading from the CMS body when it merely repeats the post
+// title, so the title does not render twice (once in the header, once at the
+// very top of the article body just under the cover image).
+function renderBody(html: string, title: string) {
+  const norm = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+  const target = norm(title || "");
+  const getText = (nodes: unknown[]): string =>
+    (nodes || [])
+      .map((n) => {
+        const node = n as { type?: string; data?: string; children?: unknown[] };
+        if (node.type === "text") return node.data || "";
+        if (node.children) return getText(node.children);
+        return "";
+      })
+      .join("");
+  let decided = false;
+  return parse(html || "", {
+    replace: (node) => {
+      if (!decided && node instanceof Element && /^h[1-6]$/.test(node.name)) {
+        decided = true;
+        if (target && norm(getText(node.children)) === target) {
+          return <></>;
+        }
+      }
+      return undefined;
+    },
+  });
+}
 
 function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -195,7 +224,7 @@ export default function BlogDetailsClient({
 
           {/* Title */}
           <h1
-            className="text-3xl md:text-4xl font-bold text-[#0d1f35] leading-tight mb-4 tracking-tight"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#0d1f35] leading-tight mb-4 tracking-tight"
             itemProp="headline"
           >
             {post.title}
@@ -247,15 +276,19 @@ export default function BlogDetailsClient({
 
         {/* ── Body ── */}
         <div className="prose prose-base max-w-none
-          prose-headings:text-[#0d1f35] prose-headings:font-bold
-          prose-h2:text-2xl prose-h3:text-xl
-          prose-p:text-gray-700 prose-p:leading-relaxed prose-p:font-light
+          prose-headings:text-[#0d1f35] prose-headings:font-bold prose-headings:tracking-tight
+          prose-h1:text-2xl prose-h1:mt-6 prose-h1:mb-3
+          prose-h2:text-xl prose-h2:mt-6 prose-h2:mb-3
+          prose-h3:text-lg prose-h3:mt-5 prose-h3:mb-2
+          prose-h4:text-base prose-h4:mt-4 prose-h4:mb-2
+          prose-p:text-gray-700 prose-p:leading-relaxed prose-p:font-light prose-p:my-4
           prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
-          prose-blockquote:border-l-4 prose-blockquote:border-[#0d1f35] prose-blockquote:pl-5 prose-blockquote:text-gray-500 prose-blockquote:italic prose-blockquote:not-italic
+          prose-blockquote:border-l-4 prose-blockquote:border-[#0d1f35] prose-blockquote:pl-5 prose-blockquote:text-gray-500 prose-blockquote:not-italic
+          prose-ul:my-4 prose-ol:my-4
           prose-img:rounded-lg prose-img:w-full prose-img:border prose-img:border-gray-200
           prose-strong:text-[#0d1f35]
         ">
-          {parse(post.content || "")}
+          {renderBody(post.content || "", post.title)}
         </div>
 
         {/* ── Share this post ── */}
