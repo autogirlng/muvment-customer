@@ -13,7 +13,13 @@ import ShareButton from "./blogUI/Sharebutton";
 import CommentsSection from "./blogUI/Commentssection";
 import Footer from "../HomeComponent/Footer";
 import { Navbar } from "../Navbar";
-import parse, { Element, attributesToProps } from "html-react-parser";
+import parse, {
+  Element,
+  attributesToProps,
+  domToReact,
+  type HTMLReactParserOptions,
+  type DOMNode,
+} from "html-react-parser";
 
 // Strip a leading heading from the CMS body when it merely repeats the post
 // title, so the title does not render twice (once in the header, once at the
@@ -31,7 +37,7 @@ function renderBody(html: string, title: string) {
       })
       .join("");
   let decided = false;
-  return parse(html || "", {
+  const options: HTMLReactParserOptions = {
     replace: (node) => {
       if (!(node instanceof Element)) return undefined;
 
@@ -50,6 +56,21 @@ function renderBody(html: string, title: string) {
         );
       }
 
+      // Wrap tables so they scroll horizontally on small screens instead of
+      // overflowing the layout.
+      if (node.name === "table") {
+        return (
+          <div className="overflow-x-auto my-6 -mx-4 sm:mx-0">
+            <table
+              {...attributesToProps(node.attribs)}
+              className="min-w-full text-sm"
+            >
+              {domToReact(node.children as DOMNode[], options)}
+            </table>
+          </div>
+        );
+      }
+
       // Remove a leading heading that just repeats the post title.
       if (!decided && /^h[1-6]$/.test(node.name)) {
         decided = true;
@@ -59,7 +80,8 @@ function renderBody(html: string, title: string) {
       }
       return undefined;
     },
-  });
+  };
+  return parse(html || "", options);
 }
 
 function useAuth() {
@@ -219,27 +241,6 @@ export default function BlogDetailsClient({
       >
         {/* ── Header ── */}
         <header className="mb-8">
-          {/* Category + tag chips */}
-          <div className="flex items-center gap-2 flex-wrap mb-4">
-            {post.blogCategory && (
-              <Link
-                href={`/blog?category=${encodeURIComponent(post.blogCategory.name)}`}
-                className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
-              >
-                {post.blogCategory.name}
-              </Link>
-            )}
-            {(post.tags ?? []).map((tag: string) => (
-              <Link
-                key={tag}
-                href={`/blog?search=${encodeURIComponent(tag)}`}
-                className="px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
-              >
-                #{tag}
-              </Link>
-            ))}
-          </div>
-
           {/* Title */}
           <h1
             className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#0d1f35] leading-tight mb-4 tracking-tight"
@@ -303,6 +304,9 @@ export default function BlogDetailsClient({
           prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
           prose-blockquote:border-l-4 prose-blockquote:border-[#0d1f35] prose-blockquote:pl-5 prose-blockquote:text-gray-500 prose-blockquote:not-italic
           prose-ul:my-4 prose-ol:my-4
+          prose-table:border prose-table:border-gray-200
+          prose-th:bg-gray-50 prose-th:text-left prose-th:font-semibold prose-th:text-[#0d1f35] prose-th:px-3 prose-th:py-2 prose-th:border prose-th:border-gray-200
+          prose-td:px-3 prose-td:py-2 prose-td:align-top prose-td:border prose-td:border-gray-200
           prose-img:rounded-lg prose-img:w-full prose-img:border prose-img:border-gray-200
           prose-strong:text-[#0d1f35]
         ">
@@ -315,16 +319,24 @@ export default function BlogDetailsClient({
           <ShareButton url={postUrl} title={post.title} />
         </div> */}
 
-        {/* ── Tags ── */}
-        {(post.tags ?? []).length > 0 && (
+        {/* ── Category + tags footer ── */}
+        {(post.blogCategory || (post.tags ?? []).length > 0) && (
           <div className="flex items-center gap-2 flex-wrap pt-6 border-t border-gray-200 mt-6">
+            {post.blogCategory && (
+              <Link
+                href={`/blog?category=${encodeURIComponent(post.blogCategory.name)}`}
+                className="px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+              >
+                {post.blogCategory.name}
+              </Link>
+            )}
             {(post.tags ?? []).map((tag: string) => (
               <Link
                 key={tag}
                 href={`/blog?search=${encodeURIComponent(tag)}`}
-                className="px-4 py-1.5 bg-gray-100 rounded text-sm text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                className="px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
               >
-                {tag}
+                #{tag}
               </Link>
             ))}
           </div>
