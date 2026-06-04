@@ -6,6 +6,7 @@ import Image from "next/image";
 import { FaArrowRight } from "react-icons/fa";
 import { IoCalendarOutline } from "react-icons/io5";
 import { useRouter } from "next/navigation";
+import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
 
 interface ServicePricingCardProps {
   data: ServicePricingShowcase;
@@ -24,7 +25,7 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
   const minimumPrice = getMinimumPrice();
 
   const getVehicleImage = () => {
-    return data.imageUrl || "/images/default-car.png";
+    return optimizeCloudinaryUrl(data.imageUrl || "") || "/images/default-car.png";
   };
 
   const getBadgeColor = () => {
