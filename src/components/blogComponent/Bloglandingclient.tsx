@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { BiSearch, BiX, BiCategory } from "react-icons/bi";
 import { BlogCategory, BlogPost, PaginatedResponse } from "@/types/blog.type";
 import { BlogService } from "@/controllers/BlogService/blogService";
+import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
 import PostCardSkeleton from "./blogUI/Postcardskeleton";
 import { Navbar } from "../Navbar";
 import Footer from "../HomeComponent/Footer";
@@ -54,82 +56,93 @@ function DateBadge({ dateStr }: { dateStr: string }) {
 // ─── Featured dark card ───────────────────────────────────────────────────────
 
 function HeroFeaturedCard({ post }: { post: BlogPost }) {
-  const router = useRouter();
   const authorName = post.authAuthorName || post.authorName || "Author";
   const dateLabel = post.createdAt
     ? format(new Date(post.createdAt), "dd MMMM yyyy")
     : "";
+  const cover = post.coverImage
+    ? optimizeCloudinaryUrl(post.coverImage, 1200)
+    : "";
 
   return (
-    <article
-      className="relative bg-[#0d1f35] rounded-2xl overflow-hidden p-8 md:p-10 cursor-pointer group"
-      onClick={() => router.push(`/blog/${post.slug}`)}
+    <Link
+      href={`/blog/${post.slug}`}
+      className="relative block rounded-2xl overflow-hidden group min-h-[340px] bg-[#0d1f35]"
     >
-      {post.blogCategory?.name && (
-        <div className="flex items-center gap-3 mb-5">
-          <span className="inline-block bg-blue-500/20 text-blue-300 text-[10px] font-semibold tracking-widest uppercase px-3 py-1 rounded-full">
+      {cover && (
+        <img
+          src={cover}
+          alt={post.title}
+          className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500"
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0d1f35] via-[#0d1f35]/80 to-[#0d1f35]/30" />
+
+      <div className="relative z-10 flex flex-col justify-end min-h-[340px] p-8 md:p-10">
+        {post.blogCategory?.name && (
+          <span className="inline-block self-start bg-blue-500/20 text-blue-200 text-[10px] font-semibold tracking-widest uppercase px-3 py-1 rounded-full mb-4 border border-blue-400/30">
             {post.blogCategory.name}
           </span>
+        )}
+
+        <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-3 group-hover:text-blue-200 transition-colors max-w-3xl">
+          {post.title}
+        </h2>
+
+        {post.excerpt && (
+          <p className="text-gray-300 text-sm leading-relaxed mb-6 max-w-2xl line-clamp-3">
+            {post.excerpt}
+          </p>
+        )}
+
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            {getInitials(authorName)}
+          </div>
+          <span className="text-sm text-gray-200">
+            {authorName}
+            {dateLabel && (
+              <span className="text-gray-400"> · {dateLabel}</span>
+            )}
+          </span>
         </div>
-      )}
-
-      <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-4 group-hover:text-blue-300 transition-colors max-w-3xl">
-        {post.title}
-      </h2>
-
-      {post.excerpt && (
-        <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-2xl line-clamp-4">
-          {post.excerpt}
-        </p>
-      )}
-
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-          {getInitials(authorName)}
-        </div>
-        <span className="text-sm text-gray-300">
-          {authorName}
-          {dateLabel && (
-            <span className="text-gray-500"> · {dateLabel}</span>
-          )}
-        </span>
       </div>
-    </article>
+    </Link>
   );
 }
 
 // ─── Grid post card ───────────────────────────────────────────────────────────
 
 function GridPostCard({ post }: { post: BlogPost }) {
-  const router = useRouter();
   const authorName = post.authAuthorName || post.authorName || "Author";
   const dateLabel = post.createdAt
     ? format(new Date(post.createdAt), "dd MMMM yyyy")
     : "";
+  const cover = post.coverImage
+    ? optimizeCloudinaryUrl(post.coverImage, 600)
+    : "";
 
   return (
-    <article
-      className="flex flex-col cursor-pointer group"
-      onClick={() => router.push(`/blog/${post.slug}`)}
-    >
+    <Link href={`/blog/${post.slug}`} className="flex flex-col group">
       {/* Image */}
-   <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-200 mb-4">
-  {post.coverImage ? (
-    <img
-      src={post.coverImage}
-      alt={post.title}
-      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-    />
-  ) : (
-    <div className="w-full h-full flex items-center justify-center bg-gray-200">
-      <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24">
-        <path stroke="currentColor" strokeWidth="1.5" d="M4 16l4-4 4 4 4-6 4 6" />
-        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      </svg>
-    </div>
-  )}
-  <DateBadge dateStr={post.createdAt || ""} />
-</div>
+      <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-200 mb-4">
+        {cover ? (
+          <img
+            src={cover}
+            alt={post.title}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+            <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" strokeWidth="1.5" d="M4 16l4-4 4 4 4-6 4 6" />
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </div>
+        )}
+        <DateBadge dateStr={post.createdAt || ""} />
+      </div>
 
       {/* Text */}
       <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
@@ -153,7 +166,7 @@ function GridPostCard({ post }: { post: BlogPost }) {
           )}
         </span>
       </div>
-    </article>
+    </Link>
   );
 }
 
@@ -179,6 +192,15 @@ export default function BlogLandingClient({
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!showCategoryModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowCategoryModal(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showCategoryModal]);
 
   const selectedCategory = categories.find(
     (c) => String(c.id) === String(categoryId)
@@ -274,7 +296,7 @@ export default function BlogLandingClient({
             Blog
           </h1>
           <p className="text-gray-400 text-base max-w-md mx-auto mb-10">
-            Ideas worth Exploring Stories, insights, and perspectives from our
+            Ideas worth exploring. Stories, insights, and perspectives from our
             community.
           </p>
           <div className="relative max-w-lg mx-auto">
@@ -414,7 +436,7 @@ export default function BlogLandingClient({
                       Loading…
                     </>
                   ) : (
-                    "View all"
+                    "Load more"
                   )}
                 </button>
               </div>
@@ -433,7 +455,12 @@ export default function BlogLandingClient({
             if (e.target === e.currentTarget) setShowCategoryModal(false);
           }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="All Categories"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+          >
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
                 All Categories
