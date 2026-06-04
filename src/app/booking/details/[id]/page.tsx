@@ -30,12 +30,12 @@ export async function generateMetadata({
     const title = `${vehicle.name} - Rent in ${vehicle.city || "Nigeria"}`;
     const description = `Rent ${vehicle.name} (${vehicle.year}) in ${
       vehicle.city || "Nigeria"
-    } with a professional chauffeur and fuel. ${vehicle.vehicleTypeName?.replaceAll(
+    } with a professional chauffeur. ${vehicle.vehicleTypeName?.replaceAll(
       "_",
       " "
     )} seating ${
       vehicle.numberOfSeats
-    }, available for hourly, daily, and monthly hire. Book instantly with flexible pricing on Muvment.`;
+    }. Hourly, daily, and monthly hire on Muvment.`;
 
     return generatePageMetadata({
       title,
