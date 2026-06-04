@@ -159,27 +159,27 @@ const NotificationsPage = () => {
 
   const slides: SlideItem[] = [
   {
-     image: "/images/r10.png",
+     image: "/images/r10.webp",
     title: "Stay updated",
     text: "Get real-time updates on your bookings, payments, and activities.",
   },
   {
-     image: "/images/r11.png",
+     image: "/images/r11.webp",
     title: "Track your bookings",
     text: "Receive timely updates from booking confirmation to trip completion.",
   },
   {
-     image: "/images/r12.png",
+     image: "/images/r12.webp",
     title: "Payment notifications",
     text: "Stay informed on all transactions with instant alerts and receipts.",
   },
   {
-     image: "/images/r13.png",
+     image: "/images/r13.webp",
     title: "Never miss a ride",
     text: "Get reminders before your scheduled trips and important updates.",
   },
   {
-    image: "/images/r14.png",
+    image: "/images/r14.webp",
     title: "Secure notifications",
     text: "Receive alerts for account activity and important security updates.",
   },

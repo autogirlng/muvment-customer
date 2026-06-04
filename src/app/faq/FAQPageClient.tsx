@@ -135,27 +135,27 @@ function FAQPageClient() {
 
   const slides: SlideItem[] = [
   {
-    image: "/images/r.png",
+    image: "/images/r.webp",
     title: "24/7 Support",
     text: "We're always here to assist you anytime.",
   },
   {
-     image: "/images/r1.png",
+     image: "/images/r1.webp",
     title: "Easy Booking",
     text: "Book your ride in just a few simple steps.",
   },
   {
-     image: "/images/r2.png",
+     image: "/images/r2.webp",
     title: "Secure Payments",
     text: "Safe and transparent payment options you can trust.",
   },
   {
-     image: "/images/r3.png",
+     image: "/images/r3.webp",
     title: "Reliable Pickups",
     text: "On-time service, exactly when you need it.",
   },
   {
-     image: "/images/r4.png",
+     image: "/images/r4.webp",
     title: "Safety First",
     text: "Well-maintained cars and trusted drivers.",
   },

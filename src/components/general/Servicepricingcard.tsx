@@ -30,11 +30,11 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
   const getBadgeColor = () => {
     switch (data?.rideType?.toUpperCase()) {
       case "EXECUTIVE":
-        return "bg-blue-600";
+        return "bg-blue-700";
       case "BASIC":
-        return "bg-blue-500";
+        return "bg-blue-600";
       default:
-        return "bg-gray-600";
+        return "bg-gray-700";
     }
   };
 
@@ -84,7 +84,7 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
         <div className="border-t border-gray-100 pt-3 mt-1 space-y-3">
           {/* Pricing */}
           <div>
-            <p className="text-xs text-gray-400 mb-0.5">Starting from</p>
+            <p className="text-xs text-gray-600 mb-0.5">Starting from</p>
             <p className="text-2xl font-bold text-blue-600 text-center">
               NGN {minimumPrice.toLocaleString()}
             </p>
@@ -100,7 +100,7 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
             <FaArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
           {extraPricingOptions > 0 && (
-            <p className="text-xs text-gray-400 text-right">
+            <p className="text-xs text-gray-600 text-right">
               +{extraPricingOptions} more pricing option
               {extraPricingOptions > 1 ? "s" : ""}
             </p>

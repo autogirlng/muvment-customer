@@ -63,7 +63,7 @@ export default function BeninRepublicTravel() {
           {/* Bottom fade on mobile */}
           <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent z-10 md:hidden" />
           <Image
-            src="/images/vehicles/suv.png"
+            src="/images/vehicles/suv.webp"
             alt="Luxury SUV for Benin Republic travel"
             fill
             className="object-cover object-center"

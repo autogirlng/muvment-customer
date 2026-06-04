@@ -207,7 +207,7 @@ export default function ProfilePage() {
             {/* Right: Decorative Panel */}
             <div className="relative lg:w-[42%] min-h-[320px] lg:min-h-0 overflow-hidden">
               <Image
-                src="/images/my-bookings-hero.png"
+                src="/images/my-bookings-hero.webp"
                 alt="Profile decoration"
                 fill
                 className="object-cover"
