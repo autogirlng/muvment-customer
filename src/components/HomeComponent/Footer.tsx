@@ -161,7 +161,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
             <div className="md:col-span-3 lg:col-span-2 space-y-6 max-w-[400px]">
               <div className="flex items-center gap-2">
                 <Image
-                  src="/images/image.png"
+                  src="/images/image.webp"
                   alt="Muvment"
                   width={250}
                   height={90}
