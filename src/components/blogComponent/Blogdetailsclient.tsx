@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BiChevronRight, BiHeart, BiSearch } from "react-icons/bi";
+import { BiChevronRight, BiHeart } from "react-icons/bi";
 import { BsEye } from "react-icons/bs";
 import { LuClock } from "react-icons/lu";
 import { BlogComment, BlogPost, PaginatedResponse } from "@/types/blog.type";
 import { BlogService } from "@/controllers/BlogService/blogService";
+import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
 import ShareButton from "./blogUI/Sharebutton";
 import CommentsSection from "./blogUI/Commentssection";
 import Footer from "../HomeComponent/Footer";
@@ -41,8 +42,9 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
       <div className="h-44 bg-gray-200 flex items-center justify-center overflow-hidden">
         {post.coverImage ? (
           <img
-            src={post.coverImage}
+            src={optimizeCloudinaryUrl(post.coverImage, 600)}
             alt={post.title}
+            loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
@@ -136,29 +138,8 @@ export default function BlogDetailsClient({
   return (
     <>
       <Navbar />
-<section className="bg-[#0d1f35] text-white">
-        <div className="max-w-4xl mx-auto px-4 pt-28 pb-20 text-center">
-          <span className="block text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
-            Blog
-          </span>
-          <p className="text-gray-400 text-base max-w-md mx-auto mb-10">
-            Ideas worth Exploring Stories, insights, and perspectives from our
-            community.
-          </p>
-          <div className="relative max-w-lg mx-auto">
-            <BiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            <input
-              type="search"
-              // value={search}
-              // onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search articles..."
-              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            />
-          </div>
-        </div>
-      </section>
       {/* ── Breadcrumb ─────────────────────────────────────────────────── */}
-      <nav aria-label="Breadcrumb" className="max-w-3xl mx-auto px-4 pt-6 pb-2">
+      <nav aria-label="Breadcrumb" className="max-w-3xl mx-auto px-4 pt-28 pb-2">
         <ol className="flex items-center gap-1.5 text-xs text-gray-400 flex-wrap">
           <li>
             <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
@@ -255,11 +236,11 @@ export default function BlogDetailsClient({
 
         {/* ── Cover image ── */}
         {post.coverImage && (
-          <div className="w-full rounded-lg overflow-hidden border border-gray-200 mb-8">
+          <div className="relative w-full aspect-[16/9] max-h-[480px] rounded-lg overflow-hidden border border-gray-200 mb-8 bg-gray-100">
             <img
-              src={post.coverImage}
+              src={optimizeCloudinaryUrl(post.coverImage, 1200)}
               alt={post.title}
-              className="w-full object-cover max-h-[480px]"
+              className="w-full h-full object-cover"
             />
           </div>
         )}
