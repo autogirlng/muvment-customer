@@ -142,10 +142,11 @@ export default function CommentsSection({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              <label htmlFor="comment-name" className="block text-xs font-semibold text-gray-600 mb-1.5">
                 Name *
               </label>
               <input
+                id="comment-name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 onClick={() => {
@@ -156,10 +157,11 @@ export default function CommentsSection({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              <label htmlFor="comment-email" className="block text-xs font-semibold text-gray-600 mb-1.5">
                 Email *
               </label>
               <input
+                id="comment-email"
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -173,11 +175,12 @@ export default function CommentsSection({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+            <label htmlFor="comment-phone" className="block text-xs font-semibold text-gray-600 mb-1.5">
               Phone{" "}
-              <span className="font-normal text-gray-400">(optional)</span>
+              <span className="font-normal text-gray-500">(optional)</span>
             </label>
             <input
+              id="comment-phone"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               placeholder="+234…"
@@ -186,10 +189,11 @@ export default function CommentsSection({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+            <label htmlFor="comment-content" className="block text-xs font-semibold text-gray-600 mb-1.5">
               Comment *
             </label>
             <textarea
+              id="comment-content"
               rows={4}
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}

@@ -22,7 +22,8 @@ export async function generateMetadata({
       post.excerpt || post.content?.replace(/<[^>]+>/g, "").slice(0, 160);
 
     return generatePageMetadata({
-      title: `${post.title} | Blog`,
+      title: post.title,
+      titleAbsolute: true,
       description,
       url: `/blog/${post.slug}`,
       image: post.coverImage || undefined,
