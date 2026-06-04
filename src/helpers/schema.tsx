@@ -334,7 +334,7 @@ export class SchemaBuilder {
       "@id": pageUrl,
       name: `${title} | ${SEO_DEFAULTS.siteName}`,
       url: pageUrl,
-      description: `Browse verified rental vehicles available in ${city}. Sedans, SUVs, luxury cars and more — all with professional chauffeurs.`,
+      description: `Browse verified rental vehicles available in ${city}. Sedans, SUVs, luxury cars and more, all with professional chauffeurs.`,
       breadcrumb: buildBreadcrumb([
         { name: "Home", url: BASE },
         { name: "Search Vehicles", url: `${BASE}${path}` },

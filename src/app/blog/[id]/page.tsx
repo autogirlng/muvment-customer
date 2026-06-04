@@ -18,8 +18,16 @@ export async function generateMetadata({
     const post = await BlogService.getPostBySlug(id);
     if (!post) return { title: "Post Not Found | Blog" };
 
-    const description =
-      post.excerpt || post.content?.replace(/<[^>]+>/g, "").slice(0, 160);
+    // Build a length-safe description. Use the curated excerpt when it is
+    // substantial enough to stand alone; otherwise fall back to the article
+    // body so short excerpts do not produce an under-length tag. The upper
+    // bound is enforced by generatePageMetadata's clamp.
+    const bodyText = (post.content || "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const excerpt = (post.excerpt || "").replace(/\s+/g, " ").trim();
+    const description = excerpt.length >= 120 ? excerpt : bodyText || excerpt;
 
     return generatePageMetadata({
       title: post.title,
