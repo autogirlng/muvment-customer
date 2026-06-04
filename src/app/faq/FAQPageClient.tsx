@@ -182,11 +182,9 @@ function FAQPageClient() {
 
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <div className="text-center px-4">
-              <h1 className="text-white text-3xl md:text-5xl lg:text-6xl font-bold mb-3">
-                Frequently Asked
-              </h1>
               <h1 className="text-white text-3xl md:text-5xl lg:text-6xl font-bold mb-4">
-                Questions
+                <span className="block mb-1">Frequently Asked</span>
+                <span className="block">Questions</span>
               </h1>
               <p className="text-white text-sm md:text-base w-full mx-auto">
                 Quick answers to common questions about Product/Service.

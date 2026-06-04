@@ -29,10 +29,13 @@ export async function generateMetadata({
 
     const title = `${vehicle.name} - Rent in ${vehicle.city || "Nigeria"}`;
     const description = `Rent ${vehicle.name} (${vehicle.year}) in ${
-      vehicle.city
-    }. ${vehicle.vehicleTypeName?.replaceAll("_", " ")} with ${
+      vehicle.city || "Nigeria"
+    } with a professional chauffeur and fuel. ${vehicle.vehicleTypeName?.replaceAll(
+      "_",
+      " "
+    )} seating ${
       vehicle.numberOfSeats
-    } seats. Book instantly with flexible pricing.`;
+    }, available for hourly, daily, and monthly hire. Book instantly with flexible pricing on Muvment.`;
 
     return generatePageMetadata({
       title,
