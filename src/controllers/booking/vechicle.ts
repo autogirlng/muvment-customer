@@ -26,6 +26,20 @@ export class VehicleSearchService {
 
   private static readonly VEHICLES_MODELS = "/api/v1/public/vehicle-models";
   private static readonly VEHICLE_DETAILS_SLUG = "/api/v1/public/vehicles/slug";
+  private static readonly CUSTOMER_CATEGORIES =
+    "/api/v1/public/customer-categories";
+
+  static async getCustomerCategories(): Promise<any[]> {
+    try {
+      const response = await getSingleData(this.CUSTOMER_CATEGORIES);
+      // handleApiResponse wraps the body in an array: [{status, data:[...]}]
+      // so the actual items live at response.data[0].data
+      return response?.data?.[0]?.data || [];
+    } catch (error) {
+      console.error("Error fetching customer categories:", error);
+      return [];
+    }
+  }
 
   static async getVehicleModels(): Promise<any[]> {
     try {
