@@ -1,77 +1,216 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 
-interface VehicleCategory {
-  name: string;
-  image: string;
+interface CustomerCategory {
   id: string;
+  vehicleType: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+  image: string;
 }
+
+const FALLBACK_IMAGE = "/images/vehicles/sedan.webp";
+
+const formatName = (name: string) =>
+  name
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+const CategoryCard: React.FC<{
+  category: CustomerCategory;
+  onClick: () => void;
+}> = ({ category, onClick }) => {
+  const [imgSrc, setImgSrc] = useState(category.image || FALLBACK_IMAGE);
+  const label = formatName(category.vehicleType?.name ?? "");
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Browse ${label} rentals`}
+      className="group relative flex shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 basis-[72%] sm:basis-[calc(50%-8px)] md:basis-[calc(33.333%-11px)] lg:basis-[calc(25%-12px)]"
+    >
+      <div className="relative flex h-32 w-full items-center justify-center overflow-hidden bg-linear-to-br from-gray-50 to-gray-100 sm:h-36">
+        <Image
+          src={imgSrc}
+          alt={`${label} car rental category`}
+          width={252}
+          height={144}
+          onError={() => setImgSrc(FALLBACK_IMAGE)}
+          className="h-24 w-auto max-w-[80%] object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110"
+          loading="lazy"
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-2 px-4 py-3">
+        <p className="truncate text-sm font-semibold text-gray-900">{label}</p>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-all duration-300 group-hover:bg-blue-600 group-hover:text-white">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14" />
+            <path d="m12 5 7 7-7 7" />
+          </svg>
+        </span>
+      </div>
+    </button>
+  );
+};
+
+const CategoryCardSkeleton: React.FC = () => (
+  <div className="flex shrink-0 basis-[72%] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm sm:basis-[calc(50%-8px)] md:basis-[calc(33.333%-11px)] lg:basis-[calc(25%-12px)]">
+    <div className="h-32 w-full animate-pulse bg-gray-100 sm:h-36" />
+    <div className="flex items-center justify-between px-4 py-3">
+      <div className="h-4 w-20 animate-pulse rounded bg-gray-100" />
+      <div className="h-7 w-7 animate-pulse rounded-full bg-gray-100" />
+    </div>
+  </div>
+);
+
+const ArrowButton: React.FC<{
+  direction: "left" | "right";
+  disabled: boolean;
+  onClick: () => void;
+}> = ({ direction, disabled, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={direction === "left" ? "Previous categories" : "Next categories"}
+    className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm transition-all hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-200 disabled:hover:text-gray-700"
+  >
+    {direction === "left" ? (
+      <FaChevronLeft className="h-3.5 w-3.5" />
+    ) : (
+      <FaChevronRight className="h-3.5 w-3.5" />
+    )}
+  </button>
+);
 
 const VehicleCategories: React.FC = () => {
   const router = useRouter();
-  const [category, setCategory] = useState<{ value: string; label: string }[]>([]);
-  const categories: VehicleCategory[] = [
-    { name: "Sedan", image: "/images/vehicles/sedan.webp", id: "sedan-id" },
-    { name: "Truck", image: "/images/vehicles/truck.webp", id: "truck-id" },
-    { name: "SUV", image: "/images/vehicles/suv.webp", id: "suv-id" },
-    { name: "Bus", image: "/images/vehicles/bus.webp", id: "bus-id" },
-  ];
+  const [categories, setCategories] = useState<CustomerCategory[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleCategoryClick = (categoryId: string) => {
-    router.push(`/booking/search?category=${categoryId}`);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const handleCategoryClick = (vehicleTypeId: string) => {
+    router.push(`/explore?vehicleTypeId=${vehicleTypeId}`);
   };
 
-  const getvechileType = async () => {
-    const result = await VehicleSearchService.getVechielType();
-    if (!Array.isArray(result) || result.length === 0) {
-      return;
+  const updateArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 1);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+  }, []);
+
+  const scroll = (direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left: (direction === "left" ? -1 : 1) * el.clientWidth,
+      behavior: "smooth",
+    });
+  };
+
+  const getCategories = async () => {
+    try {
+      const result = await VehicleSearchService.getCustomerCategories();
+      const valid = (Array.isArray(result) ? result : []).filter(
+        (item: CustomerCategory) => item?.vehicleType?.id,
+      );
+      setCategories(valid);
+    } finally {
+      setLoading(false);
     }
-    const transformedOptions = result.map((item: any) => ({
-      value: item.id,
-      label: item.name.replace("_", " "),
-    }));
-    setCategory(transformedOptions);
   };
 
   useEffect(() => {
-    getvechileType();
+    getCategories();
   }, []);
 
-  return (
-    <div className="bg-white min-h-[60vh] w-full flex flex-col items-center justify-center py-10">
-      <div className="w-[80%] max-w-6xl flex flex-col items-center sm:items-start justify-center">
-        <h2 className="text-xl font-semibold text-gray-900 mb-10">
-          Vehicle Categories
-        </h2>
+  useEffect(() => {
+    updateArrows();
+    window.addEventListener("resize", updateArrows);
+    return () => window.removeEventListener("resize", updateArrows);
+  }, [categories, updateArrows]);
 
-        <div className="flex flex-wrap justify-center sm:justify-between w-full gap-10">
-          {categories.map((category, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => handleCategoryClick(category.id)}
-              className="flex flex-col items-center text-center space-y-2 cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-0 p-0"
-              aria-label={`Browse ${category.name} rentals`}
-            >
-              <Image
-                src={category.image}
-                alt={`${category.name} car rental category`}
-                width={252}
-                height={144}
-                className="w-36 h-24 object-contain"
-                loading="lazy"
+  // Hide the section entirely if there is nothing to show
+  if (!loading && categories.length === 0) {
+    return null;
+  }
+
+  const showArrows = canScrollLeft || canScrollRight;
+
+  return (
+    <section className="flex h-[80vh] w-full items-center bg-white">
+      <div className="mx-auto flex w-[90%] max-w-6xl flex-col">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
+            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              Browse by Category
+            </h2>
+            <p className="mt-2 max-w-xl text-sm text-gray-500">
+              Find the right ride for every trip — from city sedans to spacious
+              SUVs and buses.
+            </p>
+          </div>
+
+          {showArrows && (
+            <div className="flex shrink-0 items-center justify-center gap-2">
+              <ArrowButton
+                direction="left"
+                disabled={!canScrollLeft}
+                onClick={() => scroll("left")}
               />
-              <p className="text-sm font-medium text-gray-800">
-                {category.name}
-              </p>
-            </button>
-          ))}
+              <ArrowButton
+                direction="right"
+                disabled={!canScrollRight}
+                onClick={() => scroll("right")}
+              />
+            </div>
+          )}
+        </div>
+
+        <div
+          ref={scrollRef}
+          onScroll={updateArrows}
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <CategoryCardSkeleton key={i} />
+              ))
+            : categories.map((category) => (
+                <CategoryCard
+                  key={category.id}
+                  category={category}
+                  onClick={() => handleCategoryClick(category.vehicleType.id)}
+                />
+              ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 
