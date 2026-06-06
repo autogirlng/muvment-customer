@@ -111,7 +111,7 @@ export class SchemaBuilder {
       telephone: "+2348167474165",
       address: {
         "@type": "PostalAddress",
-        streetAddress: "16 Bankole Street, Oregun",
+        streetAddress: "10 Anuoluwapo Close, Opebi",
         addressLocality: "Ikeja",
         addressRegion: "Lagos",
         postalCode: "100281",
@@ -230,7 +230,7 @@ export class SchemaBuilder {
       name: `Contact ${SEO_DEFAULTS.siteName}`,
       url: `${BASE}/contact-us`,
       description:
-        "Get in touch with Muvment by Autogirl. Reach us via phone, email, or visit us at 16 Bankole Street, Oregun, Ikeja, Lagos.",
+        "Get in touch with Muvment by Autogirl. Reach us via phone, email, or visit us at 10 Anuoluwapo Close, Opebi, Ikeja, Lagos.",
       breadcrumb: buildBreadcrumb([
         { name: "Home", url: BASE },
         { name: "Contact Us", url: `${BASE}/contact-us` },
@@ -245,7 +245,7 @@ export class SchemaBuilder {
         telephone: "+2348167474165",
         address: {
           "@type": "PostalAddress",
-          streetAddress: "16 Bankole Street, Oregun",
+          streetAddress: "10 Anuoluwapo Close, Opebi",
           addressLocality: "Ikeja",
           addressRegion: "Lagos",
           postalCode: "100281",

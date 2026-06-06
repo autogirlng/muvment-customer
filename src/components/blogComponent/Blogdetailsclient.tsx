@@ -8,6 +8,7 @@ import { BsEye } from "react-icons/bs";
 import { LuClock } from "react-icons/lu";
 import { BlogComment, BlogPost, PaginatedResponse } from "@/types/blog.type";
 import { BlogService } from "@/controllers/BlogService/blogService";
+import { SEO_DEFAULTS } from "@/helpers/metadata";
 import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
 import ShareButton from "./blogUI/Sharebutton";
 import CommentsSection from "./blogUI/Commentssection";
@@ -201,8 +202,7 @@ export default function BlogDetailsClient({
 
   const author = post.authAuthorName || post.authorName;
   const readTime = BlogService.estimateReadTime(post.content);
-  const postUrl =
-    typeof window !== "undefined" ? window.location.href : `/blog/${post.slug}`;
+  const postUrl = `${SEO_DEFAULTS.baseUrl}${BlogService.buildPostUrl(post.slug)}`;
 
   return (
     <>
