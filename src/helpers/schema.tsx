@@ -1,5 +1,6 @@
 import React from "react";
 import { SEO_DEFAULTS } from "./metadata";
+import { faqFlat } from "@/data/faq";
 
 const BASE = SEO_DEFAULTS.baseUrl;
 
@@ -135,53 +136,11 @@ export class SchemaBuilder {
     return {
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      mainEntity: [
-        {
-          "@type": "Question",
-          name: "Do I need an account to book?",
-          acceptedAnswer: { "@type": "Answer", text: "No, you don't need to create an account to book. However, you must provide accurate contact details, including an emergency contact, to help us properly identify and reach the customer, especially in case of emergencies or support-related issues." },
-        },
-        {
-          "@type": "Question",
-          name: "How long is the standard rental period on Muvment?",
-          acceptedAnswer: { "@type": "Answer", text: "Our standard rental period is 12 hours. Any use of the vehicle beyond this time will attract overtime charges, which vary depending on the vehicle category. You can view applicable overtime rates at checkout or in your booking summary." },
-        },
-        {
-          "@type": "Question",
-          name: "What happens if I need the car for longer than 12 hours?",
-          acceptedAnswer: { "@type": "Answer", text: "If you plan to extend your trip, please make the request and complete payment before your initial 12-hour period expires. This ensures the vehicle remains available for you and avoids overtime disputes. If payment isn't made in time, the driver may leave after notifying you via call or SMS." },
-        },
-        {
-          "@type": "Question",
-          name: "Can I reject a vehicle if something is wrong with it?",
-          acceptedAnswer: { "@type": "Answer", text: "Yes. You have a 1-hour inspection window once the vehicle is delivered. If there's a mechanical issue, like a faulty AC, you can reject the vehicle within that period, and our support team will step in to assist." },
-        },
-        {
-          "@type": "Question",
-          name: "Will I always have the same driver during my trip?",
-          acceptedAnswer: { "@type": "Answer", text: "For trips that last three days or longer, your initially assigned chauffeur may be replaced by another verified Muvment driver. This rotation is for safety reasons, ensuring our drivers stay well-rested and alert. Rest assured, all our chauffeurs are professional, courteous, and fully vetted." },
-        },
-        {
-          "@type": "Question",
-          name: "Are prices the same across all locations in Lagos?",
-          acceptedAnswer: { "@type": "Answer", text: "Our pricing covers most central city areas in Lagos. However, trips involving outskirts locations like Sangotedo, Ikorodu Town, Festac, Badagry, or Alimosho will attract additional charges. The fee reflects the longer travel times and logistics involved in serving those areas." },
-        },
-        {
-          "@type": "Question",
-          name: "Do I need to fuel the car during my rental?",
-          acceptedAnswer: { "@type": "Answer", text: "For daily rentals, each vehicle comes with a half tank of fuel included. If the fuel runs out within the 24-hour rental period, you are required to refill the vehicle. For self-drive rentals, fuel is not included and you are fully responsible for fueling the vehicle throughout your rental period." },
-        },
-        {
-          "@type": "Question",
-          name: "Can I book a trip outside Lagos?",
-          acceptedAnswer: { "@type": "Answer", text: "Yes, but any journey outside Lagos is treated as a full-day rental. Your rental period ends upon your return to Lagos, it doesn't continue after reentry." },
-        },
-        {
-          "@type": "Question",
-          name: "What happens if I forget something in the vehicle?",
-          acceptedAnswer: { "@type": "Answer", text: "Please notify us within 24 hours of the trip ending if you've left something behind. While we do our best to help, Muvment is not liable for lost items after that window." },
-        },
-      ],
+      mainEntity: faqFlat.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text: item.answer },
+      })),
     };
   }
 
