@@ -3,6 +3,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Navbar } from "../Navbar";
 import Footer from "../HomeComponent/Footer";
+import BookingCTA from "../general/BookingCTA";
+import Reveal from "../general/Reveal";
 
 type PolicySection = { id: string; label: string };
 
@@ -67,6 +69,7 @@ function PolicyLayout({
       {/* Header */}
       <header className="px-4 pt-28 pb-8 sm:pt-32">
         <div className="mx-auto max-w-6xl">
+          <Reveal>
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0673FF] to-[#0a328f] px-7 py-12 sm:px-12 sm:py-16">
             <div
               aria-hidden
@@ -97,6 +100,7 @@ function PolicyLayout({
               </div>
             </div>
           </div>
+          </Reveal>
         </div>
       </header>
 
@@ -197,12 +201,15 @@ function PolicyLayout({
           </aside>
 
           {/* Document */}
+          <Reveal className="min-w-0 flex-1">
           <article className="policy-prose min-w-0 flex-1 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-[0_1px_3px_rgba(16,24,40,0.04)] sm:p-10">
             {children}
           </article>
+          </Reveal>
         </div>
       </div>
 
+      <BookingCTA />
       <Footer />
     </div>
   );

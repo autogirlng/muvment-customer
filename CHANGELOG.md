@@ -1,55 +1,108 @@
-# Changelog
+# Muvment Customer, v1.10.1 (Contact Us refinements, Opebi address, success state)
 
-## v1.5.6 - Vehicle page titles and sitemap
+Note (v1.10.1): the Contact Us navbar now matches the Terms and Privacy pages (no search bar), and the "Reach us" details card is now sticky on scroll on large screens, the way the policy table of contents behaves.
 
-### Vehicle page title too long (32 pages)
-The vehicle title was `{name} - Rent in {city}` and the layout appended
-" | Muvment by Autogirl", pushing it past 60 characters. Added a titleAbsolute
-option to generatePageMetadata and used it on vehicle pages, so the title is the
-descriptive `{name} - Rent in {city}` without the brand suffix. This keeps the
-"Rent in {city}" keywords and stays under 60.
-- `src/helpers/metadata.ts`: new optional `titleAbsolute` flag. When true, the
-  title is emitted as `{ absolute: title }` (no template suffix). Default false,
-  so every other page is unchanged.
-- `src/app/booking/details/[id]/page.tsx`: passes `titleAbsolute: true`.
+## Summary
 
-### Sitemap: missing indexable page
-- `src/app/sitemap.ts`: added `/impact`, which was indexable but absent from the
-  sitemap.
+Builds on the v1.9.0 animation and Contact Us work. Switches the office address
+to the Opebi address across the site, rewrites the Contact Us form heading,
+adds a proper success state after sending, and lays the page out as two columns
+(contact details beside the form) on larger screens.
 
-### Not changed, and why
-- The remaining "Indexable page not in sitemap" entries and all three
-  "Non-canonical page in sitemap" entries need the exact URL lists from Ahrefs.
-  Every page already self-canonicals, so the non-canonical ones cannot be
-  inferred from the code. Export those two issue lists and they can be handled
-  precisely.
-- The home page "title too short" and "title mismatch" are not a code fault. The
-  title is a reasonable length once the brand suffix is included, and the
-  mismatch is Google rewriting the SERP title, which is not controlled in code.
+## What changed in this version
 
-### Verification
-- `npx tsc --noEmit`: clean.
+### Office address (now Opebi)
 
-### Deploy
+Updated everywhere it appears so the page, the structured data, and the privacy
+policy all match:
+- Contact Us page (the details column).
+- Contact Us metadata description and keywords.
+- LocalBusiness and ContactPage structured data in src/helpers/schema.tsx (the
+  geo coordinates already pointed at Opebi, so they now match the text).
+- The write-to address in the Privacy Policy.
+
+New address used: 10 Anuoluwapo Close, Opebi, Ikeja, Lagos.
+
+### Contact Us page (src/components/pagesComponent/ContactUsClient.tsx)
+
+- New form heading and subheading: "Send us a message" with a short, plain line
+  inviting a booking question, a general question, or feedback.
+- New success state: after a message sends, the form is replaced by a clear
+  confirmation (a green check, a short thank-you, and a "Send another message"
+  button that returns to a fresh form). The toast still fires as well.
+- The navbar now matches the Terms and Privacy pages (plain, no search bar).
+- The "Reach us" details card is sticky on scroll on large screens, like the policy table of contents.
+- Two-column layout on large screens: the contact details (address, mail,
+  phone) sit in a card beside the form, instead of stacked above it. On smaller
+  screens it stacks naturally.
+- The form keeps the same fields, validation, submit endpoint and payload, and
+  the entrance animation, accessible labels, social link names, and error
+  handling added in v1.9.0.
+
+## Carried from v1.9.0 (included so this deploys as one complete update)
+
+- Reduce-motion-aware entrance animations on the FAQ, Terms, Privacy, and
+  Contact Us pages, and the booking call to action.
+- Contact Us footer, canonical support email (info@muvment.ng), visible phone,
+  accessible form labels and social links, and form error/submit handling.
+- FAQ meta description em dash replaced with a colon.
+
+## Validation
+
+- TypeScript: tsc --noEmit clean.
+- Build: next build compiled successfully. /faq, /contact-us,
+  /policy/terms-conditions, and /policy/privacy-policy all prerender as static.
+- The Opebi address is present in both the visible Contact Us output and its
+  structured data.
+
+## Files changed
+
+- src/components/pagesComponent/ContactUsClient.tsx
+- src/app/contact-us/page.tsx
+- src/helpers/schema.tsx
+- src/components/pagesComponent/PrivacyPolicyClient.tsx
+- src/components/general/Reveal.tsx
+- src/components/general/BookingCTA.tsx
+- src/components/pagesComponent/PolicyLayout.tsx
+- src/app/faq/FAQPageClient.tsx
+- src/app/faq/layout.tsx
+- src/data/faq.ts
+- src/components/HomeComponent/FAQ.tsx
+
+## Deploy (Git Bash)
 
 ```bash
-SRC=~/Downloads/muvment-customer-v1.5.6-titles-sitemap
-DEST=~/muvment-customer
+cd ~/Downloads
+unzip -o muvment-customer-v1.10.1-contact-refinements.zip -d muvment-customer-v1.10.1-contact-refinements/
 
-cp "$SRC/src/helpers/metadata.ts"               "$DEST/src/helpers/metadata.ts"
-cp "$SRC/src/app/sitemap.ts"                     "$DEST/src/app/sitemap.ts"
-cp "$SRC/src/app/booking/details/[id]/page.tsx" "$DEST/src/app/booking/details/[id]/page.tsx"
-cp "$SRC/CHANGELOG.md"                           "$DEST/CHANGELOG.md"
-
-cd "$DEST"
-git stash
-git fetch origin
+cd ~/muvment-customer
 git checkout staging
 git pull origin staging
-git checkout -b fix/v1.5.6-titles-sitemap
+git checkout -b feat/v1.10.1-contact-refinements
+
+mkdir -p ~/muvment-customer/src/data
+mkdir -p ~/muvment-customer/src/components/general
+
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/pagesComponent/ContactUsClient.tsx ~/muvment-customer/src/components/pagesComponent/ContactUsClient.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/app/contact-us/page.tsx ~/muvment-customer/src/app/contact-us/page.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/helpers/schema.tsx ~/muvment-customer/src/helpers/schema.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/pagesComponent/PrivacyPolicyClient.tsx ~/muvment-customer/src/components/pagesComponent/PrivacyPolicyClient.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/pagesComponent/PolicyLayout.tsx ~/muvment-customer/src/components/pagesComponent/PolicyLayout.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/general/Reveal.tsx ~/muvment-customer/src/components/general/Reveal.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/general/BookingCTA.tsx ~/muvment-customer/src/components/general/BookingCTA.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/app/faq/FAQPageClient.tsx ~/muvment-customer/src/app/faq/FAQPageClient.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/app/faq/layout.tsx ~/muvment-customer/src/app/faq/layout.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/data/faq.ts ~/muvment-customer/src/data/faq.ts
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/HomeComponent/FAQ.tsx ~/muvment-customer/src/components/HomeComponent/FAQ.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/CHANGELOG.md ~/muvment-customer/CHANGELOG.md
+
+git status
 npx tsc --noEmit
 npm run build
 git add .
-git commit -m "v1.5.6: vehicle title under length limit via absolute title, add /impact to sitemap"
-git push -u origin fix/v1.5.6-titles-sitemap
+git commit -m "v1.10.1: Opebi address site-wide, Contact Us new heading, success state, two-column layout"
+git push -u origin feat/v1.10.1-contact-refinements
+gh pr create --base staging --head feat/v1.10.1-contact-refinements --title "Contact Us refinements and Opebi address (v1.10.1)" --body "Switch office address to Opebi across the page, metadata, schema, and privacy policy. Contact Us: new heading and subheading, success state after sending, two-column layout (details beside form). Carries the v1.9.0 animations and Contact Us overhaul so this deploys as one complete update."
 ```
+
+`git status` should list the changed files, not "nothing to commit".
