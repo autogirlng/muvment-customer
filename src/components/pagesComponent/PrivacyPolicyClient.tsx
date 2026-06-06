@@ -133,7 +133,7 @@ function PrivacyPolicyClient() {
       title: "",
       content:
         "Contact Us: If you have questions or concerns about our privacy practices, or wish to exercise your rights, please contact our Data Protection Officer at info@muvment.ng or write to:",
-      subItems: ["Muvment, 16 Bankole Street, Oregun, Ikeja, Lagos, Nigeria"],
+      subItems: ["Muvment, 10 Anuoluwapo Close, Opebi, Ikeja, Lagos, Nigeria"],
     },
     {
       title: "",

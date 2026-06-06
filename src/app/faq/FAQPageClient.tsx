@@ -6,6 +6,7 @@ import { FiSearch, FiX } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import Footer from "@/components/HomeComponent/Footer";
 import BookingCTA from "@/components/general/BookingCTA";
+import Reveal from "@/components/general/Reveal";
 import { faqSections } from "@/data/faq";
 
 function FAQPageClient() {
@@ -90,6 +91,7 @@ function FAQPageClient() {
       {/* Header */}
       <header className="px-4 pt-28 pb-8 sm:pt-32">
         <div className="mx-auto max-w-6xl">
+          <Reveal>
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0673FF] to-[#0a328f] px-7 py-12 sm:px-12 sm:py-16">
             <div
               aria-hidden
@@ -140,6 +142,7 @@ function FAQPageClient() {
               </div>
             </div>
           </div>
+          </Reveal>
         </div>
       </header>
 
@@ -197,6 +200,7 @@ function FAQPageClient() {
           </div>
         )}
 
+        <Reveal>
         <div className="lg:flex lg:gap-10">
           {/* Desktop table of contents */}
           <aside className="hidden w-64 flex-shrink-0 lg:block">
@@ -315,6 +319,7 @@ function FAQPageClient() {
             )}
           </div>
         </div>
+        </Reveal>
       </div>
 
       <BookingCTA />

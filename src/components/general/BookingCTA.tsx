@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Reveal from "@/components/general/Reveal";
 
 type BookingCTAProps = {
   className?: string;
@@ -12,7 +13,8 @@ function BookingCTA({ className = "" }: BookingCTAProps) {
   return (
     <section className={`px-4 pb-16 pt-4 ${className}`}>
       <div className="mx-auto max-w-6xl">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0673FF] to-[#0a328f] px-7 py-12 sm:px-12 sm:py-16">
+        <Reveal>
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0673FF] to-[#0a328f] px-7 py-12 sm:px-12 sm:py-16">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 opacity-[0.18]"
@@ -54,6 +56,7 @@ function BookingCTA({ className = "" }: BookingCTAProps) {
             </div>
           </div>
         </div>
+        </Reveal>
       </div>
     </section>
   );
