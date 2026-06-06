@@ -1,16 +1,8 @@
 "use client";
-import { title } from "process";
-import { useState, useEffect } from "react";
+
+import PolicyLayout from "./PolicyLayout";
 
 function TermsOfServiceClient() {
-  const [activeSection, setActiveSection] = useState("general-terms");
-
-  const currentDate = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
   const sections = [
     { id: "general-terms", label: "General Terms" },
     { id: "general-rental", label: "General Rentals" },
@@ -29,6 +21,7 @@ function TermsOfServiceClient() {
       label: "Acceptance Of Terms through Payment",
     },
     { id: "self-drive", label: "Self Drive" },
+    { id: "governing-law", label: "Governing Law & Disputes" },
     { id: "conclusion", label: "Conclusion" },
     { id: "contact-information", label: "Contact Information" },
     {
@@ -36,44 +29,6 @@ function TermsOfServiceClient() {
       label: "Version & Representation of Prior Terms",
     },
   ];
-
-  const scrollToSection = (id: any) => {
-    const element = document.getElementById(id);
-    if (element) {
-      window.scrollTo({
-        top: element.offsetTop - 100,
-        behavior: "smooth",
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY + 120;
-
-      const sectionElements = sections
-        .map((s) => document.getElementById(s.id))
-        .filter(Boolean);
-
-      for (const section of sectionElements) {
-        if (!section) continue;
-        const sectionTop = section.offsetTop;
-        const sectionHeight = section.clientHeight;
-        const sectionId = section.getAttribute("id");
-
-        if (
-          scrollPosition >= sectionTop &&
-          scrollPosition < sectionTop + sectionHeight
-        ) {
-          setActiveSection(sectionId || "");
-          break;
-        }
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const generalTerms = [
     "By making a payment for any of Muvment services after receiving an invoice, you agree to abide by these Terms and Conditions. It is assumed that you have read, understood, and accepted all terms herein.",
@@ -376,84 +331,24 @@ function TermsOfServiceClient() {
     {
       title: "",
       content:
-        "These Terms and Conditions serve as the current and complete representation of all AutoGirl policies, rules, and user obligations. This version supersedes and replaces all previously published Terms and Conditions formerly hosted at https://autogirl.ng/terms-conditions/, which is currently not accessible.",
+        "These Terms and Conditions serve as the current and complete representation of all Autogirl Limited policies, rules, and user obligations. This version supersedes and replaces all previously published Terms and Conditions formerly hosted at https://autogirl.ng/terms-conditions/, which is currently not accessible.",
     },
     {
       title: "",
       content:
-        "By continuing to use our services or platforms, all customers acknowledge and agree that these updated Terms and Conditions are the official and governing terms of AutoGirl Limited.",
+        "By continuing to use our services or platforms, all customers acknowledge and agree that these updated Terms and Conditions are the official and governing terms of Autogirl Limited (AG Muvment).",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
-      <div className="relative h-64 lg:h-[500px] w-full bg-[#0673FF]">
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="relative w-40 h-40 sm:w-60 sm:h-60 md:w-80 md:h-80 bg-white/10 rounded-full flex items-center justify-center">
-            <h1 className="text-white text-center text-2xl md:text-5xl font-semibold px-8">
-              Terms & Conditions
-            </h1>
-          </div>
-        </div>
-        <div className="absolute bottom-[-20px] right-4 bg-[#0D419B]/90 px-4 py-2 rounded-lg shadow-md z-20">
-          <p className="text-xs md:text-sm font-medium text-white">
-            Last updated: {currentDate}
-          </p>
-        </div>
-      </div>
-
-      {/* Mobile Navigation */}
-      <div className="lg:hidden sticky top-0 z-30 bg-white shadow-sm">
-        <div className="overflow-x-auto py-3 scrollbar-hide">
-          <div className="flex space-x-4 px-4 min-w-max">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => scrollToSection(section.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeSection === section.id
-                    ? "text-[#0673FF] bg-blue-50"
-                    : "text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {section.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
-        <div className="flex gap-8">
-          {/* Desktop Navigation Sidebar */}
-          <div className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24">
-              <div className="flex flex-col space-y-1 p-4 border-2 border-gray-200 bg-white rounded-2xl">
-                <p className="py-2 mb-3 text-[#101928] font-medium text-sm border-b-2 border-[#E4E7EC]">
-                  Quick Navigation
-                </p>
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    onClick={() => scrollToSection(section.id)}
-                    className={`px-4 py-3 rounded-lg text-left text-sm transition-colors ${
-                      activeSection === section.id
-                        ? "text-[#0673FF] bg-blue-50"
-                        : "text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {section.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Content Area */}
-          <div className="flex-1 bg-white rounded-xl shadow-sm p-6 sm:p-8">
-            {/* General Terms */}
+    <PolicyLayout
+      eyebrow="Legal"
+      title="Terms & Conditions"
+      intro="The terms that govern your booking and use of Muvment by Autogirl's car rental services."
+      lastUpdated="March 31, 2026"
+      sections={sections}
+    >
+      {/* General Terms */}
             <section id="general-terms" className="mb-8 sm:mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
                 General Terms
@@ -483,32 +378,24 @@ function TermsOfServiceClient() {
               </h2>
               <ol className="list-decimal pl-6 space-y-4">
                 {fuelPolicy.map((item, index) => (
-                  <>
-                    <li key={index} className="text-sm text-gray-700">
-                      {item.title && (
-                        <h4 className="text-sm font-semibold">{item.title}</h4>
-                      )}
-                      {item.content}
-
-                      <ul>
-                        {item.subItems && (
-                          <ul className="list-disc pl-6 mt-2 space-y-1">
-                            {item.subItems.map((subItem, subIndex) => (
-                              <li
-                                key={subIndex}
-                                className="text-gray-700 text-sm"
-                              >
-                                {subItem}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                  <li key={index} className="text-sm text-gray-700">
+                    {item.title && (
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
+                    )}
+                    {item.content}
+                    {item.subItems && (
+                      <ul className="list-disc pl-6 mt-2 space-y-1">
+                        {item.subItems.map((subItem, subIndex) => (
+                          <li key={subIndex} className="text-gray-700 text-sm">
+                            {subItem}
+                          </li>
+                        ))}
                       </ul>
-                      {item.otherContent && (
-                        <p className="mt-2">{item.otherContent}</p>
-                      )}
-                    </li>
-                  </>
+                    )}
+                    {item.otherContent && (
+                      <p className="mt-2">{item.otherContent}</p>
+                    )}
+                  </li>
                 ))}
               </ol>
             </section>
@@ -522,7 +409,7 @@ function TermsOfServiceClient() {
                 {cancellationNoticeItems.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.content && (
                       <p className="mt-1 text-sm text-gray-700">
@@ -552,7 +439,7 @@ function TermsOfServiceClient() {
                 {complimentaryRide.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.content && (
                       <p className="mt-1 text-sm text-gray-700">
@@ -573,7 +460,7 @@ function TermsOfServiceClient() {
                 {extraCharges.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.content && (
                       <p className="mt-1 text-sm text-gray-700">
@@ -597,7 +484,7 @@ function TermsOfServiceClient() {
                 {airportPickUpAndDropOff.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.content && (
                       <p className="mt-1 text-sm text-gray-700">
@@ -618,7 +505,7 @@ function TermsOfServiceClient() {
                 {selfDrive.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.content && (
                       <p className="mt-1 text-sm text-gray-700">
@@ -648,7 +535,7 @@ function TermsOfServiceClient() {
                 {monthlyBooking.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.content && (
                       <p className="mt-1 text-sm text-gray-700">
@@ -684,6 +571,32 @@ function TermsOfServiceClient() {
               </h2>
               <p className="text-sm text-gray-700 leading-relaxed">
                 {acceptanceOfTermsthroughPayment[0].content}
+              </p>
+            </section>
+
+            {/* Governing Law and Dispute Resolution */}
+            <section id="governing-law" className="mb-8 sm:mb-10">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                Governing Law and Dispute Resolution
+              </h2>
+              <p className="text-sm text-gray-700 leading-relaxed mb-4">
+                These Terms and Conditions, and any dispute or claim arising out
+                of or in connection with them, their subject matter, or
+                formation, are governed by and construed in accordance with the
+                laws of the Federal Republic of Nigeria, with the State of Lagos
+                as the applicable jurisdiction.
+              </p>
+              <p className="text-sm text-gray-700 leading-relaxed mb-4">
+                In the event of any dispute, claim, or disagreement arising from
+                these terms or your use of our services, both parties agree to
+                first seek resolution amicably and in good faith through our
+                customer support team.
+              </p>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                Where a dispute cannot be resolved through negotiation within
+                thirty (30) days, it shall be referred to mediation in Lagos
+                State and, failing resolution, submitted to the exclusive
+                jurisdiction of the courts of Lagos State, Nigeria.
               </p>
             </section>
 
@@ -736,23 +649,35 @@ function TermsOfServiceClient() {
                 Version & Representation of Prior Terms
               </h2>
               <div className="space-y-4">
-                {VersionRepresentation.map((item, index) => (
-                  <p
-                    key={index}
-                    className="text-sm text-gray-700 leading-relaxed"
-                  >
-                    {item.content}
-                  </p>
-                ))}
+                {VersionRepresentation.map((item, index) => {
+                  const url = "https://autogirl.ng/terms-conditions/";
+                  const parts = item.content.split(url);
+                  return (
+                    <p
+                      key={index}
+                      className="text-sm text-gray-700 leading-relaxed"
+                    >
+                      {parts.length > 1 ? (
+                        <>
+                          {parts[0]}
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {url}
+                          </a>
+                          {parts.slice(1).join(url)}
+                        </>
+                      ) : (
+                        item.content
+                      )}
+                    </p>
+                  );
+                })}
               </div>
             </section>
-          </div>
-        </div>
-      </div>
-      <div className="text-center p-3">
-        <a href="/">Back Home</a>
-      </div>
-    </div>
+    </PolicyLayout>
   );
 }
 

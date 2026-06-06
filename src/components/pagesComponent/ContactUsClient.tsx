@@ -154,7 +154,7 @@ const ContactUsClient: React.FC = () => {
               </div>
               <h3 className="text-gray-900 font-semibold mb-2">Address</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
-                10 Anuoluwapo Close, Opebi, Ikeja, Lagos
+                16 Bankole Street, Oregun, Ikeja, Lagos
               </p>
             </div>
 
