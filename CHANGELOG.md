@@ -1,130 +1,108 @@
-# Muvment Customer, v1.8.1 (FAQ redesign, expanded content, search, booking CTA)
+# Muvment Customer, v1.10.1 (Contact Us refinements, Opebi address, success state)
 
-Note (v1.8.1): removed the "Still have questions?" panel at the foot of the FAQ page, since it competed with the booking call to action directly below it. The booking call to action is now the single action at the base of the page.
+Note (v1.10.1): the Contact Us navbar now matches the Terms and Privacy pages (no search bar), and the "Reach us" details card is now sticky on scroll on large screens, the way the policy table of contents behaves.
 
 ## Summary
 
-Merged the FAQ page redesign (the gradient hero, the sticky category
-navigation, and the bordered accordion layout) with the expanded content set
-and the search and booking call to action. The redesign and the content work
-had been done separately and one had overwritten the other; this brings them
-together into a single page. The Terms and Privacy pages keep the booking call
-to action through the shared policy layout, and the FAQ structured data stays
-in step with the page.
+Builds on the v1.9.0 animation and Contact Us work. Switches the office address
+to the Opebi address across the site, rewrites the Contact Us form heading,
+adds a proper success state after sending, and lays the page out as two columns
+(contact details beside the form) on larger screens.
 
 ## What changed in this version
 
-### FAQ page (src/app/faq/FAQPageClient.tsx)
+### Office address (now Opebi)
 
-- Kept the redesigned hero: the gradient card with the "Help Center" eyebrow,
-  the serif heading, and the supporting line.
-- Kept the redesigned body layout: the sticky category dropdown on mobile, the
-  sticky category list on desktop, and the bordered accordion cards that
-  highlight when open.
-- Replaced the page's built-in 9-question list with the approved set of 53
-  questions across 13 sections, read from the shared content file so the page
-  and the structured data always match.
-- Added a search box in the hero. It filters questions and answers as you type,
-  hides categories with no match, dims categories in the side list that the
-  current search cannot reach, expands every match so the answers read at a
-  glance, and shows a contact prompt when nothing matches.
-- Removed the image carousel that previously sat between the questions and the
-  footer.
-- Added the booking call to action before the footer.
-- Removed the "Still have questions?" panel so the booking call to action is the only action at the base of the page.
+Updated everywhere it appears so the page, the structured data, and the privacy
+policy all match:
+- Contact Us page (the details column).
+- Contact Us metadata description and keywords.
+- LocalBusiness and ContactPage structured data in src/helpers/schema.tsx (the
+  geo coordinates already pointed at Opebi, so they now match the text).
+- The write-to address in the Privacy Policy.
 
-### Booking call to action (src/components/general/BookingCTA.tsx)
+New address used: 10 Anuoluwapo Close, Opebi, Ikeja, Lagos.
 
-- Shared component with a "Book a ride" button (to /booking/search) and a
-  "Talk to our team" button (to /contact-us).
-- Used before the footer on the FAQ page and, through the shared policy layout,
-  on both the Terms and the Privacy pages.
+### Contact Us page (src/components/pagesComponent/ContactUsClient.tsx)
 
-### FAQ content source (src/data/faq.ts)
+- New form heading and subheading: "Send us a message" with a short, plain line
+  inviting a booking question, a general question, or feedback.
+- New success state: after a message sends, the form is replaced by a clear
+  confirmation (a green check, a short thank-you, and a "Send another message"
+  button that returns to a fresh form). The toast still fires as well.
+- The navbar now matches the Terms and Privacy pages (plain, no search bar).
+- The "Reach us" details card is sticky on scroll on large screens, like the policy table of contents.
+- Two-column layout on large screens: the contact details (address, mail,
+  phone) sit in a card beside the form, instead of stacked above it. On smaller
+  screens it stacks naturally.
+- The form keeps the same fields, validation, submit endpoint and payload, and
+  the entrance animation, accessible labels, social link names, and error
+  handling added in v1.9.0.
 
-- Holds all FAQ questions and answers. The FAQ page and the FAQ structured data
-  both read from it.
+## Carried from v1.9.0 (included so this deploys as one complete update)
 
-### Structured data (src/helpers/schema.tsx)
-
-- The FAQ schema builds from the shared content file, so it reflects the 53
-  live questions.
-
-### Policy layout (src/components/pagesComponent/PolicyLayout.tsx)
-
-- Renders the booking call to action before the footer, which places it on both
-  the Terms and the Privacy pages.
-
-### Homepage FAQ block (src/components/HomeComponent/FAQ.tsx)
-
-- Corrected the brand name in the rental-period question (was "AutoGirl", now
-  "Muvment").
-- Updated the fuel answer to the confirmed refuel minimums (12,000 naira for
-  sedans, 20,000 naira for SUVs).
-
-## Content decisions applied
-
-- Cities served: Lagos, Abuja, Benin City, Enugu, Port Harcourt, and Accra
-  (Ghana).
-- Refuel minimums set to 12,000 naira (sedans) and 20,000 naira (SUVs) on the
-  page, the homepage block, and the schema.
-- No specific service prices for airport, monthly, or wedding bookings. Those
-  answers point customers to book on the site or contact the booking team.
-- Monthly rentals: fuel is not included unless requested.
-- Vehicle types described generally, pointing to the live categories on the
-  homepage.
-- Benin Republic travel included as a public question.
-- Hosting reduced to a single question that directs hosts to host.muvment.ng.
+- Reduce-motion-aware entrance animations on the FAQ, Terms, Privacy, and
+  Contact Us pages, and the booking call to action.
+- Contact Us footer, canonical support email (info@muvment.ng), visible phone,
+  accessible form labels and social links, and form error/submit handling.
+- FAQ meta description em dash replaced with a colon.
 
 ## Validation
 
 - TypeScript: tsc --noEmit clean.
-- Build: next build compiled successfully. /faq, /policy/terms-conditions, and
-  /policy/privacy-policy all prerender as static. /faq first-load JS is 287 kB.
-- 53 questions across 13 sections, no duplicate ids.
-- No em dashes. Only the 12,000 and 20,000 naira figures remain in the FAQ
-  content.
+- Build: next build compiled successfully. /faq, /contact-us,
+  /policy/terms-conditions, and /policy/privacy-policy all prerender as static.
+- The Opebi address is present in both the visible Contact Us output and its
+  structured data.
 
 ## Files changed
 
-- src/app/faq/FAQPageClient.tsx (redesign merged with content, search, CTA)
-- src/data/faq.ts
-- src/components/general/BookingCTA.tsx
+- src/components/pagesComponent/ContactUsClient.tsx
+- src/app/contact-us/page.tsx
 - src/helpers/schema.tsx
+- src/components/pagesComponent/PrivacyPolicyClient.tsx
+- src/components/general/Reveal.tsx
+- src/components/general/BookingCTA.tsx
 - src/components/pagesComponent/PolicyLayout.tsx
+- src/app/faq/FAQPageClient.tsx
+- src/app/faq/layout.tsx
+- src/data/faq.ts
 - src/components/HomeComponent/FAQ.tsx
 
 ## Deploy (Git Bash)
 
 ```bash
 cd ~/Downloads
-unzip -o muvment-customer-v1.8.1-faq-redesign.zip -d muvment-customer-v1.8.1-faq-redesign/
+unzip -o muvment-customer-v1.10.1-contact-refinements.zip -d muvment-customer-v1.10.1-contact-refinements/
 
 cd ~/muvment-customer
 git checkout staging
 git pull origin staging
-git checkout -b feat/v1.8.1-faq-redesign
+git checkout -b feat/v1.10.1-contact-refinements
 
 mkdir -p ~/muvment-customer/src/data
 mkdir -p ~/muvment-customer/src/components/general
 
-cp ~/Downloads/muvment-customer-v1.8.1-faq-redesign/src/app/faq/FAQPageClient.tsx ~/muvment-customer/src/app/faq/FAQPageClient.tsx
-cp ~/Downloads/muvment-customer-v1.8.1-faq-redesign/src/data/faq.ts ~/muvment-customer/src/data/faq.ts
-cp ~/Downloads/muvment-customer-v1.8.1-faq-redesign/src/components/general/BookingCTA.tsx ~/muvment-customer/src/components/general/BookingCTA.tsx
-cp ~/Downloads/muvment-customer-v1.8.1-faq-redesign/src/helpers/schema.tsx ~/muvment-customer/src/helpers/schema.tsx
-cp ~/Downloads/muvment-customer-v1.8.1-faq-redesign/src/components/pagesComponent/PolicyLayout.tsx ~/muvment-customer/src/components/pagesComponent/PolicyLayout.tsx
-cp ~/Downloads/muvment-customer-v1.8.1-faq-redesign/src/components/HomeComponent/FAQ.tsx ~/muvment-customer/src/components/HomeComponent/FAQ.tsx
-cp ~/Downloads/muvment-customer-v1.8.1-faq-redesign/CHANGELOG.md ~/muvment-customer/CHANGELOG.md
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/pagesComponent/ContactUsClient.tsx ~/muvment-customer/src/components/pagesComponent/ContactUsClient.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/app/contact-us/page.tsx ~/muvment-customer/src/app/contact-us/page.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/helpers/schema.tsx ~/muvment-customer/src/helpers/schema.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/pagesComponent/PrivacyPolicyClient.tsx ~/muvment-customer/src/components/pagesComponent/PrivacyPolicyClient.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/pagesComponent/PolicyLayout.tsx ~/muvment-customer/src/components/pagesComponent/PolicyLayout.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/general/Reveal.tsx ~/muvment-customer/src/components/general/Reveal.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/general/BookingCTA.tsx ~/muvment-customer/src/components/general/BookingCTA.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/app/faq/FAQPageClient.tsx ~/muvment-customer/src/app/faq/FAQPageClient.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/app/faq/layout.tsx ~/muvment-customer/src/app/faq/layout.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/data/faq.ts ~/muvment-customer/src/data/faq.ts
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/src/components/HomeComponent/FAQ.tsx ~/muvment-customer/src/components/HomeComponent/FAQ.tsx
+cp ~/Downloads/muvment-customer-v1.10.1-contact-refinements/CHANGELOG.md ~/muvment-customer/CHANGELOG.md
 
 git status
 npx tsc --noEmit
 npm run build
 git add .
-git commit -m "v1.8.1: merge FAQ redesign with expanded content (53 Qs, 13 sections), add search and booking CTA, sync schema, remove carousel"
-git push -u origin feat/v1.8.1-faq-redesign
-gh pr create --base staging --head feat/v1.8.1-faq-redesign --title "FAQ redesign with expanded content, search, and booking CTA (v1.8.1)" --body "Merge the FAQ redesign (hero, sticky category nav, bordered accordion) with the approved 53-question content across 13 sections; add search; add booking CTA on FAQ, Terms, and Privacy; sync FAQ structured data with the page; remove the carousel above the FAQ footer; fix homepage FAQ brand name and fuel figures."
+git commit -m "v1.10.1: Opebi address site-wide, Contact Us new heading, success state, two-column layout"
+git push -u origin feat/v1.10.1-contact-refinements
+gh pr create --base staging --head feat/v1.10.1-contact-refinements --title "Contact Us refinements and Opebi address (v1.10.1)" --body "Switch office address to Opebi across the page, metadata, schema, and privacy policy. Contact Us: new heading and subheading, success state after sending, two-column layout (details beside form). Carries the v1.9.0 animations and Contact Us overhaul so this deploys as one complete update."
 ```
 
-`git status` should show the two new files (src/data/faq.ts, src/components/general/BookingCTA.tsx) and four modified files, nothing else.
-
-To eyeball before pushing, add `npm run dev` after the `npm run build` line, check the FAQ, Terms, and Privacy pages in the browser, stop with Ctrl+C, then continue.
+`git status` should list the changed files, not "nothing to commit".
