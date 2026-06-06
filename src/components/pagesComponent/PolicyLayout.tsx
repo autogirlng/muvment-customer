@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Navbar } from "../Navbar";
 import Footer from "../HomeComponent/Footer";
+import BookingCTA from "../general/BookingCTA";
 
 type PolicySection = { id: string; label: string };
 
@@ -203,6 +204,7 @@ function PolicyLayout({
         </div>
       </div>
 
+      <BookingCTA />
       <Footer />
     </div>
   );
