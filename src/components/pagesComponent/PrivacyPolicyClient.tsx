@@ -1,15 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import PolicyLayout from "./PolicyLayout";
 
 function PrivacyPolicyClient() {
-  const [activeSection, setActiveSection] = useState("policy-statement");
-
-  const currentDate = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
   const sections = [
     { id: "policy-statement", label: "Policy Statement" },
     { id: "collection-of-information", label: "Collection of Information" },
@@ -22,47 +15,8 @@ function PrivacyPolicyClient() {
     { id: "contact-information", label: "Contact Information" },
   ];
 
-  const scrollToSection = (id: any) => {
-    const element = document.getElementById(id);
-    if (element) {
-      window.scrollTo({
-        top: element.offsetTop - 100,
-        behavior: "smooth",
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY + 120;
-
-      const sectionElements = sections
-        .map((s) => document.getElementById(s.id))
-        .filter(Boolean);
-
-      for (const section of sectionElements) {
-        const sectionTop = section?.offsetTop;
-        const sectionHeight = section?.clientHeight;
-        const sectionId = section?.getAttribute("id");
-
-        if (
-          sectionTop !== undefined &&
-          sectionHeight !== undefined &&
-          scrollPosition >= sectionTop &&
-          scrollPosition < sectionTop + sectionHeight
-        ) {
-          setActiveSection(sectionId || "");
-          break;
-        }
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const policyStatement = [
-    "Welcome to Muvment's Privacy Policy. We are a Nigerian Vehicle Rental Company providing Cars, Boats, and Jets. This policy outlines how we collect, use, store, and protect your personal information. It also details your rights regarding that information. Please note, this policy does not apply to our licensees, affiliates, or other third parties you may interact with through our services.",
+    "Welcome to Muvment's Privacy Policy. We are a Nigerian Vehicle Rental Company providing a range of vehicles. This policy outlines how we collect, use, store, and protect your personal information. It also details your rights regarding that information. Please note, this policy does not apply to our licensees, affiliates, or other third parties you may interact with through our services.",
   ];
 
   const collectionOfInformation = [
@@ -202,74 +156,14 @@ function PrivacyPolicyClient() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
-      <div className="relative h-64 lg:h-[500px] w-full bg-[#0673FF]">
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="relative w-40 h-40 sm:w-60 sm:h-60 md:w-80 md:h-80 bg-white/10 rounded-full flex items-center justify-center">
-            <h1 className="text-white text-center text-2xl md:text-5xl font-semibold px-8">
-              Privacy Policy
-            </h1>
-          </div>
-        </div>
-        <div className="absolute bottom-[-20px] right-4 bg-[#0D419B]/90 px-4 py-2 rounded-lg shadow-md z-20">
-          <p className="text-xs md:text-sm font-medium text-white">
-            Last updated: {currentDate}
-          </p>
-        </div>
-      </div>
-
-      {/* Mobile Navigation */}
-      <div className="lg:hidden sticky top-0 z-30 bg-white shadow-sm">
-        <div className="overflow-x-auto py-3 scrollbar-hide">
-          <div className="flex space-x-4 px-4 min-w-max">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => scrollToSection(section.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeSection === section.id
-                    ? "text-[#0673FF] bg-blue-50"
-                    : "text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {section.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
-        <div className="flex gap-8">
-          {/* Desktop Navigation Sidebar */}
-          <div className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24">
-              <div className="flex flex-col space-y-1 p-4 border-2 border-gray-200 bg-white rounded-2xl">
-                <p className="py-2 mb-3 text-[#101928] font-medium text-sm border-b-2 border-[#E4E7EC]">
-                  Quick Navigation
-                </p>
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    onClick={() => scrollToSection(section.id)}
-                    className={`px-4 py-3 rounded-lg text-left text-sm transition-colors ${
-                      activeSection === section.id
-                        ? "text-[#0673FF] bg-blue-50"
-                        : "text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {section.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Content Area */}
-          <div className="flex-1 bg-white rounded-xl shadow-sm p-6 sm:p-8">
-            {/* Policy Statement */}
+    <PolicyLayout
+      eyebrow="Legal"
+      title="Privacy Policy"
+      intro="How Muvment by Autogirl collects, uses, and protects your personal information."
+      lastUpdated="March 31, 2026"
+      sections={sections}
+    >
+      {/* Policy Statement */}
             <section id="policy-statement" className="mb-8 sm:mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
                 Policy Statement
@@ -293,7 +187,7 @@ function PrivacyPolicyClient() {
                 {collectionOfInformation.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.content && (
                       <p className="mt-1 text-sm text-gray-700">
@@ -323,7 +217,7 @@ function PrivacyPolicyClient() {
                 {useOfInformation.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.subItems && (
                       <ul className="list-disc pl-6 mt-2 space-y-1">
@@ -348,7 +242,7 @@ function PrivacyPolicyClient() {
                 {sharingOfInformation.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.content && (
                       <p className="mt-1 text-sm text-gray-700">
@@ -378,7 +272,7 @@ function PrivacyPolicyClient() {
                 {dataRetentionAndSecurity.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.content && (
                       <p className="mt-1 text-sm text-gray-700">
@@ -399,7 +293,7 @@ function PrivacyPolicyClient() {
                 {yourRights.map((item, index) => (
                   <li key={index} className="text-base text-gray-800">
                     {item.title && (
-                      <h4 className="text-sm font-semibold">{item.title}</h4>
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
                     )}
                     {item.subItems && (
                       <ul className="list-disc pl-6 mt-2 space-y-1">
@@ -490,14 +384,7 @@ function PrivacyPolicyClient() {
                 ))}
               </ol>
             </section>
-          </div>
-        </div>
-      </div>
-
-      <div className="text-center p-3">
-        <a href="/">Back Home</a>
-      </div>
-    </div>
+    </PolicyLayout>
   );
 }
 
