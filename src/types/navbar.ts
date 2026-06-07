@@ -2,6 +2,7 @@
 export interface NavbarProps {
     showSearchBar?: boolean;
     showAnnouncementBar?: boolean;
+    homeHero?: boolean;
 }
 
 export enum DeviceType {
