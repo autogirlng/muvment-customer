@@ -1,6 +1,71 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Dark hero ambient background (shared: about, impact, blog) */
+.hero-glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.32;
+  pointer-events: none;
+}
+.hero-glow-1 {
+  width: 440px;
+  height: 440px;
+  background: #0673ff;
+  top: -100px;
+  left: -70px;
+  animation: heroFloat1 16s ease-in-out infinite;
+}
+.hero-glow-2 {
+  width: 380px;
+  height: 380px;
+  background: #5aa2ff;
+  bottom: -120px;
+  right: -60px;
+  animation: heroFloat2 20s ease-in-out infinite;
+}
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    black 30%,
+    transparent 75%
+  );
+}
+@keyframes heroFloat1 {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(40px, 30px);
+  }
+}
+@keyframes heroFloat2 {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-30px, -40px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow-1,
+  .hero-glow-2 {
+    animation: none;
+  }
+}
+
 /* Legal / policy document typography (Terms, Privacy) */
 .policy-prose {
   color: #1f2430;
