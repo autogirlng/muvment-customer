@@ -13,9 +13,11 @@ type RevealProps = {
 
 /**
  * Fades and lifts its children into view the first time they enter the
- * viewport. Falls back to fully visible when the browser has no
- * IntersectionObserver, and skips the motion entirely when the visitor has
- * "reduce motion" turned on.
+ * viewport. It reveals as soon as any part of the element appears, so blocks
+ * taller than the screen still show. It falls back to fully visible when the
+ * browser has no IntersectionObserver, when the visitor prefers reduced
+ * motion, and as a final safety net after a short delay, so content is never
+ * left hidden.
  */
 function Reveal({ children, className = "", delay = 0, distance = 16 }: RevealProps) {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -34,22 +36,38 @@ function Reveal({ children, className = "", delay = 0, distance = 16 }: RevealPr
     }
 
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      setVisible(true);
+      return;
+    }
+
+    const reveal = () => setVisible(true);
 
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
-            setVisible(true);
+            reveal();
             observer.unobserve(entry.target);
           }
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+      // threshold 0: trigger as soon as a single pixel enters, so elements
+      // taller than the viewport still reveal. The small bottom margin starts
+      // the motion just after the element appears.
+      { threshold: 0, rootMargin: "0px 0px -10% 0px" }
     );
 
     observer.observe(el);
-    return () => observer.disconnect();
+
+    // Safety net: if the observer never fires for any reason, reveal anyway so
+    // content is never stuck hidden.
+    const fallback = window.setTimeout(reveal, 1200);
+
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(fallback);
+    };
   }, []);
 
   return (

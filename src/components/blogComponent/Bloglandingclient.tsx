@@ -201,7 +201,7 @@ export default function BlogLandingClient({
   }, [showCategoryModal]);
 
   const selectedCategory = categories.find(
-    (c) => String(c.id) === String(categoryId)
+    (c) => String(c.name) === String(categoryId)
   );
 
   const updateUrl = useCallback(
@@ -323,7 +323,7 @@ export default function BlogLandingClient({
               All
             </button>
             {visibleCategories.map((cat) => {
-              const isActive = String(cat.id) === String(categoryId);
+              const isActive = String(cat.name) === String(categoryId);
               return (
                 <button
                   key={cat.id}
@@ -485,7 +485,7 @@ export default function BlogLandingClient({
               </button>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {categories.map((cat) => {
-                  const isActive = String(cat.id) === String(categoryId);
+                  const isActive = String(cat.name) === String(categoryId);
                   return (
                     <button
                       key={cat.id}
