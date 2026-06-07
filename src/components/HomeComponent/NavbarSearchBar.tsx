@@ -52,6 +52,10 @@ const NavbarSearchBarContent = () => {
   const getBookingOptions = async () => {
     const data = await getBookingOption();
     setBookingOptions(data.dropdownOptions);
+    // Default to the first booking type (12 Hours) when none is set via the URL
+    if (!params.get("bookingType") && data.dropdownOptions?.length) {
+      setBookingType((prev) => prev ?? data.dropdownOptions[0].value);
+    }
   };
   useEffect(() => {
     getBookingOptions();
@@ -176,7 +180,7 @@ const NavbarSearchBarContent = () => {
         fromDate,
         untilDate
       );
-      window.location.href = searchUrl;
+      router.push(searchUrl);
     } catch (error) {
       console.error("Search failed:", error);
     } finally {
