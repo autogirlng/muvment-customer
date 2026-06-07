@@ -70,14 +70,22 @@ const ImpactAndCTA = ({
         </div>
       </div>
 
-      {/* CTA - white, flows into footer */}
-      <div className="bg-white py-20 md:py-28 border-t border-gray-100">
-        <div className="max-w-3xl mx-auto px-6 text-center">
+      {/* CTA - dark glow band */}
+      <div className="relative overflow-hidden bg-[#101928] py-20 md:py-28">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          <span className="hero-glow hero-glow-1" />
+          <span className="hero-glow hero-glow-2" />
+          <span className="hero-grid" />
+        </div>
+        <div className="relative max-w-3xl mx-auto px-6 text-center">
           <Reveal>
-            <h2 className="text-gray-900 text-[clamp(2.1rem,4.5vw,3.25rem)] font-bold leading-[1.1] mb-6">
+            <h2 className="text-white text-[clamp(2.1rem,4.5vw,3.25rem)] font-bold leading-[1.1] mb-6">
               Join the Muvment
             </h2>
-            <p className="text-gray-600 text-[15px] md:text-[17px] leading-[1.75] mb-10 max-w-xl mx-auto">
+            <p className="text-white/70 text-[15px] md:text-[17px] font-light leading-[1.75] mb-10 max-w-xl mx-auto">
               Whether you are a rider, a fleet owner, a corporate partner, or a
               future team member, there is a place for you in Africa's mobility
               future.
@@ -96,7 +104,7 @@ const ImpactAndCTA = ({
 
               <button
                 onClick={() => route.push("/contact-us")}
-                className="bg-white border border-gray-300 text-gray-700 px-7 py-3.5 rounded-full text-[15px] font-semibold hover:bg-gray-50 transition-colors w-full sm:w-auto justify-center"
+                className="border border-white/30 text-white px-7 py-3.5 rounded-full text-[15px] font-semibold hover:bg-white/10 transition-colors w-full sm:w-auto justify-center"
               >
                 Partner with us
               </button>
