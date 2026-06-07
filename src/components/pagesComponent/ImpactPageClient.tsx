@@ -884,17 +884,25 @@ export default function ImpactPageClient() {
       {/* PRESS & RECOGNITION */}
       <PressSection />
 
-      {/* BOOK NOW CTA */}
-      <section className="bg-white px-6 md:px-10 lg:px-16 py-24">
-        <div className="max-w-5xl mx-auto text-center">
-          <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-[#0673FF] mb-3">
+      {/* BOOK NOW CTA - dark glow band */}
+      <section className="relative overflow-hidden bg-[#101928] px-6 md:px-10 lg:px-16 py-24">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          <span className="hero-glow hero-glow-1" />
+          <span className="hero-glow hero-glow-2" />
+          <span className="hero-grid" />
+        </div>
+        <div className="relative max-w-5xl mx-auto text-center">
+          <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-[#5AA2FF] mb-3">
             Ride with purpose
           </p>
-          <h2 className="impact-reveal impact-delay-1 text-[#101928] text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] mb-5">
+          <h2 className="impact-reveal impact-delay-1 text-white text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] mb-5">
             Every ride moves{" "}
-            <em className="not-italic text-[#0673FF]">someone</em> forward.
+            <em className="not-italic text-[#5AA2FF]">someone</em> forward.
           </h2>
-          <p className="impact-reveal impact-delay-2 text-gray-600 text-[15px] md:text-[17px] font-light leading-[1.7] max-w-[560px] mx-auto mb-8">
+          <p className="impact-reveal impact-delay-2 text-white/70 text-[15px] md:text-[17px] font-light leading-[1.7] max-w-[560px] mx-auto mb-8">
             Book a Muvment ride today and put your everyday journeys behind
             cleaner mobility, higher driver incomes, and women building careers
             in transport.
