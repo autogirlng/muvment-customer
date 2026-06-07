@@ -47,12 +47,6 @@ function BookingCTA({ className = "" }: BookingCTAProps) {
               >
                 Book a ride
               </button>
-              <button
-                onClick={() => router.push("/contact-us")}
-                className="inline-flex items-center justify-center rounded-full bg-white/10 px-8 py-3.5 text-sm font-semibold text-white ring-1 ring-white/40 backdrop-blur-sm transition-colors duration-200 hover:bg-white/20 focus:outline-none focus:ring-4 focus:ring-white/40"
-              >
-                Talk to our team
-              </button>
             </div>
           </div>
         </div>
