@@ -2,6 +2,7 @@
 import Button from "@/components/utils/Button";
 import { AuthService } from "@/controllers/auth/auth";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { JSX, useState, Suspense } from "react";
 import { toast } from "react-toastify";
@@ -268,29 +269,50 @@ function SignupContent() {
   return (
     <div className="min-h-screen bg-white">
       <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
-        <div className="hidden lg:flex items-center justify-center relative overflow-hidden">
+        <div className="hidden lg:flex relative overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: "url('/images/auth/signup_bg.jpg')",
             }}
           >
-            <div className="absolute inset-0 bg-black/50"></div>
+            <div className="absolute inset-0 bg-[#101928]/70"></div>
           </div>
-          <div className="absolute inset-0 flex items-start justify-start p-8">
-            <div
-              className="text-white cursor-pointer"
+          <div className="absolute inset-0 flex flex-col justify-between p-10">
+            <button
+              className="text-white text-left"
               onClick={() => router.push(`/`)}
+              aria-label="Muvment home"
             >
-              <h1 className="text-4xl font-bold mb-2">Muvment</h1>
+              <span className="text-3xl font-bold">Muvment</span>
+            </button>
+            <div className="text-white max-w-sm">
+              <p className="text-2xl font-semibold leading-snug">
+                Premium, reliable vehicle rentals across Nigeria and Ghana.
+              </p>
+              <p className="mt-3 text-white/70 text-sm leading-relaxed">
+                Book verified vehicles with trusted drivers in minutes.
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col bg-white overflow-y-auto h-screen px-6 pt-16">
-          <div className="max-w-[90%] m-auto w-full pb-12">
+        <div className="flex flex-col bg-white overflow-y-auto h-screen px-6">
+          <div className="max-w-[90%] m-auto w-full py-12">
+            <button
+              onClick={() => router.push("/")}
+              className="lg:hidden mb-8 self-start"
+              aria-label="Muvment home"
+            >
+              <Image
+                src="/images/image.png"
+                alt="Muvment"
+                width={150}
+                height={40}
+              />
+            </button>
             <div>
-              <h1 className="md:text-5xl text-3xl font-bold text-black">
+              <h1 className="md:text-5xl text-3xl font-bold text-[#101928]">
                 Sign Up
               </h1>
               <p className="text-sm text-gray-500 pb-8 mt-2">
@@ -310,15 +332,16 @@ function SignupContent() {
               </div>
             )}
 
-            {/* Wrap the form inputs in a form element */}
-            <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex justify-between gap-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-900 mb-2">
                     First Name
                   </label>
                   <input
+                    id="firstName"
                     name="firstName"
+                    autoComplete="given-name"
                     type="text"
                     value={formValues.firstName}
                     onChange={(e) => handleChange("firstName", e.target.value)}
@@ -328,7 +351,7 @@ function SignupContent() {
                       touched.firstName && errors.firstName
                         ? "border-red-500"
                         : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-gray-800`}
+                    } focus:outline-none focus:ring-2 focus:ring-[#0673FF]`}
                   />
                   {touched.firstName && errors.firstName && (
                     <p className="text-red-500 text-sm mt-1">
@@ -338,11 +361,13 @@ function SignupContent() {
                 </div>
 
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-900 mb-2">
                     Last Name
                   </label>
                   <input
+                    id="lastName"
                     name="lastName"
+                    autoComplete="family-name"
                     type="text"
                     value={formValues.lastName}
                     onChange={(e) => handleChange("lastName", e.target.value)}
@@ -352,7 +377,7 @@ function SignupContent() {
                       touched.lastName && errors.lastName
                         ? "border-red-500"
                         : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-gray-800`}
+                    } focus:outline-none focus:ring-2 focus:ring-[#0673FF]`}
                   />
                   {touched.lastName && errors.lastName && (
                     <p className="text-red-500 text-sm mt-1">
@@ -363,7 +388,7 @@ function SignupContent() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-900 mb-2">
                   Phone Number
                 </label>
                 <div className="flex gap-3">
@@ -376,7 +401,7 @@ function SignupContent() {
                       onBlur={() =>
                         setTimeout(() => setShowCountryDropdown(false), 200)
                       }
-                      className="flex items-center gap-2 px-3 py-3 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-800 min-w-[130px]"
+                      className="flex items-center gap-2 px-3 py-3 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0673FF] min-w-[130px]"
                     >
                       {selectedCountry && (
                         <>
@@ -424,7 +449,9 @@ function SignupContent() {
 
                   <div className="flex-1">
                     <input
+                      id="phoneNumber"
                       name="phoneNumber"
+                      autoComplete="tel"
                       type="tel"
                       value={formValues.phoneNumber}
                       onChange={(e) =>
@@ -438,7 +465,7 @@ function SignupContent() {
                         touched.phoneNumber && errors.phoneNumber
                           ? "border-red-500"
                           : "border-gray-300"
-                      } focus:outline-none focus:ring-2 focus:ring-gray-800`}
+                      } focus:outline-none focus:ring-2 focus:ring-[#0673FF]`}
                     />
                   </div>
                 </div>
@@ -450,11 +477,13 @@ function SignupContent() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2">
                   Email
                 </label>
                 <input
+                  id="email"
                   name="email"
+                  autoComplete="email"
                   type="email"
                   value={formValues.email}
                   onChange={(e) => handleChange("email", e.target.value)}
@@ -464,7 +493,7 @@ function SignupContent() {
                     touched.email && errors.email
                       ? "border-red-500"
                       : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-gray-800`}
+                  } focus:outline-none focus:ring-2 focus:ring-[#0673FF]`}
                 />
                 {touched.email && errors.email && (
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -472,12 +501,14 @@ function SignupContent() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-900 mb-2">
                   Password
                 </label>
                 <div className="relative">
                   <input
+                    id="password"
                     name="password"
+                    autoComplete="new-password"
                     type={showPassword ? "text" : "password"}
                     value={formValues.password}
                     onChange={(e) => handleChange("password", e.target.value)}
@@ -487,32 +518,49 @@ function SignupContent() {
                       touched.password && errors.password
                         ? "border-red-500"
                         : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-gray-800`}
+                    } focus:outline-none focus:ring-2 focus:ring-[#0673FF]`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
+                    {showPassword ? (
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    )}
                   </button>
                 </div>
                 {touched.password && errors.password && (
@@ -574,7 +622,7 @@ function SignupContent() {
                     // onChange={(e) => handleChange("referralCode", e.target.value)}
                     placeholder="Enter referral code (optional)"
                     readOnly
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-800"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0673FF]"
                   />
                 </div>
               )}
@@ -583,7 +631,7 @@ function SignupContent() {
                 Already a user?{" "}
                 <Link
                   href="/auth/login"
-                  className="text-blue-500 hover:underline font-medium"
+                  className="text-[#0673FF] hover:underline font-medium"
                 >
                   Sign In
                 </Link>
@@ -593,16 +641,15 @@ function SignupContent() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                onClick={handleSubmit}
-                className={`w-full py-5 rounded-2xl font-medium transition-all duration-200 text-sm ${
+                className={`w-full py-4 rounded-full font-semibold transition-all duration-200 text-sm ${
                   isLoading
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-gray-800 text-white hover:bg-gray-900 active:scale-95"
+                    : "bg-[#0673FF] text-white hover:bg-[#0560d6] active:scale-95"
                 }`}
               >
                 {isLoading ? "Signing Up..." : "Sign Up"}
               </Button>
-            </div>
+            </form>
 
             <p className="text-center text-sm text-gray-600 mt-8">
               By signing up you agree to Muvment's{" "}
