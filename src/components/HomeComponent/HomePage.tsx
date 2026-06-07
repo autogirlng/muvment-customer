@@ -51,7 +51,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <Navbar showAnnouncementBar={true} />
+      <Navbar showAnnouncementBar={true} homeHero={true} />
       <BookingInterface />
       <ServicePricingShowcaseList />
       <BeninRepublicTravel />
