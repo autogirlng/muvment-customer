@@ -288,8 +288,16 @@ export default function BlogLandingClient({
       <Navbar />
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="bg-[#0d1f35] text-white">
-        <div className="max-w-4xl mx-auto px-4 pt-28 pb-20 text-center">
+      <section className="relative overflow-hidden bg-[#101928] text-white">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          <span className="hero-glow hero-glow-1" />
+          <span className="hero-glow hero-glow-2" />
+          <span className="hero-grid" />
+        </div>
+        <div className="relative max-w-4xl mx-auto px-4 pt-28 pb-20 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
             Blog
           </h1>

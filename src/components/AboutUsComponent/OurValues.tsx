@@ -3,7 +3,8 @@ import React from "react";
 import { FiAward, FiHeart } from "react-icons/fi";
 import { LuHandshake, LuLeaf } from "react-icons/lu";
 import { GiBrain } from "react-icons/gi";
-import { BsPiggyBank } from "react-icons/bs";
+import { BsLightningCharge } from "react-icons/bs";
+import Reveal from "../general/Reveal";
 
 const OurValues = () => {
   const values = [
@@ -32,10 +33,10 @@ const OurValues = () => {
         "Fleet owners, drivers, and clients are stakeholders in our shared vision.",
     },
     {
-      icon: <BsPiggyBank className="w-6 h-6" />,
+      icon: <BsLightningCharge className="w-6 h-6" />,
       title: "Relentless Execution",
       description:
-        "We turn vision into results. Profitability every year since launch.",
+        "We turn vision into results, with profitability every year since launch.",
     },
     {
       icon: <FiHeart className="w-6 h-6" />,
@@ -46,35 +47,35 @@ const OurValues = () => {
   ];
 
   return (
-    <div className="bg-gray-50 py-16 md:py-20">
+    <div className="bg-white py-20 md:py-28">
       <div className="max-w-6xl mx-auto px-6">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <p className="text-blue-500 text-[13px] font-medium mb-3 tracking-wide">
-            Our Values
+        <Reveal className="text-center mb-14 max-w-2xl mx-auto">
+          <p className="text-[#0673FF] text-[12px] font-semibold mb-4 tracking-[0.16em] uppercase">
+            Our values
           </p>
-          <h2 className="text-[#2c3e50] text-[28px] md:text-[32px] font-bold">
-            What Drives Us Forward
+          <h2 className="text-gray-900 text-[clamp(2rem,4vw,3rem)] font-bold leading-[1.1]">
+            What drives us forward
           </h2>
-        </div>
+        </Reveal>
 
-        {/* Responsive Grid with Flex Wrap */}
-        <div className="flex flex-wrap gap-6 justify-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {values.map((value, index) => (
-            <div
+            <Reveal
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]"
+              delay={(index % 3) * 80}
+              className="group relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-8 transition-all hover:shadow-md hover:-translate-y-0.5"
             >
-              <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-4 text-blue-500">
+              <span className="absolute inset-x-0 top-0 h-[3px] bg-[#0673FF] scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100" />
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-5 text-[#0673FF]">
                 {value.icon}
               </div>
-              <h3 className="text-[#2c3e50] text-[18px] font-bold mb-3">
+              <h3 className="text-gray-900 text-[18px] font-bold mb-3">
                 {value.title}
               </h3>
               <p className="text-gray-600 text-[14px] leading-relaxed">
                 {value.description}
               </p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>

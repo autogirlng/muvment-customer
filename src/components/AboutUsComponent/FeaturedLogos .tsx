@@ -1,104 +1,44 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
+import Reveal from "../general/Reveal";
 
 const FeaturedLogos = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  // Array of logo URLs - easily updatable
   const logos = [
     {
       name: "CNN",
       url: "https://upload.wikimedia.org/wikipedia/commons/b/b1/CNN.svg",
-      alt: "CNN Logo",
+      alt: "CNN logo",
     },
-    {
-      name: "TechCabal",
-      url: "/images/image3.png",
-      alt: "TechCabal Logo",
-    },
-    {
-      name: "Nairametrics",
-      url: "/images/image5.png",
-      alt: "Nairametrics Logo",
-    },
-    {
-      name: "Business Day",
-      url: "/images/image4.png",
-      alt: "Business Day Logo",
-    },
-    {
-      name: "Vanguard",
-      url: "/images/image6.png",
-      alt: "Vanguard Logo",
-    },
-    {
-      name: "The Guardian",
-      url: "/images/image8.png",
-      alt: "The Guardian Logo",
-    },
+    { name: "TechCabal", url: "/images/image3.png", alt: "TechCabal logo" },
+    { name: "Nairametrics", url: "/images/image5.png", alt: "Nairametrics logo" },
+    { name: "Business Day", url: "/images/image4.png", alt: "Business Day logo" },
+    { name: "Vanguard", url: "/images/image6.png", alt: "Vanguard logo" },
+    { name: "The Guardian", url: "/images/image8.png", alt: "The Guardian logo" },
   ];
 
   return (
-    <div className="bg-white py-12">
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Title */}
-        <h2 className="text-center text-[#2c3e50] text-[14px] font-medium mb-8 tracking-wide">
-          As Featured In
-        </h2>
+    <div className="bg-[#F5F8FD] border-y border-gray-200/70 py-12 md:py-14">
+      <div className="max-w-6xl mx-auto px-6">
+        <Reveal className="text-center mb-9">
+          <p className="text-gray-400 text-[12px] font-semibold tracking-[0.18em] uppercase">
+            As featured in
+          </p>
+        </Reveal>
 
-        {/* Desktop Grid - Hidden on mobile */}
-        <div className="hidden md:grid md:grid-cols-6 gap-8 items-center justify-items-center">
+        <Reveal
+          delay={80}
+          className="grid grid-cols-3 md:grid-cols-6 gap-x-6 gap-y-8 items-center"
+        >
           {logos.map((logo, index) => (
-            <div
-              key={index}
-              className="w-full flex items-center justify-center h-16"
-            >
+            <div key={index} className="flex items-center justify-center h-12">
               <img
                 src={logo.url}
                 alt={logo.alt}
-                className="max-w-full max-h-12 object-contain  transition-all duration-300"
+                className="max-h-9 md:max-h-10 max-w-full object-contain"
               />
             </div>
           ))}
-        </div>
-
-        {/* Mobile Slider - Visible only on mobile */}
-        <div className="md:hidden relative">
-          <div className="overflow-x-auto overflow-y-visible scrollbar-hide no-scrollbar hide-scrollbar">
-            <div
-              className="flex gap-6 transition-transform duration-300 ease-in-out px-6"
-              style={{ transform: `translateX(-${currentSlide * 180}px)` }}
-            >
-              {logos.map((logo, index) => (
-                <div key={index} className="w-[160px] flex-shrink-0">
-                  <div className="bg-white rounded-lg p-6 text-center h-20 flex items-center justify-center ">
-                    <img
-                      src={logo.url}
-                      alt={logo.alt}
-                      className="max-w-full max-h-10 object-contain "
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Dots Indicator */}
-          <div className="flex justify-center gap-1.5 mt-6">
-            {logos.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`h-1.5 rounded-full transition-all ${
-                  currentSlide === index
-                    ? "w-6 bg-[#2c3e50]"
-                    : "w-1.5 bg-gray-300"
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        </div>
+        </Reveal>
       </div>
     </div>
   );

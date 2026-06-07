@@ -393,7 +393,7 @@ function PressSection() {
         <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-[#0673FF] mb-3">
           As seen in
         </p>
-        <h2 className="impact-reveal impact-delay-1 impact-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] text-[#101928] mb-10">
+        <h2 className="impact-reveal impact-delay-1 text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] text-[#101928] mb-10">
           Press & recognition
         </h2>
 
@@ -527,8 +527,9 @@ export default function ImpactPageClient() {
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 overflow-hidden"
         >
-          <span className="impact-glow impact-glow-1" />
-          <span className="impact-glow impact-glow-2" />
+          <span className="hero-glow hero-glow-1" />
+          <span className="hero-glow hero-glow-2" />
+          <span className="hero-grid" />
         </div>
         {/* Centered text content */}
         <div className="relative text-center max-w-3xl mx-auto mb-10 lg:mb-14">
@@ -536,7 +537,7 @@ export default function ImpactPageClient() {
             Driving change across Nigeria
           </span>
 
-          <h1 className="impact-reveal impact-delay-1 impact-display text-white text-3xl sm:text-4xl md:text-5xl lg:text-[3.75rem] font-bold leading-[1.12] mb-6">
+          <h1 className="impact-reveal impact-delay-1 text-white text-3xl sm:text-4xl md:text-5xl lg:text-[3.75rem] font-bold leading-[1.12] mb-6">
             Mobility that{" "}
             <em className="not-italic text-[#5AA2FF]">lifts people</em> and
             protects the planet.
@@ -616,7 +617,7 @@ export default function ImpactPageClient() {
           <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-[#0673FF] mb-3">
             What we stand for
           </p>
-          <h2 className="impact-reveal impact-delay-1 impact-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] text-[#101928] mb-4">
+          <h2 className="impact-reveal impact-delay-1 text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] text-[#101928] mb-4">
             Four pillars of{" "}
             <em className="not-italic text-[#0673FF]">lasting impact</em>
           </h2>
@@ -671,7 +672,7 @@ export default function ImpactPageClient() {
           <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-[#0673FF] mb-3">
             Impact in focus
           </p>
-          <h2 className="impact-reveal impact-delay-1 impact-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] text-[#101928] mb-4 max-w-3xl">
+          <h2 className="impact-reveal impact-delay-1 text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] text-[#101928] mb-4 max-w-3xl">
             Stories from the <em className="not-italic text-[#0673FF]">ground</em>
           </h2>
           <p className="impact-reveal impact-delay-2 text-gray-600 max-w-2xl leading-8">
@@ -728,7 +729,7 @@ export default function ImpactPageClient() {
               <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-white/60 mb-3">
                 The economic case
               </p>
-              <h2 className="impact-reveal impact-delay-1 impact-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] mb-4">
+              <h2 className="impact-reveal impact-delay-1 text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] mb-4">
                 From ₦75k to{" "}
                 <span className="text-[#5AA2FF]">₦500k</span>
                 <br />a month.
@@ -810,7 +811,7 @@ export default function ImpactPageClient() {
           <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-[#0673FF] mb-3">
             Real outcomes
           </p>
-          <h2 className="impact-reveal impact-delay-1 impact-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] text-[#101928] mb-10">
+          <h2 className="impact-reveal impact-delay-1 text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] text-[#101928] mb-10">
             The people behind
             <br />
             the <em className="not-italic text-[#0673FF]">numbers</em>
@@ -852,7 +853,7 @@ export default function ImpactPageClient() {
           <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-[#0673FF] mb-3">
             UN Sustainable Development Goals
           </p>
-          <h2 className="impact-reveal impact-delay-1 impact-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] text-[#101928] mb-4">
+          <h2 className="impact-reveal impact-delay-1 text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] text-[#101928] mb-4">
             Our <em className="not-italic text-[#0673FF]">SDG alignment</em>
           </h2>
           <p className="impact-reveal impact-delay-2 text-gray-600 max-w-[560px] leading-[1.75] font-light">
@@ -889,7 +890,7 @@ export default function ImpactPageClient() {
           <p className="impact-reveal text-[11px] uppercase tracking-[0.16em] text-[#0673FF] mb-3">
             Ride with purpose
           </p>
-          <h2 className="impact-reveal impact-delay-1 impact-display text-[#101928] text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] mb-5">
+          <h2 className="impact-reveal impact-delay-1 text-[#101928] text-[clamp(2rem,3.5vw,2.8rem)] font-bold leading-[1.15] mb-5">
             Every ride moves{" "}
             <em className="not-italic text-[#0673FF]">someone</em> forward.
           </h2>
@@ -925,54 +926,7 @@ export default function ImpactPageClient() {
 
       <Footer />
 
-      <style jsx>{`
-        .impact-display {
-          font-family: var(--font-impact-playfair), Georgia, "Times New Roman",
-            serif;
-          letter-spacing: -0.01em;
-        }
-        .impact-glow {
-          position: absolute;
-          border-radius: 9999px;
-          filter: blur(90px);
-          opacity: 0.32;
-          pointer-events: none;
-        }
-        .impact-glow-1 {
-          width: 420px;
-          height: 420px;
-          background: #0673ff;
-          top: -90px;
-          left: -60px;
-          animation: impactFloat1 16s ease-in-out infinite;
-        }
-        .impact-glow-2 {
-          width: 360px;
-          height: 360px;
-          background: #5aa2ff;
-          bottom: -110px;
-          right: -50px;
-          animation: impactFloat2 20s ease-in-out infinite;
-        }
-        @keyframes impactFloat1 {
-          0%,
-          100% {
-            transform: translate(0, 0);
-          }
-          50% {
-            transform: translate(40px, 30px);
-          }
-        }
-        @keyframes impactFloat2 {
-          0%,
-          100% {
-            transform: translate(0, 0);
-          }
-          50% {
-            transform: translate(-30px, -40px);
-          }
-        }
-        .impact-scroll-cue {
+      <style jsx>{`        .impact-scroll-cue {
           animation: impactBounce 2.4s ease-in-out infinite;
         }
         @keyframes impactBounce {
@@ -985,8 +939,6 @@ export default function ImpactPageClient() {
           }
         }
         @media (prefers-reduced-motion: reduce) {
-          .impact-glow-1,
-          .impact-glow-2,
           .impact-scroll-cue {
             animation: none;
           }
