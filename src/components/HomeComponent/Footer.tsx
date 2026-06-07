@@ -52,10 +52,38 @@ const footerNav: FooterNavProps[] = [
     title: "Explore",
     links: [
       { name: "Get paid", link: "https://host.muvment.ng/" },
+      { name: "Become a Driver", link: "https://host.muvment.ng/earn" },
       { name: "Book a vehicle", link: "/booking/search" },
-      // { name: "Vehicle types", scrollTo: "/" },
-      // { name: "Find your location", scrollTo: "/booking/search" },
+      { name: "Partner with us", link: "/partner-with-us" },
     ],
+  },
+];
+
+const socials = [
+  {
+    Icon: FaInstagram,
+    href: "https://www.instagram.com/autogirlng",
+    label: "Muvment on Instagram",
+  },
+  {
+    Icon: FaTwitter,
+    href: "https://twitter.com/autogirlng",
+    label: "Muvment on Twitter",
+  },
+  {
+    Icon: FaTiktok,
+    href: "https://www.tiktok.com/@autogirl.ng",
+    label: "Muvment on TikTok",
+  },
+  {
+    Icon: FaFacebook,
+    href: "https://web.facebook.com/autogirlng",
+    label: "Muvment on Facebook",
+  },
+  {
+    Icon: FaLinkedin,
+    href: "https://www.linkedin.com/company/autogirl/",
+    label: "Muvment on LinkedIn",
   },
 ];
 
@@ -155,56 +183,41 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
 
   return (
     <footer className="px-4 md:px-6 lg:px-8 mb-24 bg-white text-black">
-      <div className="py-8 md:py-12 lg:py-16 px-6 md:px-10 lg:px-16 bg-[#F8F9FA] rounded-[32px] md:rounded-[48px] mx-2 md:mx-4 lg:mx-6">
-        <div className="w-full max-w-[1400px] mx-auto text-grey-500 space-y-8 md:space-y-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-10 md:gap-8 lg:gap-12 gap-y-10">
-            <div className="md:col-span-3 lg:col-span-2 space-y-6 max-w-[400px]">
-              <div className="flex items-center gap-2">
-                <Image
-                  src="/images/image.webp"
-                  alt="Muvment"
-                  width={250}
-                  height={90}
-                  className="h-auto"
-                />
-              </div>
-              {/*<p className="!font-normal text-base md:text-lg text-grey-600">
-                Be the first to receive all the recent updates, articles, and
-                valuable materials.
+      <div className="py-10 md:py-12 lg:py-16 px-6 md:px-10 lg:px-16 bg-[#F8F9FA] rounded-[32px] md:rounded-[48px] mx-2 md:mx-4 lg:mx-6">
+        <div className="w-full max-w-[1400px] mx-auto text-grey-500 space-y-10 lg:space-y-14">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-x-8 gap-y-10 lg:gap-12">
+            {/* Brand */}
+            <div className="col-span-2 space-y-5 max-w-[360px]">
+              <Image
+                src="/images/image.webp"
+                alt="Muvment by Autogirl"
+                width={250}
+                height={90}
+                className="h-auto w-[170px] md:w-[180px]"
+              />
+              <p className="text-grey-600 text-[15px] leading-relaxed">
+                Premium, reliable vehicle rentals across Nigeria and Ghana.
               </p>
-
-              <form
-                onSubmit={handleSubmit}
-                className="flex flex-col sm:flex-row gap-3"
-              >
-                <Input
-                  name="email"
-                  type="email"
-                  placeholder="Email address"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  error={errors.email}
-                  disabled={isSubmitting}
-                  fluid={true}
-                  className="flex-1 !rounded-full bg-white"
-                />
-                <Button
-                  type="submit"
-                  color="primary"
-                  variant="filled"
-                  className="!rounded-full !py-3 !px-8 h-fit whitespace-nowrap"
-                  loading={isSubmitting}
-                  disabled={isSubmitting || !isFormValid}
-                >
-                  Subscribe
-                </Button>
-              </form>*/}
+              <div className="flex items-center gap-4 text-grey-600 text-[19px] pt-1">
+                {socials.map(({ Icon, href, label }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    aria-label={label}
+                    className="hover:text-primary-500 transition-colors"
+                  >
+                    <Icon />
+                  </Link>
+                ))}
+              </div>
             </div>
 
+            {/* Nav columns */}
             {footerNav.map((nav) => (
-              <div className="space-y-6 !font-normal text-base" key={nav.title}>
+              <div className="space-y-5 text-base" key={nav.title}>
                 <p className="text-grey-900 font-medium">{nav.title}</p>
-                <ul className="space-y-4 list-none text-grey-600">
+                <ul className="space-y-3.5 list-none text-grey-600">
                   {nav.links.map((navLink) => (
                     <li key={navLink.name} className="flex gap-1">
                       {navLink.scrollTo ? (
@@ -212,7 +225,7 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                           onClick={() =>
                             navLink.scrollTo && handleScrollTo(navLink.scrollTo)
                           }
-                          className="text-left hover:text-primary-500"
+                          className="text-left hover:text-primary-500 transition-colors"
                         >
                           {navLink.name}
                         </button>
@@ -223,14 +236,14 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                               ? `&bookingType=${bookingType}`
                               : ""
                           }`}
-                          className="hover:text-primary-500"
+                          className="hover:text-primary-500 transition-colors"
                         >
                           {navLink.name}
                         </Link>
                       ) : navLink.link ? (
                         <Link
                           href={`${navLink.link}`}
-                          className="hover:text-primary-500"
+                          className="hover:text-primary-500 transition-colors"
                         >
                           {navLink.name}
                         </Link>
@@ -249,67 +262,25 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
             ))}
           </div>
 
-          <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-grey-300">
-            <div className="w-full md:w-fit flex flex-col md:flex-row items-center gap-5 md:gap-8">
-              <div className="w-full md:w-fit flex flex-col md:flex-row md:items-center gap-5 md:gap-8 text-sm">
-                <Link
-                  href="/policy/terms-conditions"
-                  className="font-normal text-grey-600 hover:text-primary-500"
-                >
-                  Terms of Service
-                </Link>
-                <Link
-                  href="/policy/privacy-policy"
-                  className="font-normal text-grey-600 hover:text-primary-500"
-                >
-                  Privacy Policy
-                </Link>
-              </div>
-              <div className="w-full md:w-fit flex items-center justify-center gap-4 mt-5 md:mt-0 py-8 md:py-0 border-t border-grey-300 md:border-none text-grey-600">
-                <Link
-                  href="https://www.instagram.com/autogirlng"
-                  target="_blank"
-                  aria-label="Muvment on Instagram"
-                  className="hover:text-primary-500"
-                >
-                  <FaInstagram />
-                </Link>
-                <Link
-                  href="https://twitter.com/autogirlng"
-                  target="_blank"
-                  aria-label="Muvment on Twitter"
-                  className="hover:text-primary-500"
-                >
-                  <FaTwitter />
-                </Link>
-                <Link
-                  href="https://www.tiktok.com/@autogirl.ng"
-                  target="_blank"
-                  aria-label="Muvment on TikTok"
-                  className="hover:text-primary-500"
-                >
-                  <FaTiktok />
-                </Link>
-                <Link
-                  href="https://web.facebook.com/autogirlng"
-                  target="_blank"
-                  aria-label="Muvment on Facebook"
-                  className="hover:text-primary-500"
-                >
-                  <FaFacebook />
-                </Link>
-                <Link
-                  href="https://www.linkedin.com/company/autogirl/"
-                  target="_blank"
-                  aria-label="Muvment on LinkedIn"
-                  className="hover:text-primary-500"
-                >
-                  <FaLinkedin />
-                </Link>
-              </div>
+          {/* Bottom bar */}
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between pt-8 border-t border-grey-300 text-sm text-grey-600">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <Link
+                href="/policy/terms-conditions"
+                className="hover:text-primary-500 transition-colors"
+              >
+                Terms of Service
+              </Link>
+              <Link
+                href="/policy/privacy-policy"
+                className="hover:text-primary-500 transition-colors"
+              >
+                Privacy Policy
+              </Link>
             </div>
-            <p className="text-sm text-grey-500 mt-5 md:mt-0">
-              © <span>{currentYear}</span> Muvment. All rights reserved.
+            <p className="text-grey-500">
+              © <span>{currentYear}</span> Muvment by Autogirl. All rights
+              reserved.
             </p>
           </div>
         </div>
