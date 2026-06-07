@@ -1,11 +1,4 @@
-import { DM_Sans, Playfair_Display } from "next/font/google";
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  variable: "--font-impact-dm",
-  display: "swap",
-});
+import { Playfair_Display } from "next/font/google";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -21,9 +14,7 @@ export default function ImpactLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className={`${dmSans.variable} ${playfair.variable} ${dmSans.className} bg-[#FAFAF7] text-[#1C1C1C]`}
-    >
+    <div className={`${playfair.variable} bg-white text-[#101928]`}>
       {children}
     </div>
   );
