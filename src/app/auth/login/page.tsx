@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Link from "next/link";
+import Image from "next/image";
 
 interface LoginFormValues {
   email: string;
@@ -122,30 +123,53 @@ export default function LoginComponent() {
     <div className="min-h-screen bg-white">
       <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
         {/* Left Side - Background Image */}
-        <div className="hidden lg:flex items-center justify-center relative overflow-hidden">
+        <div className="hidden lg:flex relative overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: "url('/images/auth/login_bg.webp')",
             }}
           >
-            <div className="absolute inset-0 bg-black/50"></div>
+            <div className="absolute inset-0 bg-[#101928]/70"></div>
           </div>
-          <div className="absolute inset-0 flex items-start justify-start p-8">
-            <div
-              className="text-white cursor-pointer"
+          <div className="absolute inset-0 flex flex-col justify-between p-10">
+            <button
+              className="text-white text-left"
               onClick={() => router.push(`/`)}
+              aria-label="Muvment home"
             >
-              <h1 className="text-4xl font-bold mb-2">Muvment</h1>
+              <span className="text-3xl font-bold">Muvment</span>
+            </button>
+            <div className="text-white max-w-sm">
+              <p className="text-2xl font-semibold leading-snug">
+                Premium, reliable vehicle rentals across Nigeria and Ghana.
+              </p>
+              <p className="mt-3 text-white/70 text-sm leading-relaxed">
+                Book verified vehicles with trusted drivers in minutes.
+              </p>
             </div>
           </div>
         </div>
 
         {/* Right Side - Login Form */}
-        <div className="flex flex-col bg-white overflow-y-auto h-screen px-6 pt-16">
+        <div className="flex flex-col bg-white overflow-y-auto h-screen px-6">
           <div className="max-w-[90%] m-auto w-full flex flex-col justify-center min-h-screen py-12">
+            {/* Mobile logo */}
+            <button
+              onClick={() => router.push("/")}
+              className="lg:hidden mb-10 self-start"
+              aria-label="Muvment home"
+            >
+              <Image
+                src="/images/image.png"
+                alt="Muvment"
+                width={150}
+                height={40}
+              />
+            </button>
+
             <div className="mb-8">
-              <h1 className="md:text-5xl text-4xl font-bold text-black mb-3">
+              <h1 className="md:text-5xl text-4xl font-bold text-[#101928] mb-3">
                 Welcome back
               </h1>
               <p className="text-base text-gray-500">
@@ -159,15 +183,20 @@ export default function LoginComponent() {
               </div>
             )}
 
-            <div className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-900 mb-2"
+                >
                   Email
                 </label>
                 <input
+                  id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   value={formValues.email}
                   onChange={(e) => handleChange("email", e.target.value)}
                   onBlur={() => handleBlur("email")}
@@ -176,7 +205,7 @@ export default function LoginComponent() {
                     touched.email && errors.email
                       ? "border-red-500"
                       : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-gray-800`}
+                  } focus:outline-none focus:ring-2 focus:ring-[#0673FF]`}
                 />
                 {touched.email && errors.email && (
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -185,13 +214,18 @@ export default function LoginComponent() {
 
               {/* Password Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-900 mb-2"
+                >
                   Password
                 </label>
                 <div className="relative">
                   <input
+                    id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
                     value={formValues.password}
                     onChange={(e) => handleChange("password", e.target.value)}
                     onBlur={() => handleBlur("password")}
@@ -200,11 +234,12 @@ export default function LoginComponent() {
                       touched.password && errors.password
                         ? "border-red-500"
                         : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-gray-800`}
+                    } focus:outline-none focus:ring-2 focus:ring-[#0673FF]`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword ? (
@@ -258,7 +293,7 @@ export default function LoginComponent() {
                     onChange={(e) =>
                       handleChange("rememberMe", e.target.checked)
                     }
-                    className="w-4 h-4 text-gray-800 border-gray-300 rounded focus:ring-gray-800 cursor-pointer"
+                    className="w-4 h-4 text-[#0673FF] border-gray-300 rounded focus:ring-[#0673FF] cursor-pointer"
                   />
                   <span className="ml-2 text-sm text-gray-700">
                     Remember me
@@ -267,7 +302,7 @@ export default function LoginComponent() {
 
                 <Link
                   href="/auth/forgot-password"
-                  className="text-sm text-blue-500 hover:underline font-medium"
+                  className="text-sm text-[#0673FF] hover:underline font-medium"
                 >
                   Forgot password?
                 </Link>
@@ -275,13 +310,12 @@ export default function LoginComponent() {
 
               {/* Sign In Button */}
               <button
-                type="button"
-                onClick={handleSubmit}
+                type="submit"
                 disabled={isLoading || !isFormValid()}
-                className={`w-full py-5 rounded-2xl font-medium transition-all duration-200 text-sm ${
+                className={`w-full py-4 rounded-full font-semibold transition-all duration-200 text-sm ${
                   isLoading || !isFormValid()
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-gray-800 text-white hover:bg-gray-900 active:scale-95"
+                    : "bg-[#0673FF] text-white hover:bg-[#0560d6] active:scale-95"
                 }`}
               >
                 {isLoading ? "Signing In..." : "Sign In"}
@@ -292,12 +326,12 @@ export default function LoginComponent() {
                 Not a user?{" "}
                 <Link
                   href="/auth/register"
-                  className="text-blue-500 hover:underline font-medium"
+                  className="text-[#0673FF] hover:underline font-medium"
                 >
                   Sign Up
                 </Link>
               </p>
-            </div>
+            </form>
 
             {/* Footer */}
             <p className="text-center text-sm text-gray-600 mt-12">
