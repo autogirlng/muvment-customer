@@ -1,5 +1,8 @@
 "use client";
 import { Navbar } from "@/components/Navbar";
+import Footer from "@/components/HomeComponent/Footer";
+import BookingCTA from "@/components/general/BookingCTA";
+import Reveal from "@/components/general/Reveal";
 import React, { useState, FormEvent } from "react";
 import {
   FaTwitter,
@@ -9,7 +12,8 @@ import {
   FaLinkedinIn,
   FaEnvelope,
   FaMapMarkerAlt,
-
+  FaPhoneAlt,
+  FaCheckCircle,
 } from "react-icons/fa";
 import { createData } from "@/controllers/connnector/app.callers";
 import { toast } from "react-toastify";
@@ -23,16 +27,53 @@ interface FormData {
   message: string;
 }
 
+const emptyForm: FormData = {
+  firstName: "",
+  lastName: "",
+  phoneNumber: "",
+  email: "",
+  location: "",
+  message: "",
+};
+
+const socials = [
+  { href: "https://www.instagram.com/autogirlng", label: "Muvment on Instagram", Icon: FaInstagram },
+  { href: "https://twitter.com/autogirlng", label: "Muvment on X (Twitter)", Icon: FaTwitter },
+  { href: "https://web.facebook.com/autogirlng", label: "Muvment on Facebook", Icon: FaFacebookF },
+  { href: "https://wa.me/2349030235285", label: "Muvment on WhatsApp", Icon: FaWhatsapp },
+  { href: "https://www.linkedin.com/company/autogirl/", label: "Muvment on LinkedIn", Icon: FaLinkedinIn },
+];
+
+const contactDetails = [
+  {
+    Icon: FaMapMarkerAlt,
+    label: "Address",
+    value: "10 Anuoluwapo Close, Opebi, Ikeja, Lagos",
+    href: undefined as string | undefined,
+  },
+  {
+    Icon: FaEnvelope,
+    label: "Mail",
+    value: "info@muvment.ng",
+    href: "mailto:info@muvment.ng",
+  },
+  {
+    Icon: FaPhoneAlt,
+    label: "Call us on",
+    value: "+234 816 747 4165",
+    href: "tel:+2348167474165",
+  },
+];
+
+const inputBase =
+  "w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:ring-2 focus:ring-[#0673FF]/40";
+
 const ContactUsClient: React.FC = () => {
-  const [formData, setFormData] = useState<FormData>({
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    email: "",
-    location: "",
-    message: "",
-  });
+  const [formData, setFormData] = useState<FormData>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
   function validate() {
     const newErrors: Record<string, string> = {};
 
@@ -58,292 +99,359 @@ const ContactUsClient: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setErrors({ ...errors, [e.target.name]: "" });
   }
-  async function sendForm() {
-    const response = await createData("/api/v1/contact-form", formData);
 
-    if (response?.error === false) {
-      toast.success("Form submitted successfully!");
-      setFormData({
-        firstName: "",
-        lastName: "",
-        phoneNumber: "",
-        email: "",
-        location: "",
-        message: "",
-      });
+  async function sendForm() {
+    try {
+      const response = await createData("/api/v1/contact-form", formData);
+
+      if (response?.error === false) {
+        toast.success("Form submitted successfully!");
+        setFormData(emptyForm);
+        setSubmitted(true);
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     }
   }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (submitting) return;
     if (!validate()) return;
 
-
+    setSubmitting(true);
     await sendForm();
+    setSubmitting(false);
+  }
 
+  function startNewMessage() {
+    setErrors({});
+    setSubmitted(false);
   }
 
   return (
-    <div className="">
-      <Navbar showSearchBar={true} />
-      <div className="h-[10vh]"></div>
-      <div className="min-h-screen  py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Hero Section */}
-          <div className="bg-blue-600 rounded-3xl p-8 sm:p-12 mb-8 shadow-lg">
-            <p className="text-blue-100 text-sm sm:text-base mb-3">
-              Contact Us
-            </p>
-            <h1 className="text-white text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">
-              We would love to <span className="text-orange-400">hear</span>{" "}
-              from you
-            </h1>
-            <div className="flex gap-3">
-              <a
-                href="https://www.instagram.com/autogirlng"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-blue-500 hover:bg-blue-400 rounded-full flex items-center justify-center transition-colors"
-              >
-                <FaInstagram className="text-white text-lg" />
-              </a>
-              <a
-                href="https://twitter.com/autogirlng"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-blue-500 hover:bg-blue-400 rounded-full flex items-center justify-center transition-colors"
-              >
-                <FaTwitter className="text-white text-lg" />
-              </a>
-              <a
-                href="https://web.facebook.com/autogirlng"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-blue-500 hover:bg-blue-400 rounded-full flex items-center justify-center transition-colors"
-              >
-                <FaFacebookF className="text-white text-lg" />
-              </a>
-              <a
-                href="https://wa.me/2349030235285"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-blue-500 hover:bg-blue-400 rounded-full flex items-center justify-center transition-colors"
-              >
-                <FaWhatsapp className="text-white text-lg" />
-              </a>
-              <a
-                href="https://www.linkedin.com/company/autogirl/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-blue-500 hover:bg-blue-400 rounded-full flex items-center justify-center transition-colors"
-              >
-                <FaLinkedinIn className="text-white text-lg" />
-              </a>
-            </div>
-          </div>
+    <div className="min-h-screen bg-white">
+      <Navbar />
 
-          {/* Contact Info Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
-            {/* Address */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <FaMapMarkerAlt className="text-blue-600" />
-              </div>
-              <h3 className="text-gray-900 font-semibold mb-2">Address</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                10 Anuoluwapo Close, Opebi, Ikeja, Lagos
+      <div className="mx-auto max-w-6xl px-4 pt-28 pb-12 sm:px-6 sm:pt-32 lg:px-8">
+        {/* Hero */}
+        <Reveal>
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0673FF] to-[#0a328f] px-7 py-12 shadow-lg sm:px-12 sm:py-16">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-[0.18]"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)",
+                backgroundSize: "22px 22px",
+              }}
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl"
+            />
+            <div className="relative">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-100/90">
+                Contact Us
               </p>
+              <h1 className="mt-3 max-w-2xl font-serif text-3xl font-semibold leading-[1.1] text-white sm:text-5xl">
+                We would love to{" "}
+                <span className="text-orange-300">hear</span> from you
+              </h1>
+              <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-blue-50/90 sm:text-lg">
+                Questions, feedback, or a booking you want help with? Send us a
+                message and our team will get back to you.
+              </p>
+              <div className="mt-7 flex gap-3">
+                {socials.map(({ href, label, Icon }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    aria-label={label}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20 backdrop-blur-sm transition-colors hover:bg-white/25"
+                  >
+                    <Icon className="text-lg text-white" />
+                  </a>
+                ))}
+              </div>
             </div>
-
-            {/* Email */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <FaEnvelope className="text-blue-600" />
-              </div>
-              <h3 className="text-gray-900 font-semibold mb-2">Mail</h3>
-              <div className="text-gray-600 text-sm space-y-1">
-                <a
-                  href="mailto:support@autogirl.ng"
-                  className="block text-gray-600 text-sm hover:text-blue-600 transition"
-                >
-                  support@autogirl.ng
-                </a>
-              </div>
-            </div>
-
-            {/* Phone */}
-            {/* <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <FaPhoneAlt className="text-blue-600" />
-              </div>
-              <h3 className="text-gray-900 font-semibold mb-2">Call us on</h3>
-
-              <div className="text-gray-600 text-sm space-y-1">
-                <a
-                  href="tel:+ 2348167474165"
-                  className="block hover:text-blue-600 transition"
-                >
-                  +234 (0)816 747 4165
-                </a>
-
-                <a
-                  href="tel:+237049818047"
-                  className="block hover:text-blue-600 transition"
-                >
-                  +234 (0)704 981 8047
-                </a>
-              </div>
-            </div> */}
           </div>
+        </Reveal>
 
-          {/* Contact Form */}
-          <div className="bg-white rounded-2xl p-6 sm:p-8 lg:p-12 shadow-sm ">
-            <h2 className="text-gray-900 text-2xl sm:text-3xl font-bold mb-2">
-              Contact Form
-            </h2>
-            <p className="text-gray-600 text-sm mb-8">
-              No idea is too big. No question is too small. Reach out and let's
-              create some <b>MUVMENT</b> together.
-            </p>
-
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    First name
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    placeholder="Enter first name"
-                    className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
-${errors.firstName ? "border-red-500" : "border-gray-200"}
-focus:ring-2 focus:ring-blue-500`} />
-                  {errors.firstName && (
-                    <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Last name
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    placeholder="Enter last name"
-                    className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
-${errors.lastName ? "border-red-500" : "border-gray-200"}
-focus:ring-2 focus:ring-blue-500`} />
-                  {errors.lastName && (
-                    <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Phone Number
-                </label>
-                <div className="flex flex-nowrap">
-                  <div className="flex items-center px-2 sm:px-3 py-3 border border-r-0 border-gray-200 rounded-l-lg bg-gray-50 flex-shrink-0">
-                    <span className="text-gray-700 text-xs sm:text-sm whitespace-nowrap">
-                      +234
-                    </span>
-
+        {/* Body: info beside form */}
+        <div className="mt-8 lg:grid lg:grid-cols-[0.85fr_1.15fr] lg:gap-8">
+          {/* Info column */}
+          <div className="mb-6 lg:mb-0">
+            <div className="lg:sticky lg:top-28">
+              <Reveal>
+                <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm sm:p-8">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                Reach us
+              </p>
+              <div className="mt-5 space-y-6">
+                {contactDetails.map(({ Icon, label, value, href }) => (
+                  <div key={label} className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-100">
+                      <Icon className="text-[#0673FF]" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        {label}
+                      </h3>
+                      {href ? (
+                        <a
+                          href={href}
+                          className="mt-0.5 block break-words text-sm text-gray-600 transition-colors hover:text-[#0673FF]"
+                        >
+                          {value}
+                        </a>
+                      ) : (
+                        <p className="mt-0.5 text-sm leading-relaxed text-gray-600">
+                          {value}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <input
-                    type="text" // change from number → removes arrows
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={(e) => {
-                      // allow only digits and max length 10
-                      const val = e.target.value.replace(/\D/g, "").slice(0, 10);
-                      setFormData({ ...formData, phoneNumber: val });
-                      setErrors({ ...errors, phoneNumber: "" }); // clear error while typing
-                    }}
-                    placeholder="Enter phone number"
-                    className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
-${errors.phoneNumber ? "border-red-500" : "border-gray-200"}
-focus:ring-2 focus:ring-blue-500`}
-                  />
-
-                </div>
-                {errors.phoneNumber && (
-                  <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>
-                )}
+                ))}
               </div>
-
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter email address"
-                  className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
-${errors.email ? "border-red-500" : "border-gray-200"}
-focus:ring-2 focus:ring-blue-500`} />
-                {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                )}
-              </div>
-
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  placeholder="Enter your location"
-                  className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
-${errors.location ? "border-red-500" : "border-gray-200"}
-focus:ring-2 focus:ring-blue-500`} />
-                {errors.location && (
-                  <p className="text-red-500 text-xs mt-1">{errors.location}</p>
-                )}
-              </div>
-
-              <div className="mb-6 sm:mb-8">
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Message
-                </label>
-                <textarea
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  placeholder="Type your message here"
-                  rows={6}
-                  className={`w-full px-4 py-3 border rounded-lg text-sm focus:outline-none
-${errors.message ? "border-red-500" : "border-gray-200"}
-focus:ring-2 focus:ring-blue-500`} />
-                {errors.message && (
-                  <p className="text-red-500 text-xs mt-1">{errors.message}</p>
-                )}
-              </div>
-
-              <button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 rounded-lg transition-colors text-sm sm:text-base"
-              >
-                Submit
-              </button>
-            </form>
+            </div>
+              </Reveal>
+            </div>
           </div>
+
+          {/* Form column */}
+          <Reveal>
+            <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm sm:p-8 lg:p-10">
+              {submitted ? (
+                <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                    <FaCheckCircle className="text-3xl text-green-600" />
+                  </div>
+                  <h2 className="mt-6 text-2xl font-bold text-gray-900">
+                    Message sent
+                  </h2>
+                  <p className="mt-3 max-w-sm text-sm leading-relaxed text-gray-600">
+                    Thanks for reaching out. Our team has your message and will
+                    get back to you shortly.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={startNewMessage}
+                    className="mt-7 inline-flex items-center justify-center rounded-full bg-[#0673FF] px-7 py-3 text-sm font-medium text-white transition-colors hover:bg-[#0558cc] focus:outline-none focus:ring-4 focus:ring-[#0673FF]/30"
+                  >
+                    Send another message
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h2 className="mb-2 text-2xl font-bold text-gray-900 sm:text-3xl">
+                    Send us a message
+                  </h2>
+                  <p className="mb-8 text-sm leading-relaxed text-gray-600">
+                    Tell us what you need, a booking, a question, or feedback,
+                    and our team will get back to you as soon as we can.
+                  </p>
+
+                  <form onSubmit={handleSubmit} noValidate>
+                    <div className="mb-4 grid grid-cols-1 gap-4 sm:mb-6 sm:grid-cols-2 sm:gap-6">
+                      <div>
+                        <label
+                          htmlFor="firstName"
+                          className="mb-2 block text-sm font-medium text-gray-700"
+                        >
+                          First name
+                        </label>
+                        <input
+                          id="firstName"
+                          type="text"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          placeholder="Enter first name"
+                          className={`${inputBase} ${
+                            errors.firstName
+                              ? "border-red-500"
+                              : "border-gray-200"
+                          }`}
+                        />
+                        {errors.firstName && (
+                          <p className="mt-1 text-xs text-red-500">
+                            {errors.firstName}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="lastName"
+                          className="mb-2 block text-sm font-medium text-gray-700"
+                        >
+                          Last name
+                        </label>
+                        <input
+                          id="lastName"
+                          type="text"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          placeholder="Enter last name"
+                          className={`${inputBase} ${
+                            errors.lastName
+                              ? "border-red-500"
+                              : "border-gray-200"
+                          }`}
+                        />
+                        {errors.lastName && (
+                          <p className="mt-1 text-xs text-red-500">
+                            {errors.lastName}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mb-4 sm:mb-6">
+                      <label
+                        htmlFor="phoneNumber"
+                        className="mb-2 block text-sm font-medium text-gray-700"
+                      >
+                        Phone Number
+                      </label>
+                      <div className="flex flex-nowrap">
+                        <div className="flex flex-shrink-0 items-center rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 px-3 py-3">
+                          <span className="whitespace-nowrap text-sm text-gray-700">
+                            +234
+                          </span>
+                        </div>
+                        <input
+                          id="phoneNumber"
+                          type="text"
+                          name="phoneNumber"
+                          inputMode="numeric"
+                          value={formData.phoneNumber}
+                          onChange={(e) => {
+                            const val = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 10);
+                            setFormData({ ...formData, phoneNumber: val });
+                            setErrors({ ...errors, phoneNumber: "" });
+                          }}
+                          placeholder="Enter phone number"
+                          className={`w-full rounded-r-xl border bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:ring-2 focus:ring-[#0673FF]/40 ${
+                            errors.phoneNumber
+                              ? "border-red-500"
+                              : "border-gray-200"
+                          }`}
+                        />
+                      </div>
+                      {errors.phoneNumber && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {errors.phoneNumber}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mb-4 sm:mb-6">
+                      <label
+                        htmlFor="email"
+                        className="mb-2 block text-sm font-medium text-gray-700"
+                      >
+                        Email
+                      </label>
+                      <input
+                        id="email"
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="Enter email address"
+                        className={`${inputBase} ${
+                          errors.email ? "border-red-500" : "border-gray-200"
+                        }`}
+                      />
+                      {errors.email && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {errors.email}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mb-4 sm:mb-6">
+                      <label
+                        htmlFor="location"
+                        className="mb-2 block text-sm font-medium text-gray-700"
+                      >
+                        Location
+                      </label>
+                      <input
+                        id="location"
+                        type="text"
+                        name="location"
+                        value={formData.location}
+                        onChange={handleChange}
+                        placeholder="Enter your location"
+                        className={`${inputBase} ${
+                          errors.location ? "border-red-500" : "border-gray-200"
+                        }`}
+                      />
+                      {errors.location && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {errors.location}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mb-6 sm:mb-8">
+                      <label
+                        htmlFor="message"
+                        className="mb-2 block text-sm font-medium text-gray-700"
+                      >
+                        Message
+                      </label>
+                      <textarea
+                        id="message"
+                        name="message"
+                        value={formData.message}
+                        onChange={handleChange}
+                        placeholder="Type your message here"
+                        rows={6}
+                        className={`${inputBase} resize-y ${
+                          errors.message ? "border-red-500" : "border-gray-200"
+                        }`}
+                      />
+                      {errors.message && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {errors.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full rounded-xl bg-[#0673FF] py-4 text-sm font-medium text-white transition-colors hover:bg-[#0558cc] focus:outline-none focus:ring-4 focus:ring-[#0673FF]/30 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+                    >
+                      {submitting ? "Sending..." : "Submit"}
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
+          </Reveal>
         </div>
       </div>
-    </div >
+
+      <BookingCTA />
+      <Footer />
+    </div>
   );
 };
 

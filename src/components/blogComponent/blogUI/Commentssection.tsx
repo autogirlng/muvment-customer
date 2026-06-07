@@ -4,7 +4,6 @@ import { BlogService } from "@/controllers/BlogService/blogService";
 import { BlogComment, PaginatedResponse } from "@/types/blog.type";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { BiCheck } from "react-icons/bi";
-import { FiMessageCircle } from "react-icons/fi";
 import CommentItem from "./Commentitem";
 
 interface CommentsSectionProps {
@@ -98,7 +97,7 @@ export default function CommentsSection({
 
       setForm({ name: "", email: "", phone: "", content: "" });
       setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 3000);
+      setTimeout(() => setSubmitted(false), 6000);
     } catch (err: any) {
       // Show the server's actual error message (e.g. rate limit) if available
       const serverMessage =
@@ -122,14 +121,22 @@ export default function CommentsSection({
 
       {/* ── Form ── */}
       <div className="bg-gray-50 rounded-2xl p-6 mb-10">
-        <h3 className="font-semibold text-gray-900 text-sm mb-5">
-          Leave a comment
+        <h3 className="font-semibold text-gray-900 text-sm mb-1">
+          {comments.filter(Boolean).length === 0
+            ? "Be the first to make a comment"
+            : "Leave a comment"}
         </h3>
+        <p className="text-xs text-gray-500 mb-5">
+          Comments are reviewed before they appear.
+        </p>
 
         {submitted && (
-          <div className="flex items-center gap-2 mb-5 p-3.5 rounded-xl bg-green-50 border border-green-100 text-green-700 text-sm">
-            <BiCheck className="w-4 h-4 flex-shrink-0" />
-            Your comment has been posted
+          <div className="flex items-start gap-2 mb-5 p-3.5 rounded-xl bg-green-50 border border-green-100 text-green-700 text-sm">
+            <BiCheck className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>
+              Your comment has been submitted and will appear once it&apos;s
+              approved by our team.
+            </span>
           </div>
         )}
 
@@ -142,10 +149,11 @@ export default function CommentsSection({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              <label htmlFor="comment-name" className="block text-xs font-semibold text-gray-600 mb-1.5">
                 Name *
               </label>
               <input
+                id="comment-name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 onClick={() => {
@@ -156,10 +164,11 @@ export default function CommentsSection({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              <label htmlFor="comment-email" className="block text-xs font-semibold text-gray-600 mb-1.5">
                 Email *
               </label>
               <input
+                id="comment-email"
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -173,11 +182,12 @@ export default function CommentsSection({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+            <label htmlFor="comment-phone" className="block text-xs font-semibold text-gray-600 mb-1.5">
               Phone{" "}
-              <span className="font-normal text-gray-400">(optional)</span>
+              <span className="font-normal text-gray-500">(optional)</span>
             </label>
             <input
+              id="comment-phone"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               placeholder="+234…"
@@ -186,10 +196,11 @@ export default function CommentsSection({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+            <label htmlFor="comment-content" className="block text-xs font-semibold text-gray-600 mb-1.5">
               Comment *
             </label>
             <textarea
+              id="comment-content"
               rows={4}
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
@@ -206,22 +217,13 @@ export default function CommentsSection({
             disabled={submitting}
             className="px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-colors"
           >
-            {submitting ? "Posting…" : "Post Comment"}
+            {submitting ? "Submitting…" : "Submit Comment"}
           </button>
         </form>
       </div>
 
       {/* ── Comments list ── */}
-      {comments.filter(Boolean).length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-14 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
-            <FiMessageCircle className="w-5 h-5 text-gray-300" />
-          </div>
-          <p className="text-gray-500 text-sm">
-            No comments yet. Be the first!
-          </p>
-        </div>
-      ) : (
+      {comments.filter(Boolean).length > 0 && (
         <div>
           {comments.filter(Boolean).map((c, i) => (
             <CommentItem key={c.id ?? i} comment={c} />

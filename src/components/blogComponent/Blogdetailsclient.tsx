@@ -3,16 +3,87 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BiChevronRight, BiHeart, BiSearch } from "react-icons/bi";
+import { BiChevronRight, BiHeart } from "react-icons/bi";
 import { BsEye } from "react-icons/bs";
 import { LuClock } from "react-icons/lu";
 import { BlogComment, BlogPost, PaginatedResponse } from "@/types/blog.type";
 import { BlogService } from "@/controllers/BlogService/blogService";
+import { SEO_DEFAULTS } from "@/helpers/metadata";
+import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
 import ShareButton from "./blogUI/Sharebutton";
 import CommentsSection from "./blogUI/Commentssection";
 import Footer from "../HomeComponent/Footer";
 import { Navbar } from "../Navbar";
-import parse from "html-react-parser";
+import parse, {
+  Element,
+  attributesToProps,
+  domToReact,
+  type HTMLReactParserOptions,
+  type DOMNode,
+} from "html-react-parser";
+
+// Strip a leading heading from the CMS body when it merely repeats the post
+// title, so the title does not render twice (once in the header, once at the
+// very top of the article body just under the cover image).
+function renderBody(html: string, title: string) {
+  const norm = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+  const target = norm(title || "");
+  const getText = (nodes: unknown[]): string =>
+    (nodes || [])
+      .map((n) => {
+        const node = n as { type?: string; data?: string; children?: unknown[] };
+        if (node.type === "text") return node.data || "";
+        if (node.children) return getText(node.children);
+        return "";
+      })
+      .join("");
+  let decided = false;
+  const options: HTMLReactParserOptions = {
+    replace: (node) => {
+      if (!(node instanceof Element)) return undefined;
+
+      // Optimize and lazy-load images embedded in the article body.
+      if (node.name === "img") {
+        const props = attributesToProps(node.attribs);
+        const rawSrc = typeof props.src === "string" ? props.src : "";
+        return (
+          <img
+            {...props}
+            src={rawSrc ? optimizeCloudinaryUrl(rawSrc, 1200) : undefined}
+            loading="lazy"
+            decoding="async"
+            alt={typeof props.alt === "string" ? props.alt : ""}
+          />
+        );
+      }
+
+      // Wrap tables so they scroll horizontally on small screens instead of
+      // overflowing the layout.
+      if (node.name === "table") {
+        return (
+          <div className="overflow-x-auto my-6 -mx-4 sm:mx-0">
+            <table
+              {...attributesToProps(node.attribs)}
+              className="min-w-full text-sm"
+            >
+              {domToReact(node.children as DOMNode[], options)}
+            </table>
+          </div>
+        );
+      }
+
+      // Remove a leading heading that just repeats the post title.
+      if (!decided && /^h[1-6]$/.test(node.name)) {
+        decided = true;
+        if (target && norm(getText(node.children)) === target) {
+          return <></>;
+        }
+      }
+      return undefined;
+    },
+  };
+  return parse(html || "", options);
+}
 
 function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -41,8 +112,9 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
       <div className="h-44 bg-gray-200 flex items-center justify-center overflow-hidden">
         {post.coverImage ? (
           <img
-            src={post.coverImage}
+            src={optimizeCloudinaryUrl(post.coverImage, 600)}
             alt={post.title}
+            loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
@@ -75,7 +147,7 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
               <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
             </svg>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <span className="font-medium text-gray-600">{authorName}</span>
             <span>•</span>
             <time>{BlogService.formatDate(post.approvedAt || post.createdAt)}</time>
@@ -130,36 +202,14 @@ export default function BlogDetailsClient({
 
   const author = post.authAuthorName || post.authorName;
   const readTime = BlogService.estimateReadTime(post.content);
-  const postUrl =
-    typeof window !== "undefined" ? window.location.href : `/blog/${post.slug}`;
+  const postUrl = `${SEO_DEFAULTS.baseUrl}${BlogService.buildPostUrl(post.slug)}`;
 
   return (
     <>
       <Navbar />
-<section className="bg-[#0d1f35] text-white">
-        <div className="max-w-4xl mx-auto px-4 pt-28 pb-20 text-center">
-          <span className="block text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
-            Blog
-          </span>
-          <p className="text-gray-400 text-base max-w-md mx-auto mb-10">
-            Ideas worth Exploring Stories, insights, and perspectives from our
-            community.
-          </p>
-          <div className="relative max-w-lg mx-auto">
-            <BiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            <input
-              type="search"
-              // value={search}
-              // onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search articles..."
-              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            />
-          </div>
-        </div>
-      </section>
       {/* ── Breadcrumb ─────────────────────────────────────────────────── */}
-      <nav aria-label="Breadcrumb" className="max-w-3xl mx-auto px-4 pt-6 pb-2">
-        <ol className="flex items-center gap-1.5 text-xs text-gray-400 flex-wrap">
+      <nav aria-label="Breadcrumb" className="max-w-3xl mx-auto px-4 pt-28 pb-2">
+        <ol className="flex items-center gap-1.5 text-xs text-gray-500 flex-wrap">
           <li>
             <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
           </li>
@@ -191,30 +241,9 @@ export default function BlogDetailsClient({
       >
         {/* ── Header ── */}
         <header className="mb-8">
-          {/* Category + tag chips */}
-          <div className="flex items-center gap-2 flex-wrap mb-4">
-            {post.blogCategory && (
-              <Link
-                href={`/blog?category=${encodeURIComponent(post.blogCategory.name)}`}
-                className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
-              >
-                {post.blogCategory.name}
-              </Link>
-            )}
-            {(post.tags ?? []).map((tag: string) => (
-              <Link
-                key={tag}
-                href={`/blog?search=${encodeURIComponent(tag)}`}
-                className="px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
-              >
-                #{tag}
-              </Link>
-            ))}
-          </div>
-
           {/* Title */}
           <h1
-            className="text-3xl md:text-4xl font-bold text-[#0d1f35] leading-tight mb-4 tracking-tight"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#0d1f35] leading-tight mb-4 tracking-tight"
             itemProp="headline"
           >
             {post.title}
@@ -237,7 +266,7 @@ export default function BlogDetailsClient({
                 <p className="font-semibold text-gray-900 text-sm" itemProp="author">
                   {author}
                 </p>
-                <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
                   <time dateTime={post.approvedAt || post.createdAt} itemProp="datePublished">
                     {BlogService.formatDateLong(post.approvedAt || post.createdAt)}
                   </time>
@@ -255,26 +284,33 @@ export default function BlogDetailsClient({
 
         {/* ── Cover image ── */}
         {post.coverImage && (
-          <div className="w-full rounded-lg overflow-hidden border border-gray-200 mb-8">
+          <div className="relative w-full aspect-[16/9] max-h-[480px] rounded-lg overflow-hidden border border-gray-200 mb-8 bg-gray-100">
             <img
-              src={post.coverImage}
+              src={optimizeCloudinaryUrl(post.coverImage, 1200)}
               alt={post.title}
-              className="w-full object-cover max-h-[480px]"
+              className="w-full h-full object-cover"
             />
           </div>
         )}
 
         {/* ── Body ── */}
         <div className="prose prose-base max-w-none
-          prose-headings:text-[#0d1f35] prose-headings:font-bold
-          prose-h2:text-2xl prose-h3:text-xl
-          prose-p:text-gray-700 prose-p:leading-relaxed prose-p:font-light
+          prose-headings:text-[#0d1f35] prose-headings:font-bold prose-headings:tracking-tight
+          prose-h1:text-2xl prose-h1:mt-6 prose-h1:mb-3
+          prose-h2:text-xl prose-h2:mt-6 prose-h2:mb-3
+          prose-h3:text-lg prose-h3:mt-5 prose-h3:mb-2
+          prose-h4:text-base prose-h4:mt-4 prose-h4:mb-2
+          prose-p:text-gray-700 prose-p:leading-relaxed prose-p:font-light prose-p:my-4
           prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
-          prose-blockquote:border-l-4 prose-blockquote:border-[#0d1f35] prose-blockquote:pl-5 prose-blockquote:text-gray-500 prose-blockquote:italic prose-blockquote:not-italic
+          prose-blockquote:border-l-4 prose-blockquote:border-[#0d1f35] prose-blockquote:pl-5 prose-blockquote:text-gray-500 prose-blockquote:not-italic
+          prose-ul:my-4 prose-ol:my-4
+          prose-table:border prose-table:border-gray-200
+          prose-th:bg-gray-50 prose-th:text-left prose-th:font-semibold prose-th:text-[#0d1f35] prose-th:px-3 prose-th:py-2 prose-th:border prose-th:border-gray-200
+          prose-td:px-3 prose-td:py-2 prose-td:align-top prose-td:border prose-td:border-gray-200
           prose-img:rounded-lg prose-img:w-full prose-img:border prose-img:border-gray-200
           prose-strong:text-[#0d1f35]
         ">
-          {parse(post.content || "")}
+          {renderBody(post.content || "", post.title)}
         </div>
 
         {/* ── Share this post ── */}
@@ -283,16 +319,24 @@ export default function BlogDetailsClient({
           <ShareButton url={postUrl} title={post.title} />
         </div> */}
 
-        {/* ── Tags ── */}
-        {(post.tags ?? []).length > 0 && (
+        {/* ── Category + tags footer ── */}
+        {(post.blogCategory || (post.tags ?? []).length > 0) && (
           <div className="flex items-center gap-2 flex-wrap pt-6 border-t border-gray-200 mt-6">
+            {post.blogCategory && (
+              <Link
+                href={`/blog?category=${encodeURIComponent(post.blogCategory.name)}`}
+                className="px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+              >
+                {post.blogCategory.name}
+              </Link>
+            )}
             {(post.tags ?? []).map((tag: string) => (
               <Link
                 key={tag}
                 href={`/blog?search=${encodeURIComponent(tag)}`}
-                className="px-4 py-1.5 bg-gray-100 rounded text-sm text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                className="px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
               >
-                {tag}
+                #{tag}
               </Link>
             ))}
           </div>
@@ -300,7 +344,7 @@ export default function BlogDetailsClient({
 
         {/* ── Enwhsdgagement bar ── */}
         <div className="flex items-center justify-between flex-wrap gap-4 py-5 border-y border-gray-200 mt-6 mb-10">
-          <div className="flex items-center gap-5 text-sm text-gray-400">
+          <div className="flex items-center gap-5 text-sm text-gray-500">
             <span className="flex items-center gap-1.5">
               <BsEye className="w-4 h-4" />
               {(post.metrics?.views ?? 0).toLocaleString()} views
@@ -338,13 +382,13 @@ export default function BlogDetailsClient({
       {relatedPosts.length > 0 && (
         <section className="bg-gray-50 border-t border-gray-100 py-20 px-4 text-center">
           <div className="max-w-5xl mx-auto">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">
               Blog
             </p>
             <h2 className="text-3xl font-bold text-[#0d1f35] mb-3 tracking-tight">
               Related posts
             </h2>
-            <p className="text-sm text-gray-400 mb-12 max-w-md mx-auto font-light">
+            <p className="text-sm text-gray-500 mb-12 max-w-md mx-auto font-light">
               {post.excerpt || "More articles you might enjoy."}
             </p>
 

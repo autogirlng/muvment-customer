@@ -7,7 +7,8 @@ const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "https://api-muvment.up.ra
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const env = process.env.NEXT_PUBLIC_VERCEL_URL || "";
   const isProduction =
-    env.includes("muvment.ng") || process.env.NODE_ENV === "production";
+    env.includes("muvment.ng") ||
+    process.env.NODE_ENV === "production";
 
   if (!isProduction) {
     return [];
@@ -63,6 +64,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     },
     {
+      url: `${APP_URL}/impact`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
       url: `${APP_URL}/partner-with-us`,
       lastModified: new Date(),
       changeFrequency: "monthly",
@@ -95,12 +102,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
     ]);
 
-    if (!blogsRes.ok)
-      console.error(`Sitemap: blogs fetch failed ${blogsRes.status}`);
-    if (!vehiclesRes.ok)
-      console.error(`Sitemap: vehicles fetch failed ${vehiclesRes.status}`);
-    if (!showcaseRes.ok)
-      console.error(`Sitemap: showcase fetch failed ${showcaseRes.status}`);
+    if (!blogsRes.ok) console.error(`Sitemap: blogs fetch failed ${blogsRes.status}`);
+    if (!vehiclesRes.ok) console.error(`Sitemap: vehicles fetch failed ${vehiclesRes.status}`);
+    if (!showcaseRes.ok) console.error(`Sitemap: showcase fetch failed ${showcaseRes.status}`);
 
     const blogsJson =
       blogsRes.ok &&
@@ -121,8 +125,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         : null;
 
     // Exclude posts whose slug is a UUID (unpublished or legacy posts without a proper slug)
-    const UUID_PATTERN =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     const blogEntries = (blogsJson?.data?.content || [])
       .filter((post: any) => post.slug && !UUID_PATTERN.test(post.slug))
@@ -143,7 +146,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }));
 
     const showcaseEntries = (showcaseJson?.data || []).map((item: any) => ({
-      url: `${APP_URL}/booking/${item.slug}/special-pricing`,
+      url: `${APP_URL}/booking/${item.servicePricingId}/special-pricing`,
       lastModified: new Date(),
       changeFrequency: "daily" as const,
       priority: 0.6,

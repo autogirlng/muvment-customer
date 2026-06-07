@@ -3,7 +3,7 @@ import { generatePageMetadata } from "@/helpers/metadata";
 export const metadata = generatePageMetadata({
   title: "FAQ",
   description:
-    "Get answers to the most common questions about booking a car on Muvment — rental periods, pricing, drivers, vehicles, payments, and our policies.",
+    "Get answers to the most common questions about booking a car on Muvment: rental periods, pricing, drivers, vehicles, payments, and our policies.",
   url: "/faq",
   keywords: [
     "Muvment FAQ",

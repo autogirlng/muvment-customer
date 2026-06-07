@@ -17,7 +17,7 @@ export async function generateMetadata({ params, searchParams }: PageProps) {
 
   return generatePageMetadata({
     title: `Vehicles to ${stateName}`,
-    description: `Browse private cars and SUVs available for travel to ${stateName}.`,
+    description: `Browse private cars and SUVs available for travel to ${stateName} with Muvment. Book verified vehicles with professional chauffeurs for intercity trips, hourly, daily, and monthly.`,
     url: `/booking/states/${stateId}?stateName=${encodeURIComponent(stateName)}`,
   });
 }

@@ -93,7 +93,7 @@ const defaultFAQs: FAQItem[] = [
       "No, you don't need to create an account to book. However, you must provide accurate contact details, including an emergency contact, to help us properly identify and reach the customer, especially in case of emergencies or support-related issues.",
   },
   {
-    title: "How long is the standard rental period on AutoGirl?",
+    title: "How long is the standard rental period on Muvment?",
     content:
       "Our standard rental period is 12 hours. Any use of the vehicle beyond this time will attract overtime charges, which vary depending on the vehicle category. You can view applicable overtime rates at checkout or in your booking summary.",
   },
@@ -119,16 +119,8 @@ const defaultFAQs: FAQItem[] = [
   },
   {
     title: "Do I need to fuel the car during my rental?",
-    content: `For daily rentals, each vehicle comes with a half tank of fuel
-included. If the fuel runs out within the 24-hour rental period due to
-the distance traveled, you are required to refill the vehicle. The
-fuel refill cost ranges from ₦8,000 minimum for Sedans to ₦14,000
-maximum for SUVs.
-
-For self-drive rentals, fuel is not included. You are fully
-responsible for fueling the vehicle throughout your rental period. The
-same fuel cost range applies: ₦8,000 minimum for Sedans and ₦14,000
-maximum for SUVs.`,
+    content:
+      "Daily rentals start with a half tank of fuel included. If the fuel runs out during your trip, you top up enough to complete the journey, with a minimum refuel of ₦12,000 for sedans and ₦20,000 for SUVs. For self-drive rentals, fuel is not included and you are fully responsible for fuelling.",
   },
   {
     title: "Can I book a trip outside Lagos?",

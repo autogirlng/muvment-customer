@@ -35,7 +35,7 @@ export async function generateMetadata({ searchParams }: PageProps) {
     title = `${categoryName} for Rent in ${city}`;
   }
 
-  let description = `Browse verified rental vehicles in ${city}.`;
+  let description = `Browse verified rental cars in ${city} with Muvment. Compare sedans, SUVs, and luxury vehicles with professional chauffeurs. Hourly, daily, and monthly hire.`;
 
   if (params.fromDate && params.untilDate) {
     description = `Rent cars in ${city} from ${params.fromDate} to ${params.untilDate}. ${description}`;
