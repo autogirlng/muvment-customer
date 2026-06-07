@@ -116,7 +116,12 @@ export default async function Page({ searchParams }: PageProps) {
 
   return (
     <>
-      <JsonLd schema={SchemaBuilder.searchResultsPage({ city, category: params.category })} />
+      <JsonLd
+        schema={SchemaBuilder.searchResultsPage({
+          city,
+          category: params.category,
+        })}
+      />
       <ExploreVehiclesClient
         initialVehicles={initialVehicles}
         initialTotalCount={totalCount}

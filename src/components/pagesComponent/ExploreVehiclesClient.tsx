@@ -1,5 +1,12 @@
 "use client";
-import React, { useState, useEffect, useCallback, useRef, Suspense } from "react";
+
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  Suspense,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { FilterState } from "@/types/filters";
@@ -513,7 +520,9 @@ function ExploreVehiclesClientContent({
   );
 }
 
-export default function ExploreVehiclesClient(props: ExploreVehiclesClientProps) {
+export default function ExploreVehiclesClient(
+  props: ExploreVehiclesClientProps,
+) {
   return (
     <Suspense fallback={null}>
       <ExploreVehiclesClientContent {...props} />

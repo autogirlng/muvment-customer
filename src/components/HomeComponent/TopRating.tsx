@@ -1,13 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import type { TopVehicle } from "./TopVech";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { TbMedal2 } from "react-icons/tb";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import TopRating from "./TopVech";
-import { useRouter } from "next/navigation";
-
 import { useAuth } from "@/context/AuthContext";
 import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicleservice";
 import LoginPromptModal from "../Booking/Loginpromptmodal";
@@ -39,7 +38,6 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
   const ITEMS_PER_PAGE = 20;
   const MAX_DOTS = 5;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
@@ -199,12 +197,6 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
     touchEndX.current = null;
   };
 
-  const handleRoute = () => {
-    router.push(
-      `/booking/search${bookingId ? `?bookingType=${bookingId}` : ""}`,
-    );
-  };
-
   return (
     <>
       <LoginPromptModal
@@ -229,12 +221,12 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
                 reliability, and comfort for your trip
               </p>
             </div>
-            <button
-              onClick={handleRoute}
+            <Link
+              href={`/booking/search${bookingId ? `?bookingType=${bookingId}` : ""}`}
               className="hidden md:block text-blue-600 cursor-pointer font-medium hover:gap-3 transition-all"
             >
               See All
-            </button>
+            </Link>
           </div>
           <div className="relative">
             <button
