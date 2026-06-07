@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import {
   FaStar,
@@ -14,6 +13,7 @@ import {
 } from "react-icons/fa";
 import { MdLocationOn } from "react-icons/md";
 import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
+import Link from "next/link";
 
 export interface TopVehicle {
   photos: Array<{
@@ -87,7 +87,6 @@ const TopRating: React.FC<TopRatingProps> = ({
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showTooltip, setShowTooltip] = useState<string | null>(null);
-  const router = useRouter();
 
   const price = vehicle.allPricingOptions[0]?.price || 0;
   const bookingType = vehicle.allPricingOptions[0]?.bookingTypeName || "";
@@ -107,10 +106,6 @@ const TopRating: React.FC<TopRatingProps> = ({
   };
 
   const goToImage = (index: number) => setCurrentImageIndex(index);
-
-  const handleRouteToDetails = () => {
-    router.push(`/booking/details/${vehicle.slug}`);
-  };
 
   return (
     <div className="flex-shrink-0 w-full md:w-full lg:w-[calc(50%-12px)] bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden mb-2">
@@ -199,13 +194,13 @@ const TopRating: React.FC<TopRatingProps> = ({
               <MdLocationOn className="w-4 h-4 text-blue-600" />
               <span>{vehicle.city}</span>
             </div>
-            <button
-              onClick={handleRouteToDetails}
+            <Link
+              href={`/booking/details/${vehicle.slug}`}
               className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:gap-2 cursor-pointer transition-all"
             >
               Open Front Door
               <FaChevronRight className="w-3 h-3" />
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -338,13 +333,13 @@ const TopRating: React.FC<TopRatingProps> = ({
               )}
             </div>
 
-            <button
-              onClick={handleRouteToDetails}
-              className="text-blue-600 text-xs pr-4 font-medium flex cursor-pointer items-center gap-1 hover:gap-2 transition-all"
+            <Link
+              href={`/booking/details/${vehicle.slug}`}
+              className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:gap-2 cursor-pointer transition-all"
             >
               Open Front Door
-              <FaChevronRight className="w-2.5 h-2.5" />
-            </button>
+              <FaChevronRight className="w-3 h-3" />
+            </Link>
           </div>
         </div>
       </div>

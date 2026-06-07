@@ -1,16 +1,15 @@
 "use client";
+
 import {
   formatCurrency,
   getDisplayLabel,
   getDisplayPrice,
 } from "@/services/vechilePriceUtiles";
 import { VehicleCardProps } from "@/types/vehicle";
-import { useRouter } from "next/navigation";
 import React, { useState, useMemo, useEffect } from "react";
 import { FiMapPin, FiUser, FiDroplet, FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa6";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
-import { IoInformationCircleOutline } from "react-icons/io5";
 import { getBookingOption } from "@/context/Constarain";
 import { clarityEvent } from "@/services/clarity";
 import { trackVehicleView } from "@/services/analytics";
@@ -38,7 +37,6 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   viewMode = "list",
 }) => {
   const { isAuthenticated } = useAuth();
-  const router = useRouter();
 
   const images = useMemo(() => {
     if (!photos || photos.length === 0) return [];

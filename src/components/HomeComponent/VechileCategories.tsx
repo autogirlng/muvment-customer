@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 
 interface VehicleCategory {
@@ -10,30 +10,33 @@ interface VehicleCategory {
   id: string;
 }
 
-const VehicleCategories: React.FC = () => {
-  const router = useRouter();
-  const [category, setCategory] = useState<{ value: string; label: string }[]>([]);
-  const categories: VehicleCategory[] = [
-    { name: "Sedan", image: "/images/vehicles/sedan.webp", id: "sedan-id" },
-    { name: "Truck", image: "/images/vehicles/truck.webp", id: "truck-id" },
-    { name: "SUV", image: "/images/vehicles/suv.webp", id: "suv-id" },
-    { name: "Bus", image: "/images/vehicles/bus.webp", id: "bus-id" },
-  ];
+const TARGET_VEHICLES = ["sedan", "truck", "suv", "bus"];
 
-  const handleCategoryClick = (categoryId: string) => {
-    router.push(`/booking/search?category=${categoryId}`);
-  };
+const IMAGE_MAPPING: Record<string, string> = {
+  sedan: "/images/vehicles/sedan.webp",
+  truck: "/images/vehicles/truck.webp",
+  suv: "/images/vehicles/suv.webp",
+  bus: "/images/vehicles/bus.webp",
+};
+
+const VehicleCategories: React.FC = () => {
+  const [categories, setCategories] = useState<VehicleCategory[]>([]);
 
   const getvechileType = async () => {
     const result = await VehicleSearchService.getVechielType();
     if (!Array.isArray(result) || result.length === 0) {
       return;
     }
-    const transformedOptions = result.map((item: any) => ({
-      value: item.id,
-      label: item.name.replace("_", " "),
-    }));
-    setCategory(transformedOptions);
+
+    const filteredAndMapped = result
+      .filter((item: any) => TARGET_VEHICLES.includes(item.name.toLowerCase()))
+      .map((item: any) => ({
+        id: item.id,
+        name: item.name.replace("_", " "),
+        image: IMAGE_MAPPING[item.name.toLowerCase()],
+      }));
+
+    setCategories(filteredAndMapped);
   };
 
   useEffect(() => {
@@ -49,11 +52,10 @@ const VehicleCategories: React.FC = () => {
 
         <div className="flex flex-wrap justify-center sm:justify-between w-full gap-10">
           {categories.map((category, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => handleCategoryClick(category.id)}
-              className="flex flex-col items-center text-center space-y-2 cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-0 p-0"
+            <Link
+              key={category.id || index}
+              href={`/booking/search?vehicleTypeId=${category.id}`}
+              className="flex flex-col items-center text-center space-y-2 cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-0 p-0 block"
               aria-label={`Browse ${category.name} rentals`}
             >
               <Image
@@ -67,7 +69,7 @@ const VehicleCategories: React.FC = () => {
               <p className="text-sm font-medium text-gray-800">
                 {category.name}
               </p>
-            </button>
+            </Link>
           ))}
         </div>
       </div>

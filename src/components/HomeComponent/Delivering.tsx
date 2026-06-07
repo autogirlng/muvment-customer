@@ -1,8 +1,8 @@
 // app/page.tsx
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import React, { useState, useRef, useEffect } from 'react';
+import Link from "next/link";
+import React, { useState, useRef, useEffect } from "react";
 
 // Define the structure of a carousel item
 interface CarouselItem {
@@ -15,69 +15,76 @@ interface CarouselItem {
 }
 
 const carouselData: CarouselItem[] = [
-   {
+  {
     id: 4,
     title: "Airport Pickups",
-    description: "Enjoy seamless arrivals and departures with reliable, on-time airport transfer services. Travel stress free with comfort and convenience from pickup to drop-off.",
+    description:
+      "Enjoy seamless arrivals and departures with reliable, on-time airport transfer services. Travel stress free with comfort and convenience from pickup to drop-off.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s4.webp"
+    backgroundImage: "/images/s4.webp",
   },
-    {
+  {
     id: 5,
     title: "Convoys for special occasions",
-    description: "Make a statement with coordinated convoy services perfect for weddings, celebrations, and VIP events. Arrive together in style with well organized, premium vehicles.",
+    description:
+      "Make a statement with coordinated convoy services perfect for weddings, celebrations, and VIP events. Arrive together in style with well organized, premium vehicles.",
     buttonText: "Book Now",
     isHighlighted: true,
-    backgroundImage: "/images/s5.webp"
+    backgroundImage: "/images/s5.webp",
   },
 
   {
     id: 5,
     title: "Interstate Travel",
-    description: "Enjoy seamless inter-state travel with spacious, well-maintained vehicles built for comfort and convenience.",
+    description:
+      "Enjoy seamless inter-state travel with spacious, well-maintained vehicles built for comfort and convenience.",
     buttonText: "Book Now",
     isHighlighted: true,
-    backgroundImage: "/images/s5.webp"
+    backgroundImage: "/images/s5.webp",
   },
 
   {
     id: 6,
     title: "Night Life",
-    description: "Experience the city after dark with safe, stylish rides for your nights out. Move freely between spots without worrying about driving or parking.",
+    description:
+      "Experience the city after dark with safe, stylish rides for your nights out. Move freely between spots without worrying about driving or parking.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s6.webp"
+    backgroundImage: "/images/s6.webp",
   },
 
   {
     id: 1,
     title: "Wide Selection Of Vehicles",
-    description: "Whether you need a compact car for city driving, a spacious SUV for family trips, or a luxury car for a special occasion, Muvment has you covered.",
+    description:
+      "Whether you need a compact car for city driving, a spacious SUV for family trips, or a luxury car for a special occasion, Muvment has you covered.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s1.webp"
+    backgroundImage: "/images/s1.webp",
   },
   {
     id: 2,
     title: "Affordable Pricing",
-    description: "We offer competitive rates and transparent pricing, with no hidden fees. Enjoy the best value for your money.",
+    description:
+      "We offer competitive rates and transparent pricing, with no hidden fees. Enjoy the best value for your money.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s2.webp"
+    backgroundImage: "/images/s2.webp",
   },
   {
     id: 3,
     title: "Flexible Rental Periods",
-    description: "Rent by the hour, day, week, or month. Whatever your needs, we have a rental plan that fits.",
+    description:
+      "Rent by the hour, day, week, or month. Whatever your needs, we have a rental plan that fits.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s3.webp"
+    backgroundImage: "/images/s3.webp",
   },
- 
 
   {
     id: 7,
     title: "Personal use",
-    description: "Get a car that fits your everyday needs, whether it’s errands, meetings, or casual outings. Flexible options designed for comfort, convenience, and independence.",
+    description:
+      "Get a car that fits your everyday needs, whether it’s errands, meetings, or casual outings. Flexible options designed for comfort, convenience, and independence.",
     buttonText: "Book Now",
-    backgroundImage: "/images/s7.webp"
-  }
+    backgroundImage: "/images/s7.webp",
+  },
 ];
 
 export default function Home() {
@@ -87,13 +94,12 @@ export default function Home() {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [cardWidth, setCardWidth] = useState(0);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Swipe/Drag state
   const [dragStartX, setDragStartX] = useState(0);
   const [dragStartTranslate, setDragStartTranslate] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
-  const router = useRouter()
   // Calculate cards per view based on screen width
   useEffect(() => {
     const updateCardsPerView = () => {
@@ -112,8 +118,8 @@ export default function Home() {
     };
 
     updateCardsPerView();
-    window.addEventListener('resize', updateCardsPerView);
-    return () => window.removeEventListener('resize', updateCardsPerView);
+    window.addEventListener("resize", updateCardsPerView);
+    return () => window.removeEventListener("resize", updateCardsPerView);
   }, []);
 
   // Calculate card width based on container
@@ -127,8 +133,8 @@ export default function Home() {
     };
 
     updateCardWidth();
-    window.addEventListener('resize', updateCardWidth);
-    return () => window.removeEventListener('resize', updateCardWidth);
+    window.addEventListener("resize", updateCardWidth);
+    return () => window.removeEventListener("resize", updateCardWidth);
   }, [cardsPerView]);
 
   const totalCards = carouselData.length;
@@ -189,7 +195,9 @@ export default function Home() {
   // The target translate value based on current index
   const targetTranslate = currentIndex * cardWidth;
   // Actual translate value during drag
-  const actualTranslate = isDragging ? dragStartTranslate + dragOffset : targetTranslate;
+  const actualTranslate = isDragging
+    ? dragStartTranslate + dragOffset
+    : targetTranslate;
 
   // Handle drag start (mouse or touch)
   const handleDragStart = (clientX: number) => {
@@ -211,10 +219,10 @@ export default function Home() {
   const handleDragEnd = () => {
     if (!isDragging) return;
     setIsDragging(false);
-    
+
     // Threshold to trigger page change (20% of card width)
     const threshold = cardWidth * 0.2;
-    
+
     if (Math.abs(dragOffset) > threshold) {
       if (dragOffset > 0) {
         // Swipe right - go to previous
@@ -224,7 +232,7 @@ export default function Home() {
         goToNext();
       }
     }
-    
+
     setDragOffset(0);
   };
 
@@ -232,8 +240,8 @@ export default function Home() {
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     handleDragStart(e.clientX);
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
   };
 
   const onMouseMove = (e: MouseEvent) => {
@@ -242,8 +250,8 @@ export default function Home() {
 
   const onMouseUp = () => {
     handleDragEnd();
-    window.removeEventListener('mousemove', onMouseMove);
-    window.removeEventListener('mouseup', onMouseUp);
+    window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("mouseup", onMouseUp);
   };
 
   // Touch event handlers
@@ -259,9 +267,6 @@ export default function Home() {
     handleDragEnd();
   };
 
-  const handleroute = () => {
-    router.push("/booking/search");
-  };
   return (
     <main className="min-h-screen  py-12 px-4 ">
       <div className="max-w-7xl mx-auto">
@@ -271,23 +276,21 @@ export default function Home() {
             Our Services
           </h2>
           <p className="text-lg text-gray-070 max-w-2xl mx-auto">
-            Choose from our wide range of vehicles and services tailored to your needs
+            Choose from our wide range of vehicles and services tailored to your
+            needs
           </p>
         </div>
 
         <div className="relative">
           {/* Slider Track */}
-          <div
-            ref={containerRef}
-            className="overflow-hidden rounded-2xl"
-          >
+          <div ref={containerRef} className="overflow-hidden rounded-2xl">
             <div
               ref={sliderRef}
               className="flex transition-transform duration-300 ease-out"
               style={{
                 transform: `translateX(-${actualTranslate}px)`,
-                cursor: isDragging ? 'grabbing' : 'grab',
-                transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+                cursor: isDragging ? "grabbing" : "grab",
+                transition: isDragging ? "none" : "transform 0.3s ease-out",
               }}
               onMouseDown={onMouseDown}
               onTouchStart={onTouchStart}
@@ -304,8 +307,8 @@ export default function Home() {
                     className="h-full rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 flex flex-col"
                     style={{
                       backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${item.backgroundImage})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
                     }}
                   >
                     {/* Content container with flex column, pushing text+button to bottom */}
@@ -327,13 +330,15 @@ export default function Home() {
                           {item.description}
                         </p>
                         <div className="pt-3 pb-1">
-                          <button
-                          onClick={handleroute}
+                          <Link
+                            href="/booking/search"
                             className={`group bg-blue-600/90 backdrop-blur-sm hover:bg-blue-700 px-5 py-2.5 rounded-lg inline-flex items-center gap-2 font-semibold transition-all duration-200 text-white shadow-md`}
                           >
                             {item.buttonText}
-                            <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
-                          </button>
+                            <span className="transition-transform duration-200 group-hover:translate-x-1">
+                              →
+                            </span>
+                          </Link>
                         </div>
                       </div>
                     </div>
@@ -351,15 +356,14 @@ export default function Home() {
                 onClick={() => handleDotClick(idx)}
                 className={`transition-all duration-300 rounded-full ${
                   Math.floor(currentIndex) === idx
-                    ? 'w-10 h-2.5 bg-white shadow-md'
-                    : 'w-2.5 h-2.5 bg-white/40 hover:bg-white/60'
+                    ? "w-10 h-2.5 bg-white shadow-md"
+                    : "w-2.5 h-2.5 bg-white/40 hover:bg-white/60"
                 }`}
                 aria-label={`Go to slide group ${idx + 1}`}
               />
             ))}
           </div>
         </div>
-
       </div>
     </main>
   );

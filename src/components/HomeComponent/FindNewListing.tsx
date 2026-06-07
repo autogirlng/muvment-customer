@@ -1,11 +1,12 @@
 "use client";
+
 import React, { useEffect, useRef, useState } from "react";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { TopVehicle } from "@/types/vehicle";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
-import { useRouter } from "next/navigation";
 import { VscSparkle } from "react-icons/vsc";
 import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
+import Link from "next/link";
 
 const FindNewListings: React.FC = () => {
   const [vehicles, setVehicles] = useState<TopVehicle[]>([]);
@@ -13,7 +14,6 @@ const FindNewListings: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   const ITEMS_PER_PAGE = 20;
 
@@ -68,11 +68,6 @@ const FindNewListings: React.FC = () => {
     setCurrentIndex(newIndex);
   };
 
-  const handleCardClick = (slug: string | undefined) => {
-    if (!slug) return;
-    router.push(`/booking/details/${slug}`);
-  };
-
   const priceOf = (v: TopVehicle) => v.allPricingOptions[0]?.price || 0;
 
   return (
@@ -118,10 +113,14 @@ const FindNewListings: React.FC = () => {
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-3">
                     {group.map((vehicle) => (
-                      <div
+                      <Link
+                        href={
+                          vehicle.slug
+                            ? `/booking/details/${vehicle.slug}`
+                            : "#"
+                        }
                         key={vehicle.id}
-                        className="relative bg-[#101928] p-3 rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300"
-                        onClick={() => handleCardClick(vehicle.slug)}
+                        className="relative bg-[#101928] p-3 rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300 block"
                       >
                         <img
                           src={optimizeCloudinaryUrl(
@@ -147,6 +146,7 @@ const FindNewListings: React.FC = () => {
                         </div>
                         <button
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             toggleFavorite(vehicle.id);
                           }}
@@ -155,7 +155,7 @@ const FindNewListings: React.FC = () => {
                               ? "Remove from favourites"
                               : "Add to favourites"
                           }
-                          className="absolute top-3 right-3 bg-white/10 p-2 rounded-full hover:bg-white/20"
+                          className="absolute top-3 right-3 bg-white/10 p-2 rounded-full hover:bg-white/20 z-10"
                         >
                           {favorites.has(vehicle.id) ? (
                             <FaHeart className="text-red-500 w-4 h-4" />
@@ -163,7 +163,7 @@ const FindNewListings: React.FC = () => {
                             <FaRegHeart className="text-white w-4 h-4" />
                           )}
                         </button>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </div>

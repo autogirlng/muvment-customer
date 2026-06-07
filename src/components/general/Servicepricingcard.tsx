@@ -5,8 +5,8 @@ import React from "react";
 import Image from "next/image";
 import { FaArrowRight } from "react-icons/fa";
 import { IoCalendarOutline } from "react-icons/io5";
-import { useRouter } from "next/navigation";
 import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
+import Link from "next/link";
 
 interface ServicePricingCardProps {
   data: ServicePricingShowcase;
@@ -15,8 +15,6 @@ interface ServicePricingCardProps {
 export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
   data,
 }) => {
-  const router = useRouter();
-
   const getMinimumPrice = () => {
     if (!data.prices || data.prices.length === 0) return 0;
     return Math.min(...data.prices.map((p) => p.price));
@@ -25,7 +23,9 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
   const minimumPrice = getMinimumPrice();
 
   const getVehicleImage = () => {
-    return optimizeCloudinaryUrl(data.imageUrl || "") || "/images/default-car.png";
+    return (
+      optimizeCloudinaryUrl(data.imageUrl || "") || "/images/default-car.png"
+    );
   };
 
   const getBadgeColor = () => {
@@ -90,14 +90,13 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
               NGN {minimumPrice.toLocaleString()}
             </p>
           </div>
-
-          <button
-            onClick={() => router.push(`/booking/${data.slug}/special-pricing`)}
-            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2 group"
+          <Link
+            href={`/booking/${data.slug}/special-pricing`}
+            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2 group block text-center"
           >
             <span>Book Now</span>
             <FaArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
+          </Link>
           {extraPricingOptions > 0 && (
             <p className="text-xs text-gray-600 text-right">
               +{extraPricingOptions} more pricing option

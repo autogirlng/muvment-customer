@@ -1,8 +1,8 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import React, { useState, useRef } from "react";
 import { BsBuildings } from "react-icons/bs";
-import { useRouter } from "next/navigation";
 
 interface City {
   name: string;
@@ -22,15 +22,7 @@ const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({
   bookingTypeId,
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const handleCityClick = (cityName: string) => {
-    const formattedCity = cityName.toLowerCase().replace(/\s+/g, "-");
-    router.push(
-      `/booking/search?city=${formattedCity}${bookingTypeId ? `&bookingType=${bookingTypeId}` : ""}`,
-    );
-  };
 
   // Optional: Function to make dots scroll the container
   const scrollToSlide = (index: number) => {
@@ -59,41 +51,35 @@ const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({
           adventure in style
         </p>
       </div>
-
-      {/* Cities Carousel - Horizontal Scroll with Snapping */}
       <div
         ref={scrollContainerRef}
         className="flex justify-start gap-6 overflow-x-auto no-scrollbar px-4 md:px-12 py-4 snap-x snap-mandatory scroll-smooth"
       >
-        {cities.map((city, index) => (
-          <div
-            key={index}
-            onClick={() => handleCityClick(city.name)}
-            // Changed w-60 to w-72 or min-w-[18rem] for better stretch/presence
-            // Added snap-center to make it stop evenly
-            className="relative flex-shrink-0 w-72 h-80 rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group snap-center border border-gray-100"
-          >
-            {/* Image */}
-            <Image
-              src={city.image}
-              alt={city.name}
-              fill
-              className="object-cover group-hover:scale-110 transition-transform duration-500"
-              sizes="(max-width: 768px) 100vw, 300px"
-            />
+        {cities.map((city, index) => {
+          const formattedCity = city.name.toLowerCase().replace(/\s+/g, "-");
+          const targetUrl = `/booking/search?city=${formattedCity}${bookingTypeId ? `&bookingType=${bookingTypeId}` : ""}`;
 
-            {/* Gradient Overlay (Improved visibility) */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-            {/* City Name */}
-            <div className="absolute bottom-5 left-5 text-white text-xl font-bold drop-shadow-md flex items-center gap-1 transform translate-y-0 group-hover:-translate-y-1 transition-transform">
-              {city.name}
-            </div>
-          </div>
-        ))}
+          return (
+            <Link
+              key={index}
+              href={targetUrl}
+              className="relative flex-shrink-0 w-72 h-80 rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group snap-center border border-gray-100 block"
+            >
+              <Image
+                src={city.image}
+                alt={city.name}
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+                sizes="(max-width: 768px) 100vw, 300px"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute bottom-5 left-5 text-white text-xl font-bold drop-shadow-md flex items-center gap-1 transform translate-y-0 group-hover:-translate-y-1 transition-transform">
+                {city.name}
+              </div>
+            </Link>
+          );
+        })}
       </div>
-
-      {/* Pagination Dots */}
       <div className="flex justify-center mt-6 space-x-2">
         {cities.map((_, i) => (
           <button
@@ -101,7 +87,7 @@ const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({
             onClick={() => scrollToSlide(i)}
             className={`transition-all duration-300 rounded-full ${
               activeIndex === i
-                ? "w-8 h-2.5 bg-blue-600" // Stretch the active dot for better UI
+                ? "w-8 h-2.5 bg-blue-600"
                 : "w-2.5 h-2.5 bg-gray-300 hover:bg-gray-400"
             }`}
             aria-label={`Go to slide ${i + 1}`}
