@@ -48,28 +48,21 @@ const HourlyPromoBar: React.FC = () => {
   if (dismissed || !show) return null;
 
   return (
-    <div className="fixed z-40 bottom-20 left-4 lg:bottom-6 lg:left-6 max-w-[calc(100vw-2rem)] animate-fadeIn">
-      <div className="flex items-center gap-3 rounded-full bg-[#101928] text-white pl-4 pr-2 py-2 shadow-2xl border border-white/10">
-        <FiClock className="hidden sm:block w-5 h-5 text-[#5AA2FF] flex-shrink-0" />
-        <div className="text-sm leading-tight min-w-0">
-          <span className="font-semibold">Just need a few hours?</span>
-          <span className="hidden sm:inline text-white/70">
-            {" "}
-            Hourly rentals with a driver, fuel included.
-          </span>
-        </div>
+    <div className="fixed z-40 bottom-5 left-4 lg:bottom-6 lg:left-6 animate-fadeIn">
+      <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-[#101928] py-1.5 pl-3 pr-1.5 text-white shadow-2xl">
         <button
           onClick={goToHourly}
-          className="flex-shrink-0 bg-[#0673FF] hover:bg-[#0560d6] text-white text-sm font-semibold rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+          className="flex items-center gap-2 whitespace-nowrap text-sm font-semibold"
         >
-          See hourly rates
+          <FiClock className="h-4 w-4 flex-shrink-0 text-[#5AA2FF]" />
+          Try Hourly Rental
         </button>
         <button
           onClick={dismiss}
           aria-label="Dismiss"
-          className="flex-shrink-0 text-white/50 hover:text-white p-1 transition-colors"
+          className="flex-shrink-0 p-1 text-white/50 transition-colors hover:text-white"
         >
-          <FiX className="w-4 h-4" />
+          <FiX className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
