@@ -76,7 +76,7 @@ const Dropdown: React.FC<DropdownProps> = ({
       {isOpen && (
         <div
           className="
-          absolute left-0 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg
+          absolute left-0 w-full min-w-[12rem] mt-1 bg-white border border-gray-200 rounded-lg shadow-lg
           z-50 animate-fadeIn overflow-hidden
           max-h-60 overflow-y-auto
         "
@@ -89,7 +89,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                   onClick={() => handleSelect(option.value)}
                   disabled={option.disabled}
                   className={`w-full text-left px-3 py-2 text-sm transition-colors duration-150 ${option.value === selectedValue
-                    ? "bg-blue-50 text-blue-600 font-medium"
+                    ? "bg-[#0673FF]/10 text-[#0673FF] font-medium"
                     : "hover:bg-gray-50 text-gray-800"
                     } ${option.disabled
                       ? "opacity-50 cursor-not-allowed"

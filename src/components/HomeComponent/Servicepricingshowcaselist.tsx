@@ -2,35 +2,28 @@
 
 import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
 import { ServicePricingShowcase } from "@/types/Servicepricing";
-import React, { useState, useEffect, useRef } from "react";
-import { FiLoader, FiAlertCircle } from "react-icons/fi";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { FiAlertCircle } from "react-icons/fi";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { ServicePricingCard } from "../general/Servicepricingcard";
+
+const HEADING = "Hourly car rentals";
+const SUBHEAD = "By the hour, from 3 hours up. Driver and fuel included.";
+
+const cardWidth =
+  "w-[66%] flex-shrink-0 snap-start md:w-[calc(40%-12px)] lg:w-[calc(25%-18px)]";
+
+const trackClasses =
+  "flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
 export const ServicePricingShowcaseList: React.FC = () => {
   const [pricingData, setPricingData] = useState<ServicePricingShowcase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [visibleCards, setVisibleCards] = useState(4);
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
-
-  const MAX_DOTS = 5;
-
-  useEffect(() => {
-    const updateCards = () => {
-      if (window.innerWidth < 640) setVisibleCards(1);
-      else if (window.innerWidth < 768) setVisibleCards(2);
-      else if (window.innerWidth < 1024) setVisibleCards(3);
-      else setVisibleCards(4);
-    };
-    updateCards();
-    window.addEventListener("resize", updateCards);
-    return () => window.removeEventListener("resize", updateCards);
-  }, []);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchServicePricing();
@@ -40,10 +33,8 @@ export const ServicePricingShowcaseList: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-
       const data = await ServicePricingService.getServicePricingShowcase();
-
-      setPricingData(data[0].data);
+      setPricingData(data?.[0]?.data ?? []);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load pricing data",
@@ -53,77 +44,94 @@ export const ServicePricingShowcaseList: React.FC = () => {
     }
   };
 
-  const handleNext = () => {
-    const maxIndex = Math.max(pricingData.length - visibleCards, 0);
-    const newIndex = Math.min(currentIndex + 1, maxIndex);
-    setCurrentIndex(newIndex);
-  };
-
-  const handlePrev = () => {
-    setCurrentIndex(Math.max(currentIndex - 1, 0));
-  };
-
-  const isPrevDisabled = currentIndex === 0;
-  const isNextDisabled = currentIndex >= pricingData.length - visibleCards;
-
-  const handleDotClick = (dotIndex: number) => {
-    const totalCards = pricingData.length;
-    const targetIndex = Math.min(
-      dotIndex * visibleCards,
-      totalCards - visibleCards,
-    );
-    setCurrentIndex(targetIndex);
-  };
-
-  const getActiveDot = () => {
-    const totalCards = pricingData.length;
-    const slidesCount = Math.ceil(totalCards / visibleCards);
-    const active = Math.floor(currentIndex / visibleCards);
-    return Math.min(active, slidesCount - 1, MAX_DOTS - 1);
-  };
+  const updateArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+  }, []);
 
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const firstChild = container.firstElementChild as HTMLElement | null;
-      if (!firstChild) return;
+    const id = setTimeout(updateArrows, 100);
+    return () => clearTimeout(id);
+  }, [pricingData, updateArrows]);
 
-      const cardWidth = firstChild.offsetWidth;
-      const gap = parseInt(getComputedStyle(container).gap || "24", 10);
-      const scrollPosition = currentIndex * (cardWidth + gap);
-
-      container.scrollTo({
-        left: scrollPosition,
-        behavior: "smooth",
-      });
-    }
-  }, [currentIndex]);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
+  const scroll = (direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left:
+        direction === "left" ? -el.clientWidth * 0.85 : el.clientWidth * 0.85,
+      behavior: "smooth",
+    });
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
+  const showArrows = canScrollLeft || canScrollRight;
 
-  const handleTouchEnd = () => {
-    if (touchStartX.current !== null && touchEndX.current !== null) {
-      const delta = touchStartX.current - touchEndX.current;
-      const threshold = 50;
-      if (delta > threshold) handleNext();
-      else if (delta < -threshold) handlePrev();
-    }
-    touchStartX.current = null;
-    touchEndX.current = null;
-  };
+  const arrowClasses = (disabled: boolean) =>
+    `flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+      disabled
+        ? "cursor-not-allowed border-gray-200 text-gray-300"
+        : "border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50"
+    }`;
+
+  const Header = ({ withArrows = false }: { withArrows?: boolean }) => (
+    <div className="mb-8 flex items-end justify-between gap-4 px-4 lg:px-8">
+      <div>
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+          {HEADING}
+        </h2>
+        <p className="mt-1 max-w-2xl text-gray-600">{SUBHEAD}</p>
+      </div>
+      {withArrows && showArrows && (
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <button
+            onClick={() => scroll("left")}
+            disabled={!canScrollLeft}
+            aria-label="Previous pricing"
+            className={arrowClasses(!canScrollLeft)}
+          >
+            <FaChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            disabled={!canScrollRight}
+            aria-label="Next pricing"
+            className={arrowClasses(!canScrollRight)}
+          >
+            <FaChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <FiLoader className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading available vehicles...</p>
+      <div
+        id="hourly-rentals"
+        className="w-full bg-white py-16 lg:py-20 scroll-mt-24"
+      >
+        <Header />
+        <div className="px-4 lg:px-8">
+          <div className="flex gap-6 overflow-hidden">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className={`${cardWidth} overflow-hidden rounded-xl border border-gray-200 bg-white`}
+              >
+                <div className="h-40 w-full animate-pulse bg-gray-100 sm:h-44" />
+                <div className="p-4">
+                  <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100" />
+                  <div className="mt-2 h-3 w-1/3 animate-pulse rounded bg-gray-100" />
+                  <div className="mt-4 h-3 w-1/4 animate-pulse rounded bg-gray-100" />
+                  <div className="mt-1 h-6 w-1/2 animate-pulse rounded bg-gray-100" />
+                  <div className="mt-3 h-10 w-full animate-pulse rounded-lg bg-gray-100" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -131,7 +139,7 @@ export const ServicePricingShowcaseList: React.FC = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[300px]">
         <div className="text-center max-w-md">
           <FiAlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -140,7 +148,7 @@ export const ServicePricingShowcaseList: React.FC = () => {
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={fetchServicePricing}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+            className="bg-[#0673FF] hover:bg-[#0560d6] text-white px-6 py-2 rounded-lg transition-colors"
           >
             Try Again
           </button>
@@ -150,101 +158,26 @@ export const ServicePricingShowcaseList: React.FC = () => {
   }
 
   if (pricingData.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-gray-600 text-lg">
-            No vehicles available at the moment.
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="w-full py-6 my-[50px]">
-      <div>
-        <div className="flex items-center justify-between mb-6 max-w-[95%] ml-auto px-6">
-          <div className="text-center md:text-start">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Short term Hourly Car Rentals
-            </h2>
-            <p className="text-gray-600">
-              Explore our range of vehicles for hourly rent starting from 3
-              hours. They come with a professional chauffeur and fueling.
-            </p>
-          </div>
-        </div>
-        <div className="relative">
-          <button
-            onClick={handlePrev}
-            disabled={isPrevDisabled}
-            aria-label="Previous pricing"
-            className={`hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${
-              isPrevDisabled
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-gray-50"
-            }`}
-          >
-            <FaChevronLeft className="w-4 h-4 text-gray-700" />
-          </button>
-          <div
-            className="relative px-4 md:px-16"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
+    <div
+      id="hourly-rentals"
+      className="w-full bg-white py-16 lg:py-20 scroll-mt-24"
+    >
+      <Header withArrows />
+      <div className="px-4 lg:px-8">
+        <div ref={scrollRef} onScroll={updateArrows} className={trackClasses}>
+          {pricingData.map((item) => (
             <div
-              ref={scrollContainerRef}
-              className="flex gap-6 overflow-x-hidden scroll-smooth select-none w-full"
-              style={{
-                maxWidth: "100%",
-              }}
+              key={`${item.yearRangeId}-${item.servicePricingId}`}
+              className={cardWidth}
             >
-              {pricingData.map((item) => (
-                <div
-                  key={`${item.yearRangeId}-${item.servicePricingId}`}
-                  className="flex-shrink-0 w-full sm:w-[calc(50%-12px)] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)]"
-                >
-                  <ServicePricingCard data={item} />
-                </div>
-              ))}
+              <ServicePricingCard data={item} />
             </div>
-          </div>
-          <button
-            onClick={handleNext}
-            disabled={isNextDisabled}
-            aria-label="Next pricing"
-            className={`hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${
-              isNextDisabled
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-gray-50"
-            }`}
-          >
-            <FaChevronRight className="w-4 h-4 text-gray-700" />
-          </button>
+          ))}
         </div>
-        {pricingData.length > visibleCards && (
-          <div className="flex justify-center gap-2 mt-6">
-            {Array.from({
-              length: Math.min(
-                Math.ceil(pricingData.length / visibleCards),
-                MAX_DOTS,
-              ),
-            }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => handleDotClick(i)}
-                aria-label={`Go to page ${i + 1}`}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === getActiveDot()
-                    ? "bg-blue-600 w-8"
-                    : "bg-gray-300 hover:bg-gray-400"
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
