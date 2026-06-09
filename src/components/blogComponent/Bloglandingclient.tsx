@@ -185,6 +185,7 @@ export default function BlogLandingClient({
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const loaderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!showCategoryModal) return;
@@ -229,7 +230,7 @@ export default function BlogLandingClient({
       try {
         const result = await BlogService.getPosts({
           page: opts.page,
-          size: 9,
+          size: 20,
           search: opts.search || undefined,
           category: opts.categoryId || undefined,
         });
@@ -268,11 +269,23 @@ export default function BlogLandingClient({
     fetchPosts({ page: 0, search, categoryId: id });
   };
 
-  const handleLoadMore = () => {
-    if (currentPage + 1 < totalPages) {
-      fetchPosts({ page: currentPage + 1, search, categoryId, append: true });
-    }
-  };
+  const loadMore = useCallback(() => {
+    if (loadingMore || loading || currentPage + 1 >= totalPages) return;
+    fetchPosts({ page: currentPage + 1, search, categoryId, append: true });
+  }, [loadingMore, loading, currentPage, totalPages, search, categoryId, fetchPosts]);
+
+  useEffect(() => {
+    const el = loaderRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadMore();
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   const isFeaturedLayout = !search && !categoryId && currentPage === 0;
   const featuredPost = isFeaturedLayout ? posts[0] : null;
@@ -402,41 +415,15 @@ export default function BlogLandingClient({
               ))}
             </div>
 
-            {/* Load more */}
             {currentPage + 1 < totalPages && (
-              <div className="flex justify-center mt-12">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="flex items-center gap-2 px-8 py-3 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-all duration-200"
-                >
-                  {loadingMore ? (
-                    <>
-                      <svg
-                        className="w-4 h-4 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8H4z"
-                        />
-                      </svg>
-                      Loading…
-                    </>
-                  ) : (
-                    "Load more"
-                  )}
-                </button>
+              <div ref={loaderRef} className="flex justify-center mt-12 py-4">
+                {loadingMore && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <PostCardSkeleton key={i} />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </>
