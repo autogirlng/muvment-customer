@@ -22,22 +22,26 @@ export default function WhatsAppChat() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const widgetTimer = setTimeout(() => {
-      setShowWidget(true);
-    }, WHATSAPP_CONFIG.delayMs);
-
-    return () => clearTimeout(widgetTimer);
+    const update = () => {
+      const vh = window.innerHeight;
+      const maxScroll = document.documentElement.scrollHeight - vh;
+      // Show once scrolled past the first screen (the hero), or right away on
+      // pages too short to scroll that far so it is never stuck hidden.
+      const pastHero = window.scrollY > vh * 0.8 || maxScroll < vh * 0.8;
+      const footer = document.querySelector("footer");
+      const atFooter = footer
+        ? footer.getBoundingClientRect().top < vh * 0.85
+        : window.scrollY >= maxScroll - 40;
+      setShowWidget(pastHero && !atFooter);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
   }, []);
-
-  useEffect(() => {
-    if (showWidget) {
-      const greetingTimer = setTimeout(() => {
-        setIsOpen(true);
-      }, WHATSAPP_CONFIG.greetingDelayMs);
-
-      return () => clearTimeout(greetingTimer);
-    }
-  }, [showWidget]);
 
   const handleWhatsAppClick = () => {
     const url = `https://wa.me/${WHATSAPP_CONFIG.phoneNumber}`;
@@ -56,10 +60,10 @@ export default function WhatsAppChat() {
   if (!showWidget) return null;
 
   return (
-    <div className="fixed bottom-6 right-8 z-50 flex flex-col items-end gap-3 pr-2">
+    <div className="fixed bottom-5 right-4 lg:bottom-6 lg:right-6 z-50 flex flex-col items-end gap-3">
       {/* Greeting Message Bubble with Chat Options */}
       {isOpen && (
-        <div className="animate-slideIn max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-gray-100">
+        <div className="animate-slideIn w-[min(22rem,calc(100vw-3rem))] rounded-2xl bg-white p-5 shadow-2xl border border-gray-100">
           {/* Header */}
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -154,22 +158,9 @@ export default function WhatsAppChat() {
 
       {/* Main Chat Button with Text Label */}
       <div className="relative flex flex-col items-center gap-2">
-        {/* Text Label - Only shows when closed */}
-        {!isOpen && (
-          <div className="absolute -top-8 whitespace-nowrap animate-fadeIn">
-            <div className="bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
-              Chat with an agent
-            </div>
-            {/* Arrow pointing to button */}
-            <div className="absolute left-1/2 -translate-x-1/2 -bottom-1">
-              <div className="w-2 h-2 bg-green-600 rotate-45"></div>
-            </div>
-          </div>
-        )}
-
         <button
           onClick={toggleChat}
-          className="group relative h-14 w-14 transition-all hover:scale-110 active:scale-95"
+          className="group relative h-11 w-11 transition-all hover:scale-110 active:scale-95"
           aria-label={isOpen ? "Close chat" : "Open chat"}
         >
           {/* Notification Badge */}
@@ -183,14 +174,14 @@ export default function WhatsAppChat() {
           )}
 
           {/* Center Button */}
-          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-lg flex items-center justify-center transition-all group-hover:shadow-xl">
+          <div className="h-11 w-11 rounded-full bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-lg flex items-center justify-center transition-all group-hover:shadow-xl">
             {/* Chat Icon */}
             <div className={`transition-all duration-300 ${isOpen ? 'rotate-0 scale-100' : 'rotate-0 scale-100'}`}>
               {isOpen ? (
                 <svg
                   viewBox="0 0 24 24"
                   fill="white"
-                  className="h-7 w-7"
+                  className="h-5 w-5"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} stroke="white" fill="none" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -198,7 +189,7 @@ export default function WhatsAppChat() {
                 <svg
                   viewBox="0 0 24 24"
                   fill="white"
-                  className="h-7 w-7"
+                  className="h-5 w-5"
                 >
                   <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
                   <circle cx="8" cy="10" r="1.5"/>
