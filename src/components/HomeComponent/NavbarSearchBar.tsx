@@ -54,7 +54,12 @@ const NavbarSearchBarContent = () => {
     setBookingOptions(data.dropdownOptions);
     // Default to the first booking type (12 Hours) when none is set via the URL
     if (!params.get("bookingType") && data.dropdownOptions?.length) {
-      setBookingType((prev) => prev ?? data.dropdownOptions[0].value);
+      const twelveHours = data.dropdownOptions.find((o: any) =>
+        /12\s*hours?/i.test(o.label || ""),
+      );
+      setBookingType(
+        (prev) => prev ?? (twelveHours?.value ?? data.dropdownOptions[0].value),
+      );
     }
   };
   useEffect(() => {

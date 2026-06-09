@@ -1,31 +1,26 @@
 "use client";
 
-import Link from "next/link";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import type { TopVehicle } from "./TopVech";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { TbMedal2 } from "react-icons/tb";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import TopRating from "./TopVech";
+import TopVehicleCard from "./TopVech";
+import { useRouter } from "next/navigation";
+
 import { useAuth } from "@/context/AuthContext";
 import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicleservice";
 import LoginPromptModal from "../Booking/Loginpromptmodal";
 
 interface TopRatedVehiclesProps {
-  cardsPerSlide?: number;
   bookingId?: string;
 }
 
-const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
-  cardsPerSlide = 2,
-  bookingId,
-}) => {
+const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
   const [vehicles, setVehicles] = useState<TopVehicle[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [visibleCards, setVisibleCards] = useState(cardsPerSlide);
 
   const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set());
   const [favouriteLoading, setFavouriteLoading] = useState<Set<string>>(
@@ -33,23 +28,13 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
   );
   const [showLoginModal, setShowLoginModal] = useState(false);
 
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
   const { isAuthenticated } = useAuth();
-
   const ITEMS_PER_PAGE = 20;
-  const MAX_DOTS = 5;
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
-
-  useEffect(() => {
-    const updateCards = () => {
-      if (window.innerWidth < 768) setVisibleCards(1);
-      else setVisibleCards(2);
-    };
-    updateCards();
-    window.addEventListener("resize", updateCards);
-    return () => window.removeEventListener("resize", updateCards);
-  }, []);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const loadVehicles = useCallback(
     async (page: number) => {
@@ -86,7 +71,6 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
 
   useEffect(() => {
     if (!isAuthenticated) return;
-
     const loadFavourites = async () => {
       try {
         const data = await FavouriteVehicleService.getFavourites();
@@ -96,7 +80,6 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
         setFavouriteIds(ids);
       } catch {}
     };
-
     loadFavourites();
   }, [isAuthenticated]);
 
@@ -105,22 +88,19 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
       setShowLoginModal(true);
       return;
     }
-
     setFavouriteIds((prev) => {
       const next = new Set(prev);
       if (next.has(vehicleId)) next.delete(vehicleId);
       else next.add(vehicleId);
       return next;
     });
-
     setFavouriteLoading((prev) => new Set(prev).add(vehicleId));
-
     try {
       const currentList = Array.from(favouriteIds);
       const { updatedFavouriteIds } =
         await FavouriteVehicleService.toggleFavourite(vehicleId, currentList);
       setFavouriteIds(new Set(updatedFavouriteIds));
-    } catch (error) {
+    } catch {
       setFavouriteIds((prev) => {
         const next = new Set(prev);
         if (next.has(vehicleId)) next.delete(vehicleId);
@@ -136,66 +116,49 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
     }
   };
 
-  const handleNext = () => {
-    const maxIndex = Math.max(vehicles.length - visibleCards, 0);
-    const newIndex = Math.min(currentIndex + 1, maxIndex);
-    setCurrentIndex(newIndex);
-
-    if (newIndex + visibleCards >= vehicles.length && hasMore && !loading) {
+  const updateArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+    if (
+      scrollLeft + clientWidth >= scrollWidth - 600 &&
+      hasMore &&
+      !loading
+    ) {
       loadVehicles(currentPage + 1);
     }
-  };
-
-  const handlePrev = () => {
-    setCurrentIndex(Math.max(currentIndex - 1, 0));
-  };
-
-  const isPrevDisabled = currentIndex === 0;
-  const isNextDisabled = currentIndex >= vehicles.length - visibleCards;
-
-  const handleDotClick = (dotIndex: number) => {
-    const targetIndex = Math.min(
-      dotIndex * visibleCards,
-      vehicles.length - visibleCards,
-    );
-    setCurrentIndex(targetIndex);
-  };
-
-  const getActiveDot = () => {
-    const slidesCount = Math.ceil(vehicles.length / visibleCards);
-    const active = Math.floor(currentIndex / visibleCards);
-    return Math.min(active, slidesCount - 1, MAX_DOTS - 1);
-  };
+  }, [hasMore, loading, currentPage, loadVehicles]);
 
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const firstChild = container.firstElementChild as HTMLElement | null;
-      if (!firstChild) return;
-      const cardWidth = firstChild.offsetWidth;
-      const gap = parseInt(getComputedStyle(container).gap || "16", 10);
-      container.scrollTo({
-        left: currentIndex * (cardWidth + gap),
-        behavior: "smooth",
-      });
-    }
-  }, [currentIndex]);
+    const id = setTimeout(updateArrows, 100);
+    return () => clearTimeout(id);
+  }, [vehicles, updateArrows]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
+  const scroll = (direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left: direction === "left" ? -el.clientWidth * 0.85 : el.clientWidth * 0.85,
+      behavior: "smooth",
+    });
   };
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
+
+  const handleRoute = () => {
+    router.push(
+      `/booking/search${bookingId ? `?bookingType=${bookingId}` : ""}`,
+    );
   };
-  const handleTouchEnd = () => {
-    if (touchStartX.current !== null && touchEndX.current !== null) {
-      const delta = touchStartX.current - touchEndX.current;
-      if (delta > 50) handleNext();
-      else if (delta < -50) handlePrev();
-    }
-    touchStartX.current = null;
-    touchEndX.current = null;
-  };
+
+  const showArrows = canScrollLeft || canScrollRight;
+
+  const arrowClasses = (disabled: boolean) =>
+    `flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+      disabled
+        ? "cursor-not-allowed border-gray-200 text-gray-300"
+        : "border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50"
+    }`;
 
   return (
     <>
@@ -204,55 +167,71 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
         onClose={() => setShowLoginModal(false)}
       />
 
-      <div className="w-full py-6 my-[50px]">
-        <div>
-          <div className="flex items-center justify-between mb-6 max-w-[95%] ml-auto px-6">
-            <div className="text-center md:text-start">
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-2 w-full">
-                <div className="flex justify-center">
-                  <TbMedal2 className="text-blue-600 text-4xl mb-2" />
-                </div>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Top-rated vehicles
-              </h2>
-              <p className="text-gray-600">
-                Our most popular choices offer the perfect balance of luxury,
-                reliability, and comfort for your trip
-              </p>
-            </div>
-            <Link
-              href={`/booking/search${bookingId ? `?bookingType=${bookingId}` : ""}`}
-              className="hidden md:block text-blue-600 cursor-pointer font-medium hover:gap-3 transition-all"
-            >
-              See All
-            </Link>
+      <div className="w-full bg-[#f7f9fc] py-16 lg:py-20">
+        <div className="mb-6 flex items-end justify-between gap-4 px-4 lg:px-8">
+          <div>
+            <TbMedal2 className="mb-1 text-3xl text-[#0673FF]" />
+            <h2 className="text-2xl font-bold text-[#0d1320]">
+              Top-rated vehicles
+            </h2>
+            <p className="mt-1 max-w-md text-sm text-gray-600">
+              Popular picks our riders book again and again.
+            </p>
           </div>
-          <div className="relative">
+
+          <div className="flex flex-shrink-0 items-center gap-2">
             <button
-              onClick={handlePrev}
-              disabled={isPrevDisabled}
-              aria-label="Previous vehicles"
-              className={`hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${
-                isPrevDisabled
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-gray-50"
-              }`}
+              onClick={handleRoute}
+              className="mr-1 hidden text-sm font-medium text-[#0673FF] hover:underline lg:block"
             >
-              <FaChevronLeft className="w-4 h-4 text-gray-700" />
+              See all
             </button>
-            <div
-              className="relative px-4 md:px-16"
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
-              <div
-                ref={scrollContainerRef}
-                className="flex gap-4 overflow-x-hidden scroll-smooth select-none w-full"
-              >
-                {vehicles.map((vehicle) => (
-                  <TopRating
+            {showArrows && (
+              <>
+                <button
+                  onClick={() => scroll("left")}
+                  disabled={!canScrollLeft}
+                  aria-label="Previous vehicles"
+                  className={arrowClasses(!canScrollLeft)}
+                >
+                  <FaChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => scroll("right")}
+                  disabled={!canScrollRight}
+                  aria-label="Next vehicles"
+                  className={arrowClasses(!canScrollRight)}
+                >
+                  <FaChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="px-4 lg:px-8">
+          <div
+            ref={scrollRef}
+            onScroll={updateArrows}
+            className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {vehicles.length === 0 && loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-[78%] flex-shrink-0 snap-start overflow-hidden rounded-xl border border-gray-200 bg-white lg:w-[calc(25%-12px)]"
+                  >
+                    <div className="aspect-[4/3] w-full animate-pulse bg-gray-100" />
+                    <div className="p-3">
+                      <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100" />
+                      <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-gray-100" />
+                      <div className="mt-2 h-3 w-1/3 animate-pulse rounded bg-gray-100" />
+                      <div className="mt-3 h-5 w-1/2 animate-pulse rounded bg-gray-100" />
+                    </div>
+                  </div>
+                ))
+              : vehicles.map((vehicle) => (
+                  <TopVehicleCard
                     key={vehicle.id}
                     vehicle={vehicle}
                     onFavorite={() => handleToggleFavourite(vehicle.id)}
@@ -260,45 +239,6 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({
                     isFavoriteLoading={favouriteLoading.has(vehicle.id)}
                   />
                 ))}
-              </div>
-
-              {loading && (
-                <div className="text-center py-4">
-                  <div className="inline-block w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                </div>
-              )}
-            </div>
-            <button
-              onClick={handleNext}
-              disabled={isNextDisabled}
-              aria-label="Next vehicles"
-              className={`hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all ${
-                isNextDisabled
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-gray-50"
-              }`}
-            >
-              <FaChevronRight className="w-4 h-4 text-gray-700" />
-            </button>
-          </div>
-          <div className="flex justify-center gap-2 mt-6">
-            {Array.from({
-              length: Math.min(
-                Math.ceil(vehicles.length / visibleCards),
-                MAX_DOTS,
-              ),
-            }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => handleDotClick(i)}
-                aria-label={`Go to page ${i + 1}`}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === getActiveDot()
-                    ? "bg-blue-600 w-8"
-                    : "bg-gray-300 hover:bg-gray-400"
-                }`}
-              />
-            ))}
           </div>
         </div>
       </div>
