@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { TbMedal2 } from "react-icons/tb";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import TopVehicleCard from "./TopVech";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { useAuth } from "@/context/AuthContext";
 import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicleservice";
@@ -21,6 +21,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [ready, setReady] = useState(false);
 
   const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set());
   const [favouriteLoading, setFavouriteLoading] = useState<Set<string>>(
@@ -34,7 +35,6 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
   const { isAuthenticated } = useAuth();
   const ITEMS_PER_PAGE = 20;
   const scrollRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   const loadVehicles = useCallback(
     async (page: number) => {
@@ -60,6 +60,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
         console.error("Failed to load vehicles:", error);
       } finally {
         setLoading(false);
+        if (page === 0) setReady(true);
       }
     },
     [loading],
@@ -145,11 +146,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
     });
   };
 
-  const handleRoute = () => {
-    router.push(
-      `/booking/search${bookingId ? `?bookingType=${bookingId}` : ""}`,
-    );
-  };
+  if (ready && vehicles.length === 0) return null;
 
   const showArrows = canScrollLeft || canScrollRight;
 
@@ -180,12 +177,12 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
           </div>
 
           <div className="flex flex-shrink-0 items-center gap-2">
-            <button
-              onClick={handleRoute}
+            <Link
+              href={`/booking/search${bookingId ? `?bookingType=${bookingId}` : ""}`}
               className="mr-1 hidden text-sm font-medium text-[#0673FF] hover:underline lg:block"
             >
               See all
-            </button>
+            </Link>
             {showArrows && (
               <>
                 <button
@@ -215,7 +212,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
             onScroll={updateArrows}
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {vehicles.length === 0 && loading
+            {!ready
               ? Array.from({ length: 4 }).map((_, i) => (
                   <div
                     key={i}

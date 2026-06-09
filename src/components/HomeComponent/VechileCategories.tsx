@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
@@ -25,15 +25,14 @@ const formatName = (name: string) =>
 
 const CategoryCard: React.FC<{
   category: CustomerCategory;
-  onClick: () => void;
-}> = ({ category, onClick }) => {
+  href: string;
+}> = ({ category, href }) => {
   const [imgSrc, setImgSrc] = useState(category.image || FALLBACK_IMAGE);
   const label = formatName(category.vehicleType?.name ?? "");
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Link
+      href={href}
       aria-label={`Browse ${label} rentals`}
       className="group relative flex shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#0673FF]/30 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0673FF] basis-[72%] sm:basis-[calc(50%-8px)] md:basis-[calc(33.333%-11px)] lg:basis-[calc(25%-12px)]"
     >
@@ -69,7 +68,7 @@ const CategoryCard: React.FC<{
           </svg>
         </span>
       </div>
-    </button>
+    </Link>
   );
 };
 
@@ -104,17 +103,12 @@ const ArrowButton: React.FC<{
 );
 
 const VehicleCategories: React.FC = () => {
-  const router = useRouter();
   const [categories, setCategories] = useState<CustomerCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const handleCategoryClick = (vehicleTypeId: string) => {
-    router.push(`/explore?vehicleTypeId=${vehicleTypeId}`);
-  };
 
   const updateArrows = useCallback(() => {
     const el = scrollRef.current;
@@ -204,7 +198,7 @@ const VehicleCategories: React.FC = () => {
                 <CategoryCard
                   key={category.id}
                   category={category}
-                  onClick={() => handleCategoryClick(category.vehicleType.id)}
+                  href={`/explore?vehicleTypeId=${category.vehicleType.id}`}
                 />
               ))}
         </div>

@@ -3,7 +3,7 @@ import Image from "next/image";
 import React from "react";
 import { BsBuildings } from "react-icons/bs";
 import { FiArrowRight } from "react-icons/fi";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface City {
   name: string;
@@ -23,13 +23,9 @@ const cities: City[] = [
 const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({
   bookingTypeId,
 }) => {
-  const router = useRouter();
-
-  const go = (name: string) => {
+  const cityHref = (name: string) => {
     const c = name.toLowerCase().replace(/\s+/g, "-");
-    router.push(
-      `/booking/search?city=${c}${bookingTypeId ? `&bookingType=${bookingTypeId}` : ""}`,
-    );
+    return `/booking/search?city=${c}${bookingTypeId ? `&bookingType=${bookingTypeId}` : ""}`;
   };
 
   return (
@@ -47,10 +43,10 @@ const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {cities.map((city) => (
-            <button
+            <Link
               key={city.name}
-              onClick={() => go(city.name)}
-              className="group relative h-52 overflow-hidden rounded-2xl border border-gray-100 text-left shadow-sm transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0673FF] sm:h-60"
+              href={cityHref(city.name)}
+              className="group relative block h-52 overflow-hidden rounded-2xl border border-gray-100 text-left shadow-sm transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0673FF] sm:h-60"
             >
               <Image
                 src={city.image}
@@ -71,7 +67,7 @@ const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({
                   View cars <FiArrowRight className="h-4 w-4" />
                 </span>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       </div>

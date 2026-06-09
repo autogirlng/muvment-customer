@@ -3,9 +3,9 @@
 import { ServicePricingShowcase } from "@/types/Servicepricing";
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { FaArrowRight } from "react-icons/fa";
 import { IoCalendarOutline } from "react-icons/io5";
-import { useRouter } from "next/navigation";
 import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
 
 interface ServicePricingCardProps {
@@ -15,8 +15,6 @@ interface ServicePricingCardProps {
 export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
   data,
 }) => {
-  const router = useRouter();
-
   const getMinimumPrice = () => {
     if (!data.prices || data.prices.length === 0) return 0;
     return Math.min(...data.prices.map((p) => p.price));
@@ -80,13 +78,13 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
           <p className="text-xl font-bold leading-tight text-[#0673FF]">
             NGN {minimumPrice.toLocaleString()}
           </p>
-          <button
-            onClick={() => router.push(`/booking/${data.slug}/special-pricing`)}
+          <Link
+            href={`/booking/${data.slug}/special-pricing`}
             className="group mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#0673FF] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0560d6] active:bg-[#0450b0]"
           >
             <span>Book now</span>
             <FaArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-          </button>
+          </Link>
         </div>
       </div>
     </div>
