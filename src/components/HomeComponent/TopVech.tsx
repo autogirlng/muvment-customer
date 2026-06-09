@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import React, { useState } from "react";
 import {
   FaStar,
@@ -84,7 +84,6 @@ const TopRating: React.FC<TopRatingProps> = ({
   isFavoriteLoading = false,
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const router = useRouter();
 
   const price = vehicle.allPricingOptions[0]?.price || 0;
   const bookingType = vehicle.allPricingOptions[0]?.bookingTypeName || "";
@@ -101,10 +100,6 @@ const TopRating: React.FC<TopRatingProps> = ({
     setCurrentImageIndex((prev) =>
       prev === 0 ? vehicle.photos.length - 1 : prev - 1,
     );
-  };
-
-  const handleRouteToDetails = () => {
-    router.push(`/booking/details/${vehicle.slug}`);
   };
 
   return (
@@ -148,8 +143,8 @@ const TopRating: React.FC<TopRatingProps> = ({
         />
       </div>
 
-      <button
-        onClick={handleRouteToDetails}
+      <Link
+        href={`/booking/details/${vehicle.slug}`}
         className="block w-full p-3 text-left"
       >
         <h3 className="truncate text-sm font-semibold text-[#0d1320]">
@@ -184,7 +179,7 @@ const TopRating: React.FC<TopRatingProps> = ({
             </span>
           )}
         </p>
-      </button>
+      </Link>
     </div>
   );
 };
