@@ -123,7 +123,7 @@ export default function RootLayout({
           <ToastContainer position="top-right" autoClose={3000} />
         </QueryProvider>
         {CLARITY_PROJECT_ID && (
-          <Script id="microsoft-clarity" strategy="afterInteractive">
+          <Script id="microsoft-clarity" strategy="lazyOnload">
             {`
               (function(c,l,a,r,i,t,y){
                   c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};

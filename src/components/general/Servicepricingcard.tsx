@@ -49,7 +49,7 @@ export const ServicePricingCard: React.FC<ServicePricingCardProps> = ({
         </span>
       </div>
 
-      <div className="flex h-40 items-center justify-center overflow-hidden bg-gray-50 sm:h-44">
+      <div className="flex h-40 items-center justify-center overflow-hidden bg-white sm:h-44">
         <div className="relative h-full w-full">
           <Image
             src={getVehicleImage()}
