@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type BookingOpt = { value: string; label: string };
 
@@ -19,8 +19,6 @@ export default function OurServices({
 }: {
   bookingOptions?: BookingOpt[];
 }) {
-  const router = useRouter();
-
   const urlFor = (match: string) => {
     if (match) {
       const opt = bookingOptions.find((o) =>
@@ -48,10 +46,10 @@ export default function OurServices({
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {SERVICES.map((s) => (
-            <button
+            <Link
               key={s.title}
-              onClick={() => router.push(urlFor(s.match))}
-              className="group relative h-48 overflow-hidden rounded-2xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0673FF] sm:h-56"
+              href={urlFor(s.match)}
+              className="group relative block h-48 overflow-hidden rounded-2xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0673FF] sm:h-56"
             >
               <Image
                 src={s.image}
@@ -70,7 +68,7 @@ export default function OurServices({
                   {s.description}
                 </p>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       </div>
