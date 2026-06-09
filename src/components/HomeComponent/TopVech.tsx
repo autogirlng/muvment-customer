@@ -1,19 +1,17 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import {
   FaStar,
-  FaUserTie,
-  FaGasPump,
   FaHeart,
   FaRegHeart,
-  FaUsers,
   FaChevronRight,
   FaChevronLeft,
+  FaUsers,
 } from "react-icons/fa";
 import { MdLocationOn } from "react-icons/md";
 import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
-import Link from "next/link";
 
 export interface TopVehicle {
   photos: Array<{
@@ -86,7 +84,7 @@ const TopRating: React.FC<TopRatingProps> = ({
   isFavoriteLoading = false,
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showTooltip, setShowTooltip] = useState<string | null>(null);
+  const router = useRouter();
 
   const price = vehicle.allPricingOptions[0]?.price || 0;
   const bookingType = vehicle.allPricingOptions[0]?.bookingTypeName || "";
@@ -105,244 +103,88 @@ const TopRating: React.FC<TopRatingProps> = ({
     );
   };
 
-  const goToImage = (index: number) => setCurrentImageIndex(index);
+  const handleRouteToDetails = () => {
+    router.push(`/booking/details/${vehicle.slug}`);
+  };
 
   return (
-    <div className="flex-shrink-0 w-full md:w-full lg:w-[calc(50%-12px)] bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden mb-2">
-      <div className="md:hidden">
-        <div className="relative h-48 rounded-t-xl overflow-hidden">
-          <img
-            src={optimizeCloudinaryUrl(
-              vehicle.photos[currentImageIndex]?.cloudinaryUrl ||
-                "/placeholder.jpg",
-            )}
-            alt={vehicle.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-
-          {vehicle.photos.length > 1 && (
-            <>
-              <button
-                onClick={prevImage}
-                aria-label="Previous image"
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
-              >
-                <FaChevronLeft className="w-3 h-3 text-gray-700" />
-              </button>
-              <button
-                onClick={nextImage}
-                aria-label="Next image"
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
-              >
-                <FaChevronRight className="w-3 h-3 text-gray-700" />
-              </button>
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                {vehicle.photos.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToImage(index)}
-                    aria-label={`Go to image ${index + 1}`}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${
-                      index === currentImageIndex
-                        ? "bg-white w-4"
-                        : "bg-white/50"
-                    }`}
-                  />
-                ))}
-              </div>
-            </>
+    <div className="group w-[78%] flex-shrink-0 snap-start overflow-hidden rounded-xl border border-gray-200 bg-white transition-shadow duration-300 hover:shadow-lg lg:w-[calc(25%-12px)]">
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+        <img
+          src={optimizeCloudinaryUrl(
+            vehicle.photos[currentImageIndex]?.cloudinaryUrl ||
+              "/placeholder.jpg",
           )}
-          <div className="absolute top-3 left-3 flex gap-2">
-            <span className="bg-gray-100 text-xs font-semibold px-2 py-1 rounded-full">
-              {vehicle.city}
-            </span>
-            <span className="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
-              <FaStar className="w-3 h-3" />
-              {vehicle.rating?.toFixed(1) || "4.5"}
-            </span>
-          </div>
-          <FavouriteButton
-            isFavorited={isFavorited}
-            isFavoriteLoading={isFavoriteLoading}
-            onFavorite={onFavorite}
-            className="absolute top-3 right-3 w-8 h-8"
-            iconSize="w-4 h-4"
-          />
-          <div className="absolute bottom-3 left-3">
-            <span className="bg-white text-gray-700 text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
-              <FaUsers className="w-3 h-3" />
-              {vehicle.numberOfSeats}
-            </span>
-          </div>
-        </div>
+          alt={vehicle.name}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+        />
 
-        <div className="p-4">
-          <div className="flex justify-between items-start mb-2">
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-gray-900 mb-1">
-                {vehicle.name}
-              </h3>
-              <p className="text-sm text-gray-500 mb-2">
-                NGN {price.toLocaleString()}/{bookingType}
-              </p>
-              <p className="text-sm text-gray-600">{vehicle.vehicleTypeName}</p>
-            </div>
-          </div>
-          <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-1 text-sm text-gray-600">
-              <MdLocationOn className="w-4 h-4 text-blue-600" />
-              <span>{vehicle.city}</span>
-            </div>
-            <Link
-              href={`/booking/details/${vehicle.slug}`}
-              className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:gap-2 cursor-pointer transition-all"
+        {vehicle.photos.length > 1 && (
+          <>
+            <button
+              onClick={prevImage}
+              aria-label="Previous image"
+              className="absolute left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 opacity-0 transition-opacity hover:bg-white group-hover:opacity-100"
             >
-              Open Front Door
-              <FaChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-        </div>
-      </div>
-      <div className="hidden md:flex">
-        <div className="relative w-[280px] h-[220px] flex-shrink-0">
-          <img
-            src={optimizeCloudinaryUrl(
-              vehicle.photos[currentImageIndex]?.cloudinaryUrl ||
-                "/placeholder.jpg",
-            )}
-            alt={vehicle.name}
-            className="w-full h-full object-cover rounded-l-xl"
-            loading="lazy"
-          />
+              <FaChevronLeft className="h-3 w-3 text-gray-700" />
+            </button>
+            <button
+              onClick={nextImage}
+              aria-label="Next image"
+              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 opacity-0 transition-opacity hover:bg-white group-hover:opacity-100"
+            >
+              <FaChevronRight className="h-3 w-3 text-gray-700" />
+            </button>
+          </>
+        )}
 
-          {vehicle.photos.length > 1 && (
-            <>
-              <button
-                onClick={prevImage}
-                aria-label="Previous image"
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
-              >
-                <FaChevronLeft className="w-3 h-3 text-white" />
-              </button>
-              <button
-                onClick={nextImage}
-                aria-label="Next image"
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
-              >
-                <FaChevronRight className="w-3 h-3 text-white" />
-              </button>
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                {vehicle.photos.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToImage(index)}
-                    aria-label={`Go to image ${index + 1}`}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${
-                      index === currentImageIndex
-                        ? "bg-white w-4"
-                        : "bg-white/50"
-                    }`}
-                  />
-                ))}
-              </div>
-            </>
+        <FavouriteButton
+          isFavorited={isFavorited}
+          isFavoriteLoading={isFavoriteLoading}
+          onFavorite={onFavorite}
+          className="absolute right-2 top-2 h-8 w-8"
+          iconSize="w-4 h-4"
+        />
+      </div>
+
+      <button
+        onClick={handleRouteToDetails}
+        className="block w-full p-3 text-left"
+      >
+        <h3 className="truncate text-sm font-semibold text-[#0d1320]">
+          {vehicle.name}
+        </h3>
+        <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
+          <span className="flex items-center gap-1 font-medium text-gray-700">
+            <FaStar className="h-3 w-3 text-[#FBB034]" />
+            {vehicle.rating?.toFixed(1) || "4.6"}
+          </span>
+          <span>&middot;</span>
+          <span className="truncate">{vehicle.vehicleTypeName}</span>
+        </div>
+        <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-500">
+          <span className="flex items-center gap-1">
+            <FaUsers className="h-3 w-3" />
+            {vehicle.numberOfSeats} seats
+          </span>
+          <span className="flex items-center gap-1 truncate">
+            <MdLocationOn className="h-3.5 w-3.5" />
+            {vehicle.city}
+          </span>
+        </div>
+        <p className="mt-2 text-[#0d1320]">
+          <span className="text-base font-bold">
+            NGN {price.toLocaleString()}
+          </span>
+          {bookingType && (
+            <span className="text-xs font-normal text-gray-500">
+              {" "}
+              /{bookingType}
+            </span>
           )}
-          <FavouriteButton
-            isFavorited={isFavorited}
-            isFavoriteLoading={isFavoriteLoading}
-            onFavorite={onFavorite}
-            className="absolute top-2 right-2 w-7 h-7"
-            iconSize="w-3.5 h-3.5"
-          />
-          <div className="absolute bottom-2 left-2">
-            <span className="bg-white/90 text-gray-700 text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
-              <FaUsers className="w-3 h-3" />
-              {vehicle.numberOfSeats}
-            </span>
-          </div>
-          <div className="absolute top-3 left-3 flex gap-2">
-            <span className="bg-gray-100 text-xs font-semibold px-2 py-1 rounded-full">
-              {vehicle.city}
-            </span>
-            <span className="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
-              <FaStar className="w-3 h-3" />
-              {vehicle.rating?.toFixed(1) || "4.5"}
-            </span>
-          </div>
-        </div>
-        <div className="flex-1 pl-8 py-6 flex flex-col justify-between">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 mb-1">
-              {vehicle.name}
-            </h3>
-            <p className="text-sm font-semibold text-gray-900 mb-2">
-              NGN {price.toLocaleString()}/{bookingType}
-            </p>
-            <p className="text-xs text-gray-600">{vehicle.vehicleTypeName}</p>
-          </div>
-
-          <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div
-                  className="flex items-center gap-1 cursor-pointer"
-                  onMouseEnter={() => setShowTooltip("location")}
-                  onMouseLeave={() => setShowTooltip(null)}
-                >
-                  <MdLocationOn className="w-4 h-4 text-gray-600" />
-                  <span className="text-xs text-gray-700">{vehicle.city}</span>
-                </div>
-                {showTooltip === "location" && (
-                  <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-10">
-                    Vehicle location
-                  </div>
-                )}
-              </div>
-              {vehicle.willProvideDriver && (
-                <div className="relative">
-                  <div
-                    className="cursor-pointer"
-                    onMouseEnter={() => setShowTooltip("driver")}
-                    onMouseLeave={() => setShowTooltip(null)}
-                  >
-                    <FaUserTie className="w-4 h-4 text-gray-600" />
-                  </div>
-                  {showTooltip === "driver" && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-10">
-                      Driver provided
-                    </div>
-                  )}
-                </div>
-              )}
-              {vehicle.willProvideFuel && (
-                <div className="relative">
-                  <div
-                    className="cursor-pointer"
-                    onMouseEnter={() => setShowTooltip("fuel")}
-                    onMouseLeave={() => setShowTooltip(null)}
-                  >
-                    <FaGasPump className="w-4 h-4 text-gray-600" />
-                  </div>
-                  {showTooltip === "fuel" && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-10">
-                      Fuel provided
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <Link
-              href={`/booking/details/${vehicle.slug}`}
-              className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:gap-2 cursor-pointer transition-all"
-            >
-              Open Front Door
-              <FaChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-        </div>
-      </div>
+        </p>
+      </button>
     </div>
   );
 };

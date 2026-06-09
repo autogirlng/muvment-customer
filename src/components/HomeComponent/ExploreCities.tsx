@@ -1,98 +1,79 @@
 "use client";
 import Image from "next/image";
-import Link from "next/link";
-import React, { useState, useRef } from "react";
+import React from "react";
 import { BsBuildings } from "react-icons/bs";
+import { FiArrowRight } from "react-icons/fi";
+import { useRouter } from "next/navigation";
 
 interface City {
   name: string;
+  country: string;
   image: string;
 }
 
 const cities: City[] = [
-  { name: "Lagos", image: "/images/landing/1.jpg" },
-  { name: "Accra", image: "/images/landing/2.jpg" },
-  { name: "Port-Harcourt", image: "/images/landing/3.jpg" },
-  { name: "Abuja", image: "/images/landing/4.jpg" },
-  { name: "Benin", image: "/images/landing/5.jpg" },
-  { name: "Enugu", image: "/images/landing/6.jpg" },
+  { name: "Lagos", country: "Nigeria", image: "/images/landing/1.jpg" },
+  { name: "Abuja", country: "Nigeria", image: "/images/landing/4.jpg" },
+  { name: "Port-Harcourt", country: "Nigeria", image: "/images/landing/3.jpg" },
+  { name: "Benin", country: "Nigeria", image: "/images/landing/5.jpg" },
+  { name: "Enugu", country: "Nigeria", image: "/images/landing/6.jpg" },
+  { name: "Accra", country: "Ghana", image: "/images/landing/2.jpg" },
 ];
 
 const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({
   bookingTypeId,
 }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
-  // Optional: Function to make dots scroll the container
-  const scrollToSlide = (index: number) => {
-    setActiveIndex(index);
-    if (scrollContainerRef.current) {
-      const width = scrollContainerRef.current.scrollWidth;
-      // Approximate scroll calculation
-      const scrollPos = (width / cities.length) * index;
-      scrollContainerRef.current.scrollTo({
-        left: scrollPos,
-        behavior: "smooth",
-      });
-    }
+  const go = (name: string) => {
+    const c = name.toLowerCase().replace(/\s+/g, "-");
+    router.push(
+      `/booking/search?city=${c}${bookingTypeId ? `&bookingType=${bookingTypeId}` : ""}`,
+    );
   };
 
   return (
-    <section className="w-full text-center py-12">
-      {/* Header */}
-      <div className="flex flex-col items-start justify-center md:justify-start mb-6 max-w-[95%] ml-auto px-4 md:px-12">
-        <BsBuildings className="text-blue-600 text-4xl mb-2" />
-        <h2 className="text-2xl font-bold text-gray-900">
-          Explore Popular Cities
-        </h2>
-        <p className="text-gray-500 mt-2 text-left">
-          Find the ideal vehicle in these bustling cities and start your
-          adventure in style
-        </p>
-      </div>
-      <div
-        ref={scrollContainerRef}
-        className="flex justify-start gap-6 overflow-x-auto no-scrollbar px-4 md:px-12 py-4 snap-x snap-mandatory scroll-smooth"
-      >
-        {cities.map((city, index) => {
-          const formattedCity = city.name.toLowerCase().replace(/\s+/g, "-");
-          const targetUrl = `/booking/search?city=${formattedCity}${bookingTypeId ? `&bookingType=${bookingTypeId}` : ""}`;
+    <section className="bg-white px-4 py-16 lg:px-8 lg:py-20">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8">
+          <BsBuildings className="mb-2 text-4xl text-[#0673FF]" />
+          <h2 className="text-3xl font-bold tracking-[-0.01em] text-[#0d1320] sm:text-4xl">
+            Cities we operate in
+          </h2>
+          <p className="mt-2 max-w-xl text-gray-600">
+            Tap a city to see the cars available near you.
+          </p>
+        </div>
 
-          return (
-            <Link
-              key={index}
-              href={targetUrl}
-              className="relative flex-shrink-0 w-72 h-80 rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group snap-center border border-gray-100 block"
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          {cities.map((city) => (
+            <button
+              key={city.name}
+              onClick={() => go(city.name)}
+              className="group relative h-52 overflow-hidden rounded-2xl border border-gray-100 text-left shadow-sm transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0673FF] sm:h-60"
             >
               <Image
                 src={city.image}
-                alt={city.name}
+                alt={`${city.name}, ${city.country}`}
                 fill
-                className="object-cover group-hover:scale-110 transition-transform duration-500"
-                sizes="(max-width: 768px) 100vw, 300px"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 640px) 50vw, 33vw"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <div className="absolute bottom-5 left-5 text-white text-xl font-bold drop-shadow-md flex items-center gap-1 transform translate-y-0 group-hover:-translate-y-1 transition-transform">
-                {city.name}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+              <span className="absolute left-3 top-3 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
+                {city.country}
+              </span>
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-4">
+                <span className="text-xl font-bold text-white drop-shadow">
+                  {city.name}
+                </span>
+                <span className="flex items-center gap-1 text-sm font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  View cars <FiArrowRight className="h-4 w-4" />
+                </span>
               </div>
-            </Link>
-          );
-        })}
-      </div>
-      <div className="flex justify-center mt-6 space-x-2">
-        {cities.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => scrollToSlide(i)}
-            className={`transition-all duration-300 rounded-full ${
-              activeIndex === i
-                ? "w-8 h-2.5 bg-blue-600"
-                : "w-2.5 h-2.5 bg-gray-300 hover:bg-gray-400"
-            }`}
-            aria-label={`Go to slide ${i + 1}`}
-          />
-        ))}
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );

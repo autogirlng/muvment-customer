@@ -1,127 +1,62 @@
 "use client";
 import React from "react";
+import { FiSearch, FiCreditCard } from "react-icons/fi";
+import { IoCarSportOutline } from "react-icons/io5";
+
+const STEPS = [
+  {
+    icon: <FiSearch className="h-6 w-6" />,
+    title: "Search",
+    body: "Enter your location, dates, and booking type to see the cars available near you.",
+  },
+  {
+    icon: <IoCarSportOutline className="h-6 w-6" />,
+    title: "Choose your car",
+    body: "Compare vehicles, prices, and options, then pick the one that fits your trip.",
+  },
+  {
+    icon: <FiCreditCard className="h-6 w-6" />,
+    title: "Book and pay",
+    body: "Confirm your details and pay securely. Your car and driver are assigned right away.",
+  },
+];
 
 const HowItWorks: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-8 my-12 ">
-      <div className="max-w-3xl w-full">
-        {/* Title */}
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+    <section className="bg-white px-4 py-16 lg:px-8 lg:py-20">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-10 text-center">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#0673FF]">
             How it works
-          </h2>
-          <p className="text-gray-600 text-sm sm:text-base max-w-md mx-auto">
-            Monthly getaway or long-term rental? Get the best rates on premium
-            vehicles with our exclusive deals.
           </p>
+          <h2 className="text-balance text-3xl font-bold tracking-[-0.01em] text-[#0d1320] lg:text-4xl">
+            Book a car in just three simple steps
+          </h2>
         </div>
 
-        {/* Timeline Container */}
-        <div className="relative flex flex-col justify-center">
-          {/* Vertical Line (desktop only) */}
-          <div className="hidden lg:block absolute left-1/2 top-23 bottom-23 transform -translate-x-1/2 w-1 bg-gray-300"></div>
-
-          {/* Step 1 */}
-          <div className="relative mb-10 sm:mb-14 lg:mb-28">
-            <div className="flex flex-col lg:flex-row items-center lg:justify-end lg:pr-8">
-              <div className="hidden lg:block w-5/12"></div>
-
-              {/* Dot (desktop only) */}
-              <div className="hidden lg:block absolute lg:left-1/2 lg:transform lg:-translate-x-1/2 w-8 h-8 bg-gray-400 rounded-full border-4 border-white z-10"></div>
-
-              {/* Card */}
-              <div className="w-full lg:w-5/12 lg:pl-8 bg-gray-100 shadow-sm p-5 sm:p-6 rounded-2xl text-center lg:text-left">
-                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">
-                  Step 1
-                </p>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-                  Select Car
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Browse available vehicles based on your location and trip needs.
-                  Compare car types, pricing, and features before making a choice.
-                  Choose the vehicle that best fits your journey.
-                </p>
+        <div className="grid gap-5 sm:grid-cols-3 sm:gap-6">
+          {STEPS.map((step, i) => (
+            <div
+              key={step.title}
+              className="relative rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-md"
+            >
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#0673FF]/10 text-[#0673FF]">
+                {step.icon}
               </div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#0673FF]">
+                Step {i + 1}
+              </p>
+              <h3 className="mt-1 text-lg font-bold text-[#0d1320]">
+                {step.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                {step.body}
+              </p>
             </div>
-          </div>
-
-          {/* Step 2 */}
-          <div className="relative mb-10 sm:mb-14 lg:mb-28">
-            <div className="flex flex-col lg:flex-row items-center lg:justify-start lg:pl-8">
-              {/* Card */}
-              <div className="w-full lg:w-5/12 lg:pr-8 bg-gray-100 shadow-sm p-5 sm:p-6 rounded-2xl text-center lg:text-right">
-                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">
-                  Step 2
-                </p>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-                  Provide Booking Details
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Tell us when and where you need the vehicle.
-                  Add your pickup time, trip duration, and preferred service option.
-                  Review your details to ensure a smooth ride experience.
-                </p>
-              </div>
-
-              {/* Dot (desktop only) */}
-              <div className="hidden lg:block absolute lg:left-1/2 lg:transform lg:-translate-x-1/2 w-8 h-8 bg-gray-400 rounded-full border-4 border-white z-10"></div>
-
-              <div className="hidden lg:block w-5/12"></div>
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className="relative mb-10 sm:mb-14 lg:mb-28">
-            <div className="flex flex-col lg:flex-row items-center lg:justify-end lg:pr-8">
-              <div className="hidden lg:block w-5/12"></div>
-
-              {/* Dot (desktop only) */}
-              <div className="hidden lg:block absolute lg:left-1/2 lg:transform lg:-translate-x-1/2 w-8 h-8 bg-gray-400 rounded-full border-4 border-white z-10"></div>
-
-              {/* Card */}
-              <div className="w-full lg:w-5/12 lg:pl-8 bg-gray-100 shadow-sm p-5 sm:p-6 rounded-2xl text-center lg:text-left">
-                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">
-                  Step 3
-                </p>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-                  Make Payment
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                  Confirm your booking by making a secure payment.
-                  Choose your preferred payment method and see a clear price breakdown.
-                  Once payment is successful, your ride is reserved.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative mb-10 sm:mb-14 lg:mb-28">
-            <div className="flex flex-col lg:flex-row items-center lg:justify-start lg:pl-8">
-              {/* Card */}
-              <div className="w-full lg:w-5/12 lg:pr-8 bg-gray-100 shadow-sm p-5 sm:p-6 rounded-2xl text-center lg:text-right">
-                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">
-                  Step 4
-                </p>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-                  Enjoy Your Ride
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Your vehicle is ready and assigned for your trip.
-                  Track your ride details and get support anytime you need it.
-                  Sit back, relax, and enjoy the Muvment experience.
-                </p>
-              </div>
-
-              {/* Dot (desktop only) */}
-              <div className="hidden lg:block absolute lg:left-1/2 lg:transform lg:-translate-x-1/2 w-8 h-8 bg-gray-400 rounded-full border-4 border-white z-10"></div>
-
-              <div className="hidden lg:block w-5/12"></div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

@@ -4,7 +4,7 @@ import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 import HomePage from "@/components/HomeComponent/HomePage";
 
 export const metadata: Metadata = generatePageMetadata({
-  title: "Rent a Car Anywhere in Nigeria",
+  title: "Rent a Car in Nigeria's Top Cities",
   description:
     "Muvment by Autogirl helps you rent cars easily for business, trips, events, and daily mobility across Nigeria. Flexible pricing. Verified cars. Fast booking.",
   url: "/",

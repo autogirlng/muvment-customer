@@ -7,6 +7,7 @@ import { getBookingOption } from "@/context/Constarain";
 import { useState } from "react";
 import { BookingOption } from "@/types/booking";
 import { ServicePricingShowcaseList } from "@/components/HomeComponent/Servicepricingshowcaselist";
+import LazyMount from "@/components/HomeComponent/LazyMount";
 
 const BeninRepublicTravel = dynamic(
   () => import("@/components/HomeComponent/BeninRepublicTravel"),
@@ -15,27 +16,31 @@ const TopRateing = dynamic(
   () => import("@/components/HomeComponent/TopRating"),
 );
 const Delivery = dynamic(() => import("@/components/HomeComponent/Delivering"));
-const PremiumCarRental = dynamic(
-  () => import("@/components/HomeComponent/PremiumCarRentals"),
-);
 const ExploreCities = dynamic(
   () => import("@/components/HomeComponent/ExploreCities"),
 );
 const VehicleCategories = dynamic(
   () => import("@/components/HomeComponent/VechileCategories"),
 );
-const FindNewListings = dynamic(
-  () => import("@/components/HomeComponent/FindNewListing"),
-);
 const Steps = dynamic(() => import("@/components/HomeComponent/Steps"));
+const Testimonials = dynamic(
+  () => import("@/components/HomeComponent/Testimonials"),
+);
 const FAQ = dynamic(() => import("@/components/HomeComponent/FAQ"));
+const ClosingCTA = dynamic(
+  () => import("@/components/HomeComponent/ClosingCTA"),
+);
 const Footer = dynamic(() => import("@/components/HomeComponent/Footer"));
+const HourlyPromoBar = dynamic(
+  () => import("@/components/HomeComponent/HourlyPromoBar"),
+  { ssr: false },
+);
 
 export default function HomePage() {
   const [bookingTypeID, setBookingTypeID] = useState<string | undefined>(
     undefined,
   );
-  const [_, setBookingOptions] = useState<BookingOption[]>([]);
+  const [bookingOptions, setBookingOptions] = useState<BookingOption[]>([]);
 
   const getBookingOptions = async () => {
     const data = await getBookingOption();
@@ -53,17 +58,44 @@ export default function HomePage() {
     <div>
       <Navbar showAnnouncementBar={true} homeHero={true} />
       <BookingInterface />
-      <ServicePricingShowcaseList />
-      <BeninRepublicTravel />
-      <TopRateing bookingId={bookingTypeID} />
-      <Delivery />
-      <PremiumCarRental />
-      <ExploreCities bookingTypeId={bookingTypeID} />
-      <VehicleCategories />
-      <FindNewListings />
-      <Steps />
-      <FAQ />
+      <div className="ag-reveal">
+        <ServicePricingShowcaseList />
+      </div>
+      <div className="ag-reveal">
+        <LazyMount minHeight={460}>
+          <TopRateing bookingId={bookingTypeID} />
+        </LazyMount>
+      </div>
+      <div className="ag-reveal">
+        <Steps />
+      </div>
+      <div className="ag-reveal">
+        <BeninRepublicTravel />
+      </div>
+      <div className="ag-reveal">
+        <Delivery bookingOptions={bookingOptions} />
+      </div>
+      <div className="ag-reveal">
+        <ExploreCities bookingTypeId={bookingTypeID} />
+      </div>
+      <div className="ag-reveal">
+        <LazyMount minHeight={420}>
+          <VehicleCategories />
+        </LazyMount>
+      </div>
+      <div className="ag-reveal">
+        <LazyMount minHeight={420}>
+          <Testimonials />
+        </LazyMount>
+      </div>
+      <div className="ag-reveal">
+        <FAQ />
+      </div>
+      <div className="ag-reveal">
+        <ClosingCTA />
+      </div>
       <Footer bookingTypeID={bookingTypeID} />
+      <HourlyPromoBar />
     </div>
   );
 }
