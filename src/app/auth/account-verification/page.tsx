@@ -1,263 +1,236 @@
 "use client";
-import { useState, useRef, useEffect, Suspense } from "react";
-import { AuthService } from "@/controllers/auth/auth";
+import { Suspense, useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import Button from "@/components/utils/Button";
+import { AuthService } from "@/controllers/auth/auth";
 import OtpInput from "@/components/AuthComponent/OTPInput";
+import ScreenLoader from "@/components/utils/ScreenLoader";
+
+const WHATSAPP_URL = "https://wa.me/2348167474165";
 
 function VerifyAccountContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const emailFromUrl = searchParams.get("email") || "";
+  const email = searchParams.get("email") || "";
 
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [email] = useState(emailFromUrl); // Email is read-only, set from URL
+  const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [navigating, setNavigating] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
-
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  useEffect(() => {
-    // Auto-focus first OTP input on mount
-    if (inputRefs.current[0]) {
-      inputRefs.current[0].focus();
-    }
-  }, []);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (resendTimer > 0) {
-      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [resendTimer]);
-
-  // Redirect to signup if no email in URL
-  useEffect(() => {
-    if (!emailFromUrl) {
-      toast.error("Email is required. Please sign up first.");
+    if (!email) {
+      toast.error("Please sign up first.");
       router.push("/auth/register");
     }
-  }, [emailFromUrl, router]);
-
-  const handleChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    // Auto-focus next input
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>
-  ) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
+  }, [email, router]);
 
   useEffect(() => {
-    setOtp(otp);
-  });
+    if (resendTimer <= 0) return;
+    const t = setTimeout(() => setResendTimer((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendTimer]);
+
+  const isComplete = otp.length === 6;
 
   const handleSubmit = async () => {
-    const otpValue = otp.join("");
-
-    if (otpValue.length !== 6) {
-      toast.error("Please enter the complete 6-digit code");
+    if (!isComplete) {
+      setError("Enter the complete 6-digit code");
       return;
     }
-
-    if (!email) {
-      toast.error("Email is required");
-      return;
-    }
-
     setIsLoading(true);
-
+    setNavigating(true);
+    setError("");
     try {
-      const response = await AuthService.verifyAccount({
-        email,
-        otp: otpValue,
-      });
-
-      if (response.error) {
-        toast.error(
-          response.message || "Verification failed. Please try again."
-        );
-        // Clear OTP on error
-        setOtp(["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
+      const res = await AuthService.verifyAccount({ email, otp });
+      if (res.error) {
+        setError(res.message || "That code is incorrect or has expired.");
+        setOtp("");
+        setIsLoading(false);
+        setNavigating(false);
       } else {
-        toast.success("Account verified successfully!");
-
-        // Redirect to login after successful verification
-        setTimeout(() => {
-          router.push("/auth/login");
-        }, 1500);
+        toast.success("Account verified.");
+        router.push("/auth/login");
       }
-    } catch (error: any) {
-      console.error("Verification error:", error);
-      toast.error(
-        error.message || "An unexpected error occurred. Please try again."
-      );
-      // Clear OTP on error
-      setOtp(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
-    } finally {
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setOtp("");
       setIsLoading(false);
+      setNavigating(false);
     }
   };
 
-  const handleResendOTP = async () => {
-    if (!email) {
-      toast.error("Email is required");
-      return;
-    }
-
+  const handleResend = async () => {
+    if (isResending || resendTimer > 0) return;
     setIsResending(true);
-
+    setError("");
     try {
-      const response = await AuthService.resendVerificationOTP({ email });
-
-      if (response.error) {
-        toast.error(
-          response.message || "Failed to resend code. Please try again."
-        );
+      const res = await AuthService.resendVerificationOTP({ email });
+      if (res.error) {
+        setError(res.message || "Couldn't resend the code. Please try again.");
       } else {
-        toast.success("Verification code sent successfully!");
+        toast.success("A new code is on its way.");
         setResendTimer(60);
-        // Clear current OTP
-        setOtp(["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
+        setOtp("");
       }
-    } catch (error: any) {
-      console.error("Resend OTP error:", error);
-      toast.error(error.message || "Failed to resend code. Please try again.");
+    } catch {
+      setError("Couldn't resend the code. Please try again.");
     } finally {
       setIsResending(false);
     }
   };
 
+  if (navigating) return <ScreenLoader />;
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
-        <div className="hidden lg:flex items-center justify-center relative overflow-hidden">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
+        {/* Brand panel */}
+        <div className="hidden lg:flex relative overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: "url('/images/auth/reset_password_bg.jpg')",
-            }}
+            style={{ backgroundImage: "url('/images/auth/login_bg.webp')" }}
           >
-            <div className="absolute inset-0 bg-black/50"></div>
+            <div className="absolute inset-0 bg-[#101928]/70" />
           </div>
-          <div className="absolute inset-0 flex items-start justify-start p-8">
-            <div className="text-white">
-              <h1 className="text-4xl font-bold mb-2">Muvment</h1>
+          <div className="absolute inset-0 flex flex-col justify-between p-10">
+            <button
+              className="text-white text-left"
+              onClick={() => router.push("/")}
+              aria-label="Muvment home"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/logo-white.svg"
+                alt="Muvment"
+                className="h-10 w-auto"
+              />
+            </button>
+            <div className="text-white max-w-sm">
+              <p className="text-2xl font-semibold leading-snug">
+                Premium, reliable vehicle rentals across Nigeria and Ghana.
+              </p>
+              <p className="mt-3 text-white/70 text-sm leading-relaxed">
+                Book verified vehicles with trusted drivers in minutes.
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col bg-white overflow-y-auto h-screen px-6 pt-16">
-          <div className="max-w-[90%] m-auto w-full flex flex-col justify-center min-h-screen py-12">
-            <div className="mb-8">
-              <button
-                onClick={() => router.push("/auth/register")}
-                className="flex items-center text-blue-500 hover:text-blue-600 mb-6"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-                Back
-              </button>
+        {/* Form */}
+        <div className="flex min-h-screen flex-col justify-center bg-white px-6 py-12">
+          <div className="mx-auto w-full max-w-md">
+            <button
+              onClick={() => router.push("/")}
+              className="lg:hidden mb-10 block w-fit"
+              aria-label="Muvment home"
+            >
+              <Image
+                src="/images/image.webp"
+                alt="Muvment"
+                width={150}
+                height={40}
+                priority
+              />
+            </button>
 
-              <h1 className="md:text-5xl text-4xl font-bold text-black mb-3">
+            <div className="mb-8">
+              <h1 className="text-3xl lg:text-4xl font-bold text-[#101928] mb-2">
                 Verify your account
               </h1>
-              <p className="text-base text-gray-500">
-                We've sent a 6-digit code to <strong>{email}</strong>. Please
-                enter it below.
+              <p className="text-sm text-gray-500">
+                Enter the 6-digit code we sent to{" "}
+                <span className="font-medium text-[#101928] break-all">
+                  {email}
+                </span>
               </p>
             </div>
 
             <div className="space-y-6">
-              {/* OTP Input */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-3">
-                  Verification Code
-                </label>
-                <div className="flex gap-3 justify-between">
-                  <OtpInput
-                    length={6}
-                    onChange={(value) => {
-                      setOtp(value.split(""));
-                    }}
-                  />
-                </div>
+                <OtpInput
+                  length={6}
+                  value={otp}
+                  align="start"
+                  hasError={!!error}
+                  disabled={isLoading}
+                  onChange={(v) => {
+                    setOtp(v);
+                    if (error) setError("");
+                  }}
+                />
+                {error && (
+                  <p className="mt-3 text-sm text-red-500">{error}</p>
+                )}
               </div>
 
-              {/* Resend Code */}
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-600">
-                  Didn't receive the code?
-                </p>
+              <div className="flex items-center gap-1.5 text-sm">
+                <span className="text-gray-500">Didn&apos;t get the code?</span>
                 <button
                   type="button"
-                  onClick={handleResendOTP}
+                  onClick={handleResend}
                   disabled={isResending || resendTimer > 0}
-                  className={`text-sm font-medium ${isResending || resendTimer > 0
-                    ? "text-gray-400 cursor-not-allowed"
-                    : "text-blue-500 hover:underline"
-                    }`}
+                  className={`font-medium ${
+                    isResending || resendTimer > 0
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-[#0673FF] hover:underline"
+                  }`}
                 >
                   {resendTimer > 0
                     ? `Resend in ${resendTimer}s`
                     : isResending
                       ? "Sending..."
-                      : "Resend Code"}
+                      : "Resend code"}
                 </button>
               </div>
 
-              {/* Submit Button */}
-              <Button
+              <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isLoading || otp.join("").length !== 6}
-                className={`w-full py-5 rounded-2xl font-medium transition-all duration-200 text-sm ${isLoading || otp.join("").length !== 6
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-gray-800 text-white hover:bg-gray-900 active:scale-95"
-                  }`}
+                disabled={isLoading || !isComplete}
+                className={`flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm font-semibold transition-all duration-200 ${
+                  isLoading
+                    ? "bg-[#0673FF] text-white cursor-wait"
+                    : !isComplete
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-[#0673FF] text-white hover:bg-[#0560d6] active:scale-95"
+                }`}
               >
-                {isLoading ? "Verifying..." : "Verify Account"}
-              </Button>
+                {isLoading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Verifying
+                  </>
+                ) : (
+                  "Verify account"
+                )}
+              </button>
+
+              <p className="text-sm text-gray-500">
+                <Link
+                  href="/auth/register"
+                  className="font-medium text-[#0673FF] hover:underline"
+                >
+                  Back to sign up
+                </Link>
+              </p>
             </div>
 
-            <p className="text-center text-sm text-gray-600 mt-12">
-              Need help?{" "}
+            <div className="mt-10 flex items-center gap-2 text-sm text-gray-500">
+              <span>Need help?</span>
               <a
-                href="/support"
-                className="text-blue-500 hover:underline font-medium"
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[#0673FF] hover:underline"
               >
-                Contact Support
+                Chat with support
               </a>
-            </p>
+            </div>
           </div>
         </div>
       </div>
@@ -267,7 +240,7 @@ function VerifyAccountContent() {
 
 export default function VerifyAccountComponent() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ScreenLoader />}>
       <VerifyAccountContent />
     </Suspense>
   );

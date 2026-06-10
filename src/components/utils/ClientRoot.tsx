@@ -18,7 +18,15 @@ export default function ClientRoot({
       <Suspense fallback={null}>
         <TopProgressBar />
       </Suspense>
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        theme="light"
+      />
       <AuthProvider>
         <Suspense fallback={null}>
           <RouteTracker />

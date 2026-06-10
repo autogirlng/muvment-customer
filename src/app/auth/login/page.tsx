@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import Image from "next/image";
+import ScreenLoader from "@/components/utils/ScreenLoader";
 
 interface LoginFormValues {
   email: string;
@@ -28,6 +29,7 @@ export default function LoginComponent() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [navigating, setNavigating] = useState(false);
 
   const handleChange = (name: string, value: string | boolean) => {
     setFormValues({ ...formValues, [name]: value });
@@ -66,6 +68,7 @@ export default function LoginComponent() {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setNavigating(true);
     try {
       const loginData = {
         email: formValues.email,
@@ -91,6 +94,8 @@ export default function LoginComponent() {
             response.message || "Login failed. Please check your credentials.",
         });
         toast.error(response.message);
+        setIsLoading(false);
+        setNavigating(false);
       } else {
         const user = response.data.data;
         const accessToken = response.data.data.accessToken;
@@ -105,8 +110,8 @@ export default function LoginComponent() {
     } catch (error) {
       console.error("Login error:", error);
       setErrors({ submit: "An unexpected error occurred. Please try again." });
-    } finally {
       setIsLoading(false);
+      setNavigating(false);
     }
   };
 
@@ -119,9 +124,11 @@ export default function LoginComponent() {
     );
   };
 
+  if (navigating) return <ScreenLoader />;
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
         {/* Left Side - Background Image */}
         <div className="hidden lg:flex relative overflow-hidden">
           <div
@@ -138,7 +145,12 @@ export default function LoginComponent() {
               onClick={() => router.push(`/`)}
               aria-label="Muvment home"
             >
-              <span className="text-3xl font-bold">Muvment</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/logo-white.svg"
+                alt="Muvment"
+                className="h-10 w-auto"
+              />
             </button>
             <div className="text-white max-w-sm">
               <p className="text-2xl font-semibold leading-snug">
@@ -152,12 +164,12 @@ export default function LoginComponent() {
         </div>
 
         {/* Right Side - Login Form */}
-        <div className="flex flex-col bg-white overflow-y-auto h-screen px-6">
-          <div className="max-w-[90%] m-auto w-full flex flex-col justify-center min-h-screen py-12">
+        <div className="flex min-h-screen flex-col justify-center bg-white px-6 py-12">
+          <div className="mx-auto w-full max-w-md">
             {/* Mobile logo */}
             <button
               onClick={() => router.push("/")}
-              className="lg:hidden mb-10 self-start"
+              className="lg:hidden mb-10 block w-fit"
               aria-label="Muvment home"
             >
               <Image
@@ -312,17 +324,26 @@ export default function LoginComponent() {
               <button
                 type="submit"
                 disabled={isLoading || !isFormValid()}
-                className={`w-full py-4 rounded-full font-semibold transition-all duration-200 text-sm ${
-                  isLoading || !isFormValid()
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-[#0673FF] text-white hover:bg-[#0560d6] active:scale-95"
+                className={`flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm font-semibold transition-all duration-200 ${
+                  isLoading
+                    ? "bg-[#0673FF] text-white cursor-wait"
+                    : !isFormValid()
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-[#0673FF] text-white hover:bg-[#0560d6] active:scale-95"
                 }`}
               >
-                {isLoading ? "Signing In..." : "Sign In"}
+                {isLoading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Signing in
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </button>
 
               {/* Sign Up Link */}
-              <p className="text-sm text-gray-600 text-center">
+              <p className="text-sm text-gray-600">
                 Not a user?{" "}
                 <Link
                   href="/auth/register"
@@ -334,7 +355,7 @@ export default function LoginComponent() {
             </form>
 
             {/* Footer */}
-            <p className="text-center text-sm text-gray-600 mt-12">
+            <p className="text-sm text-gray-600 mt-12">
               By signing in you agree to Muvment's{" "}
               <Link
                 href="/policy/privacy-policy"
