@@ -224,8 +224,21 @@ function SignupContent() {
           };
 
       const response = await AuthService.signup(signupData);
-      if (response.error) {
-        toast.error(response.message);
+      const dupMessage =
+        response.message || (response.data as any)?.message || "";
+      const alreadyRegistered = /already/i.test(dupMessage);
+      if (response.error || alreadyRegistered) {
+        toast.error(
+          alreadyRegistered
+            ? "This email is already registered. Try signing in instead."
+            : response.message || "Signup failed. Please try again."
+        );
+        if (alreadyRegistered) {
+          setErrors((prev) => ({
+            ...prev,
+            email: "This email is already registered.",
+          }));
+        }
       } else {
         toast.success(response.data.message || "Account created successfully!");
         setFormValues(INITIAL_VALUES);
@@ -268,7 +281,7 @@ function SignupContent() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
         <div className="hidden lg:flex relative overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
@@ -284,7 +297,12 @@ function SignupContent() {
               onClick={() => router.push(`/`)}
               aria-label="Muvment home"
             >
-              <span className="text-3xl font-bold">Muvment</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/logo-white.svg"
+                alt="Muvment"
+                className="h-10 w-auto"
+              />
             </button>
             <div className="text-white max-w-sm">
               <p className="text-2xl font-semibold leading-snug">
@@ -297,11 +315,11 @@ function SignupContent() {
           </div>
         </div>
 
-        <div className="flex flex-col bg-white overflow-y-auto h-screen px-6">
-          <div className="max-w-[90%] m-auto w-full py-12">
+        <div className="flex min-h-screen flex-col justify-center bg-white px-6 py-12">
+          <div className="mx-auto w-full max-w-md">
             <button
               onClick={() => router.push("/")}
-              className="lg:hidden mb-8 self-start"
+              className="lg:hidden mb-8 block w-fit"
               aria-label="Muvment home"
             >
               <Image
@@ -651,7 +669,7 @@ function SignupContent() {
               </Button>
             </form>
 
-            <p className="text-center text-sm text-gray-600 mt-8">
+            <p className="text-sm text-gray-600 mt-8">
               By signing up you agree to Muvment's{" "}
               <Link
                 href="/policy/privacy-policy"

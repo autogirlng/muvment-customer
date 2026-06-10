@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import "./globals.css";
 import ClientRoot from "@/components/utils/ClientRoot";
-import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "./globals.css";
 import { Inter } from "next/font/google";
 import { QueryProvider } from "@/controllers/connnector/QueryProvider";
 import Script from "next/script";
@@ -120,7 +119,6 @@ export default function RootLayout({
         {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
         <QueryProvider>
           <ClientRoot>{children}</ClientRoot>
-          <ToastContainer position="top-right" autoClose={3000} />
         </QueryProvider>
         {CLARITY_PROJECT_ID && (
           <Script id="microsoft-clarity" strategy="lazyOnload">

@@ -17,6 +17,15 @@ interface CustomerCategory {
 
 const FALLBACK_IMAGE = "/images/vehicles/sedan.webp";
 
+const imageForType = (name = "") => {
+  const n = name.toUpperCase();
+  if (n.includes("SUV")) return "/images/vehicles/suv.webp";
+  if (n.includes("SEDAN")) return "/images/vehicles/sedan.webp";
+  if (n.includes("TRUCK")) return "/images/vehicles/truck.webp";
+  if (n.includes("BUS") || n.includes("VAN")) return "/images/vehicles/bus.webp";
+  return FALLBACK_IMAGE;
+};
+
 const formatName = (name: string) =>
   name
     .replace(/_/g, " ")
@@ -134,7 +143,20 @@ const VehicleCategories: React.FC = () => {
       const valid = (Array.isArray(result) ? result : []).filter(
         (item: CustomerCategory) => item?.vehicleType?.id,
       );
-      setCategories(valid);
+      if (valid.length > 0) {
+        setCategories(valid);
+        return;
+      }
+      // Fallback: some backends (production) only serve vehicle-types, not customer-categories
+      const types = await VehicleSearchService.getVehicleTypes();
+      const mapped: CustomerCategory[] = (Array.isArray(types) ? types : [])
+        .filter((t) => t?.id)
+        .map((t) => ({
+          id: t.id,
+          vehicleType: { id: t.id, name: t.name, description: t.description },
+          image: imageForType(t.name),
+        }));
+      setCategories(mapped);
     } finally {
       setLoading(false);
       setReady(true);
