@@ -42,7 +42,7 @@ const YearsFilter: React.FC<YearsFilterProps> = ({
       <div className="w-full space-y-4">
         {/* Header */}
 
-        <p className="text-xs text-gray-500 -mt-2">Select one</p>
+        <p className="text-xs text-gray-500">Select one</p>
 
         {/* Search input */}
         <div className="relative">
@@ -51,7 +51,7 @@ const YearsFilter: React.FC<YearsFilterProps> = ({
             placeholder="Search years..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0673FF] focus:border-[#0673FF] text-sm"
           />
           <svg
             className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -70,13 +70,13 @@ const YearsFilter: React.FC<YearsFilterProps> = ({
 
         {/* Years grid */}
         <div className="max-h-60 overflow-y-auto">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {filteredYears.map((year) => (
               <label
                 key={year}
                 className={`flex items-center justify-center cursor-pointer p-3 rounded-lg border transition-all ${
                   value?.includes(year.toString())
-                    ? "bg-blue-50 border-blue-500"
+                    ? "bg-[#0673FF]/10 border-[#0673FF]"
                     : "bg-gray-50 border-gray-200 hover:border-gray-300"
                 }`}
               >
@@ -86,7 +86,7 @@ const YearsFilter: React.FC<YearsFilterProps> = ({
                     name="years"
                     checked={value?.includes(year.toString())}
                     onChange={() => handleSelect(year.toString())}
-                    className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
+                    className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
                   />
                   <span className="ml-2 text-sm font-medium text-gray-900">
                     {year}
@@ -135,7 +135,7 @@ const YearsFilter: React.FC<YearsFilterProps> = ({
               key={year}
               className={`flex items-center cursor-pointer px-4 py-2.5 rounded-full border transition-all ${
                 value?.includes(year.toString())
-                  ? "bg-blue-50 border-blue-500"
+                  ? "bg-[#0673FF]/10 border-[#0673FF]"
                   : "bg-gray-50 border-gray-200 hover:border-gray-300"
               }`}
             >
@@ -145,7 +145,7 @@ const YearsFilter: React.FC<YearsFilterProps> = ({
                   name="years"
                   checked={value?.includes(year.toString())}
                   onChange={() => handleSelect(year.toString())}
-                  className="appearance-none w-5 h-5 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_3px_white] focus:outline-none transition-all"
+                  className="appearance-none w-5 h-5 border-2 border-gray-400 rounded-full cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_3px_white] focus:outline-none transition-all"
                 />
               </div>
               <span className="ml-2.5 text-sm font-medium text-gray-900">

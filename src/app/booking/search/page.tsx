@@ -71,6 +71,10 @@ export default async function Page({ searchParams }: PageProps) {
     bookingTypeId: params.bookingType,
     startTime: params.startTime,
     endTime: params.endTime,
+    startDate: Array.isArray(params.startDate)
+      ? params.startDate[0]
+      : params.startDate,
+    endDate: Array.isArray(params.endDate) ? params.endDate[0] : params.endDate,
   };
 
   if (params.make)
@@ -116,12 +120,7 @@ export default async function Page({ searchParams }: PageProps) {
 
   return (
     <>
-      <JsonLd
-        schema={SchemaBuilder.searchResultsPage({
-          city,
-          category: params.category,
-        })}
-      />
+      <JsonLd schema={SchemaBuilder.searchResultsPage({ city, category: params.category })} />
       <ExploreVehiclesClient
         initialVehicles={initialVehicles}
         initialTotalCount={totalCount}

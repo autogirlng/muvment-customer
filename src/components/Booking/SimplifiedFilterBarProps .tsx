@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { FiX } from "react-icons/fi";
 import { FilterState } from "@/types/filters";
 import PriceRangeFilter from "../NewFilterComponent/PriceRangeFilter";
@@ -22,13 +23,11 @@ import {
 } from "@/helpers/explorPageHelpers";
 import { CiSettings } from "react-icons/ci";
 import { BiChevronDown } from "react-icons/bi";
-import { MdChevronLeft } from "react-icons/md";
 import {
   getSelectedModelName,
   PriceRangeformatPrice,
 } from "@/services/vechilePriceUtiles";
-import StateFilter, { StateFilterButton } from "./StateFilter";
-import { TravelState } from "@/types/state";
+
 
 interface SimplifiedFilterBarProps {
   filterState: FilterState;
@@ -41,8 +40,118 @@ interface SimplifiedFilterBarProps {
   totalCount: number;
   maxPrice?: number;
   minPrice?: number;
-  states?: TravelState[];
 }
+
+const FilterDropdownButton: React.FC<{
+  id?: string;
+  label: string;
+  selectedLabel?: string;
+  count: number;
+  isActive: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  panelWidth?: number;
+  align?: "left" | "right";
+  children: React.ReactNode;
+}> = ({
+  label,
+  selectedLabel,
+  count,
+  isActive,
+  isOpen,
+  onToggle,
+  panelWidth = 320,
+  align = "left",
+  children,
+}) => {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setPos(null);
+      return;
+    }
+    const compute = () => {
+      const el = btnRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const width = Math.min(panelWidth, window.innerWidth - 16);
+      const desired = align === "right" ? r.right - width : r.left;
+      const left = Math.max(8, Math.min(desired, window.innerWidth - width - 8));
+      setPos({ top: r.bottom + 8, left, width });
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    window.addEventListener("scroll", compute, true);
+    return () => {
+      window.removeEventListener("resize", compute);
+      window.removeEventListener("scroll", compute, true);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        ref={btnRef}
+        data-filter-trigger
+        onClick={onToggle}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium whitespace-nowrap transition-colors ${
+          isActive
+            ? "bg-[#0673FF] text-white border-[#0673FF]"
+            : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+        }`}
+      >
+        <span>{selectedLabel || label}</span>
+        {count > 0 && (
+          <span
+            className={`inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full ${
+              isActive ? "bg-white text-[#0673FF]" : "bg-[#0673FF] text-white"
+            }`}
+          >
+            {count}
+          </span>
+        )}
+        <svg
+          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+      {isOpen &&
+        pos &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            data-filter-panel
+            style={{
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
+              zIndex: 60,
+            }}
+            className="max-h-[70vh] overflow-y-auto rounded-xl border border-gray-200 bg-white p-3 shadow-lg"
+          >
+            {children}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+};
 
 export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   filterState,
@@ -55,7 +164,6 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   totalCount,
   maxPrice,
   minPrice,
-  states = [],
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -71,9 +179,10 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        !target.closest("[data-filter-panel]") &&
+        !target.closest("[data-filter-trigger]")
       ) {
         closeAllDropdowns();
       }
@@ -124,70 +233,27 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   );
   const selectedYear = getSelectedYearName(filterState.selectedYears);
   const selectedSeat = getSelectedSeatName(filterState.selectedSeats);
-  const selectedFeature = getSelectedFeatureName(
-    filterState.selectedFeatures,
-    features,
-  );
-
-  const FilterButton = ({
-    id,
-    label,
-    selectedLabel,
-    count,
-    isActive,
-    children,
-  }: {
-    id: string;
-    label: string;
-    selectedLabel?: string;
-    count: number;
-    isActive: boolean;
-    children: React.ReactNode;
-  }) => (
-    <div className="relative">
-      <button
-        onClick={() => toggleDropdown(id)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-          isActive
-            ? "bg-gray-600 text-white relative"
-            : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-        }`}
-      >
-        <span>{selectedLabel || label}</span>
-        {count > 0 && (
-          <span
-            className={`inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full ${
-              isActive ? "bg-white text-gray-600" : "bg-gray-600 text-white"
-            }`}
-          >
-            {count}
-          </span>
-        )}
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
-      {children}
-    </div>
-  );
+  const selectedFeature =
+    filterState.selectedFeatures && filterState.selectedFeatures.length > 0
+      ? features.find(
+          (f: any) => f.id === filterState.selectedFeatures![0],
+        )?.name
+      : undefined;
 
   return (
     <>
       {/* Desktop & Tablet View */}
-      <div className="hidden md:block space-y-4" ref={dropdownRef}>
-        <div className="flex flex-wrap gap-3 items-center bg-white ">
-          <FilterButton
+      <div className="hidden lg:block space-y-4" ref={dropdownRef}>
+        <div className="relative flex items-center bg-white">
+          <div
+            className={`flex w-full items-center gap-3 overflow-x-auto py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+              hasActiveFilters ? "pr-28" : ""
+            }`}
+          >
+          <FilterDropdownButton
             id="price"
+            isOpen={openDropdown === "price"}
+            onToggle={() => toggleDropdown("price")}
             label="Price range"
             selectedLabel={
               isPriceActive
@@ -202,22 +268,25 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
                 range={
                   filterState.priceRange || [
                     minPrice || 25000,
-                    maxPrice || 10000000,
+                    maxPrice || 500000,
                   ]
                 }
                 onChange={(range) => onFilterChange("priceRange", range)}
-                maxPrice={maxPrice || 10000000}
+                maxPrice={maxPrice || 500000}
                 minPrice={minPrice || 25000}
                 onClear={() => {
                   onFilterChange("priceRange", undefined);
                   closeAllDropdowns();
                 }}
+                compact
               />
             )}
-          </FilterButton>
+          </FilterDropdownButton>
 
-          <FilterButton
+          <FilterDropdownButton
             id="sort"
+            isOpen={openDropdown === "sort"}
+            onToggle={() => toggleDropdown("sort")}
             label="Order by price"
             selectedLabel={
               isSortActive
@@ -232,16 +301,16 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
                 value={currentOrderBy}
                 onChange={(value) => onFilterChange("orderBy", value)}
                 onClose={closeAllDropdowns}
+                compact
               />
             )}
-          </FilterButton>
+          </FilterDropdownButton>
 
-          {states.length > 0 && (
-            <StateFilterButton states={states} label="Travel destination" />
-          )}
-
-          <FilterButton
+          <FilterDropdownButton
             id="type"
+            panelWidth={460}
+            isOpen={openDropdown === "type"}
+            onToggle={() => toggleDropdown("type")}
             label="Vehicle type"
             selectedLabel={selectedVehicleType}
             count={isTypeActive ? 1 : 0}
@@ -255,12 +324,16 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
                 }
                 vehicleTypes={vehicleTypes}
                 onClose={closeAllDropdowns}
+                compact
               />
             )}
-          </FilterButton>
+          </FilterDropdownButton>
 
-          <FilterButton
+          <FilterDropdownButton
             id="make-model"
+            panelWidth={460}
+            isOpen={openDropdown === "make-model"}
+            onToggle={() => toggleDropdown("make-model")}
             label="Make & Model"
             selectedLabel={
               selectedMake && selectedModel
@@ -283,12 +356,16 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
                 makes={makes}
                 models={models}
                 onClose={closeAllDropdowns}
+                compact
               />
             )}
-          </FilterButton>
+          </FilterDropdownButton>
 
-          <FilterButton
+          <FilterDropdownButton
             id="years"
+            panelWidth={460}
+            isOpen={openDropdown === "years"}
+            onToggle={() => toggleDropdown("years")}
             label="Years"
             selectedLabel={selectedYear}
             count={isYearsActive ? 1 : 0}
@@ -299,12 +376,15 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
                 value={filterState.selectedYears}
                 onChange={(value) => onFilterChange("selectedYears", value)}
                 onClose={closeAllDropdowns}
+                compact
               />
             )}
-          </FilterButton>
+          </FilterDropdownButton>
 
-          <FilterButton
+          <FilterDropdownButton
             id="seats"
+            isOpen={openDropdown === "seats"}
+            onToggle={() => toggleDropdown("seats")}
             label="Seats"
             selectedLabel={selectedSeat}
             count={isSeatsActive ? 1 : 0}
@@ -315,15 +395,20 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
                 value={filterState.selectedSeats}
                 onChange={(value) => onFilterChange("selectedSeats", value)}
                 onClose={closeAllDropdowns}
+                compact
               />
             )}
-          </FilterButton>
+          </FilterDropdownButton>
 
-          <FilterButton
+          <FilterDropdownButton
             id="features"
+            align="right"
+            panelWidth={460}
+            isOpen={openDropdown === "features"}
+            onToggle={() => toggleDropdown("features")}
             label="Features"
             selectedLabel={selectedFeature}
-            count={isFeaturesActive ? 1 : 0}
+            count={filterState.selectedFeatures?.length || 0}
             isActive={isFeaturesActive}
           >
             {openDropdown === "features" && (
@@ -332,24 +417,28 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
                 onChange={(value) => onFilterChange("selectedFeatures", value)}
                 features={features}
                 onClose={closeAllDropdowns}
+                compact
               />
             )}
-          </FilterButton>
+          </FilterDropdownButton>
+          </div>
 
           {hasActiveFilters && (
-            <button
-              onClick={handleClearAll}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors ml-auto"
-            >
-              <span>✕</span>
-              Clear all
-            </button>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center bg-gradient-to-l from-white via-white to-transparent pl-12">
+              <button
+                onClick={handleClearAll}
+                className="pointer-events-auto flex shrink-0 items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap"
+              >
+                <span>✕</span>
+                Clear all
+              </button>
+            </div>
           )}
         </div>
       </div>
 
       {/* Mobile View */}
-      <div className="md:hidden ">
+      <div className="lg:hidden">
         <button
           onClick={() => setIsMobileFilterOpen(true)}
           className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium"
@@ -358,7 +447,7 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
             <CiSettings className="w-5 h-5" />
             <span>Filters</span>
             {hasActiveFilters && (
-              <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+              <span className="bg-[#0673FF] text-white text-xs font-bold px-2 py-1 rounded-full">
                 {
                   [
                     isPriceActive,
@@ -392,12 +481,73 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
           totalCount={totalCount}
           maxPrice={maxPrice}
           minPrice={minPrice}
-          states={states}
         />
       )}
     </>
   );
 };
+
+// A single selectable tile used throughout the mobile filter sheet
+const FilterChip: React.FC<{
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}> = ({ active, onClick, children }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-pressed={active}
+    className={`rounded-xl border px-3 py-3 text-sm font-medium transition-colors ${
+      active
+        ? "border-[#0673FF] bg-[#0673FF]/10 text-[#0673FF]"
+        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+    }`}
+  >
+    {children}
+  </button>
+);
+
+const AccordionSection: React.FC<{
+  title: string;
+  summary?: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}> = ({ title, summary, isOpen, onToggle, children }) => (
+  <section className="border-b border-gray-100">
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={isOpen}
+      className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
+    >
+      <span className="text-base font-semibold text-gray-900">{title}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        {summary && (
+          <span className="max-w-[150px] truncate text-sm font-medium text-[#0673FF]">
+            {summary}
+          </span>
+        )}
+        <svg
+          className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </span>
+    </button>
+    {isOpen && <div className="px-4 pb-6">{children}</div>}
+  </section>
+);
 
 // Mobile Filter Drawer Component
 const MobileFilterDrawer: React.FC<
@@ -414,10 +564,20 @@ const MobileFilterDrawer: React.FC<
   totalCount,
   maxPrice,
   minPrice,
-  states = [],
 }) => {
   const [tempFilterState, setTempFilterState] =
     useState<FilterState>(filterState);
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const toggleSection = (id: string) =>
+    setOpenSection((prev) => (prev === id ? null : id));
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   const tempOrderBy = tempFilterState.orderBy ?? DEFAULT_VEHICLE_ORDER_BY;
   const isSortActive = tempOrderBy === "HIGH_LOW";
@@ -460,7 +620,7 @@ const MobileFilterDrawer: React.FC<
   const handleClearAll = () => {
     const emptyState: FilterState = {
       orderBy: DEFAULT_VEHICLE_ORDER_BY,
-      priceRange: [minPrice || 25000, maxPrice || 10000000],
+      priceRange: [minPrice || 25000, maxPrice || 500000],
       selectedVehicleTypes: undefined,
       selectedMakes: undefined,
       selectedModels: undefined,
@@ -473,242 +633,266 @@ const MobileFilterDrawer: React.FC<
     onClearAll();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 md:hidden">
-      <div
-        className="absolute inset-0 bg-black bg-opacity-50"
-        onClick={onClose}
-      />
-      <div className="absolute top-0 right-0 left-0 bg-white rounded-t-2xl max-h-[100vh] flex flex-col animate-in slide-in-from-bottom">
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between rounded-t-2xl z-10">
-          <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
-          >
-            <MdChevronLeft className="w-6 h-6" /> hide filters
-          </button>
-        </div>
+  const SORT_OPTIONS = ["LOW_HIGH", "HIGH_LOW"] as const;
+  const SEAT_OPTIONS = ["2", "3", "4", "5", "6", "7"];
+  const YEAR_OPTIONS = [
+    "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017",
+    "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025",
+  ];
+  const toggleSingle = (
+    key: keyof FilterState,
+    current: string[] | undefined,
+    val: string,
+  ) => {
+    handleTempFilterChange(key, current?.includes(val) ? undefined : [val]);
+    setOpenSection(null);
+  };
+  const toggleMulti = (
+    key: keyof FilterState,
+    current: string[] | undefined,
+    val: string,
+  ) => {
+    const arr = current || [];
+    const next = arr.includes(val)
+      ? arr.filter((x) => x !== val)
+      : [...arr, val];
+    handleTempFilterChange(key, next.length ? next : undefined);
+  };
 
-        {/* Filter Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Price Range */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">
-                Price Range
-              </h3>
-              {isPriceActive && (
-                <button
-                  onClick={() => handleClearFilter("priceRange")}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <PriceRangeFilter
-              range={
-                tempFilterState.priceRange || [
-                  minPrice || 25000,
-                  maxPrice || 10000000,
-                ]
-              }
-              onChange={(range) => handleTempFilterChange("priceRange", range)}
-              maxPrice={maxPrice || 10000000}
-              minPrice={minPrice || 25000}
-              onClear={() => handleClearFilter("priceRange")}
-              compact={true}
-            />
+  const priceSummary =
+    isPriceActive && tempFilterState.priceRange
+      ? `₦${PriceRangeformatPrice(
+          tempFilterState.priceRange[0],
+        )} - ₦${PriceRangeformatPrice(tempFilterState.priceRange[1])}`
+      : undefined;
+  const makeName = getSelectedMakeName(tempFilterState.selectedMakes, makes);
+  const modelName = getSelectedModelName(tempFilterState.selectedModels, models);
+  const makeModelSummary =
+    makeName && modelName
+      ? `${makeName} - ${modelName}`
+      : makeName || undefined;
+
+  const drawer = (
+    <div className="fixed inset-0 z-[200] lg:hidden flex flex-col bg-white">
+      {/* Header: X (left) / Filter (center) / Clear (right) */}
+      <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-2 py-3">
+        <button
+          onClick={onClose}
+          aria-label="Close filters"
+          className="rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100"
+        >
+          <FiX className="h-6 w-6" />
+        </button>
+        <h2 className="text-base font-semibold text-gray-900">Filter</h2>
+        <button
+          onClick={handleClearAll}
+          disabled={!hasActiveFilters}
+          className="px-3 text-sm font-medium text-[#0673FF] disabled:text-gray-300"
+        >
+          Clear
+        </button>
+      </div>
+
+      {/* Collapsible sections */}
+      <div className="flex-1 overflow-y-auto overscroll-contain">
+        <AccordionSection
+          title="Sort by"
+          summary={isSortActive ? VEHICLE_ORDER_BY_LABELS[tempOrderBy] : undefined}
+          isOpen={openSection === "sort"}
+          onToggle={() => toggleSection("sort")}
+        >
+          <div className="grid grid-cols-2 gap-2">
+            {SORT_OPTIONS.map((opt) => (
+              <FilterChip
+                key={opt}
+                active={tempOrderBy === opt}
+                onClick={() => {
+                  handleTempFilterChange("orderBy", opt);
+                  setOpenSection(null);
+                }}
+              >
+                {VEHICLE_ORDER_BY_LABELS[opt]}
+              </FilterChip>
+            ))}
           </div>
+        </AccordionSection>
 
-          {/* Order by price */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">
-                Order by price
-              </h3>
-              {isSortActive && (
-                <button
+        <AccordionSection
+          title="Price range"
+          summary={priceSummary}
+          isOpen={openSection === "price"}
+          onToggle={() => toggleSection("price")}
+        >
+          <p className="mb-3 text-xs text-gray-400">Total price before tax</p>
+          <PriceRangeFilter
+            range={
+              tempFilterState.priceRange || [
+                minPrice || 25000,
+                maxPrice || 500000,
+              ]
+            }
+            onChange={(range) => handleTempFilterChange("priceRange", range)}
+            maxPrice={maxPrice || 500000}
+            minPrice={minPrice || 25000}
+            onClear={() => handleClearFilter("priceRange")}
+            compact={true}
+          />
+          {isPriceActive && (
+            <div className="mt-3 flex justify-end">
+              <button
+                onClick={() => handleClearFilter("priceRange")}
+                className="text-xs font-medium text-[#0673FF]"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </AccordionSection>
+
+        {vehicleTypes.length > 0 && (
+          <AccordionSection
+            title="Vehicle type"
+            summary={getSelectedVehicleTypeName(
+              tempFilterState.selectedVehicleTypes,
+              vehicleTypes,
+            )}
+            isOpen={openSection === "type"}
+            onToggle={() => toggleSection("type")}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {vehicleTypes.map((t: any) => (
+                <FilterChip
+                  key={t.id}
+                  active={Boolean(
+                    tempFilterState.selectedVehicleTypes?.includes(t.id),
+                  )}
                   onClick={() =>
-                    handleTempFilterChange("orderBy", DEFAULT_VEHICLE_ORDER_BY)
+                    toggleSingle(
+                      "selectedVehicleTypes",
+                      tempFilterState.selectedVehicleTypes,
+                      t.id,
+                    )
                   }
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Clear
-                </button>
-              )}
+                  {(t.name ?? "").split("_").join(" ")}
+                </FilterChip>
+              ))}
             </div>
-            <PriceSortFilter
-              value={tempOrderBy}
-              onChange={(value) => handleTempFilterChange("orderBy", value)}
-              onClose={onClose}
-              compact={true}
-            />
+          </AccordionSection>
+        )}
+
+        <AccordionSection
+          title="Make & Model"
+          summary={makeModelSummary}
+          isOpen={openSection === "makemodel"}
+          onToggle={() => toggleSection("makemodel")}
+        >
+          <MakeModelFilter
+            makeValue={tempFilterState.selectedMakes}
+            modelValue={tempFilterState.selectedModels}
+            onMakeChange={(value) => handleTempFilterChange("selectedMakes", value)}
+            onModelChange={(value) =>
+              handleTempFilterChange("selectedModels", value)
+            }
+            makes={makes}
+            models={models}
+            onClose={onClose}
+            compact={true}
+          />
+        </AccordionSection>
+
+        <AccordionSection
+          title="Year"
+          summary={getSelectedYearName(tempFilterState.selectedYears)}
+          isOpen={openSection === "year"}
+          onToggle={() => toggleSection("year")}
+        >
+          <div className="grid grid-cols-4 gap-2">
+            {YEAR_OPTIONS.map((y) => (
+              <FilterChip
+                key={y}
+                active={Boolean(tempFilterState.selectedYears?.includes(y))}
+                onClick={() =>
+                  toggleSingle("selectedYears", tempFilterState.selectedYears, y)
+                }
+              >
+                {y}
+              </FilterChip>
+            ))}
           </div>
+        </AccordionSection>
 
-          {states.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-900">
-                Travel destination
-              </h3>
-              <StateFilter states={states} onClose={onClose} compact />
-            </div>
-          )}
-
-          {/* Vehicle Type */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">
-                Vehicle Type
-              </h3>
-              {isTypeActive && (
-                <button
-                  onClick={() => handleClearFilter("selectedVehicleTypes")}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <VehicleTypeFilter
-              value={tempFilterState.selectedVehicleTypes}
-              onChange={(value) =>
-                handleTempFilterChange("selectedVehicleTypes", value)
-              }
-              vehicleTypes={vehicleTypes}
-              onClose={onClose}
-              compact={true}
-            />
+        <AccordionSection
+          title="Seats"
+          summary={getSelectedSeatName(tempFilterState.selectedSeats)}
+          isOpen={openSection === "seats"}
+          onToggle={() => toggleSection("seats")}
+        >
+          <div className="grid grid-cols-4 gap-2">
+            {SEAT_OPTIONS.map((sVal) => (
+              <FilterChip
+                key={sVal}
+                active={Boolean(tempFilterState.selectedSeats?.includes(sVal))}
+                onClick={() =>
+                  toggleSingle("selectedSeats", tempFilterState.selectedSeats, sVal)
+                }
+              >
+                {sVal === "7" ? "7+" : sVal}
+              </FilterChip>
+            ))}
           </div>
+        </AccordionSection>
 
-          {/* Make & Model Combined */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">
-                Make & Model
-              </h3>
-              {(isMakeActive || isModelActive) && (
-                <button
-                  onClick={() => {
-                    handleClearFilter("selectedMakes");
-                    handleClearFilter("selectedModels");
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <MakeModelFilter
-              makeValue={tempFilterState.selectedMakes}
-              modelValue={tempFilterState.selectedModels}
-              onMakeChange={(value) =>
-                handleTempFilterChange("selectedMakes", value)
-              }
-              onModelChange={(value) =>
-                handleTempFilterChange("selectedModels", value)
-              }
-              makes={makes}
-              models={models}
-              onClose={onClose}
-              compact={true}
-            />
-          </div>
-
-          {/* Years */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">Years</h3>
-              {isYearsActive && (
-                <button
-                  onClick={() => handleClearFilter("selectedYears")}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <YearsFilter
-              value={tempFilterState.selectedYears}
-              onChange={(value) =>
-                handleTempFilterChange("selectedYears", value)
-              }
-              onClose={onClose}
-              compact={true}
-            />
-          </div>
-
-          {/* Seats */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">Seats</h3>
-              {isSeatsActive && (
-                <button
-                  onClick={() => handleClearFilter("selectedSeats")}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <SeatsFilter
-              value={tempFilterState.selectedSeats}
-              onChange={(value) =>
-                handleTempFilterChange("selectedSeats", value)
-              }
-              onClose={onClose}
-              compact={true}
-            />
-          </div>
-
-          {/* Features */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">Features</h3>
-              {isFeaturesActive && (
-                <button
-                  onClick={() => handleClearFilter("selectedFeatures")}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <FeaturesFilter
-              value={tempFilterState.selectedFeatures}
-              onChange={(value) =>
-                handleTempFilterChange("selectedFeatures", value)
-              }
-              features={features}
-              onClose={onClose}
-              compact={true}
-            />
-          </div>
-
-          {/* Add spacing for footer */}
-          <div className="h-24" />
-        </div>
-
-        {/* Footer - Sticky at bottom */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 space-y-3">
-          {hasActiveFilters && (
-            <button
-              onClick={handleClearAll}
-              className="w-full py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Clear all filters
-            </button>
-          )}
-          <button
-            onClick={handleApplyFilters}
-            className="w-full py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+        {features.length > 0 && (
+          <AccordionSection
+            title="Features"
+            summary={
+              (tempFilterState.selectedFeatures?.length || 0) > 1
+                ? `${tempFilterState.selectedFeatures!.length} selected`
+                : getSelectedFeatureName(
+                    tempFilterState.selectedFeatures,
+                    features,
+                  )
+            }
+            isOpen={openSection === "features"}
+            onToggle={() => toggleSection("features")}
           >
-            Show results
-          </button>
-        </div>
+            <div className="grid grid-cols-2 gap-2">
+              {features.map((f: any) => (
+                <FilterChip
+                  key={f.id}
+                  active={Boolean(
+                    tempFilterState.selectedFeatures?.includes(f.id),
+                  )}
+                  onClick={() =>
+                    toggleMulti(
+                      "selectedFeatures",
+                      tempFilterState.selectedFeatures,
+                      f.id,
+                    )
+                  }
+                >
+                  {f.name}
+                </FilterChip>
+              ))}
+            </div>
+          </AccordionSection>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="shrink-0 border-t border-gray-200 p-4">
+        <button
+          onClick={handleApplyFilters}
+          className="w-full rounded-lg bg-[#0673FF] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#0560d6]"
+        >
+          Show results
+        </button>
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(drawer, document.body)
+    : null;
 };
