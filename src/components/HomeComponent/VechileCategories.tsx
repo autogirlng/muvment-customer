@@ -105,6 +105,7 @@ const ArrowButton: React.FC<{
 const VehicleCategories: React.FC = () => {
   const [categories, setCategories] = useState<CustomerCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -136,6 +137,7 @@ const VehicleCategories: React.FC = () => {
       setCategories(valid);
     } finally {
       setLoading(false);
+      setReady(true);
     }
   };
 
@@ -150,7 +152,7 @@ const VehicleCategories: React.FC = () => {
   }, [categories, updateArrows]);
 
   // Hide the section entirely if there is nothing to show
-  if (!loading && categories.length === 0) {
+  if (ready && categories.length === 0) {
     return null;
   }
 
@@ -190,7 +192,7 @@ const VehicleCategories: React.FC = () => {
           onScroll={updateArrows}
           className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {loading
+          {!ready
             ? Array.from({ length: 4 }).map((_, i) => (
                 <CategoryCardSkeleton key={i} />
               ))
