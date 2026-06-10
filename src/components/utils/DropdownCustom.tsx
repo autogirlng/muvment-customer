@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import { FiChevronDown } from "react-icons/fi";
+import { useRef, useEffect, useState } from "react";
+import { FiChevronDown, FiCheck } from "react-icons/fi";
 import { DropdownOption } from "@/types/HeroSectionTypes";
 
 interface DropdownProps {
@@ -27,6 +27,25 @@ const Dropdown: React.FC<DropdownProps> = ({
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const selectedOption = options.find((opt) => opt.value === selectedValue);
+  const [dropUp, setDropUp] = useState(false);
+  const [menuMaxHeight, setMenuMaxHeight] = useState(240);
+
+  // Open upward when there isn't room below, and cap height to fit the viewport
+  useEffect(() => {
+    if (!isOpen || !dropdownRef.current) return;
+    const rect = dropdownRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const desired = 240;
+    const buffer = 16;
+    if (spaceBelow < desired + buffer && spaceAbove > spaceBelow) {
+      setDropUp(true);
+      setMenuMaxHeight(Math.max(140, Math.min(desired, spaceAbove - buffer)));
+    } else {
+      setDropUp(false);
+      setMenuMaxHeight(Math.max(140, Math.min(desired, spaceBelow - buffer)));
+    }
+  }, [isOpen]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -55,10 +74,13 @@ const Dropdown: React.FC<DropdownProps> = ({
       className="w-full flex justify-between items-center focus:outline-none group"
     >
       <span
-        className={`text-sm ${selectedValue ? "font-medium text-gray-800" : "text-gray-800"
+        className={`flex items-center gap-2 text-sm ${selectedValue ? "font-medium text-gray-800" : "text-gray-800"
           }`}
       >
-        {selectedOption?.label || placeholder}
+        {selectedOption?.icon && (
+          <span className="shrink-0 text-base">{selectedOption.icon}</span>
+        )}
+        <span className="truncate">{selectedOption?.label || placeholder}</span>
       </span>
       <FiChevronDown
         className={`w-4 h-4 text-gray-800 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
@@ -75,11 +97,10 @@ const Dropdown: React.FC<DropdownProps> = ({
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="
-          absolute left-0 w-full min-w-[12rem] mt-1 bg-white border border-gray-200 rounded-lg shadow-lg
-          z-50 animate-fadeIn overflow-hidden
-          max-h-60 overflow-y-auto
-        "
+          className={`absolute left-0 w-full min-w-[12rem] bg-white border border-gray-200 rounded-lg shadow-lg z-50 animate-fadeIn overflow-y-auto ${
+            dropUp ? "bottom-full mb-1" : "top-full mt-1"
+          }`}
+          style={{ maxHeight: menuMaxHeight }}
         >
           <ul className="py-1">
             {options.map((option) => (
@@ -96,7 +117,17 @@ const Dropdown: React.FC<DropdownProps> = ({
                       : "cursor-pointer"
                     }`}
                 >
-                  {option.label}
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2">
+                      {option.icon && (
+                        <span className="shrink-0 text-base">{option.icon}</span>
+                      )}
+                      {option.label}
+                    </span>
+                    {option.value === selectedValue && (
+                      <FiCheck className="h-4 w-4 shrink-0 text-[#0673FF]" />
+                    )}
+                  </span>
                 </button>
               </li>
             ))}
