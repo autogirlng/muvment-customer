@@ -1,210 +1,201 @@
 "use client";
 import { useState } from "react";
-
-import { useRouter } from "next/navigation";
-import { AuthService } from "@/controllers/auth/auth";
+import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import { AuthService } from "@/controllers/auth/auth";
+import ScreenLoader from "@/components/utils/ScreenLoader";
+
+const WHATSAPP_URL = "https://wa.me/2348167474165";
+const isValidEmail = (email: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 export default function ForgotPasswordComponent() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [navigating, setNavigating] = useState(false);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [touched, setTouched] = useState(false);
 
-  const validateEmail = (email: string): boolean => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  const emailValid = isValidEmail(email.trim());
 
   const handleSubmit = async () => {
     setError("");
-    setSuccessMessage("");
 
     if (!email.trim()) {
       setError("Email is required");
       return;
     }
-
-    if (!validateEmail(email)) {
+    if (!emailValid) {
       setError("Please enter a valid email address");
       return;
     }
 
     setIsLoading(true);
-
+    setNavigating(true);
     try {
       const response = await AuthService.forgotPassword({ email });
-
       if (response.error) {
         setError(
-          response.message || "Failed to send reset email. Please try again."
+          response.message || "Couldn't send the reset code. Please try again."
         );
+        setIsLoading(false);
+        setNavigating(false);
       } else {
-        setSuccessMessage(
-          "Password reset instructions have been sent to your email!"
-        );
-
-        // Redirect to reset password page after 2 seconds
-        setTimeout(() => {
-          router.push(
-            `/auth/reset-password?email=${encodeURIComponent(email)}`
-          );
-        }, 2000);
+        toast.success("Reset code sent. Check your email.");
+        router.push(`/auth/reset-password?email=${encodeURIComponent(email)}`);
       }
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      setError("An unexpected error occurred. Please try again.");
-    } finally {
+    } catch {
+      setError("Something went wrong. Please try again.");
       setIsLoading(false);
+      setNavigating(false);
     }
   };
 
+  if (navigating) return <ScreenLoader />;
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
-        <div className="hidden lg:flex items-center justify-center relative overflow-hidden">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
+        {/* Brand panel */}
+        <div className="hidden lg:flex relative overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: "url('/images/auth/login_bg.webp')",
-            }}
+            style={{ backgroundImage: "url('/images/auth/login_bg.webp')" }}
           >
-            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="absolute inset-0 bg-[#101928]/70" />
           </div>
-          <div className="absolute inset-0 flex items-start justify-start p-8">
-            <div className="text-white">
-              <h1 className="text-4xl font-bold mb-2">Muvment</h1>
+          <div className="absolute inset-0 flex flex-col justify-between p-10">
+            <button
+              className="text-white text-left"
+              onClick={() => router.push("/")}
+              aria-label="Muvment home"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/logo-white.svg"
+                alt="Muvment"
+                className="h-10 w-auto"
+              />
+            </button>
+            <div className="text-white max-w-sm">
+              <p className="text-2xl font-semibold leading-snug">
+                Premium, reliable vehicle rentals across Nigeria and Ghana.
+              </p>
+              <p className="mt-3 text-white/70 text-sm leading-relaxed">
+                Book verified vehicles with trusted drivers in minutes.
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col bg-white overflow-y-auto h-screen px-6 pt-16">
-          <div className="max-w-[90%] m-auto w-full flex flex-col justify-center min-h-screen py-12">
-            <div className="mb-8">
-              <button
-                onClick={() => router.back()}
-                className="flex items-center text-blue-500 hover:text-blue-600 mb-6"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-                Back
-              </button>
+        {/* Form */}
+        <div className="flex min-h-screen flex-col justify-center bg-white px-6 py-12">
+          <div className="mx-auto w-full max-w-md">
+            <button
+              onClick={() => router.push("/")}
+              className="lg:hidden mb-10 block w-fit"
+              aria-label="Muvment home"
+            >
+              <Image
+                src="/images/image.webp"
+                alt="Muvment"
+                width={150}
+                height={40}
+                priority
+              />
+            </button>
 
-              <h1 className="md:text-5xl text-4xl font-bold text-black mb-3">
+            <div className="mb-8">
+              <h1 className="text-3xl lg:text-4xl font-bold text-[#101928] mb-2">
                 Reset password
               </h1>
-              <p className="text-base text-gray-500">
-                Enter your email, and we'll send you instructions to regain
-                access
+              <p className="text-sm text-gray-500">
+                Enter your email and we&apos;ll email you a code to reset your
+                password.
               </p>
             </div>
 
-            {successMessage && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-start">
-                  <svg
-                    className="w-5 h-5 text-green-500 mt-0.5 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <p className="text-green-800 text-sm">{successMessage}</p>
-                </div>
-              </div>
-            )}
-
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start">
-                  <svg
-                    className="w-5 h-5 text-red-500 mt-0.5 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <p className="text-red-800 text-sm">{error}</p>
-                </div>
+              <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                <p className="text-sm text-red-600">{error}</p>
               </div>
             )}
 
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-900">
                   Email
                 </label>
                 <input
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    setError("");
+                    if (error) setError("");
                   }}
                   onBlur={() => setTouched(true)}
                   placeholder="Enter email address"
-                  className={`w-full px-4 py-3 rounded-lg border ${
-                    touched && error ? "border-red-500" : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-gray-800`}
+                  className={`w-full rounded-xl border px-4 py-3 text-[#101928] outline-none transition-all duration-150 placeholder:text-gray-400 focus:ring-2 focus:ring-[#0673FF]/15 ${
+                    touched && email && !emailValid
+                      ? "border-red-300 focus:border-red-500"
+                      : "border-gray-200 focus:border-[#0673FF]"
+                  }`}
                 />
-                {touched && error && !successMessage && (
-                  <p className="text-red-500 text-sm mt-1">{error}</p>
+                {touched && email && !emailValid && (
+                  <p className="mt-1.5 text-sm text-red-500">
+                    Please enter a valid email address
+                  </p>
                 )}
               </div>
 
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isLoading || !email.trim()}
-                className={`w-full py-5 rounded-2xl font-medium transition-all duration-200 text-sm ${
-                  isLoading || !email.trim()
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-gray-800 text-white hover:bg-gray-900 active:scale-95"
+                disabled={isLoading || !emailValid}
+                className={`flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm font-semibold transition-all duration-200 ${
+                  isLoading
+                    ? "bg-[#0673FF] text-white cursor-wait"
+                    : !emailValid
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-[#0673FF] text-white hover:bg-[#0560d6] active:scale-95"
                 }`}
               >
-                {isLoading ? "Sending..." : "Reset Password"}
+                {isLoading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Sending
+                  </>
+                ) : (
+                  "Send reset code"
+                )}
               </button>
 
-              <p className="text-sm text-gray-600 text-center">
+              <p className="text-sm text-gray-500">
                 Remember your password?{" "}
                 <Link
                   href="/auth/login"
-                  className="text-blue-500 hover:underline font-medium"
+                  className="font-medium text-[#0673FF] hover:underline"
                 >
-                  Sign In
+                  Sign in
                 </Link>
               </p>
             </div>
 
-            <p className="text-center text-sm text-gray-600 mt-12">
-              Need help?{" "}
+            <div className="mt-10 flex items-center gap-2 text-sm text-gray-500">
+              <span>Need help?</span>
               <a
-                href="/contact-us"
-                className="text-blue-500 hover:underline font-medium"
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 font-medium text-[#0673FF] hover:underline"
               >
-                Contact Support
+                Chat with support
               </a>
-            </p>
+            </div>
           </div>
         </div>
       </div>
