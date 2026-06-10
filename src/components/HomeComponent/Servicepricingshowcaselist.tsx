@@ -19,6 +19,7 @@ const trackClasses =
 export const ServicePricingShowcaseList: React.FC = () => {
   const [pricingData, setPricingData] = useState<ServicePricingShowcase[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -41,6 +42,7 @@ export const ServicePricingShowcaseList: React.FC = () => {
       );
     } finally {
       setLoading(false);
+      setReady(true);
     }
   };
 
@@ -107,7 +109,7 @@ export const ServicePricingShowcaseList: React.FC = () => {
     </div>
   );
 
-  if (loading) {
+  if (!ready) {
     return (
       <div
         id="hourly-rentals"
