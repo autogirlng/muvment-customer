@@ -2,6 +2,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FiMapPin } from "react-icons/fi";
+import { FaCar, FaCarSide, FaBus, FaShuttleVan } from "react-icons/fa";
+import { DropdownOption } from "@/types/HeroSectionTypes";
 import Image from "next/image";
 import Dropdown from "../utils/DropdownCustom";
 import Calendar from "../utils/Calender";
@@ -14,6 +16,23 @@ import { GoogleMapsService } from "@/context/googleMapConnector";
 import { trackCategoryClick, trackVehicleSearch } from "@/services/analytics";
 import TimePicker from "../Booking/BookingTimePicker";
 import BackgroundCarousel from "./Backgroundcarousel";
+
+const formatCategoryLabel = (name: string) =>
+  name
+    .replace(/_/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\bSuv\b/g, "SUV")
+    .replace(/\bVip\b/g, "VIP");
+
+const categoryIcon = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes("bus")) return <FaBus />;
+  if (n.includes("van") || n.includes("shuttle")) return <FaShuttleVan />;
+  if (n.includes("suv")) return <FaCarSide />;
+  return <FaCar />;
+};
 
 const DEFAULT_LOCATION = {
   name: "Lagos, Nigeria",
@@ -30,19 +49,38 @@ const COTONOU = {
 // Some backend "booking types" are really trip destinations. We group them in
 // the UI ("Boat Trip", "Interstate Trip") but still send the destination's own
 // booking-type id to the backend.
-const BOAT_DESTINATION_NAMES = [
-  "Ishahayi",
-  "Ikare",
-  "Ibeshe",
-  "Tarkwa Bay",
-  "Ilashe",
+// Standard durations/services shown directly in the Booking Type dropdown.
+const STANDARD_BOOKING_NAMES = [
+  "12 hours",
+  "24 hours",
+  "airport pickup",
+  "monthly booking",
 ];
-const INTERSTATE_DESTINATION_NAMES = ["Cotonou"];
+// Cross-border destinations grouped under "Interstate Trip" (matched by keyword).
+const INTERSTATE_KEYWORDS = [
+  "cotonou",
+  "benin republic",
+  "accra",
+  "ghana",
+  "lome",
+  "togo",
+];
 const BOAT_VALUE = "__boat_trip__";
 const INTERSTATE_VALUE = "__interstate_trip__";
 
-const matchesName = (list: string[], name?: string) =>
-  list.some((x) => x.toLowerCase() === (name || "").toLowerCase());
+type TripGroup = "standard" | "interstate" | "boat";
+
+// The backend returns destinations as "booking types". Standard durations show
+// directly, cross-border ones group under Interstate Trip, and every other
+// named destination groups under Boat Trip. Names are trimmed before matching
+// because some backend entries carry trailing spaces.
+const classifyBookingType = (label?: string): TripGroup => {
+  const n = (label || "").trim().toLowerCase();
+  if (INTERSTATE_KEYWORDS.some((k) => n.includes(k))) return "interstate";
+  if (STANDARD_BOOKING_NAMES.includes(n)) return "standard";
+  return "boat";
+};
+const cleanLabel = (label?: string) => (label || "").trim();
 
 export default function HeroBookingSection() {
   const router = useRouter();
@@ -71,10 +109,7 @@ export default function HeroBookingSection() {
   });
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [categoryOptions, setcategoryOptions] = useState<{
-    value: any;
-    label: string;
-  }[]>([]);
+  const [categoryOptions, setcategoryOptions] = useState<DropdownOption[]>([]);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -108,9 +143,7 @@ export default function HeroBookingSection() {
     setBookingOptions(opts);
     if (opts.length > 0) {
       const standard = opts.filter(
-        (o: any) =>
-          !matchesName(BOAT_DESTINATION_NAMES, o.label) &&
-          !matchesName(INTERSTATE_DESTINATION_NAMES, o.label),
+        (o: any) => classifyBookingType(o.label) === "standard",
       );
       const twelveHours = standard.find((o: any) =>
         /12\s*hours?/i.test(o.label || ""),
@@ -282,7 +315,8 @@ export default function HeroBookingSection() {
   
     const transformedOptions = data.map((item: any) => ({
       value: item.id,
-      label: item.name.replace("_", " "),
+      label: formatCategoryLabel(item.name),
+      icon: categoryIcon(item.name),
     }));
     setcategoryOptions(transformedOptions);
   };
@@ -313,24 +347,22 @@ export default function HeroBookingSection() {
   };
 
   // Group booking types: standard durations vs trip destinations.
-  const boatDestinations = bookingOptions.filter((o: any) =>
-    matchesName(BOAT_DESTINATION_NAMES, o.label),
-  );
-  const interstateDestinations = bookingOptions.filter((o: any) =>
-    matchesName(INTERSTATE_DESTINATION_NAMES, o.label),
-  );
-  const standardBookingOptions = bookingOptions.filter(
-    (o: any) =>
-      !matchesName(BOAT_DESTINATION_NAMES, o.label) &&
-      !matchesName(INTERSTATE_DESTINATION_NAMES, o.label),
-  );
+  const boatDestinations = bookingOptions
+    .filter((o: any) => classifyBookingType(o.label) === "boat")
+    .map((o: any) => ({ ...o, label: cleanLabel(o.label) }));
+  const interstateDestinations = bookingOptions
+    .filter((o: any) => classifyBookingType(o.label) === "interstate")
+    .map((o: any) => ({ ...o, label: cleanLabel(o.label) }));
+  const standardBookingOptions = bookingOptions
+    .filter((o: any) => classifyBookingType(o.label) === "standard")
+    .map((o: any) => ({ ...o, label: cleanLabel(o.label) }));
   const displayBookingOptions = [
     ...standardBookingOptions,
-    ...(boatDestinations.length
-      ? [{ value: BOAT_VALUE, label: "Boat Trip" }]
-      : []),
     ...(interstateDestinations.length
       ? [{ value: INTERSTATE_VALUE, label: "Interstate Trip" }]
+      : []),
+    ...(boatDestinations.length
+      ? [{ value: BOAT_VALUE, label: "Boat Trip" }]
       : []),
   ];
   const tripMode =
@@ -645,21 +677,31 @@ const HERO_ALTS = [
                   aria-label="Search cars"
                 >
                   {isSearching ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span className="ml-2 font-semibold xl:hidden">
+                        Searching...
+                      </span>
+                    </>
                   ) : (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
+                    <>
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                      <span className="ml-2 font-semibold xl:hidden">
+                        Find a Vehicle
+                      </span>
+                    </>
                   )}
                 </button>
               </div>

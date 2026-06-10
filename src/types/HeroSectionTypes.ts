@@ -1,7 +1,9 @@
+import { ReactNode } from "react";
 export interface DropdownOption {
   value: string;
   label: string;
   disabled?: boolean;
+  icon?: ReactNode;
 }
 
 export interface DropdownProps {
