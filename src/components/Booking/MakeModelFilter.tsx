@@ -80,7 +80,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
             {selectedMake && (
               <button
                 onClick={handleClearAll}
-                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                className="text-xs text-[#0673FF] hover:text-[#0560d6] font-medium"
               >
                 Clear All
               </button>
@@ -93,7 +93,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
               placeholder="Search make..."
               value={makeSearchTerm}
               onChange={(e) => setMakeSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0673FF] text-sm"
             />
           </div>
 
@@ -104,7 +104,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
                   key={make.id}
                   className={`flex items-center cursor-pointer p-3 rounded-lg border transition-all ${
                     makeValue?.includes(make.id)
-                      ? "bg-blue-50 border-blue-500"
+                      ? "bg-[#0673FF]/10 border-[#0673FF]"
                       : "bg-gray-50 border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -113,7 +113,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
                     name="make"
                     checked={makeValue?.includes(make.id)}
                     onChange={() => handleMakeSelect(make.id)}
-                    className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
+                    className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
                   />
                   <span className="ml-2 text-sm font-medium text-gray-900">
                     {make.name}
@@ -142,12 +142,27 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
           </div>
 
           {!selectedMake ? (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-              <p className="text-sm text-blue-800 font-medium">
-                Please select a make first to view available models
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#0673FF]/10">
+                <svg
+                  className="h-5 w-5 text-[#0673FF]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 15l7-7 7 7"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-gray-900">
+                Choose a make first
               </p>
-              <p className="text-xs text-blue-600 mt-1">
-                This helps us show you relevant models for your search
+              <p className="mt-1 text-xs text-gray-500">
+                Pick a make above and its models will appear here.
               </p>
             </div>
           ) : (
@@ -158,18 +173,18 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
                   placeholder="Search model..."
                   value={modelSearchTerm}
                   onChange={(e) => setModelSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0673FF] text-sm"
                 />
               </div>
 
               <div className="max-h-48 overflow-y-auto">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                   {filteredModels.map((model) => (
                     <label
                       key={model.id}
                       className={`flex items-center cursor-pointer p-3 rounded-lg border transition-all ${
                         modelValue && modelValue.includes(model.id)
-                          ? "bg-blue-50 border-blue-500"
+                          ? "bg-[#0673FF]/10 border-[#0673FF]"
                           : "bg-gray-50 border-gray-200 hover:border-gray-300"
                       }`}
                     >
@@ -180,7 +195,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
                           modelValue && modelValue.includes(model.id),
                         )}
                         onChange={() => handleModelSelect(model.id)}
-                        className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
+                        className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
                       />
                       <span className="ml-2 text-sm font-medium text-gray-900 truncate">
                         {model.name}
@@ -238,7 +253,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
               placeholder="Search vehicle make..."
               value={makeSearchTerm}
               onChange={(e) => setMakeSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0673FF] focus:border-[#0673FF] text-sm"
             />
           </div>
 
@@ -248,7 +263,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
                 key={make.id}
                 className={`flex items-center cursor-pointer px-4 py-2.5 rounded-full border transition-all ${
                   makeValue?.includes(make.id)
-                    ? "bg-blue-50 border-blue-500"
+                    ? "bg-[#0673FF]/10 border-[#0673FF]"
                     : "bg-gray-50 border-gray-200 hover:border-gray-300"
                 }`}
               >
@@ -257,7 +272,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
                   name="make"
                   checked={makeValue?.includes(make.id)}
                   onChange={() => handleMakeSelect(make.id)}
-                  className="appearance-none w-5 h-5 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_3px_white] focus:outline-none transition-all"
+                  className="appearance-none w-5 h-5 border-2 border-gray-400 rounded-full cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_3px_white] focus:outline-none transition-all"
                 />
                 <span className="ml-2.5 text-sm font-medium text-gray-900">
                   {make.name}
@@ -281,30 +296,32 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
           <h4 className="text-sm font-semibold text-gray-700">
             Step 2: Select Model{" "}
             {selectedMakeName && (
-              <span className="text-blue-600">({selectedMakeName})</span>
+              <span className="text-[#0673FF]">({selectedMakeName})</span>
             )}
           </h4>
 
           {!selectedMake ? (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-              <svg
-                className="w-12 h-12 mx-auto text-blue-400 mb-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-sm text-blue-800 font-medium mb-1">
-                Please select a make first
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#0673FF]/10">
+                <svg
+                  className="h-5 w-5 text-[#0673FF]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 15l7-7 7 7"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-gray-900">
+                Choose a make first
               </p>
-              <p className="text-xs text-blue-600">
-                Choose a vehicle make above to view available models
+              <p className="mt-1 text-xs text-gray-500">
+                Pick a make above and its models will appear here.
               </p>
             </div>
           ) : (
@@ -315,7 +332,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
                   placeholder="Search models..."
                   value={modelSearchTerm}
                   onChange={(e) => setModelSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0673FF] focus:border-[#0673FF] text-sm"
                 />
               </div>
 
@@ -325,7 +342,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
                     key={model.id}
                     className={`flex items-center cursor-pointer px-4 py-2.5 rounded-full border transition-all ${
                       modelValue && modelValue.includes(model.id)
-                        ? "bg-blue-50 border-blue-500"
+                        ? "bg-[#0673FF]/10 border-[#0673FF]"
                         : "bg-gray-50 border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -336,7 +353,7 @@ const MakeModelFilter: React.FC<MakeModelFilterProps> = ({
                         modelValue && modelValue.includes(model.id),
                       )}
                       onChange={() => handleModelSelect(model.id)}
-                      className="appearance-none w-5 h-5 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_3px_white] focus:outline-none transition-all"
+                      className="appearance-none w-5 h-5 border-2 border-gray-400 rounded-full cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_3px_white] focus:outline-none transition-all"
                     />
                     <span className="ml-2.5 text-sm font-medium text-gray-900">
                       {model.name}

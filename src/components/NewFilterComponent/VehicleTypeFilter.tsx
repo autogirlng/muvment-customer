@@ -29,16 +29,16 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
   if (compact) {
     return (
       <div className="w-full space-y-4">
-        <p className="text-xs text-gray-500 -mt-2">Select one</p>
+        <p className="text-xs text-gray-500">Select one</p>
 
         {/* Vehicle types grid */}
         <div className="max-h-60 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {vehicleTypes.map((type) => (
               <label
                 key={type.id}
                 className={`flex items-center cursor-pointer p-3 rounded-lg border transition-all ${value && value.includes(type.id)
-                  ? "bg-blue-50 border-blue-500"
+                  ? "bg-[#0673FF]/10 border-[#0673FF]"
                   : "bg-gray-50 border-gray-200 hover:border-gray-300"
                   }`}
               >
@@ -48,7 +48,7 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
                     name="vehicle-type"
                     checked={Boolean(value && value.includes(type.id))}
                     onChange={() => handleSelect(type.id)}
-                    className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
+                    className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
                   />
                   <span className="ml-2 text-sm font-medium text-gray-900 truncate">
                     {(type.name ?? "").split("_").join(" ")}
@@ -90,7 +90,7 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
             <label
               key={type.id}
               className={`flex items-center cursor-pointer px-4 py-2.5 rounded-full border transition-all ${value && value.includes(type.id)
-                ? "bg-blue-50 border-blue-500"
+                ? "bg-[#0673FF]/10 border-[#0673FF]"
                 : "bg-gray-50 border-gray-200 hover:border-gray-300"
                 }`}
             >
@@ -100,7 +100,7 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
                   name="vehicle-type"
                   checked={Boolean(value && value.includes(type.id))}
                   onChange={() => handleSelect(type.id)}
-                  className="appearance-none w-5 h-5 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_3px_white] focus:outline-none transition-all"
+                  className="appearance-none w-5 h-5 border-2 border-gray-400 rounded-full cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_3px_white] focus:outline-none transition-all"
                 />
               </div>
               <span className="ml-2.5 text-sm font-medium text-gray-900">

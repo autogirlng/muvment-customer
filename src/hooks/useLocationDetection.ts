@@ -186,22 +186,44 @@ export const useLocationDetection = () => {
   };
 
   useEffect(() => {
-    if (!hasAttemptedRef.current) {
-      hasAttemptedRef.current = true;
+    if (hasAttemptedRef.current) return;
+    hasAttemptedRef.current = true;
 
-      // First check if we have a stored location
-      const hasStored = checkStoredLocation();
+    // Already remembered this session: use it, no prompt.
+    if (checkStoredLocation()) return;
 
-      // If no stored location, set to default
-      if (!hasStored) {
-        setLocationState({
-          status: "default",
-          location: DEFAULT_LOCATION,
-          isDefault: true,
-          error: null,
-        });
-      }
+    const setDefault = () =>
+      setLocationState({
+        status: "default",
+        location: DEFAULT_LOCATION,
+        isDefault: true,
+        error: null,
+      });
+
+    // If the browser already granted geolocation, fetch it silently
+    // instead of prompting. Only prompt when permission is undecided.
+    if (typeof navigator !== "undefined" && navigator.permissions?.query) {
+      navigator.permissions
+        .query({ name: "geolocation" as PermissionName })
+        .then((result) => {
+          if (result.state === "granted") {
+            requestLocation();
+          } else if (result.state === "denied") {
+            setLocationState({
+              status: "denied",
+              location: DEFAULT_LOCATION,
+              isDefault: true,
+              error: null,
+            });
+          } else {
+            setDefault();
+          }
+        })
+        .catch(() => setDefault());
+    } else {
+      setDefault();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

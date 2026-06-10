@@ -115,8 +115,10 @@ const NavbarSearchBarContent = () => {
       latParam !== null && !isNaN(Number(latParam)) ? Number(latParam) : null;
 
     const bookingTypeParam = params.get("bookingType");
-    const fromDateParam = params.get("fromDate") ?? "";
-    const untilDateParam = params.get("untilDate") ?? "";
+    const fromDateParam =
+      params.get("startDate") ?? params.get("fromDate") ?? "";
+    const untilDateParam =
+      params.get("endDate") ?? params.get("untilDate") ?? "";
     const vehicleTypeIdParam = params.get("vehicleTypeId") ?? "";
 
 
@@ -185,6 +187,9 @@ const NavbarSearchBarContent = () => {
         fromDate,
         untilDate
       );
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("app:navstart"));
+      }
       router.push(searchUrl);
     } catch (error) {
       console.error("Search failed:", error);

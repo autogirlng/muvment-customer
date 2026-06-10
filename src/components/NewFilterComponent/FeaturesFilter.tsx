@@ -22,7 +22,10 @@ const FeaturesFilter: React.FC<FeaturesFilterProps> = ({
   );
 
   const handleSelect = (featureId: string) => {
-    const newValue = value?.includes(featureId) ? [] : [featureId];
+    const current = value || [];
+    const newValue = current.includes(featureId)
+      ? current.filter((id) => id !== featureId)
+      : [...current, featureId];
     onChange(newValue);
   };
 
@@ -36,27 +39,27 @@ const FeaturesFilter: React.FC<FeaturesFilterProps> = ({
       <div className="w-full space-y-4">
         {/* Header */}
 
-        <p className="text-xs text-gray-500 -mt-2">Select one</p>
+        <p className="text-xs text-gray-500">Select all that apply</p>
 
         {/* Features grid */}
         <div className="max-h-60 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {filteredFeatures.map((feature) => (
               <label
                 key={feature.id}
                 className={`flex items-center cursor-pointer p-3 rounded-lg border transition-all ${
                   value?.includes(feature.id)
-                    ? "bg-blue-50 border-blue-500"
+                    ? "bg-[#0673FF]/10 border-[#0673FF]"
                     : "bg-gray-50 border-gray-200 hover:border-gray-300"
                 }`}
               >
                 <div className="relative flex items-center w-full">
                   <input
-                    type="radio"
+                    type="checkbox"
                     name="features"
                     checked={value?.includes(feature.id)}
                     onChange={() => handleSelect(feature.id)}
-                    className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
+                    className="appearance-none w-4 h-4 border-2 border-gray-400 rounded cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
                   />
                   <span className="ml-2 text-sm font-medium text-gray-900 truncate">
                     {feature.name}
@@ -97,7 +100,7 @@ const FeaturesFilter: React.FC<FeaturesFilterProps> = ({
           </button>
         </div>
 
-        <p className="text-sm text-gray-400 mb-4">Select one</p>
+        <p className="text-sm text-gray-400 mb-4">Select all that apply</p>
 
         <div className="relative mb-4">
           <input
@@ -105,7 +108,7 @@ const FeaturesFilter: React.FC<FeaturesFilterProps> = ({
             placeholder="Search features"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0673FF] focus:border-[#0673FF] text-sm"
           />
         </div>
 
@@ -115,17 +118,17 @@ const FeaturesFilter: React.FC<FeaturesFilterProps> = ({
               key={feature.id}
               className={`flex items-center cursor-pointer px-4 py-2.5 rounded-full border transition-all ${
                 value?.includes(feature.id)
-                  ? "bg-blue-50 border-blue-500"
+                  ? "bg-[#0673FF]/10 border-[#0673FF]"
                   : "bg-gray-50 border-gray-200 hover:border-gray-300"
               }`}
             >
               <div className="relative flex items-center">
                 <input
-                  type="radio"
+                  type="checkbox"
                   name="features"
                   checked={value?.includes(feature.id)}
                   onChange={() => handleSelect(feature.id)}
-                  className="appearance-none w-5 h-5 border-2 border-gray-400 rounded-full cursor-pointer checked:border-blue-500 checked:bg-blue-500 checked:shadow-[inset_0_0_0_3px_white] focus:outline-none transition-all"
+                  className="appearance-none w-5 h-5 border-2 border-gray-400 rounded cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_3px_white] focus:outline-none transition-all"
                 />
               </div>
               <span className="ml-2.5 text-sm font-medium text-gray-900">

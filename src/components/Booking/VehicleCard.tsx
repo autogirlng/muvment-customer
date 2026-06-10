@@ -1,22 +1,22 @@
 "use client";
-
 import {
   formatCurrency,
   getDisplayLabel,
   getDisplayPrice,
 } from "@/services/vechilePriceUtiles";
 import { VehicleCardProps } from "@/types/vehicle";
+import { useRouter } from "next/navigation";
 import React, { useState, useMemo, useEffect } from "react";
 import { FiMapPin, FiUser, FiDroplet, FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa6";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
+import { IoInformationCircleOutline } from "react-icons/io5";
 import { getBookingOption } from "@/context/Constarain";
 import { clarityEvent } from "@/services/clarity";
 import { trackVehicleView } from "@/services/analytics";
 import { useAuth } from "@/context/AuthContext";
 import { FavouriteService } from "@/controllers/favourites/favouriteService";
 import { Spinner } from "../general/spinner";
-import Link from "next/link";
 interface VehicleCardPropsExtended extends VehicleCardProps {
   viewMode?: "list" | "grid";
 }
@@ -37,6 +37,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   viewMode = "list",
 }) => {
   const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const images = useMemo(() => {
     if (!photos || photos.length === 0) return [];
@@ -134,19 +135,21 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       vehicleCategory: bookingType || "",
       price: getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
     });
+    router.push(
+      `/booking/details/${slug || id}?vehicleType=${encodeURIComponent(
+        vehicleTypeName,
+      )}&bookingType=${bookingType}`,
+    );
   };
 
   const currentImage = images[currentImageIndex];
 
-  const vehicleDetailsUrl = `/booking/details/${slug || id}?vehicleType=${encodeURIComponent(vehicleTypeName)}&bookingType=${bookingType}`;
-
   // Grid View Component
   if (viewMode === "grid") {
     return (
-      <Link
-        href={vehicleDetailsUrl}
+      <div
         onClick={handleCardClick}
-        className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 block"
+        className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
       >
         {/* Image Section */}
         <div className="relative w-full h-[180px] bg-gray-100">
@@ -270,19 +273,18 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             </div>
           </div>
         </div>
-      </Link>
+      </div>
     );
   }
 
   // List View Component
   return (
-    <Link
-      href={vehicleDetailsUrl}
+    <div
       onClick={handleCardClick}
-      className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer relative hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:h-[180px] block"
+      className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer relative hover:shadow-md transition-all duration-300 flex flex-col lg:flex-row lg:h-[180px]"
     >
       {/* Image Section */}
-      <div className="relative w-full md:w-[260px] h-[200px] md:h-full bg-gray-100 flex-shrink-0">
+      <div className="relative w-full lg:w-[260px] h-[200px] lg:h-full bg-gray-100 flex-shrink-0">
         {currentImage ? (
           <img
             src={currentImage}
@@ -317,11 +319,11 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       </div>
 
       {/* Content Section */}
-      <div className="flex-1 flex flex-col md:flex-row md:items-center p-4 md:p-0 gap-4 md:gap-0">
+      <div className="flex-1 flex flex-col lg:flex-row lg:items-center p-4 lg:p-0 gap-4 lg:gap-0">
         {/* Left Content */}
-        <div className="flex-1 md:px-6 md:py-4">
+        <div className="flex-1 lg:px-6 lg:py-4">
           {/* Title */}
-          <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2.5">
+          <h3 className="text-lg lg:text-xl font-semibold text-gray-900 mb-2.5">
             {name}
           </h3>
 
@@ -364,10 +366,10 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
         </div>
 
         {/* Vertical Divider */}
-        <div className="hidden md:block w-px h-28 bg-gray-200 flex-shrink-0"></div>
+        <div className="hidden lg:block w-px h-28 bg-gray-200 flex-shrink-0"></div>
 
         {/* Right Content - Features */}
-        <div className="flex flex-col gap-3 md:px-6 md:py-4 md:min-w-[380px]">
+        <div className="flex flex-col gap-3 lg:px-6 lg:py-4 lg:min-w-[380px]">
           <div className="flex items-center gap-8 text-sm text-gray-700">
             <div className="flex items-center gap-2">
               <FiUser className="w-4 h-4" />
@@ -403,10 +405,10 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
         {isAuthenticated && (
           <>
             {/* Vertical Divider */}
-            <div className="hidden md:block w-px h-28 bg-gray-200 flex-shrink-0"></div>
+            <div className="hidden lg:block w-px h-28 bg-gray-200 flex-shrink-0"></div>
 
             {/* Like Button */}
-            <div className="hidden md:flex items-center justify-center px-5">
+            <div className="hidden lg:flex items-center justify-center px-5">
               <button
                 onClick={handleLike}
                 className="p-2 hover:bg-gray-100 cursor-pointer rounded-full transition-colors"
@@ -425,7 +427,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             {/* Mobile Like Button */}
             <button
               onClick={handleLike}
-              className="md:hidden absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors flex items-center justify-center z-10"
+              className="lg:hidden absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors flex items-center justify-center z-10"
               aria-label="Add to favorites"
             >
               {loadingFavouriteStatus ? (
@@ -439,7 +441,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
           </>
         )}
       </div>
-    </Link>
+    </div>
   );
 };
 

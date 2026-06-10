@@ -37,5 +37,7 @@ export const getSelectedFeatureName = (
   features: any[]
 ) => {
   if (!selectedIds || selectedIds.length === 0) return undefined;
-  return features.find((f) => f.id === selectedIds[0])?.name;
+  const first = features.find((f) => f.id === selectedIds[0])?.name;
+  if (selectedIds.length === 1) return first;
+  return `${first} +${selectedIds.length - 1}`;
 };

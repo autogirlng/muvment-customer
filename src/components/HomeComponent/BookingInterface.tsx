@@ -447,6 +447,9 @@ export default function HeroBookingSection() {
         fromTime,
         tripMode === "standard" ? untilTime : undefined,
       );
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("app:navstart"));
+      }
       router.push(searchUrl);
     } catch (error) {
       setErrorMessage("Failed to search vehicles. Please try again.");
