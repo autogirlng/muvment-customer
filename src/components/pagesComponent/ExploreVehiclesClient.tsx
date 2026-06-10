@@ -1,13 +1,6 @@
 "use client";
-
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  Suspense,
-} from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { FilterState } from "@/types/filters";
 import {
@@ -25,9 +18,8 @@ import { clarityEvent } from "@/services/clarity";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 import LocationPrompt from "../Booking/LocationPrompt";
 import Footer from "../HomeComponent/Footer";
-import Slider, { SlideItem } from "../utils/UtilitySlider";
 
-import { TravelState } from "@/types/state";
+import { TravelState, buildStateExploreUrl } from "@/types/state";
 
 interface ExploreVehiclesClientProps {
   initialVehicles: any[];
@@ -39,6 +31,34 @@ interface ExploreVehiclesClientProps {
   initialFeatures: any[];
   initialStates?: TravelState[];
 }
+
+const VehicleCardSkeleton: React.FC<{ viewMode: "list" | "grid" }> = ({
+  viewMode,
+}) => {
+  if (viewMode === "grid") {
+    return (
+      <div className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="h-[180px] w-full animate-pulse bg-gray-100" />
+        <div className="p-4">
+          <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100" />
+          <div className="mt-2 h-3 w-1/3 animate-pulse rounded bg-gray-100" />
+          <div className="mt-4 h-6 w-1/2 animate-pulse rounded bg-gray-100" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white md:h-[180px] md:flex-row">
+      <div className="h-[200px] w-full flex-shrink-0 animate-pulse bg-gray-100 md:h-full md:w-[260px]" />
+      <div className="flex-1 p-4">
+        <div className="h-5 w-1/2 animate-pulse rounded bg-gray-100" />
+        <div className="mt-2 h-3 w-1/3 animate-pulse rounded bg-gray-100" />
+        <div className="mt-4 h-3 w-2/3 animate-pulse rounded bg-gray-100" />
+        <div className="mt-4 h-7 w-1/3 animate-pulse rounded bg-gray-100" />
+      </div>
+    </div>
+  );
+};
 
 function ExploreVehiclesClientContent({
   initialVehicles,
@@ -53,6 +73,8 @@ function ExploreVehiclesClientContent({
   const searchParams = useSearchParams();
   const observerTarget = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [showInterstate, setShowInterstate] = useState(false);
+  const pathname = usePathname();
 
   const isFirstMount = useRef(true);
 
@@ -84,8 +106,6 @@ function ExploreVehiclesClientContent({
   const [makes] = useState(initialMakes);
   const [features] = useState(initialFeatures);
   const [models] = useState(initialModels);
-  const [dynamicMaxPrice, setDynamicMaxPrice] = useState(100000);
-  const [dynamicMinPrice, setDynamicMinPrice] = useState(25000);
 
   const lat = searchParams.get("lat");
   const lng = searchParams.get("lng");
@@ -136,23 +156,6 @@ function ExploreVehiclesClientContent({
 
   useEffect(() => {
     setFilterState(initializeFiltersFromUrl());
-
-    if (initialVehicles.length > 0) {
-      const allPrices = initialVehicles
-        .map((v: any) =>
-          v.allPricingOptions && v.allPricingOptions.length > 0
-            ? v.allPricingOptions[0].price
-            : 0,
-        )
-        .filter((price: number) => price > 0);
-
-      if (allPrices.length > 0) {
-        const minPrice = Math.min(...allPrices);
-        const maxPrice = Math.max(...allPrices);
-        setDynamicMinPrice(Math.floor(minPrice / 1000) * 1000);
-        setDynamicMaxPrice(Math.ceil(maxPrice / 1000) * 1000);
-      }
-    }
   }, []);
 
   useEffect(() => {
@@ -165,7 +168,7 @@ function ExploreVehiclesClientContent({
       params.set("lat", detectedLocation.lat.toString());
       params.set("lng", detectedLocation.lng.toString());
       params.set("location", detectedLocation.name);
-      router.replace(`/booking/search?${params.toString()}`);
+      router.replace(`${pathname}?${params.toString()}`);
     }
   }, [locationStatus, hasLocationParams, detectedLocation]);
 
@@ -211,6 +214,8 @@ function ExploreVehiclesClientContent({
       }
       if (currentCity) params.city = currentCity;
       if (category) params.vehicleTypeId = category;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
       if (startTime) params.startTime = startTime;
       if (endTime) params.endTime = endTime;
       if (bookingType) params.bookingTypeId = bookingType;
@@ -223,8 +228,8 @@ function ExploreVehiclesClientContent({
         params.yearOfRelease = filters.selectedYears[0];
       if (filters.selectedSeats)
         params.numberOfSeats = filters.selectedSeats[0];
-      if (filters.selectedFeatures)
-        params.featureIds = filters.selectedFeatures[0];
+      if (filters.selectedFeatures && filters.selectedFeatures.length > 0)
+        params.featureIds = filters.selectedFeatures.join(",");
       if (filters.selectedModels)
         params.vehicleModelId = filters.selectedModels[0];
 
@@ -295,6 +300,48 @@ function ExploreVehiclesClientContent({
     }
   };
 
+  const syncFiltersToUrl = useCallback(
+    (filters: FilterState) => {
+      if (typeof window === "undefined") return;
+      const params = new URLSearchParams(window.location.search);
+      const setMulti = (key: string, vals?: string[]) => {
+        params.delete(key);
+        vals?.forEach((v) => params.append(key, v));
+      };
+      setMulti("vehicleTypeId", filters.selectedVehicleTypes);
+      setMulti("make", filters.selectedMakes);
+      setMulti("model", filters.selectedModels);
+      setMulti("yearOfRelease", filters.selectedYears);
+      setMulti("numberOfSeats", filters.selectedSeats);
+      setMulti("features", filters.selectedFeatures);
+
+      params.delete("minPrice");
+      params.delete("maxPrice");
+      if (filters.priceRange) {
+        params.set("minPrice", String(filters.priceRange[0]));
+        params.set("maxPrice", String(filters.priceRange[1]));
+      }
+
+      params.delete("orderBy");
+      if (filters.orderBy && filters.orderBy !== DEFAULT_VEHICLE_ORDER_BY) {
+        params.set("orderBy", String(filters.orderBy));
+      }
+
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname],
+  );
+
+  const urlSyncReady = useRef(false);
+  useEffect(() => {
+    if (!urlSyncReady.current) {
+      urlSyncReady.current = true;
+      return;
+    }
+    syncFiltersToUrl(filterState);
+  }, [filterState, syncFiltersToUrl]);
+
   const handleFilterChange = (filterId: string, value: any) => {
     setFilterState((prev) => ({ ...prev, [filterId]: value }));
   };
@@ -309,7 +356,7 @@ function ExploreVehiclesClientContent({
       selectedSeats: undefined,
       selectedFeatures: undefined,
     });
-    router.replace("/booking/search");
+    router.replace(pathname);
   };
 
   useEffect(() => {
@@ -332,33 +379,11 @@ function ExploreVehiclesClientContent({
     };
   }, [hasMore, loading, loadingMore, currentPage, filterState]);
 
-  const slides: SlideItem[] = [
-    {
-      image: "/images/r5.webp",
-      title: "Inspired by your favorites",
-      text: "Discover more options similar to what you've saved.",
-    },
-    {
-      image: "/images/r6.webp",
-      title: "Complete Your Plan",
-      text: "Turn your saved ideas into a confirmed booking.",
-    },
-    {
-      image: "/images/r7.webp",
-      title: "Upgrade your experience",
-      text: "Explore premium options for a more comfortable ride.",
-    },
-    {
-      image: "/images/r8.webp",
-      title: "Don't miss out",
-      text: "Your saved rides are in high demand, book before they're gone.",
-    },
-    {
-      image: "/images/r9.webp",
-      title: "Explore more options",
-      text: "Find new rides and experiences tailored to your lifestyle.",
-    },
-  ];
+
+  const gridClass =
+    viewMode === "grid"
+      ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      : "grid grid-cols-1 gap-6";
 
   return (
     <div>
@@ -378,7 +403,7 @@ function ExploreVehiclesClientContent({
           <div className="lg:h-[1rem]"></div>
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 flex items-center gap-2">
                 <CiLocationOn
                   color="#0673FF"
                   size={24}
@@ -390,21 +415,26 @@ function ExploreVehiclesClientContent({
                     ? `Vehicles in ${location}`
                     : "Vehicles in Lagos"}
               </h1>
-              <p className="text-[1.2rem] md:text-2xl font-bold text-gray-900 mb-2">
+              <p
+                aria-live="polite"
+                className="text-sm md:text-base font-medium text-gray-500 mb-2"
+              >
                 {loading && vehicles.length === 0
                   ? "Loading..."
-                  : totalCount < 10
-                    ? `${totalCount || 0} vehicles available`
-                    : `${totalCount || 0}+ vehicles available`}
+                  : `${totalCount > 100 ? "100+" : totalCount || 0} ${
+                      totalCount === 1 ? "vehicle" : "vehicles"
+                    } available`}
               </p>
             </div>
 
             <div className="flex hidden lg:block items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
+                aria-label="List view"
+                aria-pressed={viewMode === "list"}
                 className={`p-2 rounded-md transition-colors ${
                   viewMode === "list"
-                    ? "bg-blue-600 text-white"
+                    ? "bg-[#0673FF] text-white"
                     : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
@@ -412,9 +442,11 @@ function ExploreVehiclesClientContent({
               </button>
               <button
                 onClick={() => setViewMode("grid")}
+                aria-label="Grid view"
+                aria-pressed={viewMode === "grid"}
                 className={`p-2 rounded-md transition-colors ${
                   viewMode === "grid"
-                    ? "bg-blue-600 text-white"
+                    ? "bg-[#0673FF] text-white"
                     : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
@@ -433,32 +465,84 @@ function ExploreVehiclesClientContent({
               models={models}
               features={features}
               totalCount={childCount as number}
-              maxPrice={dynamicMaxPrice}
-              minPrice={dynamicMinPrice}
-              states={initialStates}
+              maxPrice={500000}
+              minPrice={25000}
             />
           </div>
 
-          {error && (
+          {initialStates && initialStates.length > 0 && (
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={() => setShowInterstate((v) => !v)}
+                aria-expanded={showInterstate}
+                className="inline-flex items-center gap-1 text-sm font-medium text-[#0673FF] hover:text-[#0560d6]"
+              >
+                Is this an interstate trip?
+                <svg
+                  className={`h-4 w-4 transition-transform ${
+                    showInterstate ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              {showInterstate && (
+                <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {initialStates.map((st) => (
+                    <button
+                      key={st.stateId}
+                      onClick={() => router.push(buildStateExploreUrl(st))}
+                      className="group flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-[#0673FF] hover:text-[#0673FF]"
+                    >
+                      <span className="whitespace-nowrap">{st.stateName}</span>
+                      <svg
+                        className="h-3.5 w-3.5 shrink-0 text-gray-400 transition-colors group-hover:text-[#0673FF]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {error && vehicles.length > 0 && (
             <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
 
-          <main className="h-[calc(100vh-250px)] overflow-y-auto hide-scrollbar pb-20">
-            {loading && vehicles.length === 0 && (
-              <div className="flex items-center justify-center py-20">
-                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <main className="pb-20">
+            {loading && vehicles.length === 0 ? (
+              <div className={gridClass}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <VehicleCardSkeleton key={i} viewMode={viewMode} />
+                ))}
               </div>
-            )}
-
-            {!loading && vehicles.length > 0 && (
+            ) : vehicles.length > 0 ? (
               <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                    : "grid grid-cols-1 gap-6"
-                }
+                aria-busy={loading}
+                className={`${gridClass} transition-opacity ${
+                  loading ? "pointer-events-none opacity-60" : ""
+                }`}
               >
                 {vehicles.map((v: any) => (
                   <VehicleCard
@@ -469,12 +553,12 @@ function ExploreVehiclesClientContent({
                   />
                 ))}
               </div>
-            )}
+            ) : null}
 
             {hasMore && vehicles.length > 0 && (
               <div ref={observerTarget} className="py-8 flex justify-center">
                 {loadingMore && (
-                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-4 border-[#0673FF] border-t-transparent rounded-full animate-spin" />
                 )}
               </div>
             )}
@@ -487,18 +571,32 @@ function ExploreVehiclesClientContent({
 
             {!loading &&
               vehicles.length === 0 &&
+              recommendedVehicles.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <p className="text-lg font-semibold text-gray-900">
+                    No vehicles match your search
+                  </p>
+                  <p className="mt-1 max-w-md text-sm text-gray-500">
+                    Try removing some filters, or broadening your location and
+                    dates.
+                  </p>
+                  <button
+                    onClick={handleClearAll}
+                    className="mt-5 rounded-full bg-[#0673FF] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0560d6]"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
+
+            {!loading &&
+              vehicles.length === 0 &&
               recommendedVehicles.length > 0 && (
                 <div className="mt-10">
                   <h2 className="text-xl font-semibold mb-4 text-gray-800">
                     Recommended Cars
                   </h2>
-                  <div
-                    className={
-                      viewMode === "grid"
-                        ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                        : "grid grid-cols-1 gap-6"
-                    }
-                  >
+                  <div className={gridClass}>
                     {recommendedVehicles.map((v: any) => (
                       <VehicleCard
                         key={v.id}
@@ -514,15 +612,12 @@ function ExploreVehiclesClientContent({
         </div>
       </div>
 
-      <Slider slides={slides} automatic seconds={4} />
       <Footer />
     </div>
   );
 }
 
-export default function ExploreVehiclesClient(
-  props: ExploreVehiclesClientProps,
-) {
+export default function ExploreVehiclesClient(props: ExploreVehiclesClientProps) {
   return (
     <Suspense fallback={null}>
       <ExploreVehiclesClientContent {...props} />

@@ -71,9 +71,33 @@ export default function TopProgressBar() {
         return;
       start();
     };
+    const onNavStart = () => start();
+    const onPopState = () => start();
+
+    // Catch programmatic navigations (router.push / router.replace and <Link>),
+    // which all go through the History API. Only trigger on a real pathname
+    // change so same-page query updates (e.g. applying filters) don't flash it.
+    const origPush = window.history.pushState;
+    const origReplace = window.history.replaceState;
+    const wrap =
+      (orig: History["pushState"]): History["pushState"] =>
+      function (this: History, ...args: Parameters<History["pushState"]>) {
+        const prevPath = window.location.pathname;
+        orig.apply(this, args);
+        if (window.location.pathname !== prevPath) start();
+      };
+    window.history.pushState = wrap(origPush);
+    window.history.replaceState = wrap(origReplace);
+
     document.addEventListener("click", onClick, true);
+    window.addEventListener("app:navstart", onNavStart);
+    window.addEventListener("popstate", onPopState);
     return () => {
       document.removeEventListener("click", onClick, true);
+      window.removeEventListener("app:navstart", onNavStart);
+      window.removeEventListener("popstate", onPopState);
+      window.history.pushState = origPush;
+      window.history.replaceState = origReplace;
       clearTimers();
     };
   }, []);
