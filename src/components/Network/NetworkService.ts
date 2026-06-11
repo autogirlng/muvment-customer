@@ -13,11 +13,15 @@ export default class NetworkService {
     message: string;
     error: boolean;
   } {
-    if (response.err) {
+    if (response?.err) {
       return {
         data: null,
         message: response.err || "No response received from server.",
         error: true,
+        // Surface the HTTP status (e.g. 409) for callers that need to
+        // distinguish a conflict from a generic failure. Kept off the public
+        // return type so existing consumers are unaffected.
+        ...(response.status !== undefined ? { status: response.status } : {}),
       };
     }
 

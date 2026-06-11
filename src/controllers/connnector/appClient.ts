@@ -50,15 +50,23 @@ class ApiClient {
     } catch (error: unknown) {
       console.error("API request error:", error);
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 409) {
-          return [409, "A conflict occured"];
-        }
         let message =
-          error.response?.data.data ||
+          error.response?.data?.data ||
           error.response?.data?.error ||
           error.response?.data?.message ||
           error.message ||
           "Network error or request failed";
+
+        if (error.response?.status === 409) {
+          // Preserve the backend's conflict message (e.g. "An account with
+          // this email already exists.") and surface the status so callers can
+          // detect the conflict instead of mistaking it for a success.
+          message =
+            typeof message === "string" && message
+              ? message
+              : "A conflict occurred";
+          return [{ err: message, status: 409 }, message];
+        }
 
         if (error.response?.status === 401) {
           message = message
