@@ -51,6 +51,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   >([]);
   const [pricing, setPricing] = useState<EstimatedBookingPrice | undefined>();
   const [continueBooking, setContinueBooking] = useState<boolean>(false);
+  const [isEstimating, setIsEstimating] = useState(false);
   const [bookRideModal, setBookRideModal] = useState<boolean>(false);
   const [couponCode, setCouponCode] = useState<string>("");
   const [isFavorited, setIsFavorited] = useState(false);
@@ -168,72 +169,125 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     );
   }
 
-  const estimatePrice = async (): Promise<EstimatedBookingPrice> => {
-    const tripSegments = trips.map((trip) => {
-      const details = trip?.tripDetails;
-      const pickupCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${details?.pickupCoordinates}`,
-      );
-      const dropoffCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${details?.dropoffCoordinates}`,
-      );
-      let areaOfUseCoordinates: { lat: number; lng: number } | null = null;
-      if (details?.areaOfUseCoordinates) {
+  const estimatePrice = async () => {
+    setIsEstimating(true);
+    try {
+      const tripSegments = trips.map((trip) => {
+        const details = trip?.tripDetails;
+
+        let pickupCoordinates: { lat: number; lng: number };
+        let dropoffCoordinates: { lat: number; lng: number };
         try {
-          areaOfUseCoordinates = JSON.parse(`${details?.areaOfUseCoordinates}`);
-        } catch (e) {
-          console.error("Error parsing area of use", e);
+          pickupCoordinates = JSON.parse(`${details?.pickupCoordinates}`);
+          dropoffCoordinates = JSON.parse(`${details?.dropoffCoordinates}`);
+        } catch {
+          throw new Error(
+            "Please select your pickup and dropoff locations from the dropdown suggestions.",
+          );
         }
+
+        let areaOfUseCoordinates: { lat: number; lng: number } | null = null;
+        if (details?.areaOfUseCoordinates) {
+          try {
+            areaOfUseCoordinates = JSON.parse(
+              `${details?.areaOfUseCoordinates}`,
+            );
+          } catch (e) {
+            console.error("Error parsing area of use", e);
+          }
+        }
+
+        return {
+          bookingTypeId: details?.bookingType,
+          startDate: format(
+            new Date(details?.tripStartDate || ""),
+            "yyyy-MM-dd",
+          ),
+          startTime: format(
+            new Date(details?.tripStartTime || ""),
+            "HH:mm:ss",
+          ),
+          pickupLatitude: pickupCoordinates.lat,
+          pickupLongitude: pickupCoordinates.lng,
+          dropoffLatitude: dropoffCoordinates.lat,
+          dropoffLongitude: dropoffCoordinates.lng,
+          pickupLocationString: details?.pickupLocation,
+          dropoffLocationString: details?.dropoffLocation,
+          areaOfUse: areaOfUseCoordinates
+            ? [
+                {
+                  areaOfUseLatitude: areaOfUseCoordinates.lat,
+                  areaOfUseLongitude: areaOfUseCoordinates.lng,
+                  areaOfUseName: details?.areaOfUse,
+                },
+              ]
+            : [],
+        };
+      });
+
+      const data: any = {
+        vehicleId: vehicle.id,
+        segments: tripSegments,
+      };
+      if (couponCode.trim() !== "") {
+        data.couponCode = couponCode;
       }
 
-      return {
-        bookingTypeId: details?.bookingType,
-        startDate: format(new Date(details?.tripStartDate || ""), "yyyy-MM-dd"),
-        startTime: format(new Date(details?.tripStartTime || ""), "HH:mm:ss"),
-        pickupLatitude: pickupCoordinates.lat,
-        pickupLongitude: pickupCoordinates.lng,
-        dropoffLatitude: dropoffCoordinates.lat,
-        dropoffLongitude: dropoffCoordinates.lng,
-        pickupLocationString: details?.pickupLocation,
-        dropoffLocationString: details?.dropoffLocation,
-        areaOfUse: areaOfUseCoordinates
-          ? [
-              {
-                areaOfUseLatitude: areaOfUseCoordinates.lat,
-                areaOfUseLongitude: areaOfUseCoordinates.lng,
-                areaOfUseName: details?.areaOfUse,
-              },
-            ]
-          : [],
-      };
-    });
-
-    const data: any = {
-      vehicleId: vehicle.id,
-      segments: tripSegments,
-    };
-
-    if (couponCode.trim() !== "") {
-      data.couponCode = couponCode;
+      const pricing = await BookingService.calculateBooking(data);
+      sessionStorage.setItem(
+        "priceEstimateId",
+        pricing.data.data.calculationId,
+      );
+      trackPaymentClick({
+        vehicleId: vehicle.id,
+        vehicleName: vehicle.name,
+        amount: vehicle.price,
+        step: "initiate",
+      });
+      if (couponCode.trim()) {
+        sessionStorage.setItem("couponCode", couponCode);
+      } else {
+        sessionStorage.removeItem("couponCode");
+      }
+      setPricing(pricing);
+      setContinueBooking(true);
+    } catch (e: any) {
+      console.error("Failed to estimate price", e);
+      toast.error(
+        e?.message ||
+          "We couldn't estimate the price. Please check your trip details and try again.",
+      );
+      setPricing(undefined);
+      setContinueBooking(false);
+    } finally {
+      setIsEstimating(false);
     }
-
-    const pricing = await BookingService.calculateBooking(data);
-    sessionStorage.setItem("priceEstimateId", pricing.data.data.calculationId);
-    trackPaymentClick({
-      vehicleId: vehicle.id,
-      vehicleName: vehicle.name,
-      amount: vehicle.price,
-      step: "initiate",
-    });
-    if (couponCode.trim()) {
-      sessionStorage.setItem("couponCode", couponCode);
-    } else {
-      sessionStorage.removeItem("couponCode");
-    }
-    setPricing(pricing);
-    setContinueBooking(true);
-    return pricing;
   };
+
+  const handlePrimaryAction = () => {
+    if (!isTripFormsComplete) {
+      toast.warning(
+        "Please complete all trip details. Make sure to select your locations from the dropdown suggestions.",
+      );
+      return;
+    }
+    if (!continueBooking) {
+      estimatePrice();
+      return;
+    }
+    if (!isAuthenticated) {
+      setBookRideModal(true);
+      return;
+    }
+    router.push(`/booking/create/${vehicle.id}`);
+  };
+
+  const storedTrips =
+    typeof window !== "undefined"
+      ? JSON.parse(sessionStorage.getItem("trips") || "[]")
+      : [];
+  const tripInitialValues =
+    storedTrips.length > 0 ? storedTrips[storedTrips.length - 1] : null;
 
   return (
     <>
@@ -254,16 +308,19 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                 <span>Back</span>
               </button>
               <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 w-full">
-                <h1 className="text-2xl xs:text-3xl sm:text-4xl font-bold text-gray-800 leading-tight break-words max-w-full">
+                <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 leading-tight break-words max-w-full">
                   {vehicle.name || ""}
                 </h1>
 
-                <div className="flex flex-row items-center space-x-2 xs:space-x-3 self-end sm:self-auto">
+                <div className="flex flex-row items-center space-x-2 self-end sm:self-auto">
                   <SocialShareButton />
 
                   <button
                     onClick={handleToggleFavourite}
                     disabled={isFavoriteLoading}
+                    aria-label={
+                      isFavorited ? "Remove from favourites" : "Add to favourites"
+                    }
                     className={`p-2 sm:p-2.5 rounded-full transition duration-150 cursor-pointer
                     ${isFavorited ? "bg-red-100 text-red-600" : "bg-red-50 hover:bg-red-100 text-red-600"}
                     ${isFavoriteLoading ? "opacity-60 cursor-not-allowed" : ""}`}
@@ -299,8 +356,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
               </div>
             </div>
 
-            <div className="p-6 md:p-8 flex flex-col md:flex-row gap-8">
-              <div className="w-full md:w-3/5 space-y-8 mt-5">
+            <div className="p-6 lg:p-8 flex flex-col lg:flex-row gap-8">
+              <div className="w-full lg:w-3/5 space-y-8 mt-5">
                 <div className="space-y-2">
                   <h2 className="text-lg text-gray-800 pb-1">
                     Vehicle Details
@@ -357,30 +414,18 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                 </div>
                 <section>
                   <h2 className="text-lg text-gray-800 pb-1"> Reviews </h2>
-                  <div className="max-h-96 overflow-y-auto">
+                  <div>
                     <Reviews vehicleId={id as string} />
                   </div>
                 </section>
               </div>
 
-              <div className="w-full md:w-2/5 border-1 py-5 px-3 rounded-xl border-[#E4E7EC]">
+              <div className="w-full lg:w-2/5 border py-5 px-3 rounded-xl border-[#E4E7EC]">
                 <div>
                   <h2 className="font-bold text-[17px]">Add Booking Details</h2>
                   <p className="text-sm my-4">Daily Itinerary</p>
 
                   {trips?.map((key, index) => {
-                    const initialValues = JSON.parse(
-                      sessionStorage.getItem("trips") || "[]",
-                    );
-                    let tripInitialValues;
-
-                    if (initialValues.length > 0) {
-                      tripInitialValues =
-                        initialValues[initialValues.length - 1];
-                    } else {
-                      tripInitialValues = null;
-                    }
-
                     return (
                       <TripAccordion
                         key={`${key.id}`}
@@ -496,58 +541,29 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                   </div>
                 </div>
 
-                {!continueBooking || !isTripFormsComplete ? (
-                  <div
-                    onClick={() => {
-                      if (!isTripFormsComplete)
-                        toast.warning(
-                          "Please complete all trip details. Make sure to select your locations from the dropdown suggestions.",
-                        );
-                    }}
-                  >
-                    <button
-                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
-                      disabled={!isTripFormsComplete}
-                      onClick={estimatePrice}
-                    >
-                      Estimate Price
-                    </button>
-                  </div>
-                ) : !isAuthenticated ? (
-                  <div
-                    onClick={() => {
-                      if (!isTripFormsComplete)
-                        toast.warning(
-                          "Please complete all trip details. Make sure to select your locations from the dropdown suggestions.",
-                        );
-                    }}
-                  >
-                    <button
-                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
-                      disabled={!isTripFormsComplete}
-                      onClick={() => setBookRideModal(true)}
-                    >
-                      Continue Booking
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => {
-                      if (!isTripFormsComplete)
-                        toast.warning(
-                          "Please complete all trip details. Make sure to select your locations from the dropdown suggestions.",
-                        );
-                    }}
-                  >
-                    <button
-                      className="w-full py-4 mt-2 text-sm font-medium cursor-pointer bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-white rounded-full shadow-md hover:bg-blue-700 transition duration-150"
-                      disabled={!isTripFormsComplete}
-                      onClick={() => router.push(`/booking/create/${vehicle.id}`)}
-                    >
-                      Continue Booking
-                    </button>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={handlePrimaryAction}
+                  disabled={isEstimating}
+                  className={`w-full py-4 mt-2 text-sm font-medium text-white rounded-full shadow-md transition duration-150 flex items-center justify-center gap-2 ${
+                    isEstimating
+                      ? "bg-blue-600 opacity-80 cursor-wait"
+                      : !isTripFormsComplete
+                        ? "bg-blue-600/60 cursor-pointer"
+                        : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                  }`}
+                >
+                  {isEstimating ? (
+                    <>
+                      <span className="block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Estimating...
+                    </>
+                  ) : !continueBooking || !isTripFormsComplete ? (
+                    "Estimate Price"
+                  ) : (
+                    "Continue Booking"
+                  )}
+                </button>
 
                 {vehicle?.discounts?.length > 0 && (
                   <div className="space-y-3 pt-4">
@@ -594,23 +610,6 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     </>
   );
 };
-
-const IconButton = ({
-  children,
-  className = "",
-  onClick,
-}: {
-  children: any;
-  className: any;
-  onClick: any;
-}) => (
-  <button
-    onClick={onClick}
-    className={`p-2 rounded-full transition duration-150 ${className}`}
-  >
-    {children}
-  </button>
-);
 
 const PriceRow = ({
   label,
