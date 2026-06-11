@@ -1,4 +1,5 @@
 import { DatePicker } from "./calendar";
+import Icons from "./icons";
 import cn from "classnames";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -98,7 +99,7 @@ const DateInput = ({
       )}
       <div
         className={cn(
-          "w-full rounded-[12px] px-2 pt-3 cursor-pointer text-left text-sm h-[45px] gap-[5px] outline-none data-[placeholder]:text-gray-400",
+          "w-full rounded-[12px] px-3 cursor-pointer text-left text-sm h-[45px] flex items-center justify-between gap-2 outline-none",
           disabled
             ? "bg-grey-100 text-grey-400 border-grey-300 cursor-not-allowed" // Disabled styles
             : error
@@ -109,12 +110,15 @@ const DateInput = ({
         style={disabled ? { pointerEvents: "none" } : {}} // Prevent clicks when disabled
       >
         {value ? (
-          <span className={cn("text-grey-800", disabled && "text-grey-400")}>
+          <span
+            className={cn("text-grey-800 truncate", disabled && "text-grey-400")}
+          >
             {format(new Date(value), "dd/MM/yyyy")}
           </span>
         ) : (
           <span className="text-gray-400 text-[12px]">Select a date</span>
         )}
+        <span className="shrink-0 text-gray-400">{Icons.ic_chevron_down}</span>
       </div>
       {error && (
         <p className="text-error-500 text-sm mt-2 text-left">{error}</p>

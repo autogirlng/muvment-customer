@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "@/context/AuthContext";
 import RouteTracker from "../general/RouteTracker";
-import SplashScreen from "@/components/utils/SplashScreen";
 import TopProgressBar from "@/components/utils/TopProgressBar";
 
 export default function ClientRoot({
@@ -14,7 +13,6 @@ export default function ClientRoot({
 }) {
   return (
     <>
-      <SplashScreen />
       <Suspense fallback={null}>
         <TopProgressBar />
       </Suspense>

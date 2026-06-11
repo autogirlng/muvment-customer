@@ -37,12 +37,17 @@ const InputSection = ({
   error?: string;
 }) => {
   return (
-    <div className="p-1">
-      <p className={cn("text-sm 3xl:text-base", `text-${textColor}`)}>
+    <div>
+      <p
+        className={cn(
+          "text-xs font-semibold mb-1.5",
+          textColor ? `text-${textColor}` : "text-gray-600",
+        )}
+      >
         {title}
       </p>
       <div className="flex items-center gap-3">{children}</div>
-      {error && <p className="text-error-500 text-sm">{error}</p>}
+      {error && <p className="text-error-500 text-xs mt-1">{error}</p>}
     </div>
   );
 };
@@ -185,18 +190,25 @@ const TripAccordion = ({
 
   return (
     <>
-      <div className="rounded-2xl px-4 p-2 mt-1 border border-[#E4E7EC]">
+      <div className="rounded-2xl px-4 py-3 mt-2 border border-[#E4E7EC]">
         <div
-          className="flex justify-between items-center cursor-pointer"
+          className="flex justify-between items-center cursor-pointer gap-3"
           onClick={() => toggleOpen()}
         >
-          <div className="flex items-center space-x-2 text-gray-600">
-            {Icons.ic_calendar}
-            <span className="text-sm">{date}</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#EAF2FF] text-[#0673ff] shrink-0">
+              {Icons.ic_calendar}
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">Day {day}</p>
+              <p className="text-xs text-gray-500 truncate">
+                {date.replace(`Day ${day}: `, "")}
+              </p>
+            </div>
           </div>
 
           {/* Right side actions */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 shrink-0">
             {day !== "1" && deleteMethod ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -204,7 +216,7 @@ const TripAccordion = ({
                   e.stopPropagation();
                   deleteMethod(id);
                 }}
-                className="w-5 h-5 text-gray-600 cursor-pointer"
+                className="w-5 h-5 text-gray-400 hover:text-red-500 transition cursor-pointer"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -215,13 +227,11 @@ const TripAccordion = ({
                 <line x1="10" y1="11" x2="10" y2="17" />
                 <line x1="14" y1="11" x2="14" y2="17" />
               </svg>
-            ) : (
-              <div className="w-5 h-5" />
-            )}
+            ) : null}
 
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${
+              className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${
                 isCollapsed ? "rotate-180" : "rotate-0"
               }`}
               viewBox="0 0 20 20"
@@ -237,62 +247,22 @@ const TripAccordion = ({
         </div>
 
         {!isCollapsed && (
-          <div className="mt-2 pt-2 space-y-4">
-            <div>
-              <InputSection title="Booking Type">
-                <SelectInput
-                  disabled={disabled}
-                  id="bookingType"
-                  placeholder="Select Booking Type"
-                  variant="outlined"
-                  className=""
-                  options={bookingOptions}
-                  value={bookingType}
-                  onChange={(value) => onChange("bookingType", value)}
-                />
-              </InputSection>
+          <div className="mt-3 pt-3 border-t border-gray-100 space-y-4">
+            <InputSection title="Booking Type">
+              <SelectInput
+                disabled={disabled}
+                id="bookingType"
+                placeholder="Select Booking Type"
+                variant="outlined"
+                className=""
+                options={bookingOptions}
+                value={bookingType}
+                onChange={(value) => onChange("bookingType", value)}
+              />
+            </InputSection>
 
-              <InputSection title="Pickup Location">
-                <GoogleMapsLocationInput
-                  disabled={disabled}
-                  value={pickupLocation}
-                  onChange={(value) => onChange("pickupLocation", value)}
-                  placeholder="Enter location"
-                  coordinates={coordinates}
-                  type="pickupCoordinates"
-                />
-              </InputSection>
-
-              <InputSection title="Drop-off Location">
-                <GoogleMapsLocationInput
-                  disabled={disabled}
-                  value={dropoffLocation}
-                  onChange={(value) => onChange("dropoffLocation", value)}
-                  placeholder="Enter location"
-                  coordinates={coordinates}
-                  type="dropoffCoordinates"
-                />
-              </InputSection>
-
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                {/* Dropdown Arrow Icon */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            <div>
-              <InputSection title="Trip Start" textColor="[#0673ff]">
+            <InputSection title="Trip Start" textColor="[#0673ff]">
+              <div className="flex-1 min-w-0">
                 <DateInput
                   name="startDate"
                   value={tripStartDate}
@@ -302,7 +272,8 @@ const TripAccordion = ({
                   }}
                   minDate={new Date()}
                 />
-
+              </div>
+              <div className="flex-1 min-w-0">
                 <TimeInput
                   name="startTime"
                   disabled={disabled || !tripStartDate || loadingAvailableTimes}
@@ -320,8 +291,31 @@ const TripAccordion = ({
                         : "Select time"
                   }
                 />
-              </InputSection>
-            </div>
+              </div>
+            </InputSection>
+
+            <InputSection title="Pickup Location">
+              <GoogleMapsLocationInput
+                disabled={disabled}
+                value={pickupLocation}
+                onChange={(value) => onChange("pickupLocation", value)}
+                placeholder="Enter location"
+                coordinates={coordinates}
+                type="pickupCoordinates"
+              />
+            </InputSection>
+
+            <InputSection title="Drop-off Location">
+              <GoogleMapsLocationInput
+                disabled={disabled}
+                value={dropoffLocation}
+                onChange={(value) => onChange("dropoffLocation", value)}
+                placeholder="Enter location"
+                coordinates={coordinates}
+                type="dropoffCoordinates"
+              />
+            </InputSection>
+
             <InputSection title="Area of Use">
               <GoogleMapsLocationInput
                 disabled={disabled}

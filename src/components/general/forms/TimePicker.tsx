@@ -272,7 +272,7 @@ function TimePicker({
       <div
         ref={triggerRef}
         onClick={handleTriggerClick}
-        className={`flex items-center gap-1 transition-colors ${
+        className={`flex items-center justify-between w-full gap-2 transition-colors ${
           disabled
             ? "cursor-not-allowed opacity-60"
             : "cursor-pointer hover:text-grey-700"
@@ -280,21 +280,21 @@ function TimePicker({
         style={disabled ? { pointerEvents: "none" } : {}}
       >
         <span
-          className={`text-xs xl:text-sm transition-colors ${
+          className={`text-sm truncate transition-colors ${
             disabled
               ? "text-gray-400"
               : selectedTime
                 ? "text-gray-800"
                 : "text-gray-400"
-          } whitespace-nowrap`}
+          }`}
         >
           {getDisplayTime()}
         </span>
         {showArrow && (
           <div
-            className={`transition-transform duration-200 ${
+            className={`shrink-0 text-gray-400 transition-transform duration-200 ${
               isOpen && !disabled ? "rotate-180" : ""
-            } ${disabled ? "text-grey-400" : ""}`}
+            }`}
           >
             {Icons.ic_chevron_down}
           </div>
@@ -305,9 +305,9 @@ function TimePicker({
       {isOpen && !disabled && (
         <div
           ref={dropdownRef}
-          className="absolute bottom-full right-0 mt-2 w-[120px] bg-white border border-grey-200 rounded-2xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06)] z-50 max-h-[300px] overflow-hidden"
+          className="absolute top-full left-0 mt-2 w-full min-w-[150px] bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-[240px] overflow-hidden"
         >
-          <div className="py-2 overflow-y-auto max-h-[280px] custom-scrollbar">
+          <div className="py-1.5 overflow-y-auto max-h-[240px] custom-scrollbar">
             {timeOptions.map((time, index) => (
               <div
                 key={index}
@@ -315,17 +315,13 @@ function TimePicker({
                   if (!time?.available) return;
                   handleTimeSelect(time.value);
                 }}
-                className={`px-4 py-2.5 mt-1 text-sm transition-colors duration-150 ease-in-out hover:bg-grey-50
-                  ${
-                    !time?.available
-                      ? "bg-red-200  cursor-not-allowed opacity-60"
-                      : "cursor-pointer hover:bg-grey-50"
-                  }
-                  ${
-                    selectedTime === time.value
-                      ? "bg-blue-50 text-blue-600 font-medium"
-                      : "text-grey-700"
-                  }`}
+                className={`px-4 py-2 text-sm transition-colors duration-150 ease-in-out ${
+                  !time?.available
+                    ? "text-gray-300 line-through cursor-not-allowed"
+                    : selectedTime === time.value
+                      ? "bg-blue-50 text-[#0673ff] font-medium cursor-pointer"
+                      : "text-gray-700 cursor-pointer hover:bg-gray-50"
+                }`}
               >
                 {time.label}
               </div>

@@ -20,13 +20,19 @@ const Reviews = ({ vehicleId, pageType }: ReviewsProps) => {
     const [openModalId, setOpenModalId] = useState<string>("");
     const [currentPage, setCurrentPage] = useState<number>(0);
     const [pages, setPages] = useState<number>(1)
+    const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(true);
 
     const fetchReviewData = async () => {
-        const data = await getSingleData(`/api/v1/rating-review/entity/${vehicleId}?page=${currentPage ?? 0}&size=${10}`);
-        const reviews = data?.data as ReviewResponse[]
-        if (reviews) {
-            setReviewData(reviews);
-            setPages(reviews[0]?.data?.totalPages ?? 1)
+        setIsLoadingReviews(true);
+        try {
+            const data = await getSingleData(`/api/v1/rating-review/entity/${vehicleId}?page=${currentPage ?? 0}&size=${10}`);
+            const reviews = data?.data as ReviewResponse[]
+            if (reviews) {
+                setReviewData(reviews);
+                setPages(reviews[0]?.data?.totalPages ?? 1)
+            }
+        } finally {
+            setIsLoadingReviews(false);
         }
     }
 
@@ -92,7 +98,25 @@ const Reviews = ({ vehicleId, pageType }: ReviewsProps) => {
 
             {/* Show all reviews on mount */}
             {
-                reviewData?.length > 0 && reviewData[0]?.data?.content?.length > 0 ? reviewData[0]?.data?.content?.map((review) => {
+                isLoadingReviews ? (
+                    <div className="space-y-2 mt-2" aria-hidden="true">
+                        {[0, 1, 2].map((i) => (
+                            <div key={i} className="bg-white px-5 p-3 rounded-xl">
+                                <div className="flex flex-row justify-between">
+                                    <div className="space-y-2">
+                                        <div className="h-3.5 w-32 rounded bg-gray-200 animate-pulse" />
+                                        <div className="h-2.5 w-24 rounded bg-gray-100 animate-pulse" />
+                                    </div>
+                                    <div className="h-3.5 w-20 rounded bg-gray-100 animate-pulse" />
+                                </div>
+                                <div className="mt-2 space-y-1.5">
+                                    <div className="h-2.5 w-full rounded bg-gray-100 animate-pulse" />
+                                    <div className="h-2.5 w-3/4 rounded bg-gray-100 animate-pulse" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : reviewData?.length > 0 && reviewData[0]?.data?.content?.length > 0 ? reviewData[0]?.data?.content?.map((review) => {
                     const reviewDate = format(parseISO(review.createdAt), "MMMM d, yyyy");
                     const reviewTime = format(parseISO(review.createdAt), "h:mma")
                     return (
