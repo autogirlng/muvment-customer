@@ -189,7 +189,7 @@ const CostBreakdown = ({
         sessionStorage.setItem("bookingId", bookingId);
       }
 
-      if (!bookingId && booking.data !== 409) {
+      if (!bookingId && booking?.status !== 409) {
         throw new Error("Booking ID not returned from API");
       }
 
