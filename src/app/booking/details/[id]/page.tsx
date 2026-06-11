@@ -1,8 +1,14 @@
-import VehicleDetailsClient from "@/components/pagesComponent/VehicleDetailsClient ";
+import VehicleDetailsClient from "@/components/pagesComponent/VehicleDetailsClient";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { generatePageMetadata } from "@/helpers/metadata";
 import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { cache } from "react";
+
+const getVehicle = cache((slug: string) =>
+  VehicleSearchService.getVehicleBySlug(slug),
+);
 
 interface PageProps {
   params: Promise<{
@@ -17,7 +23,7 @@ export async function generateMetadata({
   const slug = resolvedParams.id;
 
   try {
-    const vehicle = await VehicleSearchService.getVehicleBySlug(slug);
+    const vehicle = await getVehicle(slug);
 
     if (!vehicle) {
       return generatePageMetadata({
@@ -66,23 +72,9 @@ export default async function VehicleDetailsPage({ params }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams.id;
 
+  let vehicle;
   try {
-    const vehicle = await VehicleSearchService.getVehicleBySlug(slug);
-
-    if (!vehicle) {
-      return (
-        <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
-          <p className="text-xl text-red-600 mb-4">Vehicle not found</p>
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <JsonLd schema={SchemaBuilder.vehicle(vehicle, slug)} />
-        <VehicleDetailsClient initialVehicleData={vehicle} />
-      </>
-    );
+    vehicle = await getVehicle(slug);
   } catch (error) {
     console.error("Error generating page:", error);
     return (
@@ -93,4 +85,15 @@ export default async function VehicleDetailsPage({ params }: PageProps) {
       </div>
     );
   }
+
+  if (!vehicle) {
+    notFound();
+  }
+
+  return (
+    <>
+      <JsonLd schema={SchemaBuilder.vehicle(vehicle, slug)} />
+      <VehicleDetailsClient initialVehicleData={vehicle} />
+    </>
+  );
 }
