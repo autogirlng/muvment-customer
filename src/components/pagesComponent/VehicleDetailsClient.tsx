@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, ReactNode } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { formatCurrency } from "@/services/vechilePriceUtiles";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
@@ -14,6 +15,8 @@ import {
   FiBell,
   FiTag,
   FiInfo,
+  FiX,
+  FiCheckCircle,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import { SocialShareButton } from "@/components/general/share";
@@ -39,7 +42,6 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   initialVehicleData,
 }) => {
   const router = useRouter();
-  const { id } = useParams();
   const { isAuthenticated } = useAuth();
 
   const [vehicle, setVehicle] = useState<any>(initialVehicleData);
@@ -57,6 +59,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const [isFavorited, setIsFavorited] = useState(false);
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const {
     setTrips,
@@ -71,6 +75,24 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   } = useItineraryForm();
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [sheetOpen]);
+
+  useEffect(() => {
     if (continueBooking) {
       setContinueBooking(false);
       setPricing(undefined);
@@ -80,6 +102,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   useEffect(() => {
     if (continueBooking) {
       setContinueBooking(false);
+      setPricing(undefined);
     }
   }, [couponCode]);
 
@@ -99,9 +122,37 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   }, [vehicle]);
 
   useEffect(() => {
-    sessionStorage.removeItem("trips");
     sessionStorage.removeItem("bookingId");
-    setTrips([{ id: "trip-0", tripDetails: {} }]);
+
+    // Prefill trip 0 from the search params; time and drop-off stay for the user.
+    const params = new URLSearchParams(window.location.search);
+    const location = params.get("location");
+    const lat = params.get("lat");
+    const lng = params.get("lng");
+    const startDate = params.get("startDate");
+    const bookingTypeParam = params.get("bookingType");
+
+    const seed: Record<string, string> = { id: "trip-0" };
+    if (bookingTypeParam) seed.bookingType = bookingTypeParam;
+    if (location) seed.pickupLocation = location;
+    if (lat && lng && !isNaN(Number(lat)) && !isNaN(Number(lng))) {
+      seed.pickupCoordinates = JSON.stringify({
+        lat: Number(lat),
+        lng: Number(lng),
+      });
+    }
+    if (startDate) {
+      seed.tripStartDate = `${startDate}T00:00:00`;
+    }
+
+    if (Object.keys(seed).length > 1) {
+      sessionStorage.setItem("trips", JSON.stringify([seed]));
+      const { id: seedId, ...details } = seed;
+      setTrips([{ id: seedId, tripDetails: details }]);
+    } else {
+      sessionStorage.removeItem("trips");
+      setTrips([{ id: "trip-0", tripDetails: {} }]);
+    }
   }, []);
 
   const check = async () => {
@@ -289,141 +340,63 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const tripInitialValues =
     storedTrips.length > 0 ? storedTrips[storedTrips.length - 1] : null;
 
-  return (
+  const lowestPrice = vehicle?.allPricingOptions?.length
+    ? Math.min(
+        ...vehicle.allPricingOptions.map((o: any) => Number(o.price) || 0),
+      )
+    : null;
+
+  const primaryPhoto =
+    vehicle?.photos?.find((ph: any) => ph.isPrimary)?.cloudinaryUrl ||
+    vehicle?.photos?.[0]?.cloudinaryUrl ||
+    "";
+
+  const appliedCouponDiscount = Number(
+    pricing?.data?.data?.couponDiscountAmount || 0,
+  );
+  const couponState: "none" | "pending" | "applied" | "invalid" =
+    !couponCode.trim()
+      ? "none"
+      : !pricing?.data
+        ? "pending"
+        : appliedCouponDiscount > 0
+          ? "applied"
+          : "invalid";
+
+  const selectedBookingTypeName = (
+    vehicle?.allPricingOptions?.find(
+      (o: any) => o.bookingTypeId === trips?.[0]?.tripDetails?.bookingType,
+    )?.bookingTypeName || ""
+  )
+    .trim()
+    .toLowerCase();
+  const bookingNoteTitle = selectedBookingTypeName.includes("airport")
+    ? "Airport pickup"
+    : selectedBookingTypeName.includes("interstate")
+      ? "Interstate trip"
+      : selectedBookingTypeName.includes("hour")
+        ? "Within-city booking"
+        : "Important note";
+  const bookingNote = selectedBookingTypeName.includes("airport")
+    ? "Airport pickup is a one-way trip to your chosen location. Outskirts stops can be added and will be reflected in the price."
+    : selectedBookingTypeName.includes("interstate")
+      ? "Interstate trips are priced for travel between states, based on your route."
+      : selectedBookingTypeName.includes("hour")
+        ? "This is a within-city booking for the period you select, so you can move around central locations freely. Going to an outskirts area can be added and will be reflected in the price."
+        : "Prices shown are for trips within the city. Outskirts areas can be added and will be reflected in the price.";
+
+  const bookingMain = (
     <>
-      <LoginPromptModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-      />
-      <Navbar />
-      <div className="min-h-screen w-full bg-gray-50 mt-15">
-        <div className="min-h-screen bg-gray-50 p-0 sm:p-3 flex items-center justify-center flex-col">
-          <div className="max-w-4xl flex flex-col w-full">
-            <div className=" rounded-xl flex-shrink p-4 sm:p-6 space-y-4">
-              <button
-                className="cursor-pointer flex items-center space-x-1"
-                onClick={() => router.back()}
-              >
-                <FiArrowLeft size={24} />
-                <span>Back</span>
-              </button>
-              <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 w-full">
-                <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 leading-tight break-words max-w-full">
-                  {vehicle.name || ""}
-                </h1>
-
-                <div className="flex flex-row items-center space-x-2 self-end sm:self-auto">
-                  <SocialShareButton />
-
-                  <button
-                    onClick={handleToggleFavourite}
-                    disabled={isFavoriteLoading}
-                    aria-label={
-                      isFavorited ? "Remove from favourites" : "Add to favourites"
-                    }
-                    className={`p-2 sm:p-2.5 rounded-full transition duration-150 cursor-pointer
-                    ${isFavorited ? "bg-red-100 text-red-600" : "bg-red-50 hover:bg-red-100 text-red-600"}
-                    ${isFavoriteLoading ? "opacity-60 cursor-not-allowed" : ""}`}
-                  >
-                    {isFavoriteLoading ? (
-                      <span className="block w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
-                    ) : (
-                      <FiHeart
-                        size={16}
-                        className={`sm:size-[18px] ${isFavorited ? "fill-red-500" : ""}`}
-                      />
-                    )}
-                  </button>
-                </div>
-              </header>
-
-              <Carousel
-                urls={
-                  vehicle.photos?.map((photo: any) => photo.cloudinaryUrl) || []
-                }
-              />
-            </div>
-
-            <div className="bg-[#F7F9FC] py-4 w-full px-4 rounded-t-xl space-y-3">
-              <div className="flex items-center space-x-3">
-                <FiBell
-                  size={30}
-                  className="p-2 bg-[#FBE2B7] rounded-lg border border-[#F38218] flex-shrink-0"
-                />
-                <span className="text-sm font-medium text-gray-800">
-                  1 day advance notice required before booking
-                </span>
-              </div>
-            </div>
-
-            <div className="p-6 lg:p-8 flex flex-col lg:flex-row gap-8">
-              <div className="w-full lg:w-3/5 space-y-8 mt-5">
-                <div className="space-y-2">
-                  <h2 className="text-lg text-gray-800 pb-1">
-                    Vehicle Details
-                  </h2>
-                  <div className="flex flex-wrap items-center gap-4">
-                    <VehicleDetailsChip
-                      label="Make"
-                      value={vehicle.vehicleMakeName || "N/A"}
-                    />
-                    <VehicleDetailsChip
-                      label="Model"
-                      value={vehicle.vehicleModelName || "N/A"}
-                    />
-                    <VehicleDetailsChip
-                      label="Year"
-                      value={vehicle.year || "N/A"}
-                    />
-                    <VehicleDetailsChip
-                      label="Colour"
-                      value={vehicle.vehicleColorName || "N/A"}
-                    />
-                    <VehicleDetailsChip
-                      label="City"
-                      value={vehicle.city || "N/A"}
-                    />
-                    <VehicleDetailsChip
-                      label="Vehicle type"
-                      value={vehicle.vehicleTypeName?.replaceAll("_", " ")}
-                    />
-                    <VehicleDetailsChip
-                      label="Seating Capacity"
-                      value={vehicle.numberOfSeats}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h2 className="text-lg">Description</h2>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    {vehicle.description || "N/A"}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <h2 className="text-lg text-gray-800">Features</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {vehicle.vehicleFeatures?.length > 0 &&
-                      vehicle.vehicleFeatures.map((feature: string) => {
-                        return (
-                          <FeatureTag key={feature}>{feature} </FeatureTag>
-                        );
-                      })}
-                  </div>
-                </div>
-                <section>
-                  <h2 className="text-lg text-gray-800 pb-1"> Reviews </h2>
-                  <div>
-                    <Reviews vehicleId={id as string} />
-                  </div>
-                </section>
-              </div>
-
-              <div className="w-full lg:w-2/5 border py-5 px-3 rounded-xl border-[#E4E7EC]">
                 <div>
                   <h2 className="font-bold text-[17px]">Add Booking Details</h2>
-                  <p className="text-sm my-4">Daily Itinerary</p>
+                  <div className="mt-2 mb-4">
+                    <p className="text-sm font-semibold text-gray-900">
+                      Daily Itinerary
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Add a stop for each day you need the car.
+                    </p>
+                  </div>
 
                   {trips?.map((key, index) => {
                     return (
@@ -439,33 +412,69 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                         isCollapsed={!openTripIds.has(key.id)}
                         toggleOpen={() => toggleOpen(key.id)}
                         bookingOptions={bookingOptions}
-                        vehicleId={id?.toString()}
+                        vehicleId={vehicle.id}
                       />
                     );
                   })}
                   <button
                     onClick={() => addTrip(generateNextTripId())}
-                    className="text-[#0673ff] mt-3 text-sm cursor-pointer border-0"
+                    className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#0673ff]/40 text-[#0673ff] text-sm font-medium py-2.5 hover:bg-[#0673ff]/5 transition cursor-pointer"
                   >
-                    + Add Trip
+                    + Add another day
                   </button>
 
                   <div className="mt-6 mb-2">
                     <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                      Have a Coupon? (Optional)
+                      Have a coupon? (Optional)
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiTag className="text-gray-400" />
+                        <FiTag
+                          className={
+                            couponState === "applied"
+                              ? "text-green-500"
+                              : couponState === "invalid"
+                                ? "text-red-400"
+                                : "text-gray-400"
+                          }
+                        />
                       </div>
                       <input
                         type="text"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
                         placeholder="Enter coupon code"
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"
+                        className={`block w-full pl-10 pr-10 py-2 border rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 sm:text-sm transition duration-150 ease-in-out ${
+                          couponState === "applied"
+                            ? "border-green-400 focus:ring-green-500 focus:border-green-500"
+                            : couponState === "invalid"
+                              ? "border-red-300 focus:ring-red-400 focus:border-red-400"
+                              : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        }`}
                       />
+                      {couponState === "applied" && (
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <FiCheckCircle className="text-green-500" />
+                        </div>
+                      )}
                     </div>
+                    {couponState === "applied" && (
+                      <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-green-600">
+                        Coupon applied, you save{" "}
+                        {formatCurrency(appliedCouponDiscount)}
+                      </p>
+                    )}
+                    {couponState === "invalid" && (
+                      <p className="mt-1.5 text-xs font-medium text-red-500">
+                        We couldn&apos;t apply this code. Check it and estimate
+                        again.
+                      </p>
+                    )}
+                    {couponState === "pending" && (
+                      <p className="mt-1.5 text-xs text-gray-400">
+                        Tap Estimate Price to apply your coupon.
+                      </p>
+                    )}
                   </div>
 
                   {pricing?.data && (
@@ -502,19 +511,23 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                         />
                       )}
 
-                      <PriceRow
-                        label="Duration Discount"
-                        value={pricing.data.data.discountAmount}
-                        isDiscount
-                      />
+                      {pricing.data.data.discountAmount > 0 && (
+                        <PriceRow
+                          label="Duration Discount"
+                          value={pricing.data.data.discountAmount}
+                          isDiscount
+                        />
+                      )}
 
-                      <PriceRow
-                        label={`Coupon (${
-                          pricing.data.data.appliedCouponCode || "Applied"
-                        })`}
-                        value={pricing.data.data.couponDiscountAmount}
-                        isDiscount
-                      />
+                      {pricing.data.data.couponDiscountAmount > 0 && (
+                        <PriceRow
+                          label={`Coupon (${
+                            pricing.data.data.appliedCouponCode || couponCode
+                          })`}
+                          value={pricing.data.data.couponDiscountAmount}
+                          isDiscount
+                        />
+                      )}
 
                       <PriceRow
                         label="TOTAL"
@@ -532,15 +545,17 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                   />
                   <div className="flex flex-col">
                     <span className="text-[11px] font-bold text-orange-700 uppercase tracking-wider mb-1">
-                      Important Note
+                      {bookingNoteTitle}
                     </span>
                     <p className="text-sm text-orange-900 leading-snug font-medium">
-                      Kindly note that all prices on this website are within
-                      city and does not cover interstate travels.
+                      {bookingNote}
                     </p>
                   </div>
                 </div>
+    </>
+  );
 
+  const bookingCTA = (
                 <button
                   type="button"
                   onClick={handlePrimaryAction}
@@ -564,8 +579,9 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     "Continue Booking"
                   )}
                 </button>
+  );
 
-                {vehicle?.discounts?.length > 0 && (
+  const bookingDiscounts = vehicle?.discounts?.length > 0 && (
                   <div className="space-y-3 pt-4">
                     <h3 className="text-lg font-bold text-gray-800">
                       Discounts
@@ -579,32 +595,364 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                       />
                     ))}
                   </div>
-                )}
+                );
+
+  return (
+    <>
+      <LoginPromptModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        vehicleName={vehicle?.name}
+      />
+      <Navbar />
+      <div className="min-h-screen w-full bg-gray-50 mt-24">
+        <div className="min-h-screen bg-gray-50 p-0 sm:p-3 flex items-center justify-center flex-col">
+          <div className="max-w-4xl flex flex-col w-full">
+            <div className=" rounded-xl flex-shrink p-4 sm:p-6 space-y-4">
+              <button
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition cursor-pointer"
+                onClick={() => router.back()}
+              >
+                <FiArrowLeft size={18} />
+                <span>Back</span>
+              </button>
+              <header className="flex flex-row items-start justify-between gap-3 w-full">
+                <h1 className="min-w-0 flex-1 text-2xl sm:text-4xl font-bold text-gray-800 leading-tight break-words">
+                  {vehicle.name || ""}
+                </h1>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <SocialShareButton triggerClassName="w-10 h-10 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 flex items-center justify-center transition cursor-pointer" />
+
+                  <button
+                    onClick={handleToggleFavourite}
+                    disabled={isFavoriteLoading}
+                    aria-label={
+                      isFavorited ? "Remove from favourites" : "Add to favourites"
+                    }
+                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition cursor-pointer shrink-0 ${
+                      isFavorited
+                        ? "border-red-200 bg-red-50 text-red-600"
+                        : "border-gray-200 bg-white hover:bg-gray-50 text-gray-500 hover:text-red-500"
+                    } ${isFavoriteLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+                  >
+                    {isFavoriteLoading ? (
+                      <span className="block w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                    ) : (
+                      <FiHeart
+                        size={18}
+                        className={isFavorited ? "fill-red-500" : ""}
+                      />
+                    )}
+                  </button>
+                </div>
+              </header>
+
+              <Carousel
+                urls={
+                  vehicle.photos?.map((photo: any) => photo.cloudinaryUrl) || []
+                }
+              />
+            </div>
+
+            <div className="bg-[#F7F9FC] py-4 w-full px-4 rounded-t-xl space-y-3">
+              <div className="flex items-center space-x-3">
+                <FiBell
+                  size={30}
+                  className="p-2 bg-[#FBE2B7] rounded-lg border border-[#F38218] flex-shrink-0"
+                />
+                <span className="text-sm font-medium text-gray-800">
+                  {vehicle?.advanceNotice || "1 day"} advance notice required
+                  before booking
+                </span>
               </div>
+            </div>
+
+            <div className="p-6 lg:p-8 flex flex-col lg:flex-row lg:items-start gap-8">
+              <div className="w-full lg:w-3/5 space-y-8 mt-5 lg:sticky lg:top-24 lg:self-start">
+                <div className="space-y-2">
+                  <h2 className="text-lg text-gray-800 pb-1">
+                    Vehicle Details
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <VehicleDetailsChip
+                      label="Make"
+                      value={vehicle.vehicleMakeName || "N/A"}
+                    />
+                    <VehicleDetailsChip
+                      label="Model"
+                      value={vehicle.vehicleModelName || "N/A"}
+                    />
+                    <VehicleDetailsChip
+                      label="Year"
+                      value={vehicle.year || "N/A"}
+                    />
+                    <VehicleDetailsChip
+                      label="Colour"
+                      value={vehicle.vehicleColorName || "N/A"}
+                    />
+                    <VehicleDetailsChip
+                      label="City"
+                      value={vehicle.city || "N/A"}
+                    />
+                    <VehicleDetailsChip
+                      label="Vehicle type"
+                      value={vehicle.vehicleTypeName?.replaceAll("_", " ")}
+                    />
+                    <VehicleDetailsChip
+                      label="Seating Capacity"
+                      value={vehicle.numberOfSeats}
+                    />
+                    {typeof vehicle.willProvideDriver === "boolean" && (
+                      <VehicleDetailsChip
+                        label="Driver"
+                        value={
+                          vehicle.willProvideDriver
+                            ? "Included"
+                            : "Not included"
+                        }
+                      />
+                    )}
+                    {typeof vehicle.willProvideFuel === "boolean" && (
+                      <VehicleDetailsChip
+                        label="Fuel"
+                        value={
+                          vehicle.willProvideFuel ? "Included" : "Not included"
+                        }
+                      />
+                    )}
+                    {vehicle.maxTripDuration && (
+                      <VehicleDetailsChip
+                        label="Max trip"
+                        value={vehicle.maxTripDuration}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {vehicle.allPricingOptions?.length > 0 && (
+                  <div className="space-y-2">
+                    <h2 className="text-lg text-gray-800">Pricing</h2>
+                    <div className="space-y-2">
+                      {vehicle.allPricingOptions.map((opt: any) => (
+                        <div
+                          key={opt.bookingTypeId}
+                          className="flex justify-between items-center p-3 bg-[#F0F2F5] rounded-lg"
+                        >
+                          <span className="text-sm font-medium text-gray-700">
+                            {opt.bookingTypeName?.trim()}
+                          </span>
+                          <span className="text-sm font-bold text-gray-900">
+                            {formatCurrency(Number(opt.price || 0))}
+                          </span>
+                        </div>
+                      ))}
+                      {vehicle.extraHourlyRate ? (
+                        <div className="flex justify-between items-center p-3 bg-[#F0F2F5] rounded-lg">
+                          <span className="text-sm font-medium text-gray-700">
+                            Extra hour
+                          </span>
+                          <span className="text-sm font-bold text-gray-900">
+                            {formatCurrency(Number(vehicle.extraHourlyRate))}/hr
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Final price depends on your itinerary. Use Estimate Price
+                      for an exact quote.
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <h2 className="text-lg">Description</h2>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {vehicle.description || "N/A"}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h2 className="text-lg text-gray-800">Features</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {vehicle.vehicleFeatures?.length > 0 &&
+                      vehicle.vehicleFeatures.map((feature: string) => {
+                        return (
+                          <FeatureTag key={feature}>{feature} </FeatureTag>
+                        );
+                      })}
+                  </div>
+                </div>
+                <section>
+                  <h2 className="text-lg text-gray-800 pb-1"> Reviews </h2>
+                  <div>
+                    <Reviews vehicleId={vehicle.id} />
+                  </div>
+                </section>
+              </div>
+
+              {!isMobile && (
+                <div className="w-full lg:w-2/5 border py-5 px-3 rounded-xl border-[#E4E7EC] lg:sticky lg:top-24 lg:self-start">
+                  {bookingMain}
+                  {bookingCTA}
+                  {bookingDiscounts}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+      {isMobile && (
+        <>
+          <div className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 px-4 py-3 flex items-center justify-between gap-4">
+            <div className="leading-tight">
+              {lowestPrice != null ? (
+                <>
+                  <p className="text-[11px] text-gray-500">From</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {formatCurrency(lowestPrice)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm font-semibold text-gray-900">
+                  Book this vehicle
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              className="flex-1 max-w-[60%] bg-[#0673ff] hover:bg-[#0560d6] text-white font-semibold py-3 rounded-full transition cursor-pointer"
+            >
+              Book this car
+            </button>
+          </div>
+
+          {sheetOpen && (
+            <div className="fixed inset-0 z-50 flex flex-col bg-white animate-in slide-in-from-bottom duration-300">
+              <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-3 shrink-0">
+                {primaryPhoto ? (
+                  <img
+                    src={primaryPhoto}
+                    alt={vehicle?.name || "Vehicle"}
+                    className="w-16 h-12 rounded-lg object-cover shrink-0"
+                  />
+                ) : null}
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-sm font-bold text-gray-900 truncate">
+                    {vehicle?.name}
+                  </h2>
+                  <p className="text-xs text-gray-500 truncate">
+                    {[
+                      vehicle?.vehicleTypeName?.replaceAll("_", " "),
+                      vehicle?.numberOfSeats
+                        ? `${vehicle.numberOfSeats} seats`
+                        : null,
+                      lowestPrice != null
+                        ? `from ${formatCurrency(lowestPrice)}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSheetOpen(false)}
+                  aria-label="Close booking"
+                  className="p-2 -mr-1 rounded-full hover:bg-gray-100 cursor-pointer shrink-0"
+                >
+                  <FiX size={22} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 py-4">
+                {bookingMain}
+                {bookingDiscounts}
+              </div>
+              <div className="border-t border-gray-200 px-4 py-3 shrink-0">
+                {bookingCTA}
+              </div>
+            </div>
+          )}
+        </>
+      )}
       <Footer />
+      {isMobile && <div aria-hidden className="h-20" />}
       <Modal isOpen={bookRideModal} onClose={() => setBookRideModal(false)}>
-        <div className="flex flex-col px-[50px] py-[25px]">
-          <h2 className="text-xl font-semibold mb-4">Book Ride</h2>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-3 pb-4 mb-4 border-b border-gray-100">
+            {primaryPhoto ? (
+              <img
+                src={primaryPhoto}
+                alt={vehicle?.name || "Vehicle"}
+                className="w-16 h-12 rounded-lg object-cover shrink-0"
+              />
+            ) : null}
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-900 truncate">
+                {vehicle?.name}
+              </p>
+              {pricing?.data?.data?.finalPrice ? (
+                <p className="text-xs text-gray-500">
+                  Estimated total{" "}
+                  <span className="font-semibold text-gray-800">
+                    {formatCurrency(Number(pricing.data.data.finalPrice))}
+                  </span>
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  {[
+                    vehicle?.vehicleTypeName?.replaceAll("_", " "),
+                    vehicle?.numberOfSeats
+                      ? `${vehicle.numberOfSeats} seats`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <h2 className="text-xl font-bold text-gray-900">
+            You&apos;re almost there
+          </h2>
+          <p className="text-sm text-gray-500 mt-1 mb-5">
+            Confirm your trip in the next step. Book as a guest in seconds, or
+            sign in to save it to your account.
+          </p>
 
           <button
-            className="w-full py-4 text-sm font-medium cursor-pointer bg-[#d0d5dd] text-black rounded-2xl  hover:opacity-80 "
             onClick={() =>
               router.push(`/booking/create/${vehicle.id}?user=guest`)
             }
+            className="w-full py-3.5 text-sm font-semibold text-white rounded-full bg-[#0673ff] hover:bg-[#0560d6] shadow-sm transition cursor-pointer"
           >
             Continue as guest
           </button>
 
-          <button
-            className="w-full py-4 mt-4 text-sm font-medium cursor-pointer bg-blue-600 text-white rounded-2xl hover:bg-blue-700 "
-            onClick={() => router.push(`/auth/login`)}
-          >
-            Sign In
-          </button>
+          <div className="mt-4 rounded-xl border border-gray-200 p-4">
+            <p className="text-sm font-semibold text-gray-900">
+              Have an account, or want one?
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5 mb-3">
+              Sign in to track your bookings and check out faster next time.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push(`/auth/login`)}
+                className="flex-1 py-2.5 text-sm font-medium rounded-full border border-gray-300 text-gray-800 hover:bg-gray-50 transition cursor-pointer"
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => router.push(`/auth/register`)}
+                className="flex-1 py-2.5 text-sm font-medium rounded-full border border-[#0673ff]/40 text-[#0673ff] hover:bg-[#0673ff]/5 transition cursor-pointer"
+              >
+                Create account
+              </button>
+            </div>
+          </div>
         </div>
       </Modal>
     </>

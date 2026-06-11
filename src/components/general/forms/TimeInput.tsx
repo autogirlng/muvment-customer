@@ -77,7 +77,7 @@ const TimeInput = ({
       )}
       <div
         className={cn(
-          "w-full rounded-[15px] px-2 pt-1 text-left text-sm h-[45px] gap-[5px] outline-none data-[placeholder]:text-gray-400 flex items-center border",
+          "w-full rounded-[12px] px-3 text-left text-sm h-[45px] outline-none data-[placeholder]:text-gray-400 flex items-center border",
           disabled
             ? "bg-grey-100 text-gray-400 border-grey-300 cursor-not-allowed"
             : error

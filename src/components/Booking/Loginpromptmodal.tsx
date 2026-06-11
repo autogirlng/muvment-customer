@@ -1,19 +1,20 @@
 "use client";
 import React, { useEffect } from "react";
-import { FiX, FiLogIn, FiHeart } from "react-icons/fi";
+import { FiX, FiHeart, FiCheck } from "react-icons/fi";
 
 interface LoginPromptModalProps {
   isOpen: boolean;
   onClose: () => void;
   redirectAfterLogin?: string;
+  vehicleName?: string;
 }
 
 const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
   isOpen,
   onClose,
   redirectAfterLogin,
+  vehicleName,
 }) => {
-
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -25,7 +26,6 @@ const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
     };
   }, [isOpen]);
 
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -36,124 +36,108 @@ const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleLogin = () => {
+  const go = (path: string) => {
     const redirect = redirectAfterLogin || window.location.pathname;
-    window.location.href = `/auth/login?redirect=${encodeURIComponent(redirect)}`;
+    window.location.href = `${path}?redirect=${encodeURIComponent(redirect)}`;
     onClose();
   };
 
-  const handleSignUp = () => {
-    const redirect = redirectAfterLogin || window.location.pathname;
-    window.location.href = `/auth/register?redirect=${encodeURIComponent(redirect)}`;
-    onClose();
-  };
+  const benefits = [
+    "Keep your favourite cars in one place",
+    "Book faster with your details saved",
+    "Get alerts on price drops and availability",
+  ];
 
   return (
-    <>
-      {/* Backdrop */}
+    <div
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-modal-title"
       >
-        {/* Modal */}
-        <div
-          className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="login-modal-title"
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 p-2 rounded-full text-white/80 hover:text-white hover:bg-white/15 transition-colors"
+          aria-label="Close"
         >
-          {/* Close button */}
+          <FiX className="w-5 h-5" />
+        </button>
+
+        {/* Hero */}
+        <div className="bg-gradient-to-br from-[#0673ff] to-[#0b2c66] px-8 pt-10 pb-8 text-white text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-white/15 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+              <FiHeart className="w-8 h-8 text-white fill-white" />
+            </div>
+          </div>
+          <h2 id="login-modal-title" className="text-2xl font-bold mb-2">
+            {vehicleName
+              ? `Save the ${vehicleName}`
+              : "Save the cars you love"}
+          </h2>
+          <p className="text-blue-100 text-sm leading-relaxed">
+            Create a free account to keep your favourites and pick up right
+            where you left off.
+          </p>
+        </div>
+
+        {/* Body */}
+        <div className="px-8 py-6">
+          <ul className="space-y-3 mb-6 text-sm text-gray-700">
+            {benefits.map((b) => (
+              <li key={b} className="flex items-center gap-3">
+                <span className="flex-shrink-0 w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
+                  <FiCheck className="w-3 h-3 text-[#0673ff]" strokeWidth={3} />
+                </span>
+                {b}
+              </li>
+            ))}
+          </ul>
+
+          {/* Primary: drive sign-up */}
           <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            aria-label="Close"
+            onClick={() => go("/auth/register")}
+            className="w-full bg-[#0673ff] hover:bg-[#0560d6] text-white font-semibold py-3.5 px-6 rounded-xl transition-colors duration-200 cursor-pointer"
           >
-            <FiX className="w-5 h-5" />
+            Create free account
           </button>
+          <p className="text-center text-xs text-gray-400 mt-2">
+            Free, and takes less than a minute.
+          </p>
 
-          {/* Hero section */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 px-8 pt-10 pb-8 text-white text-center">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <FiHeart className="w-8 h-8 text-white fill-white" />
-              </div>
-            </div>
-            <h2
-              id="login-modal-title"
-              className="text-2xl font-bold mb-2"
+          {/* Secondary: existing users */}
+          <div className="mt-5 pt-4 border-t border-gray-100 text-center">
+            <span className="text-sm text-gray-500">
+              Already have an account?{" "}
+            </span>
+            <button
+              onClick={() => go("/auth/login")}
+              className="text-sm font-semibold text-[#0673ff] hover:underline cursor-pointer"
             >
-              Save Your Favourites
-            </h2>
-            <p className="text-blue-100 text-sm leading-relaxed">
-              Sign in to save vehicles to your favourites list and access them
-              anytime, anywhere.
-            </p>
+              Sign in
+            </button>
           </div>
 
-          {/* Body */}
-          <div className="px-8 py-6">
-            {/* Benefits */}
-            <ul className="space-y-3 mb-6 text-sm text-gray-600">
-              {[
-                "Save and revisit your favourite vehicles",
-                "Get notified about price changes",
-                "Faster booking with saved preferences",
-              ].map((benefit) => (
-                <li key={benefit} className="flex items-center gap-3">
-                  <span className="flex-shrink-0 w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-3 h-3 text-blue-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={3}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  </span>
-                  {benefit}
-                </li>
-              ))}
-            </ul>
-
-            {/* Actions */}
-            <div className="space-y-3">
-              <button
-                onClick={handleLogin}
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200"
-              >
-                <FiLogIn className="w-4 h-4" />
-                Sign In
-              </button>
-              <button
-                onClick={handleSignUp}
-                className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-colors duration-200"
-              >
-                Create an Account
-              </button>
-            </div>
-
-            <p className="text-center text-xs text-gray-400 mt-4">
-              By continuing, you agree to our{" "}
-              <a href="/terms" className="text-blue-500 hover:underline">
-                Terms
-              </a>{" "}
-              and{" "}
-              <a href="/privacy" className="text-blue-500 hover:underline">
-                Privacy Policy
-              </a>
-              .
-            </p>
-          </div>
+          <p className="text-center text-xs text-gray-400 mt-4">
+            By continuing, you agree to our{" "}
+            <a href="/terms" className="text-[#0673ff] hover:underline">
+              Terms
+            </a>{" "}
+            and{" "}
+            <a href="/privacy" className="text-[#0673ff] hover:underline">
+              Privacy Policy
+            </a>
+            .
+          </p>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

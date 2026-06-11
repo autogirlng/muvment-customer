@@ -59,7 +59,7 @@ const DateRangeCalendar = ({
             <Popover.Portal>
                 <Popover.Content
                     align="end"
-                    className="z-50 rounded-xl p-4 w-[90vw] max-w-sm bg-white border border-grey-200 will-change-[transform,opacity] data-[state=open]:data-[side=top]:animate-slideDownAndFade data-[state=open]:data-[side=right]:animate-slideLeftAndFade data-[state=open]:data-[side=bottom]:animate-slideUpAndFade data-[state=open]:data-[side=left]:animate-slideRightAndFade"
+                    className="z-50 rounded-2xl p-4 w-[90vw] max-w-sm bg-white border border-grey-200 shadow-xl will-change-[transform,opacity] data-[state=open]:data-[side=top]:animate-slideDownAndFade data-[state=open]:data-[side=right]:animate-slideLeftAndFade data-[state=open]:data-[side=bottom]:animate-slideUpAndFade data-[state=open]:data-[side=left]:animate-slideRightAndFade"
                     sideOffset={5}
                 >
                     <div className="flex justify-between items-center mb-3">
@@ -159,7 +159,7 @@ export const DatePicker = ({
             <Popover.Portal>
                 <Popover.Content
                     align="end"
-                    className="z-50 rounded-xl p-4 w-[90vw] max-w-sm bg-white border border-grey-200 will-change-[transform,opacity] data-[state=open]:data-[side=top]:animate-slideDownAndFade data-[state=open]:data-[side=right]:animate-slideLeftAndFade data-[state=open]:data-[side=bottom]:animate-slideUpAndFade data-[state=open]:data-[side=left]:animate-slideRightAndFade"
+                    className="z-50 rounded-2xl p-4 w-[90vw] max-w-sm bg-white border border-grey-200 shadow-xl will-change-[transform,opacity] data-[state=open]:data-[side=top]:animate-slideDownAndFade data-[state=open]:data-[side=right]:animate-slideLeftAndFade data-[state=open]:data-[side=bottom]:animate-slideUpAndFade data-[state=open]:data-[side=left]:animate-slideRightAndFade"
                     sideOffset={5}
                 >
                     <Calendar
