@@ -1,4 +1,4 @@
-import VehicleDetailsClient from "@/components/pagesComponent/VehicleDetailsClient ";
+import VehicleDetailsClient from "@/components/pagesComponent/VehicleDetailsClient";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { generatePageMetadata } from "@/helpers/metadata";
 import { JsonLd, SchemaBuilder } from "@/helpers/schema";
