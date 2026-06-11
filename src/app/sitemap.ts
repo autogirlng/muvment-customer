@@ -137,9 +137,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }));
 
     const vehicleEntries = (vehiclesJson?.data?.content || [])
-      .filter((v: any) => v.slug)
+      .filter((v: any) => v.slug || v.id)
       .map((v: any) => ({
-        url: `${APP_URL}/booking/details/${v.slug}`,
+        url: `${APP_URL}/booking/details/${v.slug || v.id}`,
         lastModified: new Date(v.updatedAt || v.createdAt || Date.now()),
         changeFrequency: "daily" as const,
         priority: 0.8,
