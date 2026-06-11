@@ -135,11 +135,17 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       vehicleCategory: bookingType || "",
       price: getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
     });
-    router.push(
-      `/booking/details/${slug || id}?vehicleType=${encodeURIComponent(
-        vehicleTypeName,
-      )}&bookingType=${bookingType}`,
+    const ctx = new URLSearchParams();
+    ctx.set("vehicleType", vehicleTypeName);
+    if (bookingType) ctx.set("bookingType", bookingType);
+    const current = new URLSearchParams(
+      typeof window !== "undefined" ? window.location.search : "",
     );
+    ["location", "lat", "lng", "startDate", "startTime"].forEach((k) => {
+      const val = current.get(k);
+      if (val) ctx.set(k, val);
+    });
+    router.push(`/booking/details/${slug || id}?${ctx.toString()}`);
   };
 
   const currentImage = images[currentImageIndex];
