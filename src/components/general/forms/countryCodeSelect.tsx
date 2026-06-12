@@ -55,9 +55,11 @@ const CountryCodeSelect = ({
         }}
         className={
           buttonClassName ||
-          `flex items-center justify-between w-full h-[56px] px-4 rounded-[12px] border bg-white text-sm outline-none transition-colors focus:ring-2 focus:ring-[#0673FF] disabled:opacity-60 disabled:cursor-not-allowed ${
-            error ? "border-red-500" : "border-gray-300"
-          }`
+          (disabled
+            ? "flex items-center justify-between w-full h-[56px] px-4 rounded-[12px] border border-gray-200 bg-gray-50 text-sm text-gray-900 cursor-not-allowed"
+            : `flex items-center justify-between w-full h-[56px] px-4 rounded-[12px] border bg-white text-sm text-gray-900 outline-none transition-colors focus:ring-2 focus:ring-[#0673FF] ${
+                error ? "border-red-500" : "border-gray-300"
+              }`)
         }
       >
         <span className="flex items-center gap-2 truncate">
@@ -70,21 +72,23 @@ const CountryCodeSelect = ({
             <span className="text-gray-400">+234</span>
           )}
         </span>
-        <svg
-          className={`w-5 h-5 shrink-0 text-gray-500 transition-transform ${
-            open ? "rotate-180" : ""
-          }`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        {!disabled && (
+          <svg
+            className={`w-5 h-5 shrink-0 text-gray-500 transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        )}
       </button>
 
       {open && (

@@ -43,7 +43,19 @@ export const personalInformationMyselfSchema = object().shape({
       const resolvedCountry = secondaryCountry || country;
       const resolvedCode = secondaryCountryCode || countryCode;
       return validatePhoneNumber(`${resolvedCode}${val}`, resolvedCountry);
-    }),
+    })
+    .test(
+      "secondaryDifferent",
+      "Secondary number must be different from your primary number",
+      function (val) {
+        if (!val) return true;
+        const { secondaryCountryCode, countryCode, primaryPhoneNumber } =
+          this.parent;
+        const secondary = `${secondaryCountryCode || countryCode}${val}`;
+        const primary = `${countryCode}${primaryPhoneNumber || ""}`;
+        return secondary !== primary;
+      },
+    ),
 });
 
 export const personalInformationOthersSchema = object().shape({

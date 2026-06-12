@@ -1,5 +1,6 @@
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
 import ItineraryForm from "./ItineraryForm";
+import BookingVehicleAside from "./BookingVehicleAside";
 
 const Itinerary = ({
     steps,
@@ -15,12 +16,15 @@ const Itinerary = ({
     vehicleImages: string[];
 }) => {
     return (
-        <div className="flex justify-between flex-col md:flex-row items-start gap-8">
-            <ItineraryForm
-                steps={steps}
-                currentStep={currentStep}
-                setCurrentStep={setCurrentStep}
-            />
+        <div className="flex flex-col-reverse lg:flex-row lg:justify-between items-start gap-8 lg:gap-10">
+            <div className="w-full lg:flex-1">
+                <ItineraryForm
+                    steps={steps}
+                    currentStep={currentStep}
+                    setCurrentStep={setCurrentStep}
+                />
+            </div>
+            <BookingVehicleAside vehicle={vehicle} vehicleImages={vehicleImages} />
         </div>
     );
 };
