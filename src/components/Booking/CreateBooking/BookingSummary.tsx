@@ -11,6 +11,7 @@ import CostBreakdown from "./CostBreakdown";
 import { TripDetails } from "@/types/vehicleDetails";
 import { StepperNavigation } from "./stepper";
 import EstimatedPickupTime from "./EstimatedPickupTime";
+import { DELIVERY_WINDOW_LABEL } from "./deliveryConfig";
 
 type Props = {
   vehicle: any | null;
@@ -127,7 +128,9 @@ export default function BookingSummary({
                 className="p-2 bg-[#FBE2B7] rounded-lg border border-[#F38218] flex-shrink-0"
               />
               <span className="text-sm font-medium text-gray-800">
-                1 day advance notice required before booking
+                {vehicleDetails?.data.advanceNotice
+                  ? `${vehicleDetails.data.advanceNotice} advance notice required before booking`
+                  : "Advance notice may be required before booking"}
               </span>
             </div>
 
@@ -138,8 +141,8 @@ export default function BookingSummary({
                 className="p-2 bg-[#D1FAE5] rounded-lg border border-[#10B981] flex-shrink-0"
               />
               <span className="text-sm font-medium text-gray-800">
-                Your vehicle will arrive within 1-2 hours of booking, regardless
-                of where it's currently located
+                Your vehicle will arrive within {DELIVERY_WINDOW_LABEL} of
+                booking, regardless of where it's currently located
               </span>
             </div>
           </div>
@@ -172,8 +175,10 @@ export default function BookingSummary({
                 <VehicleDetailsChip
                   label="Vehicle type"
                   value={
-                    vehicleDetails?.data.vehicleTypeName.replaceAll("_", " ") ||
-                    "N/A"
+                    vehicleDetails?.data.vehicleTypeName?.replaceAll(
+                      "_",
+                      " ",
+                    ) || "N/A"
                   }
                 />
                 <VehicleDetailsChip
