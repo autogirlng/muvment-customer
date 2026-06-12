@@ -348,7 +348,11 @@ export const deleteWithParams = async (path: string, params?: any) => {
   });
 };
 
-export const createData = async (path: string, body: any) => {
+export const createData = async (
+  path: string,
+  body: any,
+  options?: { silent?: boolean },
+) => {
   return withLoading(async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
     // const validation = validateDataInput(body);
@@ -366,7 +370,7 @@ export const createData = async (path: string, body: any) => {
         requireAuth: true,
       });
 
-      if (data.err) {
+      if (data.err && !options?.silent) {
         toast.error(data.err);
       }
 

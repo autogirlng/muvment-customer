@@ -4,9 +4,58 @@ import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { createData, updateData } from "@/controllers/connnector/app.callers";
 import { EstimatedBookingPrice, Trips } from "@/types/vehicleDetails";
-import { FiCheckCircle, FiCircle } from "react-icons/fi";
+import { FiCheckCircle, FiCircle, FiAlertCircle } from "react-icons/fi";
 
 const ngn = (n?: number) => `NGN ${Number(n || 0).toLocaleString()}`;
+
+const parseCoordinates = (
+  raw: unknown,
+): { lat: number; lng: number } | null => {
+  if (raw === null || raw === undefined || raw === "" || raw === "undefined") {
+    return null;
+  }
+  let value: any = raw;
+  if (typeof raw === "string") {
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (value && typeof value.lat === "number" && typeof value.lng === "number") {
+    return { lat: value.lat, lng: value.lng };
+  }
+  return null;
+};
+
+const parseAreasOfUse = (
+  raw: unknown,
+): {
+  areaOfUseLatitude: number;
+  areaOfUseLongitude: number;
+  areaOfUseName: string;
+}[] => {
+  if (typeof raw !== "string" || raw.trim() === "") return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (a: any) =>
+          a &&
+          a.name &&
+          typeof a.lat === "number" &&
+          typeof a.lng === "number",
+      )
+      .map((a: any) => ({
+        areaOfUseLatitude: a.lat,
+        areaOfUseLongitude: a.lng,
+        areaOfUseName: a.name,
+      }));
+  } catch {
+    return [];
+  }
+};
 
 export type PersonalInformationMyselfValues = {
   guestEmail: string;
@@ -50,30 +99,47 @@ const CostBreakdown = ({
   const [pricing, setPricing] = useState<EstimatedBookingPrice>();
   const [paymentGateway, setPaymentGateway] =
     useState<PaymentGateway>("PAYSTACK");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const router = useRouter();
 
+  const readApiMessage = (result: any, fallback: string) => {
+    const msg = result?.message;
+    if (typeof msg === "string" && msg && msg !== "Success") return msg;
+    return fallback;
+  };
+
   const estimatePrice = async () => {
-    const tripSegments = trips?.map((trip, index) => {
-      const pickupCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${trip?.tripDetails?.pickupCoordinates}`,
-      );
-      const dropoffCoordinates: { lat: number; lng: number } = JSON.parse(
-        `${trip?.tripDetails?.dropoffCoordinates}`,
-      );
+    setErrorMessage("");
 
-      let areaOfUseCoordinates: { lat: number; lng: number } | null = null;
+    const tripSegments: any[] = [];
+    for (const trip of trips || []) {
+      const pickup = parseCoordinates(trip?.tripDetails?.pickupCoordinates);
+      const dropoff = parseCoordinates(trip?.tripDetails?.dropoffCoordinates);
 
-      if (trip?.tripDetails?.areaOfUseCoordinates) {
-        try {
-          areaOfUseCoordinates = JSON.parse(
-            `${trip?.tripDetails.areaOfUseCoordinates}`,
-          );
-        } catch (e) {
-          console.error("Error parsing area of use:", e);
+      if (!pickup || !dropoff) {
+        setPriceReEstimated(false);
+        setErrorMessage(
+          "Select your pick-up and drop-off from the location suggestions so we can price your trip.",
+        );
+        return;
+      }
+
+      let areaOfUse = parseAreasOfUse(trip?.tripDetails?.areasOfUse);
+      if (areaOfUse.length === 0) {
+        const single = parseCoordinates(trip?.tripDetails?.areaOfUseCoordinates);
+        if (single) {
+          areaOfUse = [
+            {
+              areaOfUseLatitude: single.lat,
+              areaOfUseLongitude: single.lng,
+              areaOfUseName: trip?.tripDetails?.areaOfUse || "",
+            },
+          ];
         }
       }
 
-      return {
+      tripSegments.push({
         bookingTypeId: trip?.tripDetails?.bookingType,
         startDate: format(
           new Date(trip?.tripDetails?.tripStartDate || ""),
@@ -83,88 +149,94 @@ const CostBreakdown = ({
           new Date(trip?.tripDetails?.tripStartTime || ""),
           "HH:mm:ss",
         ),
-        pickupLatitude: pickupCoordinates.lat,
-        pickupLongitude: pickupCoordinates.lng,
-        dropoffLatitude: dropoffCoordinates.lat,
-        dropoffLongitude: dropoffCoordinates.lng,
+        pickupLatitude: pickup.lat,
+        pickupLongitude: pickup.lng,
+        dropoffLatitude: dropoff.lat,
+        dropoffLongitude: dropoff.lng,
         pickupLocationString: trip?.tripDetails?.pickupLocation,
         dropoffLocationString: trip?.tripDetails?.dropoffLocation,
-        areaOfUse: (() => {
-          let list: {
-            areaOfUseLatitude: number;
-            areaOfUseLongitude: number;
-            areaOfUseName: string;
-          }[] = [];
-          if (trip?.tripDetails?.areasOfUse) {
-            try {
-              const parsedAreas = JSON.parse(trip.tripDetails.areasOfUse);
-              list = parsedAreas
-                .filter(
-                  (a: any) =>
-                    a &&
-                    a.name &&
-                    typeof a.lat === "number" &&
-                    typeof a.lng === "number",
-                )
-                .map((a: any) => ({
-                  areaOfUseLatitude: a.lat,
-                  areaOfUseLongitude: a.lng,
-                  areaOfUseName: a.name,
-                }));
-            } catch (e) {
-              console.error("Error parsing areas of use", e);
-            }
-          }
-          if (list.length === 0 && areaOfUseCoordinates) {
-            list = [
-              {
-                areaOfUseLatitude: areaOfUseCoordinates.lat,
-                areaOfUseLongitude: areaOfUseCoordinates.lng,
-                areaOfUseName: trip?.tripDetails?.areaOfUse || "",
-              },
-            ];
-          }
-          return list;
-        })(),
-      };
-    });
-
-    const couponCode = sessionStorage.getItem("couponCode");
-    const data: any = { vehicleId: vehicleId, segments: tripSegments };
-    if (couponCode) {
-      data.couponCode = couponCode;
+        areaOfUse,
+      });
     }
 
-    const pricing = (await updateData(
-      `/api/v1/public/bookings/calculate`,
-      estimatedPriceId,
-      data,
-    )) as EstimatedBookingPrice;
-    const priceEstimateIdFromResponse = pricing?.data?.data;
-    sessionStorage.setItem("priceEstimateId", priceEstimateIdFromResponse?.calculationId);
-    setPricing(pricing);
-    setPriceReEstimated(true);
-    return pricing;
-  };
-  useEffect(() => {
-    const estimatedPriceId = sessionStorage.getItem("priceEstimateId") || "";
-    const bookingId = sessionStorage.getItem("bookingId") || "";
+    if (tripSegments.length === 0) {
+      setPriceReEstimated(false);
+      return;
+    }
 
-    setEstimatedPriceId(estimatedPriceId);
-    setBookId(bookingId);
+    const couponCode = sessionStorage.getItem("couponCode");
+    const body: any = { vehicleId, segments: tripSegments };
+    if (couponCode) {
+      body.couponCode = couponCode;
+    }
+
+    const existingId = sessionStorage.getItem("priceEstimateId") || "";
+
+    const result: any = existingId
+      ? await updateData(`/api/v1/public/bookings/calculate`, existingId, body)
+      : await createData(`/api/v1/public/bookings/calculate`, body, {
+          silent: true,
+        });
+
+    const payload = result?.data?.data;
+
+    if (result?.error || !payload?.calculationId) {
+      setPriceReEstimated(false);
+      setErrorMessage(
+        readApiMessage(
+          result,
+          "We could not calculate your price. Please try again.",
+        ),
+      );
+      return;
+    }
+
+    sessionStorage.setItem("priceEstimateId", payload.calculationId);
+    setEstimatedPriceId(payload.calculationId);
+    setPricing(result as EstimatedBookingPrice);
+    setErrorMessage("");
+    setPriceReEstimated(true);
+  };
+
+  useEffect(() => {
+    const storedBookingId = sessionStorage.getItem("bookingId") || "";
+    setEstimatedPriceId(sessionStorage.getItem("priceEstimateId") || "");
+    setBookId(storedBookingId);
     setPriceReEstimated(false);
     estimatePrice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trips]);
 
   const processPayment = async () => {
-    const userBookingInfo: PersonalInformationMyselfValues = JSON.parse(
-      sessionStorage.getItem("userBookingInformation") || "",
-    );
+    if (isProcessing) return;
 
-    let data;
+    const calculationId =
+      sessionStorage.getItem("priceEstimateId") || estimatedPriceId;
+    if (!calculationId) {
+      setErrorMessage(
+        "Please calculate your price before continuing to payment.",
+      );
+      return;
+    }
+
+    let userBookingInfo: PersonalInformationMyselfValues;
+    try {
+      userBookingInfo = JSON.parse(
+        sessionStorage.getItem("userBookingInformation") || "",
+      );
+    } catch {
+      setErrorMessage(
+        "Your details are missing. Please go back and complete the personal information step.",
+      );
+      return;
+    }
+
+    const discountAmount = pricing?.data?.data?.discountAmount;
+
+    let data: any;
     if (userBookingInfo.isBookingForOthers) {
       data = {
-        calculationId: estimatedPriceId,
+        calculationId,
         primaryPhoneNumber:
           userBookingInfo.countryCode + userBookingInfo.recipientPhoneNumber ||
           "",
@@ -178,22 +250,16 @@ const CostBreakdown = ({
         purposeOfRide: userBookingInfo.purposeOfRide || "N/A",
         channel: "WEBSITE",
         paymentMethod: "ONLINE",
-        discountAmount: pricing?.data.data.discountAmount,
+        discountAmount,
       };
-      if (
-        userBookingInfo.secondaryPhoneNumber &&
-        !userBookingInfo.isBookingForOthers
-      ) {
-        data = {
-          ...data,
-          secondaryPhoneNumber:
-            userBookingInfo.secondaryCountryCode +
-            userBookingInfo.secondaryPhoneNumber,
-        };
+      if (userBookingInfo.recipientSecondaryPhoneNumber) {
+        data.recipientSecondaryPhoneNumber =
+          userBookingInfo.secondaryCountryCode +
+          userBookingInfo.recipientSecondaryPhoneNumber;
       }
     } else {
       data = {
-        calculationId: estimatedPriceId,
+        calculationId,
         primaryPhoneNumber:
           userBookingInfo.countryCode + userBookingInfo.primaryPhoneNumber ||
           "",
@@ -202,56 +268,103 @@ const CostBreakdown = ({
         purposeOfRide: userBookingInfo.purposeOfRide || "N/A",
         channel: "WEBSITE",
         paymentMethod: "ONLINE",
-        discountAmount: pricing?.data.data.discountAmount,
+        discountAmount,
         guestFullName: userBookingInfo.guestFullName || "",
         guestEmail: userBookingInfo.guestEmail || "",
       };
-      if (userBookingInfo.recipientSecondaryPhoneNumber) {
-        data = {
-          ...data,
-          recipientSecondaryPhoneNumber:
-            userBookingInfo.secondaryCountryCode +
-            userBookingInfo.recipientSecondaryPhoneNumber,
-        };
+      if (userBookingInfo.secondaryPhoneNumber) {
+        data.secondaryPhoneNumber =
+          userBookingInfo.secondaryCountryCode +
+          userBookingInfo.secondaryPhoneNumber;
       }
     }
 
+    setIsProcessing(true);
+    setErrorMessage("");
+
     try {
-      const booking: any = await createData("/api/v1/bookings", data);
-      let bookingId = booking?.data?.data?.bookingId;
+      const booking: any = await createData("/api/v1/bookings", data, {
+        silent: true,
+      });
 
-      if (bookingId) {
-        setBookId(bookingId);
-        sessionStorage.setItem("bookingId", bookingId);
+      if (booking?.data === 409) {
+        setErrorMessage(
+          "This vehicle is no longer available for the selected time. Please choose another time.",
+        );
+        return;
+      }
+      if (booking?.error) {
+        setErrorMessage(
+          readApiMessage(
+            booking,
+            "We could not create your booking. Please try again.",
+          ),
+        );
+        return;
       }
 
-      if (!bookingId && booking.data !== 409) {
-        throw new Error("Booking ID not returned from API");
+      const bookingId = booking?.data?.data?.bookingId;
+      if (!bookingId) {
+        setErrorMessage(
+          readApiMessage(
+            booking,
+            "We could not create your booking. Please try again.",
+          ),
+        );
+        return;
       }
+
+      setBookId(bookingId);
+      sessionStorage.setItem("bookingId", bookingId);
 
       let authUrl = "";
 
       if (paymentGateway === "MONNIFY") {
-        // --- MONNIFY FLOW ---
-        const payment = await createData("/api/v1/payments/initiate", {
-          bookingId: bookingId,
-        });
-        authUrl = payment?.data?.data?.authorizationUrl;
-      } else if (paymentGateway === "PAYSTACK") {
-        const payment = await createData(
-          `/api/v1/payments/initialize/${bookingId || bookId}`,
-          {},
+        const payment: any = await createData(
+          "/api/v1/payments/initiate",
+          { bookingId },
+          { silent: true },
         );
+        if (payment?.error) {
+          setErrorMessage(
+            readApiMessage(
+              payment,
+              "We couldn't start the payment. Please try again.",
+            ),
+          );
+          return;
+        }
+        authUrl = payment?.data?.data?.authorizationUrl;
+      } else {
+        const payment: any = await createData(
+          `/api/v1/payments/initialize/${bookingId}`,
+          {},
+          { silent: true },
+        );
+        if (payment?.error) {
+          setErrorMessage(
+            readApiMessage(
+              payment,
+              "We couldn't start the payment. Please try again.",
+            ),
+          );
+          return;
+        }
         authUrl = payment?.data?.data;
       }
 
       if (!authUrl) {
-        throw new Error("Payment authorization URL missing");
+        setErrorMessage("We couldn't start the payment. Please try again.");
+        return;
       }
 
       router.push(authUrl);
     } catch (err) {
-      console.error("Booking or payment failed:", err);
+      setErrorMessage(
+        "Something went wrong while processing your booking. Please try again.",
+      );
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -262,24 +375,53 @@ const CostBreakdown = ({
 
   useEffect(() => {
     if (!onActionChange) return;
-    onActionChange(
-      priceReEstimated
-        ? {
-            label: "Confirm & pay",
-            onClick: () => processPaymentRef.current(),
-            disabled: false,
-          }
-        : {
-            label: "Calculate price",
-            onClick: () => estimateRef.current(),
-            disabled: false,
-          },
-    );
-  }, [priceReEstimated, onActionChange]);
+
+    if (isProcessing) {
+      onActionChange({
+        label: "Processing...",
+        onClick: () => {},
+        disabled: true,
+      });
+      return;
+    }
+
+    if (priceReEstimated) {
+      onActionChange({
+        label: "Confirm & pay",
+        onClick: () => processPaymentRef.current(),
+        disabled: false,
+      });
+    } else {
+      onActionChange({
+        label: errorMessage ? "Try again" : "Calculate price",
+        onClick: () => estimateRef.current(),
+        disabled: false,
+      });
+    }
+  }, [priceReEstimated, onActionChange, isProcessing, errorMessage]);
 
   return (
     <>
       <div className="rounded-2xl w-full lg:w-[420px] lg:flex-shrink-0 lg:sticky lg:top-6 p-5 border border-[#E4E7EC]">
+        {errorMessage && (
+          <div className="flex items-start gap-2 rounded-xl border border-[#FDA29B] bg-[#FEF3F2] p-3 mb-4">
+            <FiAlertCircle
+              className="text-[#D42620] flex-shrink-0 mt-0.5"
+              size={18}
+            />
+            <div className="space-y-2">
+              <p className="text-sm text-[#912018]">{errorMessage}</p>
+              <button
+                type="button"
+                onClick={() => estimateRef.current()}
+                className="text-sm font-medium text-[#0673ff] hover:underline"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        )}
+
         {priceReEstimated && (
           <section>
             <h2 className="font-bold">Cost Breakdown</h2>
@@ -396,7 +538,7 @@ const CostBreakdown = ({
           </section>
         )}
 
-        {!priceReEstimated && (
+        {!priceReEstimated && !errorMessage && (
           <div className="text-center text-sm text-grey-500 py-4">
             Calculating your price...
           </div>

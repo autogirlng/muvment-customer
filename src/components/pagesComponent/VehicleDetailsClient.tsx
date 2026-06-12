@@ -38,6 +38,7 @@ import {
   FiInfo,
   FiX,
   FiCheckCircle,
+  FiAlertCircle,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import ScreenLoader from "@/components/utils/ScreenLoader";
@@ -76,6 +77,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const [pricing, setPricing] = useState<EstimatedBookingPrice | undefined>();
   const [continueBooking, setContinueBooking] = useState<boolean>(false);
   const [isEstimating, setIsEstimating] = useState(false);
+  const [priceErrorMessage, setPriceErrorMessage] = useState<string>("");
   const [bookRideModal, setBookRideModal] = useState<boolean>(false);
   const [couponCode, setCouponCode] = useState<string>("");
   const [isFavorited, setIsFavorited] = useState(false);
@@ -102,6 +104,10 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     setSameForAllDays,
     applySharedPlanChange,
   } = useItineraryForm();
+
+  useEffect(() => {
+    setPriceErrorMessage("");
+  }, [tripsVersion]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -244,6 +250,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 
   const estimatePrice = async () => {
     setIsEstimating(true);
+    setPriceErrorMessage("");
     try {
       const tripSegments = trips.map((trip) => {
         const details = trip?.tripDetails;
@@ -353,7 +360,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       setContinueBooking(true);
     } catch (e: any) {
       console.error("Failed to estimate price", e);
-      toast.error(
+      setPriceErrorMessage(
         e?.message ||
           "We couldn't estimate the price. Please check your trip details and try again.",
       );
@@ -490,6 +497,18 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                           {trips.length === 1 ? "day" : "days"}
                         </span>
                       </div>
+                    </div>
+                  )}
+
+                  {priceErrorMessage && (
+                    <div className="mb-3 flex items-start gap-2 rounded-xl border border-[#FDA29B] bg-[#FEF3F2] px-3 py-2.5">
+                      <FiAlertCircle
+                        className="mt-0.5 flex-shrink-0 text-[#D42620]"
+                        size={16}
+                      />
+                      <p className="text-xs text-[#912018]">
+                        {priceErrorMessage}
+                      </p>
                     </div>
                   )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { FiClock } from "react-icons/fi";
+import { DELIVERY_HOURS, DELIVERY_WINDOW_LABEL } from "./deliveryConfig";
 
 // Add these helper functions at the top of your file, after imports
 const isToday = (date: Date) => {
@@ -91,11 +92,7 @@ const EstimatedPickupTime = ({
         return;
       }
 
-      // ⚠️ ADJUST DELIVERY TIME HERE ⚠️
-      // Change the number 2 to increase/decrease hours
-      const DELIVERY_HOURS = 2; // <-- Change this value (e.g., 3 for 3 hours, 1.5 for 90 minutes)
-
-      // Add DELIVERY_HOURS to trip start time for estimated pickup
+      // Add the delivery window to the trip start time for estimated pickup
       const estimatedTime = new Date(
         tripTime.getTime() + DELIVERY_HOURS * 60 * 60 * 1000,
       );
@@ -155,8 +152,8 @@ const EstimatedPickupTime = ({
           </div>
 
           <p className="text-xs text-gray-600 italic">
-            Your vehicle will be delivered within 1-2 hours of your requested
-            pickup time, regardless of its current location.
+            Your vehicle will be delivered within {DELIVERY_WINDOW_LABEL} of
+            your requested pickup time, regardless of its current location.
           </p>
         </div>
       </div>
