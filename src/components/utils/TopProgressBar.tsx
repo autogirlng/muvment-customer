@@ -84,7 +84,12 @@ export default function TopProgressBar() {
       function (this: History, ...args: Parameters<History["pushState"]>) {
         const prevPath = window.location.pathname;
         orig.apply(this, args);
-        if (window.location.pathname !== prevPath) start();
+        // React calls these from inside an insertion effect during navigation,
+        // which forbids scheduling state updates. Defer so start() runs after
+        // that phase, and skip if a click already kicked it off.
+        if (window.location.pathname !== prevPath && !startedRef.current) {
+          queueMicrotask(() => start());
+        }
       };
     window.history.pushState = wrap(origPush);
     window.history.replaceState = wrap(origReplace);
