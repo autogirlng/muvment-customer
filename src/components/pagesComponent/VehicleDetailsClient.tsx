@@ -4,6 +4,27 @@ import React, { useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/services/vechilePriceUtiles";
 import { format } from "date-fns";
+
+const formatPlanRange = (
+  startStr?: string,
+  endStr?: string,
+  count: number = 1,
+) => {
+  if (!startStr) return `Day 1 to Day ${count}`;
+  try {
+    const start = new Date(startStr);
+    const end = endStr ? new Date(endStr) : start;
+    if (count <= 1) return format(start, "do MMM");
+    const sameMonth =
+      start.getMonth() === end.getMonth() &&
+      start.getFullYear() === end.getFullYear();
+    return sameMonth
+      ? `${format(start, "do")} to ${format(end, "do MMM")}`
+      : `${format(start, "do MMM")} to ${format(end, "do MMM")}`;
+  } catch {
+    return `Day 1 to Day ${count}`;
+  }
+};
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
 import Modal from "@/components/general/modal";
@@ -61,6 +82,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [copiedAllDays, setCopiedAllDays] = useState(false);
 
   const {
     setTrips,
@@ -72,6 +94,12 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     openTripIds,
     isTripFormsComplete,
     generateNextTripId,
+    tripsVersion,
+    applyToAllTrips,
+    setNumberOfDays,
+    sameForAllDays,
+    setSameForAllDays,
+    applySharedPlanChange,
   } = useItineraryForm();
 
   useEffect(() => {
@@ -248,6 +276,41 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
           }
         }
 
+        let areaOfUseList: {
+          areaOfUseLatitude: number;
+          areaOfUseLongitude: number;
+          areaOfUseName: string;
+        }[] = [];
+        if (details?.areasOfUse) {
+          try {
+            const parsedAreas = JSON.parse(details.areasOfUse);
+            areaOfUseList = parsedAreas
+              .filter(
+                (a: any) =>
+                  a &&
+                  a.name &&
+                  typeof a.lat === "number" &&
+                  typeof a.lng === "number",
+              )
+              .map((a: any) => ({
+                areaOfUseLatitude: a.lat,
+                areaOfUseLongitude: a.lng,
+                areaOfUseName: a.name,
+              }));
+          } catch (e) {
+            console.error("Error parsing areas of use", e);
+          }
+        }
+        if (areaOfUseList.length === 0 && areaOfUseCoordinates) {
+          areaOfUseList = [
+            {
+              areaOfUseLatitude: areaOfUseCoordinates.lat,
+              areaOfUseLongitude: areaOfUseCoordinates.lng,
+              areaOfUseName: details?.areaOfUse || "",
+            },
+          ];
+        }
+
         return {
           bookingTypeId: details?.bookingType,
           startDate: format(
@@ -264,15 +327,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
           dropoffLongitude: dropoffCoordinates.lng,
           pickupLocationString: details?.pickupLocation,
           dropoffLocationString: details?.dropoffLocation,
-          areaOfUse: areaOfUseCoordinates
-            ? [
-                {
-                  areaOfUseLatitude: areaOfUseCoordinates.lat,
-                  areaOfUseLongitude: areaOfUseCoordinates.lng,
-                  areaOfUseName: details?.areaOfUse,
-                },
-              ]
-            : [],
+          areaOfUse: areaOfUseList,
         };
       });
 
@@ -398,30 +453,163 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     </p>
                   </div>
 
-                  {trips?.map((key, index) => {
-                    return (
+                  {trips.length > 0 && (
+                    <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#E4E7EC] bg-white px-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-gray-800">
+                          Trip length
+                        </p>
+                        <p className="text-[11px] leading-snug text-gray-500">
+                          Set days once; fill one plan for all.
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <button
+                          type="button"
+                          aria-label="Fewer days"
+                          onClick={() => setNumberOfDays(trips.length - 1)}
+                          disabled={trips.length <= 1}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E4E7EC] text-gray-700 disabled:opacity-40"
+                        >
+                          &minus;
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          value={trips.length}
+                          onChange={(e) =>
+                            setNumberOfDays(
+                              Math.max(1, parseInt(e.target.value) || 1),
+                            )
+                          }
+                          className="h-7 w-11 rounded-lg border border-[#E4E7EC] text-center text-sm text-gray-800 focus:border-[#0673ff] focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          aria-label="More days"
+                          onClick={() => setNumberOfDays(trips.length + 1)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E4E7EC] text-gray-700"
+                        >
+                          +
+                        </button>
+                        <span className="ml-0.5 text-xs text-gray-600">
+                          {trips.length === 1 ? "day" : "days"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {trips.length <= 1 ? (
+                    trips.map((key, index) => (
                       <TripAccordion
-                        key={`${key.id}`}
+                        key={`${key.id}-${tripsVersion}`}
                         day={`${index + 1}`}
                         id={key.id}
                         vehicle={vehicle}
-                        initialValues={tripInitialValues}
+                        initialValues={
+                          key.tripDetails &&
+                          Object.keys(key.tripDetails).length > 0
+                            ? key.tripDetails
+                            : tripInitialValues
+                        }
                         deleteMethod={deleteTrip}
                         disabled={false}
                         onChangeTrip={onChangeTrip}
-                        isCollapsed={!openTripIds.has(key.id)}
+                        isCollapsed={false}
                         toggleOpen={() => toggleOpen(key.id)}
                         bookingOptions={bookingOptions}
                         vehicleId={vehicle.id}
                       />
-                    );
-                  })}
-                  <button
-                    onClick={() => addTrip(generateNextTripId())}
-                    className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#0673ff]/40 text-[#0673ff] text-sm font-medium py-2.5 hover:bg-[#0673ff]/5 transition cursor-pointer"
-                  >
-                    + Add another day
-                  </button>
+                    ))
+                  ) : sameForAllDays ? (
+                    <>
+                      <div className="mb-3 flex items-center gap-2 rounded-xl border border-[#0673ff]/20 bg-[#EAF2FF] px-3 py-2 text-xs text-[#0560d6]">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                        <span>
+                          One plan for all {trips.length} days. Fill it once; every
+                          day is set.
+                        </span>
+                      </div>
+                      {trips[0] && (
+                        <TripAccordion
+                          key={`plan-${tripsVersion}`}
+                          day={`${1}`}
+                          dayLabel={formatPlanRange(
+                            trips[0]?.tripDetails?.tripStartDate,
+                            trips[trips.length - 1]?.tripDetails?.tripStartDate,
+                            trips.length,
+                          )}
+                          daySubLabel={`${trips.length} days`}
+                          id={trips[0].id || ""}
+                          vehicle={vehicle}
+                          initialValues={
+                            trips[0].tripDetails &&
+                            Object.keys(trips[0].tripDetails).length > 0
+                              ? trips[0].tripDetails
+                              : tripInitialValues
+                          }
+                          deleteMethod={() => {}}
+                          disabled={false}
+                          onChangeTrip={(_id, details) =>
+                            applySharedPlanChange(details)
+                          }
+                          isCollapsed={!openTripIds.has(trips[0].id || "")}
+                          toggleOpen={() => toggleOpen(trips[0].id || "")}
+                          bookingOptions={bookingOptions}
+                          vehicleId={vehicle.id}
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setSameForAllDays(false)}
+                        className="mt-2 text-[#0673ff] text-xs font-medium cursor-pointer"
+                      >
+                        Need a day to be different?
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {trips?.map((key, index) => (
+                        <TripAccordion
+                          key={`${key.id}-${tripsVersion}`}
+                          day={`${index + 1}`}
+                          id={key.id}
+                          vehicle={vehicle}
+                          initialValues={
+                            key.tripDetails &&
+                            Object.keys(key.tripDetails).length > 0
+                              ? key.tripDetails
+                              : tripInitialValues
+                          }
+                          deleteMethod={deleteTrip}
+                          disabled={false}
+                          onChangeTrip={onChangeTrip}
+                          isCollapsed={!openTripIds.has(key.id)}
+                          toggleOpen={() => toggleOpen(key.id)}
+                          bookingOptions={bookingOptions}
+                          vehicleId={vehicle.id}
+                        />
+                      ))}
+                      <button
+                        onClick={() => addTrip(generateNextTripId())}
+                        className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#0673ff]/40 text-[#0673ff] text-sm font-medium py-2.5 hover:bg-[#0673ff]/5 transition cursor-pointer"
+                      >
+                        + Add a different day
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          applyToAllTrips(trips[0]?.id || "");
+                          setSameForAllDays(true);
+                        }}
+                        className="mt-2 w-full text-gray-600 text-xs cursor-pointer"
+                      >
+                        Use one plan for all days
+                      </button>
+                    </>
+                  )}
 
                   <div className="mt-6 mb-2">
                     <label className="text-xs font-semibold text-gray-600 mb-1 block">

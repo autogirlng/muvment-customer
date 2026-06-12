@@ -16,6 +16,7 @@ export interface VehicleInformation {
   id?: string;
   listingName: string;
   location?: string;
+  city?: string;
   address?: string;
   vehicleType: string;
   make: string;
@@ -88,6 +89,7 @@ export interface TripDetails {
   pickupLocation?: string;
   dropoffLocation?: string;
   areaOfUse?: string;
+  areasOfUse?: string;
   pickupCoordinates?: { lat: number; lng: number };
   dropoffCoordinates?: { lat: number; lng: number };
   areaOfUseCoordinates?: { lat: number; lng: number };
@@ -102,6 +104,8 @@ export type CalendarValue =
 export interface ITripPerDaySelect {
   initialValues?: TripDetails;
   day: string;
+  dayLabel?: string;
+  daySubLabel?: string;
   deleteMethod?: (idToDelete: string) => void;
   id: string;
   vehicleId?: string;

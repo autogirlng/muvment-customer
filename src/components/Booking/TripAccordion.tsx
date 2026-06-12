@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DateInput from "../general/forms/DateInput";
 import TimeInput from "../general/forms/TimeInput";
 import Icons from "../general/forms/icons";
@@ -6,6 +6,8 @@ import SelectInput from "../general/forms/select";
 import { ReactNode } from "react";
 import cn from "classnames";
 import { format } from "date-fns";
+import AreaOfUseSelect, { SelectedArea } from "./AreaOfUseSelect";
+import { getAreasForCity } from "@/data/lagosAreas";
 import { GoogleMapsLocationInput } from "../general/forms/GoogleMapsLocationInput";
 import {
   ITripPerDaySelect,
@@ -54,6 +56,8 @@ const InputSection = ({
 
 const TripAccordion = ({
   day,
+  dayLabel,
+  daySubLabel,
   deleteMethod,
   id,
   onChangeTrip,
@@ -63,6 +67,7 @@ const TripAccordion = ({
   toggleOpen,
   bookingOptions,
   vehicleId,
+  vehicle,
 }: ITripPerDaySelect) => {
   const [date, setDate] = useState(`Day ${day}: Choose Date`);
   const [bookingType, setBookingType] = useState(
@@ -86,7 +91,19 @@ const TripAccordion = ({
   const [dropoffLocation, setDropoffLocation] = useState(
     initialValues?.dropoffLocation || "",
   );
+  const dropoffTouchedRef = useRef<boolean>(!!initialValues?.dropoffLocation);
   const [areaOfUse, setAreaOfUse] = useState(initialValues?.areaOfUse || "");
+  const initialAreas: SelectedArea[] = (() => {
+    if (!initialValues?.areasOfUse) return [];
+    try {
+      return JSON.parse(initialValues.areasOfUse);
+    } catch {
+      return [];
+    }
+  })();
+  const [selectedAreas, setSelectedAreas] =
+    useState<SelectedArea[]>(initialAreas);
+  const cityAreas = getAreasForCity(vehicle?.city);
   const [availableTimes, setAvailableTimes] =
     useState<{ available: boolean; time: string }[]>();
   const [loadingAvailableTimes, setLoadingAvailableTimes] =
@@ -132,6 +149,10 @@ const TripAccordion = ({
         break;
       case "pickupLocation":
         setPickupLocation(value);
+        if (!dropoffTouchedRef.current) {
+          setDropoffLocation(value);
+          onChange("dropoffLocation", value);
+        }
         break;
       case "dropoffLocation":
         setDropoffLocation(value);
@@ -184,9 +205,76 @@ const TripAccordion = ({
     }
   }, []);
 
+  useEffect(() => {
+    if (
+      initialValues?.pickupLocation &&
+      !initialValues?.dropoffLocation &&
+      !dropoffTouchedRef.current
+    ) {
+      setDropoffLocation(initialValues.pickupLocation);
+      onChange("dropoffLocation", initialValues.pickupLocation);
+      const pc = initialValues?.pickupCoordinates as any;
+      if (pc) {
+        onChange(
+          "dropoffCoordinates",
+          typeof pc === "string" ? pc : JSON.stringify(pc),
+        );
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (
+      !tripStartTime &&
+      tripStartDate &&
+      availableTimes &&
+      availableTimes.length > 0
+    ) {
+      const firstAvail = availableTimes.find((t) => t.available);
+      if (firstAvail?.time) {
+        try {
+          const [timePart, ampm] = firstAvail.time.split(" ");
+          const [hStr, mStr] = timePart.split(":");
+          let h = parseInt(hStr, 10);
+          const m = parseInt(mStr, 10) || 0;
+          if (ampm === "AM" && h === 12) h = 0;
+          if (ampm === "PM" && h !== 12) h = h + 12;
+          if (!isNaN(h) && h >= 0 && h <= 23) {
+            const d = new Date(tripStartDate);
+            d.setHours(h, m, 0, 0);
+            onChange("tripStartTime", d.toString());
+          }
+        } catch {}
+      }
+    }
+  }, [availableTimes]);
+
   const coordinates = (type: string, value: { lat: number; lng: number }) => {
     onChange(type, JSON.stringify(value));
+    if (type === "pickupCoordinates" && !dropoffTouchedRef.current) {
+      onChange("dropoffCoordinates", JSON.stringify(value));
+    }
   };
+
+  const selectedTypeName =
+    bookingOptions?.find((o: any) => o.value === bookingType)?.option || "";
+  const durationMatch = selectedTypeName.match(/(\d+)\s*hour/i);
+  const durationHours = durationMatch ? parseInt(durationMatch[1], 10) : 0;
+  const bookingEndDate =
+    durationHours && tripStartDate && tripStartTime
+      ? new Date(
+          new Date(tripStartDate).setHours(
+            tripStartTime.getHours(),
+            tripStartTime.getMinutes(),
+            0,
+            0,
+          ) +
+            durationHours * 60 * 60 * 1000,
+        )
+      : null;
+  const formattedBookingEnd = bookingEndDate
+    ? format(bookingEndDate, "EEE, MMM d 'at' h:mm a")
+    : "";
 
   return (
     <>
@@ -200,9 +288,11 @@ const TripAccordion = ({
               {Icons.ic_calendar}
             </span>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900">Day {day}</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {dayLabel || `Day ${day}`}
+              </p>
               <p className="text-xs text-gray-500 truncate">
-                {date.replace(`Day ${day}: `, "")}
+                {daySubLabel ?? date.replace(`Day ${day}: `, "")}
               </p>
             </div>
           </div>
@@ -294,6 +384,33 @@ const TripAccordion = ({
               </div>
             </InputSection>
 
+            {bookingEndDate && (
+              <div className="-mt-2 flex items-center gap-2.5 rounded-xl border border-[#0673ff]/15 bg-[#EAF2FF] px-3 py-2.5">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-[#0673ff]">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                </span>
+                <p className="text-xs leading-snug text-gray-600">
+                  This {durationHours}-hour booking ends{" "}
+                  <span className="font-semibold text-gray-900">
+                    {formattedBookingEnd}
+                  </span>
+                </p>
+              </div>
+            )}
+
             <InputSection title="Pickup Location">
               <GoogleMapsLocationInput
                 disabled={disabled}
@@ -309,23 +426,51 @@ const TripAccordion = ({
               <GoogleMapsLocationInput
                 disabled={disabled}
                 value={dropoffLocation}
-                onChange={(value) => onChange("dropoffLocation", value)}
+                onChange={(value) => {
+                  dropoffTouchedRef.current = true;
+                  onChange("dropoffLocation", value);
+                }}
                 placeholder="Enter location"
                 coordinates={coordinates}
                 type="dropoffCoordinates"
               />
             </InputSection>
 
-            <InputSection title="Area of Use">
-              <GoogleMapsLocationInput
-                disabled={disabled}
-                value={areaOfUse}
-                onChange={(value) => onChange("areaOfUse", value)}
-                placeholder="Enter location"
-                coordinates={coordinates}
-                type="areaOfUseCoordinates"
-              />
-            </InputSection>
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <p className="text-xs font-semibold text-gray-600">
+                  Area of use
+                </p>
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500">
+                  Optional · add now or later
+                </span>
+              </div>
+              <p className="mb-2 text-[11px] leading-snug text-gray-500">
+                Tell us where you plan to drive. It helps us plan your trip and
+                apply the right pricing. Add as many areas as you like.
+              </p>
+              {cityAreas.length > 0 ? (
+                <AreaOfUseSelect
+                  areas={cityAreas}
+                  value={selectedAreas}
+                  city={vehicle?.city}
+                  disabled={disabled}
+                  onChange={(areas) => {
+                    setSelectedAreas(areas);
+                    onChange("areasOfUse", JSON.stringify(areas));
+                  }}
+                />
+              ) : (
+                <GoogleMapsLocationInput
+                  disabled={disabled}
+                  value={areaOfUse}
+                  onChange={(value) => onChange("areaOfUse", value)}
+                  placeholder="Enter location"
+                  coordinates={coordinates}
+                  type="areaOfUseCoordinates"
+                />
+              )}
+            </div>
           </div>
         )}
       </div>

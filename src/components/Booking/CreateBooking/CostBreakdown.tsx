@@ -81,15 +81,43 @@ const CostBreakdown = ({
         dropoffLongitude: dropoffCoordinates.lng,
         pickupLocationString: trip?.tripDetails?.pickupLocation,
         dropoffLocationString: trip?.tripDetails?.dropoffLocation,
-        areaOfUse: areaOfUseCoordinates
-          ? [
+        areaOfUse: (() => {
+          let list: {
+            areaOfUseLatitude: number;
+            areaOfUseLongitude: number;
+            areaOfUseName: string;
+          }[] = [];
+          if (trip?.tripDetails?.areasOfUse) {
+            try {
+              const parsedAreas = JSON.parse(trip.tripDetails.areasOfUse);
+              list = parsedAreas
+                .filter(
+                  (a: any) =>
+                    a &&
+                    a.name &&
+                    typeof a.lat === "number" &&
+                    typeof a.lng === "number",
+                )
+                .map((a: any) => ({
+                  areaOfUseLatitude: a.lat,
+                  areaOfUseLongitude: a.lng,
+                  areaOfUseName: a.name,
+                }));
+            } catch (e) {
+              console.error("Error parsing areas of use", e);
+            }
+          }
+          if (list.length === 0 && areaOfUseCoordinates) {
+            list = [
               {
                 areaOfUseLatitude: areaOfUseCoordinates.lat,
                 areaOfUseLongitude: areaOfUseCoordinates.lng,
-                areaOfUseName: trip?.tripDetails?.areaOfUse,
+                areaOfUseName: trip?.tripDetails?.areaOfUse || "",
               },
-            ]
-          : [],
+            ];
+          }
+          return list;
+        })(),
       };
     });
 
