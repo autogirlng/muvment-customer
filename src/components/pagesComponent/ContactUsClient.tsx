@@ -17,11 +17,17 @@ import {
 } from "react-icons/fa";
 import { createData } from "@/controllers/connnector/app.callers";
 import { toast } from "react-toastify";
+import PhoneNumberAndCountryField from "@/components/general/forms/phoneNumberAndCountryField";
+import { getCountryCallingCode } from "react-phone-number-input";
+import { validatePhoneNumber } from "@/utils/validationSchema";
+import { CountryCode } from "libphonenumber-js";
 
 interface FormData {
   firstName: string;
   lastName: string;
   phoneNumber: string;
+  country: string;
+  countryCode: string;
   email: string;
   location: string;
   message: string;
@@ -31,6 +37,8 @@ const emptyForm: FormData = {
   firstName: "",
   lastName: "",
   phoneNumber: "",
+  country: "NG",
+  countryCode: "+234",
   email: "",
   location: "",
   message: "",
@@ -73,6 +81,13 @@ const ContactUsClient: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+
+  const getPhoneError = (number: string, country: string, code: string) =>
+    number.trim() &&
+    !validatePhoneNumber(`${code}${number}`, country as CountryCode)
+      ? "Please enter a valid phone number"
+      : "";
 
   function validate() {
     const newErrors: Record<string, string> = {};
@@ -83,8 +98,16 @@ const ContactUsClient: React.FC = () => {
     if (!formData.lastName.trim())
       newErrors.lastName = "Last name is required";
 
-    if (!/^\d{10}$/.test(formData.phoneNumber))
-      newErrors.phoneNumber = "Enter a valid 10-digit number";
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = "Phone number is required";
+    } else if (
+      !validatePhoneNumber(
+        `${formData.countryCode}${formData.phoneNumber}`,
+        formData.country as CountryCode,
+      )
+    ) {
+      newErrors.phoneNumber = "Please enter a valid phone number";
+    }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       newErrors.email = "Enter a valid email";
@@ -108,7 +131,12 @@ const ContactUsClient: React.FC = () => {
 
   async function sendForm() {
     try {
-      const response = await createData("/api/v1/contact-form", formData);
+      const { country, countryCode, ...rest } = formData;
+      const payload = {
+        ...rest,
+        phoneNumber: `${countryCode}${formData.phoneNumber}`,
+      };
+      const response = await createData("/api/v1/contact-form", payload);
 
       if (response?.error === false) {
         toast.success("Form submitted successfully!");
@@ -319,44 +347,62 @@ const ContactUsClient: React.FC = () => {
                     </div>
 
                     <div className="mb-4 sm:mb-6">
-                      <label
-                        htmlFor="phoneNumber"
-                        className="mb-2 block text-sm font-medium text-gray-700"
-                      >
-                        Phone Number
-                      </label>
-                      <div className="flex flex-nowrap">
-                        <div className="flex flex-shrink-0 items-center rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 px-3 py-3">
-                          <span className="whitespace-nowrap text-sm text-gray-700">
-                            +234
-                          </span>
-                        </div>
-                        <input
-                          id="phoneNumber"
-                          type="text"
-                          name="phoneNumber"
-                          inputMode="numeric"
-                          value={formData.phoneNumber}
-                          onChange={(e) => {
-                            const val = e.target.value
-                              .replace(/\D/g, "")
-                              .slice(0, 10);
-                            setFormData({ ...formData, phoneNumber: val });
-                            setErrors({ ...errors, phoneNumber: "" });
-                          }}
-                          placeholder="Enter phone number"
-                          className={`w-full rounded-r-xl border bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:ring-2 focus:ring-[#0673FF]/40 ${
-                            errors.phoneNumber
-                              ? "border-red-500"
-                              : "border-gray-200"
-                          }`}
-                        />
-                      </div>
-                      {errors.phoneNumber && (
-                        <p className="mt-1 text-xs text-red-500">
-                          {errors.phoneNumber}
-                        </p>
-                      )}
+                      <PhoneNumberAndCountryField
+                        label="Phone Number"
+                        inputName="phoneNumber"
+                        selectName="country"
+                        inputId="phoneNumber"
+                        selectId="country"
+                        inputPlaceholder="Enter phone number"
+                        selectPlaceholder="+234"
+                        inputValue={formData.phoneNumber}
+                        selectValue={formData.country}
+                        inputOnChange={(e: any) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          setFormData({ ...formData, phoneNumber: val });
+                          if (phoneTouched) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              phoneNumber: getPhoneError(
+                                val,
+                                formData.country,
+                                formData.countryCode,
+                              ),
+                            }));
+                          }
+                        }}
+                        selectOnChange={(value: any) => {
+                          const code = `+${getCountryCallingCode(value as any)}`;
+                          setFormData({
+                            ...formData,
+                            country: value,
+                            countryCode: code,
+                          });
+                          if (phoneTouched) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              phoneNumber: getPhoneError(
+                                formData.phoneNumber,
+                                value,
+                                code,
+                              ),
+                            }));
+                          }
+                        }}
+                        inputOnBlur={() => {
+                          setPhoneTouched(true);
+                          setErrors((prev) => ({
+                            ...prev,
+                            phoneNumber: getPhoneError(
+                              formData.phoneNumber,
+                              formData.country,
+                              formData.countryCode,
+                            ),
+                          }));
+                        }}
+                        selectOnBlur={() => {}}
+                        inputError={errors.phoneNumber}
+                      />
                     </div>
 
                     <div className="mb-4 sm:mb-6">

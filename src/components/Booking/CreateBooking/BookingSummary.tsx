@@ -214,7 +214,17 @@ export default function BookingSummary({
                   />
                   <SectionDetails
                     title="Areas of Use"
-                    description={trip?.tripDetails?.areaOfUse || "N/A"}
+                    description={(() => {
+                      try {
+                        const list = trip?.tripDetails?.areasOfUse
+                          ? JSON.parse(trip.tripDetails.areasOfUse)
+                          : [];
+                        if (Array.isArray(list) && list.length > 0) {
+                          return list.map((a: any) => a.name).join(", ");
+                        }
+                      } catch {}
+                      return trip?.tripDetails?.areaOfUse || "N/A";
+                    })()}
                   />
                   <EstimatedPickupTime
                     tripStartDate={trip?.tripDetails?.tripStartDate || ""}

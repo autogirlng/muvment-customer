@@ -10,14 +10,118 @@ export const useItineraryForm = () => {
     return new Set(allIds);
   });
   const [isTripFormsComplete, setIsTripFormComplete] = useState<boolean>(false);
+  const [tripsVersion, setTripsVersion] = useState<number>(0);
+  const [sameForAllDays, setSameForAllDays] = useState<boolean>(true);
 
-  const toggleOpen = (id: string) => {
-    setOpenTripIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+  const applySharedPlanChange = (details: TripDetails) => {
+    const hasDate = Object.prototype.hasOwnProperty.call(
+      details,
+      "tripStartDate",
+    );
+    setTrips((prev) => {
+      const next = prev.map((t, i) => {
+        if (hasDate) {
+          const start = (details as any).tripStartDate;
+          let dateStr = start;
+          if (start) {
+            const d = new Date(`${String(start).slice(0, 10)}T00:00:00Z`);
+            d.setUTCDate(d.getUTCDate() + i);
+            dateStr = `${d.toISOString().slice(0, 10)}T00:00:00`;
+          }
+          return {
+            ...t,
+            tripDetails: { ...(t.tripDetails || {}), tripStartDate: dateStr },
+          };
+        }
+        return {
+          ...t,
+          tripDetails: { ...(t.tripDetails || {}), ...details },
+        };
+      });
+      try {
+        sessionStorage.setItem(
+          "trips",
+          JSON.stringify(next.map((t) => ({ ...t.tripDetails, id: t.id }))),
+        );
+      } catch {}
       return next;
     });
+  };
+
+  const setNumberOfDays = (n: number) => {
+    if (n < 1 || trips.length === 0) return;
+    if (n === trips.length) return;
+    const base = (trips[0]?.tripDetails || {}) as any;
+    const baseDateStr = base?.tripStartDate;
+    let next = [...trips];
+    if (n > trips.length) {
+      let maxNum = trips.reduce((m, t) => {
+        const num = parseInt((t.id || "").replace("trip-", ""), 10);
+        return isNaN(num) ? m : Math.max(m, num);
+      }, -1);
+      const { id: _omitId, tripStartDate: _omitDate, ...basePlan } = base;
+      for (let i = trips.length; i < n; i++) {
+        maxNum += 1;
+        const id = `trip-${maxNum}`;
+        let dateStr = baseDateStr;
+        if (baseDateStr) {
+          const d = new Date(`${String(baseDateStr).slice(0, 10)}T00:00:00Z`);
+          d.setUTCDate(d.getUTCDate() + i);
+          dateStr = `${d.toISOString().slice(0, 10)}T00:00:00`;
+        }
+        next.push({ id, tripDetails: { ...basePlan, id, tripStartDate: dateStr } });
+      }
+    } else {
+      next = trips.slice(0, n);
+    }
+    try {
+      sessionStorage.setItem(
+        "trips",
+        JSON.stringify(next.map((t) => ({ ...t.tripDetails, id: t.id }))),
+      );
+    } catch {}
+    setTrips(next);
+    setOpenTripIds(new Set(next[0]?.id ? [next[0].id] : []));
+    setTripsVersion((v) => v + 1);
+  };
+
+  const applyToAllTrips = (sourceId: string) => {
+    const source = trips.find((t) => t.id === sourceId)?.tripDetails as any;
+    if (!source) return;
+    const hasSomething =
+      source.bookingType ||
+      source.pickupLocation ||
+      source.dropoffLocation ||
+      source.areasOfUse ||
+      source.areaOfUse;
+    if (!hasSomething) return;
+    const updatedTrips = trips.map((trip) => {
+      if (trip.id === sourceId) return trip;
+      return {
+        id: trip.id,
+        tripDetails: {
+          ...source,
+          id: trip.id,
+          tripStartDate: trip.tripDetails?.tripStartDate,
+        },
+      };
+    });
+    try {
+      sessionStorage.setItem(
+        "trips",
+        JSON.stringify(
+          updatedTrips.map((t) => ({ ...t.tripDetails, id: t.id })),
+        ),
+      );
+    } catch {}
+    setTrips(updatedTrips);
+    setTripsVersion((v) => v + 1);
+  };
+
+  const toggleOpen = (id: string) => {
+    setOpenTripIds((prev) =>
+      prev.has(id) ? new Set<string>() : new Set<string>([id]),
+    );
   };
 
   const addTrip = (id: string) => {
@@ -145,6 +249,12 @@ export const useItineraryForm = () => {
     addTrip,
     isTripFormsComplete,
     setIsTripFormComplete,
-    generateNextTripId
+    generateNextTripId,
+    tripsVersion,
+    applyToAllTrips,
+    setNumberOfDays,
+    sameForAllDays,
+    setSameForAllDays,
+    applySharedPlanChange,
   };
 };

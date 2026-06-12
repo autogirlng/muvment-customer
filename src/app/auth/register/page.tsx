@@ -4,13 +4,18 @@ import { AuthService } from "@/controllers/auth/auth";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { JSX, useState, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { toast } from "react-toastify";
+import CountryCodeSelect from "@/components/general/forms/countryCodeSelect";
+import { getCountryCallingCode } from "react-phone-number-input";
+import { validatePhoneNumber } from "@/utils/validationSchema";
+import { CountryCode } from "libphonenumber-js";
 
 interface SignupFormValues {
   firstName: string;
   lastName: string;
   country: string;
+  countryCode: string;
   phoneNumber: string;
   email: string;
   password: string;
@@ -25,65 +30,12 @@ interface SignupFormValues {
   };
 }
 
-interface Country {
-  value: string;
-  label: string;
-  code: string;
-  flag: JSX.Element;
-}
-
-const FLAGS = {
-  NG: (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <g clipPath="url(#clip0_7024_34985)">
-        <path
-          d="M12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24Z"
-          fill="#F0F0F0"
-        />
-        <path
-          d="M0 12.0006C0 17.1603 3.2565 21.5587 7.82611 23.2543V0.74707C3.2565 2.44254 0 6.8411 0 12.0006Z"
-          fill="#6DA544"
-        />
-        <path
-          d="M23.998 12.0006C23.998 6.8411 20.7415 2.44254 16.1719 0.74707V23.2543C20.7415 21.5587 23.998 17.1603 23.998 12.0006Z"
-          fill="#6DA544"
-        />
-      </g>
-    </svg>
-  ),
-  GH: (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <g clipPath="url(#clip0_7024_34992)">
-        <path
-          d="M0 12.0003C0 13.4682 0.264047 14.8743 0.746391 16.1742L12 16.696L23.2536 16.1743C23.736 14.8743 24 13.4682 24 12.0003C24 10.5325 23.736 9.12644 23.2536 7.82645L12 7.30469L0.746391 7.82641C0.264047 9.12644 0 10.5325 0 12.0003H0Z"
-          fill="#FFDA44"
-        />
-        <path
-          d="M12.0036 0C6.84403 0 2.44552 3.2565 0.75 7.82611H23.2573C21.5617 3.2565 17.1632 0 12.0036 0Z"
-          fill="#D80027"
-        />
-        <path
-          d="M23.2572 16.1738H0.75C2.44552 20.7434 6.84403 23.9999 12.0036 23.9999C17.1632 23.9999 21.5617 20.7434 23.2572 16.1738Z"
-          fill="#496E2D"
-        />
-        <path
-          d="M11.998 7.82617L13.0339 11.0146H16.3868L13.6745 12.9854L14.7104 16.174L11.998 14.2033L9.28558 16.174L10.3217 12.9854L7.60938 11.0146H10.9621L11.998 7.82617Z"
-          fill="black"
-        />
-      </g>
-    </svg>
-  ),
-};
-
-const COUNTRIES: Country[] = [
-  { value: "NG", label: "+234", code: "NG", flag: FLAGS.NG },
-  { value: "GH", label: "+233", code: "GH", flag: FLAGS.GH },
-];
 
 const INITIAL_VALUES: SignupFormValues = {
   firstName: "",
   lastName: "",
   country: "NG",
+  countryCode: "+234",
   phoneNumber: "",
   email: "",
   password: "",
@@ -105,7 +57,6 @@ function SignupContent() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const searchParams = useSearchParams();
   const ReferalCode = searchParams.get("code");
@@ -124,23 +75,8 @@ function SignupContent() {
   const router = useRouter();
   INITIAL_VALUES.referralCode = ReferalCode as string;
 
-  const getPhoneNumberPlaceholder = (country: string): string => {
-    if (country === "NG") return "8012345678";
-    if (country === "GH") return "201234567";
-    return "Enter phone number";
-  };
-
   const handleChange = (name: string, value: string) => {
-    if (name === "phoneNumber") {
-      const cleaned = value.replace(/\D/g, "");
-      let formatted = cleaned;
-      if (formValues.country === "NG") formatted = cleaned.slice(0, 10);
-      else if (formValues.country === "GH") formatted = cleaned.slice(0, 9);
-      setFormValues({ ...formValues, [name]: formatted });
-    } else if (name === "country") {
-      setFormValues({ ...formValues, [name]: value, phoneNumber: "" });
-      setShowCountryDropdown(false);
-    } else if (name === "password") {
+    if (name === "password") {
       const checks = validatePassword(value);
       setFormValues({ ...formValues, password: value, passwordChecks: checks });
     } else {
@@ -151,6 +87,12 @@ function SignupContent() {
   const handleBlur = (name: string) => {
     setTouched({ ...touched, [name]: true });
   };
+
+  const getPhoneError = (number: string, country: string, code: string) =>
+    number.trim() &&
+    !validatePhoneNumber(`${code}${number}`, country as CountryCode)
+      ? "Please enter a valid phone number"
+      : "";
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -167,6 +109,13 @@ function SignupContent() {
 
     if (!formValues.phoneNumber) {
       newErrors.phoneNumber = "Phone number is required";
+    } else if (
+      !validatePhoneNumber(
+        `${formValues.countryCode}${formValues.phoneNumber}`,
+        formValues.country as CountryCode,
+      )
+    ) {
+      newErrors.phoneNumber = "Please enter a valid phone number";
     }
 
     if (!formValues.password) newErrors.password = "Password is required";
@@ -210,7 +159,7 @@ function SignupContent() {
             lastName: formValues.lastName,
             email: formValues.email,
             password: formValues.password,
-            phoneNumber: formValues.phoneNumber,
+            phoneNumber: `${formValues.countryCode}${formValues.phoneNumber}`,
             userType: "CUSTOMER" as const,
             referralCode: formValues.referralCode || undefined,
           }
@@ -219,7 +168,7 @@ function SignupContent() {
             lastName: formValues.lastName,
             email: formValues.email,
             password: formValues.password,
-            phoneNumber: formValues.phoneNumber,
+            phoneNumber: `${formValues.countryCode}${formValues.phoneNumber}`,
             userType: "CUSTOMER" as const,
           };
 
@@ -277,7 +226,6 @@ function SignupContent() {
   //   );
   // };
 
-  const selectedCountry = COUNTRIES.find((c) => c.value === formValues.country);
 
   return (
     <div className="min-h-screen bg-white">
@@ -406,88 +354,74 @@ function SignupContent() {
               </div>
 
               <div>
-                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-900 mb-2">
+                <label
+                  htmlFor="phoneNumber"
+                  className="block text-sm font-medium text-gray-900 mb-2"
+                >
                   Phone Number
                 </label>
-                <div className="flex gap-3">
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowCountryDropdown(!showCountryDropdown)
-                      }
-                      onBlur={() =>
-                        setTimeout(() => setShowCountryDropdown(false), 200)
-                      }
-                      className="flex items-center gap-2 px-3 py-3 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0673FF] min-w-[130px]"
-                    >
-                      {selectedCountry && (
-                        <>
-                          {selectedCountry.flag}
-                          <span className="font-medium">
-                            {selectedCountry.label}
-                          </span>
-                        </>
-                      )}
-                      <svg
-                        className={`w-4 h-4 ml-auto transition-transform ${
-                          showCountryDropdown ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                        />
-                      </svg>
-                    </button>
-
-                    {showCountryDropdown && (
-                      <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                        {COUNTRIES.map((country) => (
-                          <button
-                            key={country.value}
-                            type="button"
-                            onClick={() =>
-                              handleChange("country", country.value)
-                            }
-                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg text-left"
-                          >
-                            {country.flag}
-                            <span className="font-medium">{country.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1">
-                    <input
-                      id="phoneNumber"
-                      name="phoneNumber"
-                      autoComplete="tel"
-                      type="tel"
-                      value={formValues.phoneNumber}
-                      onChange={(e) =>
-                        handleChange("phoneNumber", e.target.value)
-                      }
-                      onBlur={() => handleBlur("phoneNumber")}
-                      placeholder={getPhoneNumberPlaceholder(
-                        formValues.country
-                      )}
-                      className={`w-full px-4 py-3 rounded-lg border ${
-                        touched.phoneNumber && errors.phoneNumber
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      } focus:outline-none focus:ring-2 focus:ring-[#0673FF]`}
+                <div className="flex items-stretch gap-2">
+                  <div className="shrink-0 w-[140px]">
+                    <CountryCodeSelect
+                      value={formValues.country}
+                      onChange={(value: string) => {
+                        const code = `+${getCountryCallingCode(value as any)}`;
+                        setFormValues({
+                          ...formValues,
+                          country: value,
+                          countryCode: code,
+                        });
+                        if (touched.phoneNumber) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            phoneNumber: getPhoneError(
+                              formValues.phoneNumber,
+                              value,
+                              code,
+                            ),
+                          }));
+                        }
+                      }}
                     />
                   </div>
+                  <input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    autoComplete="tel"
+                    type="tel"
+                    value={formValues.phoneNumber}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      setFormValues({ ...formValues, phoneNumber: val });
+                      if (touched.phoneNumber) {
+                        setErrors((prev) => ({
+                          ...prev,
+                          phoneNumber: getPhoneError(
+                            val,
+                            formValues.country,
+                            formValues.countryCode,
+                          ),
+                        }));
+                      }
+                    }}
+                    onBlur={() => {
+                      handleBlur("phoneNumber");
+                      setErrors((prev) => ({
+                        ...prev,
+                        phoneNumber: getPhoneError(
+                          formValues.phoneNumber,
+                          formValues.country,
+                          formValues.countryCode,
+                        ),
+                      }));
+                    }}
+                    placeholder="Enter phone number"
+                    className={`flex-1 min-w-0 h-[56px] px-4 rounded-[12px] border text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:ring-2 focus:ring-[#0673FF] ${
+                      errors.phoneNumber ? "border-red-500" : "border-gray-300"
+                    }`}
+                  />
                 </div>
-                {touched.phoneNumber && errors.phoneNumber && (
+                {errors.phoneNumber && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.phoneNumber}
                   </p>
