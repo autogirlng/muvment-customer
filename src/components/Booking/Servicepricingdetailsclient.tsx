@@ -6,8 +6,10 @@ import { format } from "date-fns";
 import { toast } from "react-toastify";
 import {
   FiArrowLeft,
+  FiLoader,
   FiCalendar,
   FiTag,
+  FiDollarSign,
   FiInfo,
   FiMapPin,
   FiClock,
@@ -42,23 +44,14 @@ interface Trip {
   tripDetails: Partial<TripDetails>;
 }
 
-interface ServicePricingDetailsClientProps {
-  initialData?: ServicePricingShowcase | null;
-}
-
-const ServicePricingBookingPage: React.FC<ServicePricingDetailsClientProps> = ({
-  initialData,
-}) => {
+const ServicePricingBookingPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const slug = params?.id as string;
 
-  const [pricing, setPricing] = useState<ServicePricingShowcase | null>(
-    initialData || null,
-  );
-  const [loading, setLoading] = useState<boolean>(!initialData);
+  const [pricing, setPricing] = useState<ServicePricingShowcase | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [trips, setTrips] = useState<Trip[]>([
     { id: "trip-0", tripDetails: {} },
   ]);
@@ -70,10 +63,10 @@ const ServicePricingBookingPage: React.FC<ServicePricingDetailsClientProps> = ({
   const [canProceed, setCanProceed] = useState(false);
 
   useEffect(() => {
-    if (slug && !initialData) {
+    if (slug) {
       fetchPricingData();
     }
-  }, [slug, initialData]);
+  }, [slug]);
 
   useEffect(() => {
     const allTripsComplete = trips.every((trip) => {

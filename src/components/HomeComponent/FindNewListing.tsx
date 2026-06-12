@@ -6,7 +6,6 @@ import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { VscSparkle } from "react-icons/vsc";
 import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
-import { getVehicleBookingPath } from "@/utils/vehicle-url";
 
 const FindNewListings: React.FC = () => {
   const [vehicles, setVehicles] = useState<TopVehicle[]>([]);
@@ -69,10 +68,9 @@ const FindNewListings: React.FC = () => {
     setCurrentIndex(newIndex);
   };
 
-  const handleCardClick = (vehicle: TopVehicle) => {
-    const bookingPath = getVehicleBookingPath(vehicle);
-    if (!bookingPath) return;
-    router.push(bookingPath);
+  const handleCardClick = (slug: string | undefined) => {
+    if (!slug) return;
+    router.push(`/booking/details/${slug}`);
   };
 
   const priceOf = (v: TopVehicle) => v.allPricingOptions[0]?.price || 0;
@@ -123,7 +121,7 @@ const FindNewListings: React.FC = () => {
                       <div
                         key={vehicle.id}
                         className="relative bg-[#101928] p-3 rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300"
-                        onClick={() => handleCardClick(vehicle)}
+                        onClick={() => handleCardClick(vehicle.slug)}
                       >
                         <img
                           src={optimizeCloudinaryUrl(

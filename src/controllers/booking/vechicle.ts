@@ -146,32 +146,6 @@ export class VehicleSearchService {
     }
   }
 
-  static async getVehicleByIdentifier(identifier: string): Promise<any> {
-    if (!identifier || identifier === "undefined") {
-      return null;
-    }
-
-    try {
-      const vehicleBySlug = await this.getVehicleBySlug(identifier);
-      if (vehicleBySlug) {
-        return vehicleBySlug;
-      }
-    } catch (error) {
-      console.warn("Slug lookup failed, falling back to vehicle ID:", error);
-    }
-
-    const vehicleByIdResponse = await this.getVehicleById(identifier);
-    if (!vehicleByIdResponse) {
-      return null;
-    }
-
-    if (Array.isArray(vehicleByIdResponse)) {
-      return vehicleByIdResponse[0]?.data || vehicleByIdResponse[0] || null;
-    }
-
-    return vehicleByIdResponse;
-  }
-
   static async getVehicleAvailableTimeSlots(
     vehicleId: string,
     date: string,

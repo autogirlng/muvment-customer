@@ -8,6 +8,7 @@ import { getCountryCallingCode } from "react-phone-number-input";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { replaceCharactersWithString } from "./PersonalInformationFormOthers";
+import PersistBookingDraft from "./PersistBookingDraft";
 
 type Props = {
   steps: string[];
@@ -45,9 +46,9 @@ const PersonalInformationFormMyself = ({
       countryCode: bookingInformationValues?.countryCode || "+234",
       secondaryPhoneNumber:
         bookingInformationValues?.secondaryPhoneNumber || "",
-      secondaryCountry: bookingInformationValues?.secondaryCountry || "",
+      secondaryCountry: bookingInformationValues?.secondaryCountry || "NG",
       secondaryCountryCode:
-        bookingInformationValues?.secondaryCountryCode || "",
+        bookingInformationValues?.secondaryCountryCode || "+234",
       isBookingForOthers: false,
     }),
     [bookingInformationValues, user],
@@ -62,6 +63,9 @@ const PersonalInformationFormMyself = ({
         ) as PersonalInformationMyselfValues;
         if (!userBookingValues?.isBookingForOthers) {
           setBookingInformationValues(userBookingValues);
+        }
+        if (userBookingValues?.secondaryPhoneNumber) {
+          setShowSecondaryPhoneNumber(true);
         }
       } catch (error) {
         console.error(
@@ -86,12 +90,13 @@ const PersonalInformationFormMyself = ({
           }
         }
 
-        // ✅ Combine countryCode + phone number into E.164 format
+        // Store the national number only. The country code is applied once
+        // downstream when the booking is created.
         const formattedValues = {
           ...values,
-          primaryPhoneNumber: `${values.countryCode}${values.primaryPhoneNumber}`,
+          primaryPhoneNumber: values.primaryPhoneNumber.replace(/^0+/, ""),
           ...(values.secondaryPhoneNumber && {
-            secondaryPhoneNumber: `${values.secondaryCountryCode}${values.secondaryPhoneNumber}`,
+            secondaryPhoneNumber: values.secondaryPhoneNumber.replace(/^0+/, ""),
           }),
         };
 
@@ -125,6 +130,7 @@ const PersonalInformationFormMyself = ({
       }) => {
         return (
           <Form className="max-w-[700px] w-full space-y-5">
+            <PersistBookingDraft />
             <InputField
               name="guestFullName"
               id="guestFullName"
@@ -168,7 +174,9 @@ const PersonalInformationFormMyself = ({
               inputValue={values.primaryPhoneNumber}
               selectValue={values.country}
               inputOnChange={(event) => {
-                const number = replaceCharactersWithString(event.target.value);
+                const number = replaceCharactersWithString(
+                  event.target.value,
+                ).replace(/^0+/, "");
                 setFieldTouched("primaryPhoneNumber", true);
                 setFieldValue("primaryPhoneNumber", number);
               }}
@@ -176,8 +184,6 @@ const PersonalInformationFormMyself = ({
                 const countryCode = `+${getCountryCallingCode(value as any)}`;
                 setFieldValue("country", value);
                 setFieldValue("countryCode", countryCode);
-                setFieldValue("secondaryCountry", value);
-                setFieldValue("secondaryCountryCode", countryCode);
               }}
               inputOnBlur={handleBlur}
               selectOnBlur={handleBlur}
@@ -202,20 +208,17 @@ const PersonalInformationFormMyself = ({
                 label="Phone number - Secondary (optional)"
                 inputPlaceholder="Enter phone number"
                 selectPlaceholder="+234"
-                selectDisabled
                 inputValue={values.secondaryPhoneNumber}
                 selectValue={values.secondaryCountry}
                 inputOnChange={(event) => {
                   const number = replaceCharactersWithString(
                     event.target.value,
-                  );
+                  ).replace(/^0+/, "");
                   setFieldTouched("secondaryPhoneNumber", true);
                   setFieldValue("secondaryPhoneNumber", number);
                 }}
                 selectOnChange={(value: string) => {
                   const countryCode = `+${getCountryCallingCode(value as any)}`;
-                  setFieldValue("country", value);
-                  setFieldValue("countryCode", countryCode);
                   setFieldValue("secondaryCountry", value);
                   setFieldValue("secondaryCountryCode", countryCode);
                 }}
@@ -241,12 +244,16 @@ const PersonalInformationFormMyself = ({
             <button
               type="button"
               className="text-sm md:text-base 3xl:text-xl text-[#0673ff] cursor-pointer"
-              onClick={() =>
-                setShowSecondaryPhoneNumber(!showSecondaryPhoneNumber)
-              }
+              onClick={() => {
+                if (showSecondaryPhoneNumber) {
+                  setFieldValue("secondaryPhoneNumber", "");
+                  setFieldTouched("secondaryPhoneNumber", false);
+                }
+                setShowSecondaryPhoneNumber(!showSecondaryPhoneNumber);
+              }}
             >
               {showSecondaryPhoneNumber
-                ? "Hide secondary phone number"
+                ? "Remove secondary phone number"
                 : "Add secondary phone number"}
             </button>
 
@@ -257,7 +264,7 @@ const PersonalInformationFormMyself = ({
               handleSaveDraft={() => {}}
               isSaveDraftloading={false}
               isNextLoading={isSubmitting}
-              disableNextButton={!isValid || isSubmitting}
+              disableNextButton={isSubmitting}
             />
           </Form>
         );

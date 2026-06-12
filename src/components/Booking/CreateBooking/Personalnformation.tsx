@@ -1,6 +1,5 @@
 import PersonalInformationForm from "./PersonalInformationForm";
-import VehicleInformationCard from "../VehicleCard";
-// import { VehicleInformation } from "@/utils/types";
+import BookingVehicleAside from "./BookingVehicleAside";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
 
 type Props = {
@@ -21,14 +20,17 @@ const PersonalInformation = ({
     type,
 }: Props) => {
     return (
-        <div className="flex justify-between flex-col md:flex-row items-start gap-8">
-            <PersonalInformationForm
-                steps={steps}
-                currentStep={currentStep}
-                setCurrentStep={setCurrentStep}
-                vehicleId={vehicle?.data.id ?? ""}
-                type={type}
-            />
+        <div className="flex flex-col-reverse lg:flex-row lg:justify-between items-start gap-8 lg:gap-10">
+            <div className="w-full lg:flex-1">
+                <PersonalInformationForm
+                    steps={steps}
+                    currentStep={currentStep}
+                    setCurrentStep={setCurrentStep}
+                    vehicleId={vehicle?.data.id ?? ""}
+                    type={type}
+                />
+            </div>
+            <BookingVehicleAside vehicle={vehicle} vehicleImages={vehicleImages} />
         </div>
     );
 };

@@ -122,9 +122,19 @@ export class BookingService {
       const response = await createData(
         this.BOOKINGS_URL + "/calculate",
         request,
+        { silent: true },
       );
-      if (!response || !response.data)
-        throw new Error("Failed to calculate booking price");
+      if (!response || response.error || !response.data) {
+        const apiMessage =
+          response &&
+          typeof response.message === "string" &&
+          response.message !== "Success"
+            ? response.message
+            : "";
+        throw new Error(
+          apiMessage || "We couldn't calculate the price for this trip.",
+        );
+      }
       return response;
     } catch (error) {
       console.error("Booking calculation error:", error);

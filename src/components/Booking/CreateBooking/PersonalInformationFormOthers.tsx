@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Formik, Form, useFormikContext } from "formik";
 import InputField from "@/components/general/forms/inputField";
 import { StepperNavigation } from "./stepper";
+import PersistBookingDraft from "./PersistBookingDraft";
 import { personalInformationOthersSchema } from "@/utils/validationSchema";
 import { PersonalInformationOthersValues } from "@/types/booking";
 import PhoneNumberAndCountryField from "@/components/general/forms/phoneNumberAndCountryField";
@@ -73,10 +74,11 @@ const PersonalInformationFormOthers = ({
     catch (err) { console.error("Invalid sessionStorage JSON:", err); }
   }
 
-  // ✅ Combine countryCode + phone number into E.164 format
+  // Store the national number only. The country code is applied once
+  // downstream when the booking is created.
   const formattedValues = {
     ...values,
-    recipientPhoneNumber: `${values.countryCode}${values.recipientPhoneNumber}`,
+    recipientPhoneNumber: values.recipientPhoneNumber.replace(/^0+/, ""),
   };
 
   const bookingData = bookingInfomation && typeof bookingInfomation === "object"
@@ -128,6 +130,7 @@ const PersonalInformationFormInner = ({
 
   return (
     <Form className="max-w-[800px] w-full space-y-8">
+      <PersistBookingDraft />
       {isOthers && (
         <>
           <InputField
@@ -156,7 +159,9 @@ const PersonalInformationFormInner = ({
             inputValue={values.recipientPhoneNumber}
             selectValue={values.country}
             inputOnChange={(event) => {
-              const number = replaceCharactersWithString(event.target.value);
+              const number = replaceCharactersWithString(
+                event.target.value,
+              ).replace(/^0+/, "");
               setFieldTouched("recipientPhoneNumber", true);
               setFieldValue("recipientPhoneNumber", number);
             }}
@@ -205,7 +210,7 @@ const PersonalInformationFormInner = ({
         handleSaveDraft={() => {}}
         isSaveDraftloading={false}
         isNextLoading={isSubmitting}
-        disableNextButton={!isValid || isSubmitting}
+        disableNextButton={isSubmitting}
       />
     </Form>
   );
