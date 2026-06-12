@@ -159,7 +159,7 @@ const AutocompleteSelect = ({
           placeholder={placeholder || "Select an option..."}
           disabled={disabled}
           className={cn(
-            `w-full cursor-pointer rounded-[12px] px-4 text-sm ${
+            `w-full cursor-pointer rounded-[12px] pl-4 pr-11 text-sm ${
               profile ? "h-[56px]" : "h-[45px]"
             } outline-none transition-all duration-200 ease-in-out`,
             "disabled:bg-[#e4e7ec] disabled:text-grey-400 disabled:cursor-not-allowed disabled:border-grey-300",

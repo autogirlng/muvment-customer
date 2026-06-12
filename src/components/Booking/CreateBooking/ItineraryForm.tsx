@@ -90,6 +90,7 @@ const ItineraryFormContent = ({
     purposeOfRide: string;
   } | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
+  const [showAdditional, setShowAdditional] = useState(false);
 
 
 
@@ -184,6 +185,9 @@ const ItineraryFormContent = ({
       try {
         const { extraDetails, purposeOfRide } = JSON.parse(stored);
         setBookingInformationValues({ extraDetails, purposeOfRide });
+        if (extraDetails || purposeOfRide) {
+          setShowAdditional(true);
+        }
       } catch (error) {
         console.error(
           "Failed to parse booking information from sessionStorage:",
@@ -244,11 +248,11 @@ const ItineraryFormContent = ({
                 Booking Details
               </h6>
 
-              <p className="text-sm my-4">Daily Iternary </p>
+              <p className="text-sm my-4">Daily itinerary</p>
 
               {trips.length > 0 && (
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-[#E4E7EC] bg-white px-4 py-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
+                <div className="flex flex-col gap-4 rounded-xl border border-[#E4E7EC] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#EAF2FF] text-[#0673ff]">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -257,7 +261,7 @@ const ItineraryFormContent = ({
                     </span>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-800">Trip length</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
                         Set the number of days, then fill one plan and copy it to
                         all.
                       </p>
@@ -443,32 +447,71 @@ const ItineraryFormContent = ({
                 </>
               )}
 
-              <TextArea
-                name="extraDetails"
-                id="extraDetails"
-                placeholder="Add extra trip details you will like to share"
-                label="Extra details(optional)"
-                onChange={handleChange}
-                onBlur={handleBlur}
-                value={values.extraDetails}
-              />
+              <div className="rounded-2xl border border-[#D0D5DD] bg-white p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-grey-900">
+                      Additional information
+                    </h3>
+                    <p className="text-sm text-grey-500 mt-0.5">
+                      Optional. A ride purpose or special request for your driver.
+                    </p>
+                  </div>
+                  {!showAdditional && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAdditional(true)}
+                      className="shrink-0 rounded-full border border-[#0673ff] text-[#0673ff] text-sm font-medium px-4 py-2 hover:bg-[#EAF2FF] cursor-pointer"
+                    >
+                      Add
+                    </button>
+                  )}
+                </div>
 
-              <AutocompleteSelect
-                id="purposeOfRide"
-                label="Ride purpose (optional)"
-                placeholder="Search or select ride purpose..."
-                options={RIDE_PURPOSES.map((purpose) => ({
-                  value: purpose,
-                  option: purpose,
-                }))}
-                value={values.purposeOfRide}
-                onChange={(value) => setFieldValue("purposeOfRide", value)}
-                error={
-                  errors.purposeOfRide && touched.purposeOfRide
-                    ? String(errors.purposeOfRide)
-                    : ""
-                }
-              />
+                {showAdditional && (
+                  <div className="space-y-4 mt-5">
+                    <AutocompleteSelect
+                      id="purposeOfRide"
+                      label="Ride purpose"
+                      placeholder="Search or select ride purpose..."
+                      profile
+                      options={RIDE_PURPOSES.map((purpose) => ({
+                        value: purpose,
+                        option: purpose,
+                      }))}
+                      value={values.purposeOfRide}
+                      onChange={(value) => setFieldValue("purposeOfRide", value)}
+                      error={
+                        errors.purposeOfRide && touched.purposeOfRide
+                          ? String(errors.purposeOfRide)
+                          : ""
+                      }
+                    />
+
+                    <TextArea
+                      name="extraDetails"
+                      id="extraDetails"
+                      placeholder="e.g. child seat needed, extra luggage, preferred route"
+                      label="Special requests"
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      value={values.extraDetails}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAdditional(false);
+                        setFieldValue("purposeOfRide", "");
+                        setFieldValue("extraDetails", "");
+                      }}
+                      className="text-sm font-medium text-[#0673ff] hover:underline cursor-pointer"
+                    >
+                      Remove additional information
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <StepperNavigation
                 steps={steps}
@@ -476,6 +519,7 @@ const ItineraryFormContent = ({
                 setCurrentStep={setCurrentStep}
                 handleSaveDraft={() => {}}
                 isSaveDraftloading={false}
+                nextText="Review itinerary"
                 disableNextButton={!isTripFormsComplete}
               />
             </Form>

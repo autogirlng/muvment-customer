@@ -50,7 +50,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
   const [initialPosts, categories] = await Promise.all([
     BlogService.getPosts({
       page: 0,
-      size: 20,
+      size: 9,
       search: params.search,
       category: params.category,
     }).catch(() => ({
@@ -58,7 +58,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
       totalElements: 0,
       totalPages: 0,
       page: 0,
-      size: 20,
+      size: 9,
     })),
     BlogService.getCategories().catch(() => []),
   ]);

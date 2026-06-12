@@ -3,6 +3,18 @@ import Icons from "@/components/general/forms/icons";
 import cn from "classnames";
 import { Spinner } from "@/components/general/spinner";
 
+const CheckIcon = () => (
+    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
+        <path
+            d="M5 10.5L8.5 14L15 6.5"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
 export const Stepper = ({
     steps,
     children,
@@ -12,31 +24,71 @@ export const Stepper = ({
     children: ReactNode;
     currentStep: number;
 }) => {
+    const total = steps.length;
     return (
         <>
-            <div className="flex justify-between items-center gap-2">
-                {steps.map((step, index) => (
-                    <Fragment key={index}>
-                        <div className="flex items-center justify-between gap-6">
-                            <div
-                                className={`flex items-center justify-center w-8 sm:w-10 h-8 sm:h-10 rounded-full border-grey-500 border-[1.5px] text-xs ${currentStep > index
-                                    ? "bg-[#0673ff] border-[#0673ff] text-white"
-                                    : currentStep === index
-                                        ? "bg-[#667185] text-white"
-                                        : "text-grey-500"
-                                    }`}
-                            >
-                                {index + 1}
+            {/* Mobile progress */}
+            <div className="lg:hidden space-y-2">
+                <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-grey-900">
+                        Step {currentStep + 1} of {total}
+                    </span>
+                    <span className="text-sm text-grey-500">{steps[currentStep]}</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-grey-200 overflow-hidden">
+                    <div
+                        className="h-full rounded-full bg-[#0673ff] transition-all duration-500"
+                        style={{ width: `${((currentStep + 1) / total) * 100}%` }}
+                    />
+                </div>
+            </div>
+
+            {/* Desktop progress */}
+            <div className="hidden lg:flex items-center w-full">
+                {steps.map((step, index) => {
+                    const completed = currentStep > index;
+                    const active = currentStep === index;
+                    return (
+                        <Fragment key={index}>
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className={cn(
+                                        "flex items-center justify-center w-9 h-9 3xl:w-10 3xl:h-10 rounded-full border-[1.5px] text-sm font-semibold transition-colors",
+                                        completed
+                                            ? "bg-[#0673ff] border-[#0673ff] text-white"
+                                            : active
+                                                ? "border-[#0673ff] text-[#0673ff] bg-[#EAF2FF]"
+                                                : "border-grey-300 text-grey-400 bg-white"
+                                    )}
+                                >
+                                    {completed ? <CheckIcon /> : index + 1}
+                                </div>
+                                <p
+                                    className={cn(
+                                        "text-base 3xl:text-xl font-medium whitespace-nowrap transition-colors",
+                                        active
+                                            ? "text-grey-900"
+                                            : completed
+                                                ? "text-[#0673ff]"
+                                                : "text-grey-400"
+                                    )}
+                                >
+                                    {step}
+                                </p>
                             </div>
-                            <p className="font-medium text-base 3xl:text-xl text-grey-500 hidden md:block">
-                                {step}
-                            </p>
-                        </div>
-                        {index < steps.length - 1 && (
-                            <div className="text-black">{Icons.ic_chevron_right}</div>
-                        )}
-                    </Fragment>
-                ))}
+                            {index < steps.length - 1 && (
+                                <div className="flex-1 h-[2px] mx-4 rounded bg-grey-200 overflow-hidden">
+                                    <div
+                                        className={cn(
+                                            "h-full bg-[#0673ff] transition-all duration-500",
+                                            completed ? "w-full" : "w-0"
+                                        )}
+                                    />
+                                </div>
+                            )}
+                        </Fragment>
+                    );
+                })}
             </div>
 
             {/* ========== content here ========== */}
@@ -51,6 +103,7 @@ export const StepperNavigation = ({
     currentStep,
     setCurrentStep,
     submitText,
+    nextText = "Next",
     handleSubmit,
     handleSaveDraft,
     disableSubmitButton,
@@ -65,6 +118,7 @@ export const StepperNavigation = ({
     currentStep: number;
     setCurrentStep: (step: number) => void;
     submitText?: string;
+    nextText?: string;
 
     disableSubmitButton?: boolean;
     disableSaveDraftButton?: boolean;
@@ -79,86 +133,62 @@ export const StepperNavigation = ({
 
     showSaveDraftButton?: boolean;
 }) => {
-    const handleNext = () => {
-        if (currentStep < steps.length - 1) {
-            setCurrentStep(currentStep + 1);
-        }
-
-    };
-
     const handleBack = () => {
         if (currentStep > 0) {
             setCurrentStep(currentStep - 1);
         }
     };
     return (
-        <div className="fixed bottom-0 left-0 w-full py-4 3xl:py-6 px-4 sm:px-8 lg:px-[52px]">
-
-            <div className="flex justify-between">
-                {!(currentStep === 0) && (currentStep >= 0 && (
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-grey-200 py-3 sm:py-4 3xl:py-6 px-4 sm:px-8 lg:px-[52px] z-40">
+            <div className="max-w-[1200px] 3xl:max-w-[1320px] mx-auto flex items-center justify-between gap-3">
+                {!(currentStep === 0) && currentStep >= 0 && (
                     <StepperButton
                         onClick={handleBack}
-                        // disabled={currentStep === 0}
-                        className="sm:border-2 sm:border-grey-600 cursor-pointer"
+                        className="border-2 border-grey-300 text-grey-700 hover:bg-grey-50 cursor-pointer"
                         type="button"
                     >
                         {Icons.ic_chevron_left} <span>Previous</span>
                     </StepperButton>
-                ))}
+                )}
 
                 <div className="flex items-center gap-3 justify-end w-full">
-
                     {showSaveDraftButton && (
                         <StepperButton
                             onClick={handleSaveDraft}
                             disabled={isSaveDraftloading || disableSaveDraftButton}
-                            className="sm:border-2 sm:border-grey-600 text-grey-600 disabled:text-grey-300 disabled:sm:border-grey-300"
+                            className="border-2 border-grey-600 text-grey-600 disabled:text-grey-300 disabled:border-grey-300"
                             type="button"
                         >
                             <span>Save Draft</span> {isSaveDraftloading && <Spinner />}
                         </StepperButton>
                     )}
-                    {
-                        submitText ? (
-                            <StepperButton
-                                onClick={handleSubmit}
-                                disabled={disableSubmitButton || isSubmitloading}
-                                className="px-6 3xl:!px-8 bg-transparent sm:bg-primary-500 text-primary-500 sm:text-white disabled:sm:bg-grey-300"
-                                type="button"
-                            >
-                                <span>{submitText}</span>{" "}
-                            // {isSubmitloading ? <Spinner /> : Icons.ic_chevron_right}
-                            </StepperButton>
-                        ) : currentStep === 0 ?
-
-                            <StepperButton
-                                // Button to be clicked if formik is not handling the next step
-                                // onClick={handleNext}
-                                disabled={
-                                    currentStep === steps.length ||
-                                    disableNextButton ||
-                                    isNextLoading
-                                }
-                                className="px-6 3xl:!px-8 cursor-pointer bg-[#0673ff] text-white sm:text-white disabled:sm:bg-grey-300"
-                                type="submit"
-                            >
-                                <span>Next</span>{" "}
+                    {submitText ? (
+                        <StepperButton
+                            onClick={handleSubmit}
+                            disabled={disableSubmitButton || isSubmitloading}
+                            className="w-full sm:w-auto justify-center cursor-pointer bg-[#0673ff] text-white hover:opacity-90 disabled:bg-[#80b9ff]"
+                            type="button"
+                        >
+                            <span>{submitText}</span>
+                            {isSubmitloading && <Spinner />}
+                        </StepperButton>
+                    ) : currentStep === 0 ? (
+                        <StepperButton
+                            disabled={disableNextButton || isNextLoading}
+                            className="w-full sm:w-auto justify-center cursor-pointer bg-[#0673ff] text-white disabled:bg-grey-300"
+                            type="submit"
+                        >
+                            <span>{nextText}</span>{" "}
+                            {isNextLoading ? <Spinner /> : Icons.ic_chevron_right}
+                        </StepperButton>
+                    ) : (
+                        !(currentStep === steps.length || disableNextButton || isNextLoading) && (
+                            <StepperButton className="w-full sm:w-auto justify-center cursor-pointer disabled:bg-[#80b9ff] bg-[#0673ff] text-white">
+                                <span>{nextText}</span>{" "}
                                 {isNextLoading ? <Spinner /> : Icons.ic_chevron_right}
-                            </StepperButton> : !(currentStep === steps.length || disableNextButton || isNextLoading) && (
-                                // Button clicked if formik is handling next step
-                                <StepperButton
-                                    // disabled={
-                                    //     currentStep === steps.length ||
-                                    //     disableNextButton ||
-                                    //     isNextLoading
-                                    // }
-                                    className="px-6 3xl:!px-8 cursor-pointer disabled:bg-[#80b9ff] bg-[#0673ff] text-white"
-                                // type="submit"
-                                >
-                                    <span>Next</span>{" "}
-                                    {isNextLoading ? <Spinner /> : Icons.ic_chevron_right}
-                                </StepperButton>
-                            )}
+                            </StepperButton>
+                        )
+                    )}
                 </div>
             </div>
         </div>
@@ -179,7 +209,7 @@ const StepperButton = ({
     <button
         {...rest}
         className={cn(
-            "py-2 sm:py-3 3xl:py-4 px-2 sm:px-4 3xl:px-6 rounded-[43px] flex items-center gap-1 3xl:gap-2 text-xs 3xl:text-base font-semibold",
+            "py-3 3xl:py-4 px-5 sm:px-6 3xl:px-8 rounded-full flex items-center gap-1 3xl:gap-2 text-sm 3xl:text-base font-semibold transition-colors",
             className
         )}
         onClick={onClick}

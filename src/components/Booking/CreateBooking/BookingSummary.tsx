@@ -1,5 +1,5 @@
 import Icons from "@/components/general/forms/icons";
-import { useEffect, ReactNode } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import Collapse from "@/components/general/collapsible";
 import Vehicle from "./Vehicle";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
@@ -65,6 +65,12 @@ export default function BookingSummary({
   setCurrentStep,
 }: Props) {
   const { setTrips, trips } = useItineraryForm();
+  const [bookingInfo, setBookingInfo] = useState<any>(null);
+  const [action, setAction] = useState<{
+    label: string;
+    onClick: () => void;
+    disabled: boolean;
+  } | null>(null);
 
   useEffect(() => {
     const tripsInfo = JSON.parse(
@@ -74,28 +80,50 @@ export default function BookingSummary({
       return { id: trip.id || "", tripDetails: { ...trip } };
     });
     setTrips(tripData);
+
+    try {
+      const stored = sessionStorage.getItem("userBookingInformation");
+      if (stored) setBookingInfo(JSON.parse(stored));
+    } catch {}
   }, []);
 
+  const forOthers = !!bookingInfo?.isBookingForOthers;
+  const recapName = forOthers
+    ? bookingInfo?.recipientFullName
+    : bookingInfo?.guestFullName;
+  const recapEmail = forOthers
+    ? bookingInfo?.recipientEmail
+    : bookingInfo?.guestEmail;
+  const recapPhone = forOthers
+    ? `${bookingInfo?.countryCode || ""} ${bookingInfo?.recipientPhoneNumber || ""}`.trim()
+    : `${bookingInfo?.countryCode || ""} ${bookingInfo?.primaryPhoneNumber || ""}`.trim();
+  const recapSecondaryPhone = forOthers
+    ? bookingInfo?.recipientSecondaryPhoneNumber
+      ? `${bookingInfo?.secondaryCountryCode || ""} ${bookingInfo.recipientSecondaryPhoneNumber}`.trim()
+      : ""
+    : bookingInfo?.secondaryPhoneNumber
+      ? `${bookingInfo?.secondaryCountryCode || ""} ${bookingInfo.secondaryPhoneNumber}`.trim()
+      : "";
+
   return (
-    <div className="flex justify-between flex-col-reverse md:flex-row items-start gap-8">
-      <div className="space-y-8 w-full md:max-w-[calc(100%-400px)]">
+    <div className="flex flex-col-reverse lg:flex-row items-start gap-8">
+      <div className="space-y-6 w-full lg:flex-1 lg:min-w-0">
         <Collapse
           title={
-            <p className="text-h6 3xl:text-h5 font-medium text-black">
+            <p className="text-base md:text-lg font-semibold text-grey-900">
               Vehicle Details
             </p>
           }
           closeText={Icons.ic_chevron_down}
           openText={Icons.ic_chevron_up}
-          className="bg-[#F9FAFB] border border-[#98a2b3] rounded-3xl py-5 px-7"
+          className="bg-white border border-[#E4E7EC] rounded-2xl px-5 py-4"
         >
           <Vehicle photos={vehicleImages} />
-          <div className="bg-[#F7F9FC] py-4 w-full px-4 rounded-t-xl space-y-3">
+          <div className="bg-[#F9FAFB] border border-[#EAECF0] py-4 w-full px-4 rounded-xl space-y-3">
             {/* Advance Notice */}
             <div className="flex items-center space-x-3">
               <FiBell
                 size={30}
-                // color="#F38218"
                 className="p-2 bg-[#FBE2B7] rounded-lg border border-[#F38218] flex-shrink-0"
               />
               <span className="text-sm font-medium text-gray-800">
@@ -107,7 +135,6 @@ export default function BookingSummary({
             <div className="flex items-center space-x-3">
               <FiClock
                 size={30}
-                // color="#10B981"
                 className="p-2 bg-[#D1FAE5] rounded-lg border border-[#10B981] flex-shrink-0"
               />
               <span className="text-sm font-medium text-gray-800">
@@ -116,9 +143,11 @@ export default function BookingSummary({
               </span>
             </div>
           </div>
-          <div className="w-full md:w-3/5 space-y-8 mt-5">
+          <div className="w-full space-y-8 mt-5">
             <div className="space-y-2">
-              <h2 className="text-lg text-gray-800 pb-1">Vehicle Details</h2>
+              <h2 className="text-sm font-semibold text-grey-900 pb-1">
+                Specifications
+              </h2>
               <div className="flex flex-wrap items-center gap-4">
                 <VehicleDetailsChip
                   label="Make"
@@ -155,14 +184,14 @@ export default function BookingSummary({
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-lg">Description</h2>
+              <h2 className="text-sm font-semibold text-grey-900">Description</h2>
               <p className="text-gray-600 text-sm leading-relaxed">
                 {vehicleDetails?.data.description || "N/A"}
               </p>
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-lg text-gray-800">Features</h2>
+              <h2 className="text-sm font-semibold text-grey-900">Features</h2>
               <div className="flex flex-wrap gap-2">
                 {vehicleDetails?.data.vehicleFeatures &&
                   vehicleDetails?.data.vehicleFeatures.map(
@@ -177,78 +206,174 @@ export default function BookingSummary({
 
         <Collapse
           title={
-            <p className="text-h6 3xl:text-h5 font-medium text-black">
+            <p className="text-base md:text-lg font-semibold text-grey-900">
               Trip Details
             </p>
           }
           closeText={Icons.ic_chevron_down}
           openText={Icons.ic_chevron_up}
-          isDefaultOpen
-          className="bg-[#F9FAFB] border border-[#98a2b3] mt-4 rounded-3xl py-5 px-7"
+          className="bg-white border border-[#E4E7EC] rounded-2xl px-5 py-4"
         >
-          {trips.map((trip, index) => {
-            return (
-              <div key={trip.id}>
-                <p>Trip {index + 1}</p>
-
-                <TripInfoWrapper title="Booking Type">
-                  <DurationDetails
-                    date={new Date(trip?.tripDetails?.tripStartDate || "")}
-                    time={new Date(trip?.tripDetails?.tripStartTime || "")}
-                    icon={Icons.ic_flag}
-                    iconColor="text-primary-500"
-                    title="Start"
-                  />
-                </TripInfoWrapper>
-
-                <TripInfoWrapper title="Itinerary">
-                  <SectionDetails
-                    title="Pick-up"
-                    description={trip?.tripDetails?.pickupLocation || "N/A"}
-                    isLocation
-                  />
-                  <SectionDetails
-                    title="Drop-off"
-                    description={trip?.tripDetails?.dropoffLocation || "N/A"}
-                    isLocation
-                  />
-                  <SectionDetails
-                    title="Areas of Use"
-                    description={(() => {
-                      try {
-                        const list = trip?.tripDetails?.areasOfUse
-                          ? JSON.parse(trip.tripDetails.areasOfUse)
-                          : [];
-                        if (Array.isArray(list) && list.length > 0) {
-                          return list.map((a: any) => a.name).join(", ");
-                        }
-                      } catch {}
-                      return trip?.tripDetails?.areaOfUse || "N/A";
-                    })()}
-                  />
-                  <EstimatedPickupTime
-                    tripStartDate={trip?.tripDetails?.tripStartDate || ""}
-                    tripStartTime={trip?.tripDetails?.tripStartTime || ""}
-                  />
-                </TripInfoWrapper>
-              </div>
-            );
-          })}
+          <div className="space-y-4">
+            {trips.map((trip, index) => {
+              const td = trip?.tripDetails;
+              const areas = (() => {
+                try {
+                  const list = td?.areasOfUse ? JSON.parse(td.areasOfUse) : [];
+                  if (Array.isArray(list) && list.length > 0) {
+                    return list.map((a: any) => a.name).join(", ");
+                  }
+                } catch {}
+                return td?.areaOfUse || "N/A";
+              })();
+              const startDate = td?.tripStartDate
+                ? format(new Date(td.tripStartDate), "do MMM yyyy")
+                : "N/A";
+              const startTime = td?.tripStartTime
+                ? format(new Date(td.tripStartTime), "hh:mma")
+                : "";
+              return (
+                <div
+                  key={trip.id}
+                  className="rounded-xl border border-[#EAECF0] p-4"
+                >
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-grey-100">
+                    <p className="text-sm font-semibold text-grey-900">
+                      Day {index + 1}
+                    </p>
+                    <span className="text-xs text-grey-500">
+                      {startDate}
+                      {startTime ? ` · ${startTime}` : ""}
+                    </span>
+                  </div>
+                  <div className="space-y-3.5">
+                    <SummaryRow
+                      icon={Icons.ic_location}
+                      label="Pick-up"
+                      value={td?.pickupLocation || "N/A"}
+                    />
+                    <SummaryRow
+                      icon={Icons.ic_location}
+                      label="Drop-off"
+                      value={td?.dropoffLocation || "N/A"}
+                    />
+                    <SummaryRow
+                      icon={Icons.ic_location}
+                      label="Areas of use"
+                      value={areas}
+                    />
+                    <EstimatedPickupTime
+                      tripStartDate={td?.tripStartDate || ""}
+                      tripStartTime={td?.tripStartTime || ""}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </Collapse>
+
+        {bookingInfo && (
+          <Collapse
+            title={
+              <p className="text-base md:text-lg font-semibold text-grey-900">
+                Your Information
+              </p>
+            }
+            closeText={Icons.ic_chevron_down}
+            openText={Icons.ic_chevron_up}
+            isDefaultOpen
+            className="bg-white border border-[#E4E7EC] rounded-2xl px-5 py-4"
+          >
+            <div className="space-y-4 pt-1">
+              <InfoRow
+                label="Booking for"
+                value={forOthers ? "Someone else" : "Myself"}
+              />
+              <InfoRow label="Full name" value={recapName} />
+              <InfoRow label="Email" value={recapEmail} />
+              <InfoRow label="Phone number" value={recapPhone} />
+              {recapSecondaryPhone && (
+                <InfoRow label="Secondary phone" value={recapSecondaryPhone} />
+              )}
+            </div>
+          </Collapse>
+        )}
+
+        {bookingInfo && (
+          <Collapse
+            title={
+              <p className="text-base md:text-lg font-semibold text-grey-900">
+                Additional Details
+              </p>
+            }
+            closeText={Icons.ic_chevron_down}
+            openText={Icons.ic_chevron_up}
+            isDefaultOpen
+            className="bg-white border border-[#E4E7EC] rounded-2xl px-5 py-4"
+          >
+            <div className="space-y-4 pt-1">
+              <InfoRow
+                label="Ride purpose"
+                value={bookingInfo?.purposeOfRide || "Not specified"}
+              />
+              <div className="space-y-1.5">
+                <p className="text-sm md:text-base font-medium text-grey-800">
+                  Special requests
+                </p>
+                <p className="text-sm text-grey-500">
+                  {bookingInfo?.extraDetails || "None added"}
+                </p>
+              </div>
+            </div>
+          </Collapse>
+        )}
       </div>
-      <CostBreakdown trips={trips} vehicleId={vehicleDetails?.data.id || ""} />
+      <CostBreakdown
+        trips={trips}
+        vehicleId={vehicleDetails?.data.id || ""}
+        onActionChange={setAction}
+      />
 
       <StepperNavigation
         steps={steps}
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
-        handleSaveDraft={() => {}}
+        submitText={action?.label || "Confirm & pay"}
+        handleSubmit={action?.onClick}
+        disableSubmitButton={!action || action.disabled}
         isSaveDraftloading={false}
-        disableNextButton={true}
       />
     </div>
   );
 }
+
+const SummaryRow = ({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) => (
+  <div className="flex items-start justify-between gap-4 text-sm">
+    <span className="flex items-center gap-2 text-grey-700 font-medium flex-shrink-0">
+      <span className="*:w-4 *:h-4 text-grey-400">{icon}</span>
+      {label}
+    </span>
+    <span className="text-grey-900 text-right break-words">{value}</span>
+  </div>
+);
+
+const InfoRow = ({ label, value }: { label: string; value?: string }) => (
+  <div className="flex items-start justify-between gap-4 text-sm md:text-base">
+    <span className="text-grey-800 font-medium flex-shrink-0">{label}</span>
+    <span className="text-[#98a2b3] text-right break-words">
+      {value || "N/A"}
+    </span>
+  </div>
+);
 
 const TripInfoWrapper = ({
   title,
@@ -303,7 +428,7 @@ const DurationDetails = ({
   iconColor: string;
   title: string;
 }) => (
-  <div className="flex text-xs justify-between mb-3items-center text-sm md:text-base">
+  <div className="flex text-xs justify-between mb-3 items-center text-sm md:text-base">
     <p className="flex items-center gap-2">
       <span className={cn("*:w-5 *:h-5", iconColor)}>{icon}</span>
       <span>{title}</span>

@@ -1,10 +1,12 @@
 import cn from "classnames";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { createData, updateData } from "@/controllers/connnector/app.callers";
 import { EstimatedBookingPrice, Trips } from "@/types/vehicleDetails";
 import { FiCheckCircle, FiCircle } from "react-icons/fi";
+
+const ngn = (n?: number) => `NGN ${Number(n || 0).toLocaleString()}`;
 
 export type PersonalInformationMyselfValues = {
   guestEmail: string;
@@ -32,9 +34,15 @@ type PaymentGateway = "MONNIFY" | "PAYSTACK";
 const CostBreakdown = ({
   vehicleId,
   trips,
+  onActionChange,
 }: {
   vehicleId: string;
   trips: Trips[];
+  onActionChange?: (action: {
+    label: string;
+    onClick: () => void;
+    disabled: boolean;
+  }) => void;
 }) => {
   const [estimatedPriceId, setEstimatedPriceId] = useState<string>("");
   const [priceReEstimated, setPriceReEstimated] = useState<boolean>(false);
@@ -217,7 +225,7 @@ const CostBreakdown = ({
         sessionStorage.setItem("bookingId", bookingId);
       }
 
-      if (!bookingId && booking?.status !== 409) {
+      if (!bookingId && booking.data !== 409) {
         throw new Error("Booking ID not returned from API");
       }
 
@@ -247,9 +255,31 @@ const CostBreakdown = ({
     }
   };
 
+  const processPaymentRef = useRef(processPayment);
+  processPaymentRef.current = processPayment;
+  const estimateRef = useRef(estimatePrice);
+  estimateRef.current = estimatePrice;
+
+  useEffect(() => {
+    if (!onActionChange) return;
+    onActionChange(
+      priceReEstimated
+        ? {
+            label: "Confirm & pay",
+            onClick: () => processPaymentRef.current(),
+            disabled: false,
+          }
+        : {
+            label: "Calculate price",
+            onClick: () => estimateRef.current(),
+            disabled: false,
+          },
+    );
+  }, [priceReEstimated, onActionChange]);
+
   return (
     <>
-      <div className="rounded-2xl w-full md:w-[450px] p-5 m-2 border border-[#98a2b3]">
+      <div className="rounded-2xl w-full lg:w-[420px] lg:flex-shrink-0 lg:sticky lg:top-6 p-5 border border-[#E4E7EC]">
         {priceReEstimated && (
           <section>
             <h2 className="font-bold">Cost Breakdown</h2>
@@ -258,9 +288,7 @@ const CostBreakdown = ({
                 <div className="w-full text-sm flex text-black justify-between mt-3">
                   <span>Base Price</span>
                   <span>
-                    NGN{" "}
-                    {(pricing?.data?.data?.basePrice || 0) +
-                      (pricing?.data?.data?.platformFeeAmount || 0)}
+                    {ngn((pricing?.data?.data?.basePrice || 0) + (pricing?.data?.data?.platformFeeAmount || 0))}
                   </span>
                 </div>
               )}
@@ -268,7 +296,7 @@ const CostBreakdown = ({
               {(pricing?.data?.data?.geofenceSurcharge || 0) > 0 && (
                 <div className="w-full text-sm flex justify-between mt-4">
                   <span>Geofence Surcharge</span>
-                  <span>NGN {pricing?.data?.data?.geofenceSurcharge}</span>
+                  <span>{ngn(pricing?.data?.data?.geofenceSurcharge)}</span>
                 </div>
               )}
 
@@ -277,14 +305,14 @@ const CostBreakdown = ({
                   <span>
                     VAT{pricing?.data?.data?.vatPercentage ? ` (${pricing.data.data.vatPercentage}%)` : ""}
                   </span>
-                  <span>NGN {pricing?.data?.data?.vatAmount}</span>
+                  <span>{ngn(pricing?.data?.data?.vatAmount)}</span>
                 </div>
               )}
 
               {(pricing?.data?.data?.discountAmount || 0) > 0 && (
                 <div className="w-full text-sm flex justify-between mt-4 text-green-600">
                   <span>Duration Discount</span>
-                  <span>- NGN {pricing?.data?.data?.discountAmount}</span>
+                  <span>- {ngn(pricing?.data?.data?.discountAmount)}</span>
                 </div>
               )}
 
@@ -293,14 +321,14 @@ const CostBreakdown = ({
                   <span>
                     Coupon Discount ({pricing?.data?.data?.appliedCouponCode})
                   </span>
-                  <span>- NGN {pricing?.data?.data?.couponDiscountAmount}</span>
+                  <span>- {ngn(pricing?.data?.data?.couponDiscountAmount)}</span>
                 </div>
               )}
             </div>
             <div className="w-full text-sm flex justify-between mt-4 mb-6">
               <span>Total</span>
               <span className="font-bold">
-                NGN {pricing?.data?.data?.finalPrice}
+                {ngn(pricing?.data?.data?.finalPrice)}
               </span>
             </div>
 
@@ -368,23 +396,9 @@ const CostBreakdown = ({
           </section>
         )}
 
-        {priceReEstimated ? (
-          <button
-            onClick={processPayment}
-            className="bg-[#0673ff] cursor-pointer mt-3 hover:opacity-90 w-full p-3 text-white rounded-full font-medium"
-          >
-            Proceed to Payment (
-            {paymentGateway === "MONNIFY" ? "Monnify" : "Paystack"})
-          </button>
-        ) : (
-          <div className="text-center text-xs">
-            Estimate booking cost
-            <button
-              onClick={estimatePrice}
-              className="bg-[#0673ff] cursor-pointer hover:opacity-90 w-full p-3 text-white rounded-full"
-            >
-              Calculate
-            </button>
+        {!priceReEstimated && (
+          <div className="text-center text-sm text-grey-500 py-4">
+            Calculating your price...
           </div>
         )}
       </div>

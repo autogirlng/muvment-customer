@@ -40,6 +40,7 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
+import ScreenLoader from "@/components/utils/ScreenLoader";
 import { SocialShareButton } from "@/components/general/share";
 import { Carousel } from "@/components/utils/Carousel";
 import { TripAccordion } from "@/components/Booking/TripAccordion";
@@ -219,14 +220,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex items-center justify-center h-screen">
-          <FiLoader className="w-12 h-12 animate-spin text-blue-600" />
-        </div>
-      </div>
-    );
+    return <ScreenLoader />;
   }
 
   if (error || !vehicle) {

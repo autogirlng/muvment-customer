@@ -1,8 +1,14 @@
-// import { CaretLeft } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
+import { FiArrowLeft } from "react-icons/fi";
 import React from "react";
-type Props = { backLink: string; className?: string };
-export default function BackLink({ backLink, className }: Props) {
+
+type Props = { backLink: string; className?: string; label?: string };
+
+export default function BackLink({
+    backLink,
+    className,
+    label = "Cancel",
+}: Props) {
     const router = useRouter();
 
     const handleGoBack = () => {
@@ -10,20 +16,14 @@ export default function BackLink({ backLink, className }: Props) {
     };
 
     return (
-        <span
-            className="flex items-center gap-0.5 text-primary-500 fill-primary-500 cursor-pointer w-[80px]"
+        <button
+            type="button"
             onClick={handleGoBack}
-            // Add keyboard accessibility
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e: React.KeyboardEvent) => {
-                if (e.key === "Enter" || e.key === " ") {
-                    handleGoBack();
-                }
-            }}
+            className={`inline-flex items-center gap-2 rounded-full border border-grey-300 bg-white px-4 py-2 text-sm font-medium text-grey-700 transition-colors hover:bg-grey-50 hover:border-grey-400 cursor-pointer ${className || ""}`}
+            aria-label={label}
         >
-            {/* <CaretLeft size={18} fill="inherit" /> */}
-            <span className="text-sm 2xl:text-base font-medium">Cancel</span>
-        </span>
+            <FiArrowLeft className="w-4 h-4" />
+            <span>{label}</span>
+        </button>
     );
 }

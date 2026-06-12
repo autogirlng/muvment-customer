@@ -7,7 +7,6 @@ import { getBookingOption } from "@/context/Constarain";
 import { useState } from "react";
 import { BookingOption } from "@/types/booking";
 import { ServicePricingShowcaseList } from "@/components/HomeComponent/Servicepricingshowcaselist";
-import LazyMount from "@/components/HomeComponent/LazyMount";
 
 const BeninRepublicTravel = dynamic(
   () => import("@/components/HomeComponent/BeninRepublicTravel"),
@@ -62,9 +61,7 @@ export default function HomePage() {
         <ServicePricingShowcaseList />
       </div>
       <div className="ag-reveal">
-        <LazyMount minHeight={460}>
-          <TopRateing bookingId={bookingTypeID} />
-        </LazyMount>
+        <TopRateing bookingId={bookingTypeID} />
       </div>
       <div className="ag-reveal">
         <Steps />
@@ -79,14 +76,10 @@ export default function HomePage() {
         <ExploreCities bookingTypeId={bookingTypeID} />
       </div>
       <div className="ag-reveal">
-        <LazyMount minHeight={420}>
-          <VehicleCategories />
-        </LazyMount>
+        <VehicleCategories />
       </div>
       <div className="ag-reveal">
-        <LazyMount minHeight={420}>
-          <Testimonials />
-        </LazyMount>
+        <Testimonials />
       </div>
       <div className="ag-reveal">
         <FAQ />
