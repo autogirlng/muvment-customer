@@ -10,6 +10,7 @@ interface PageProps {
     city?: string;
     location?: string;
     category?: string;
+    categoryName?: string;
     fromDate?: string;
     untilDate?: string;
     lat?: string;
@@ -24,7 +25,7 @@ interface PageProps {
 export async function generateMetadata({ searchParams }: PageProps) {
   const params = await searchParams;
   const city = params.city || params.location || "Lagos";
-  const categoryName = params.category;
+  const categoryName = params.categoryName;
 
   let title = `Rent Cars in ${city}`;
   if (categoryName) {
@@ -120,7 +121,7 @@ export default async function Page({ searchParams }: PageProps) {
 
   return (
     <>
-      <JsonLd schema={SchemaBuilder.searchResultsPage({ city, category: params.category })} />
+      <JsonLd schema={SchemaBuilder.searchResultsPage({ city, category: params.categoryName })} />
       <ExploreVehiclesClient
         initialVehicles={initialVehicles}
         initialTotalCount={totalCount}

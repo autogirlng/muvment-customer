@@ -169,7 +169,7 @@ export class GoogleMapsService {
     return new Promise((resolve, reject) => {
       const request: google.maps.places.PlaceDetailsRequest = {
         placeId: placeId,
-        fields: ["geometry.location", "formatted_address", "name"],
+        fields: ["geometry.location", "formatted_address", "name", "types"],
       };
 
       this.placesService!.getDetails(request, (place, status) => {

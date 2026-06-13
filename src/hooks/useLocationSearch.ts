@@ -8,6 +8,7 @@ type SelectedLocation = {
   name: string;
   lat: number | null;
   lng: number | null;
+  types?: string[];
 };
 
 export const useLocationSearch = () => {
@@ -96,7 +97,12 @@ export const useLocationSearch = () => {
         const lat = placeDetails.geometry?.location?.lat();
         const lng = placeDetails.geometry?.location?.lng();
 
-        return { name: location.name, lat: lat ?? null, lng: lng ?? null };
+        return {
+          name: location.name,
+          lat: lat ?? null,
+          lng: lng ?? null,
+          types: placeDetails.types ?? [],
+        };
       } catch (error) {
         console.error("Error fetching place details:", error);
         setSearchError("Could not retrieve location details.");
