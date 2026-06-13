@@ -28,6 +28,17 @@ export class VehicleSearchService {
   private static readonly VEHICLE_DETAILS_SLUG = "/api/v1/public/vehicles/slug";
   private static readonly CUSTOMER_CATEGORIES =
     "/api/v1/public/customer-categories";
+  private static readonly DESTINATIONS = "/api/v1/public/destinations";
+
+  static async getDestinations(bookingTypeId: string): Promise<any[]> {
+    try {
+      const response = await getSingleData(this.DESTINATIONS, { bookingTypeId });
+      return response?.data?.[0]?.data || [];
+    } catch (error) {
+      console.error("Error fetching destinations:", error);
+      return [];
+    }
+  }
 
   static async getCustomerCategories(): Promise<any[]> {
     try {
@@ -190,6 +201,7 @@ export class VehicleSearchService {
     untilDate?: Date,
     startTime?: string, // Time string in "HH:MM" format
     endTime?: string, // Time string in "HH:MM" format
+    categoryName?: string,
   ) {
     const params = new URLSearchParams();
 
@@ -205,7 +217,11 @@ export class VehicleSearchService {
     }
 
     if (category) {
-      params.append("vehicleTypeId", category);
+      params.append("category", category);
+    }
+
+    if (categoryName) {
+      params.append("categoryName", categoryName);
     }
 
     // Add date and time separately
