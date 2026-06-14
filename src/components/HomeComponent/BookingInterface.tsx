@@ -93,16 +93,28 @@ type SupportedAirport = {
   city: string;
   lat: number;
   lng: number;
+  keywords: string;
 };
 
 const SUPPORTED_AIRPORTS: SupportedAirport[] = [
-  { code: "LOS", name: "Murtala Muhammed International Airport", city: "Lagos", lat: 6.5774, lng: 3.3212 },
-  { code: "ABV", name: "Nnamdi Azikiwe International Airport", city: "Abuja", lat: 9.0068, lng: 7.2632 },
-  { code: "PHC", name: "Port Harcourt International Airport", city: "Port Harcourt", lat: 5.0155, lng: 6.9496 },
-  { code: "ENU", name: "Akanu Ibiam International Airport", city: "Enugu", lat: 6.4742, lng: 7.5619 },
-  { code: "BNI", name: "Benin Airport", city: "Benin City", lat: 6.3169, lng: 5.5995 },
-  { code: "ACC", name: "Kotoka International Airport", city: "Accra", lat: 5.6052, lng: -0.1668 },
-  { code: "COO", name: "Cadjehoun Airport", city: "Cotonou", lat: 6.3573, lng: 2.3844 },
+  // Lagos: one international terminal and two domestic terminals (GAT and MMA2)
+  { code: "LOS-INT", name: "Lagos International (MMIA, Murtala Muhammed)", city: "Lagos", lat: 6.5774, lng: 3.3212, keywords: "los mmia mma1 mm1 murtala muhammed ikeja terminal 1 terminal 2 international" },
+  { code: "LOS-MMA2", name: "Lagos Domestic (MMA2)", city: "Lagos", lat: 6.5839, lng: 3.3214, keywords: "los mma2 mm2 bi-courtney murtala muhammed ikeja domestic local terminal 2 ibom dana valuejet air peace" },
+  { code: "LOS-GAT", name: "Lagos Domestic (GAT)", city: "Lagos", lat: 6.5836, lng: 3.3210, keywords: "los gat general aviation terminal murtala muhammed ikeja domestic local air peace arik" },
+  // Abuja: separate international and domestic terminals
+  { code: "ABV-INT", name: "Abuja International (Nnamdi Azikiwe)", city: "Abuja", lat: 9.0067, lng: 7.2631, keywords: "abv nnamdi azikiwe naia international" },
+  { code: "ABV-DOM", name: "Abuja Domestic (Nnamdi Azikiwe)", city: "Abuja", lat: 9.0067, lng: 7.2631, keywords: "abv nnamdi azikiwe naia domestic local" },
+  // Port Harcourt (Omagwa): international and domestic
+  { code: "PHC-INT", name: "Port Harcourt International (Omagwa)", city: "Port Harcourt", lat: 5.0153, lng: 6.9500, keywords: "phc phia omagwa rivers international" },
+  { code: "PHC-DOM", name: "Port Harcourt Domestic (Omagwa)", city: "Port Harcourt", lat: 5.0153, lng: 6.9500, keywords: "phc phia omagwa rivers domestic local" },
+  // Enugu (Akanu Ibiam): international and domestic
+  { code: "ENU-INT", name: "Enugu International (Akanu Ibiam)", city: "Enugu", lat: 6.4739, lng: 7.5611, keywords: "enu akanu ibiam emene international" },
+  { code: "ENU-DOM", name: "Enugu Domestic (Akanu Ibiam)", city: "Enugu", lat: 6.4739, lng: 7.5611, keywords: "enu akanu ibiam emene domestic local" },
+  // Benin City: single airport, mostly domestic
+  { code: "BNI", name: "Benin Airport", city: "Benin City", lat: 6.3169, lng: 5.5995, keywords: "bni benin city ogba domestic local" },
+  // Accra (Kotoka): Terminal 3 international, Terminal 2 domestic
+  { code: "ACC-T3", name: "Accra International (Kotoka, Terminal 3)", city: "Accra", lat: 5.6061, lng: -0.1682, keywords: "acc kotoka kia ghana terminal 3 t3 international" },
+  { code: "ACC-T2", name: "Accra Domestic (Kotoka, Terminal 2)", city: "Accra", lat: 5.6061, lng: -0.1682, keywords: "acc kotoka kia ghana terminal 2 t2 domestic local" },
 ];
 
 function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
@@ -115,19 +127,6 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
       Math.cos((bLat * Math.PI) / 180) *
       Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(s));
-}
-
-function nearestSupportedAirport(lat: number, lng: number, maxKm = 40) {
-  let best: SupportedAirport | null = null;
-  let bestDistance = Infinity;
-  for (const a of SUPPORTED_AIRPORTS) {
-    const d = distanceKm(lat, lng, a.lat, a.lng);
-    if (d < bestDistance) {
-      bestDistance = d;
-      best = a;
-    }
-  }
-  return best && bestDistance <= maxKm ? best : null;
 }
 
 const inputClass =
@@ -552,83 +551,43 @@ function AirportField({
     a: { name: string; lat: number | null; lng: number | null } | null,
   ) => void;
 }) {
-  const search = useLocationSearch();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [display, setDisplay] = useState("");
-  const [err, setErr] = useState("");
   const anchorRef = useRef<HTMLDivElement>(null);
 
-  const supported = useMemo(() => {
-    const ordered = [...SUPPORTED_AIRPORTS].sort(
-      (a, b) =>
-        distanceKm(userLoc.lat, userLoc.lng, a.lat, a.lng) -
-        distanceKm(userLoc.lat, userLoc.lng, b.lat, b.lng),
-    );
-    return ordered.map((a) => ({
-      id: a.code,
-      place_id: `supported:${a.code}`,
-      name: a.name,
-      description: a.city,
-    }));
-  }, [userLoc.lat, userLoc.lng]);
+  // The airports Muvment serves, nearest to the user first. This is a fixed
+  // list, not a Google lookup, so a selection can never be rejected.
+  const ordered = useMemo(
+    () =>
+      [...SUPPORTED_AIRPORTS].sort(
+        (a, b) =>
+          distanceKm(userLoc.lat, userLoc.lng, a.lat, a.lng) -
+          distanceKm(userLoc.lat, userLoc.lng, b.lat, b.lng),
+      ),
+    [userLoc.lat, userLoc.lng],
+  );
 
-  const handleQuery = (q: string) => {
-    setQuery(q);
-    setDisplay("");
-    setErr("");
-    onSelect(null);
-    search.handleSearchInputChange(q);
-  };
+  const q = query.trim().toLowerCase();
+  const items = (
+    q
+      ? ordered.filter((a) =>
+          `${a.name} ${a.city} ${a.code} ${a.keywords}`
+            .toLowerCase()
+            .includes(q),
+        )
+      : ordered
+  ).map((a) => ({ id: a.code, place_id: a.code, name: a.name, description: a.city }));
 
-  const pick = async (item: any) => {
-    if (
-      typeof item.place_id === "string" &&
-      item.place_id.startsWith("supported:")
-    ) {
-      const code = item.place_id.slice("supported:".length);
-      const a = SUPPORTED_AIRPORTS.find((x) => x.code === code);
-      if (a) {
-        setDisplay(a.name);
-        setQuery(a.name);
-        setErr("");
-        onSelect({ name: a.name, lat: a.lat, lng: a.lng });
-      }
-      search.setShowLocationDropdown(false);
-      setOpen(false);
-      return;
+  const pick = (item: any) => {
+    const a = SUPPORTED_AIRPORTS.find((x) => x.code === item.id);
+    if (a) {
+      setDisplay(a.name);
+      setQuery(a.name);
+      onSelect({ name: a.name, lat: a.lat, lng: a.lng });
     }
-    const sel = await search.handleLocationSelect(item);
-    setQuery(sel.name);
-    if (!sel.types || !sel.types.includes("airport")) {
-      onSelect(null);
-      setErr(
-        "That's not an airport. Search for an airport and pick it from the suggestions.",
-      );
-      return;
-    }
-    const match =
-      sel.lat != null && sel.lng != null
-        ? nearestSupportedAirport(sel.lat, sel.lng)
-        : null;
-    if (!match) {
-      onSelect(null);
-      setErr(
-        direction === "pickup"
-          ? `We don't support drop-offs at ${sel.name} yet. Pick one of the suggested airports.`
-          : `We don't support pickups from ${sel.name} yet. Pick one of the suggested airports.`,
-      );
-      return;
-    }
-    setDisplay(match.name);
-    setQuery(match.name);
-    setErr("");
-    onSelect({ name: match.name, lat: match.lat, lng: match.lng });
-    search.setShowLocationDropdown(false);
     setOpen(false);
   };
-
-  const items = query.trim() ? search.locationSuggestions : supported;
 
   return (
     <div ref={anchorRef} className="relative">
@@ -641,7 +600,7 @@ function AirportField({
         className={`${inputClass} flex items-center justify-between text-left`}
       >
         <span className={`truncate ${display ? "text-gray-800" : "text-gray-400"}`}>
-          {display || "Search for an airport"}
+          {display || "Choose an airport"}
         </span>
         <FaPlane className="ml-2 flex-shrink-0 text-gray-400" />
       </button>
@@ -650,20 +609,21 @@ function AirportField({
         onClose={() => setOpen(false)}
         anchorRef={anchorRef}
         query={query}
-        onQueryChange={handleQuery}
-        placeholder="Search for an airport"
+        onQueryChange={(v) => {
+          setQuery(v);
+          setDisplay("");
+          onSelect(null);
+        }}
+        placeholder="Search airports (e.g. Lagos, MM2)"
       >
         <SuggestionList
           items={items}
-          loading={search.isLoadingPlaces}
-          error={search.searchError || err}
-          emptyText="Search for an airport"
+          loading={false}
+          error=""
+          emptyText="No airport matches that. Try a city like Lagos or Abuja."
           onPick={pick}
         />
       </SearchOverlay>
-      {err && !open ? (
-        <p className="mt-1 text-left text-xs text-[#D42620]">{err}</p>
-      ) : null}
     </div>
   );
 }
@@ -916,6 +876,13 @@ export default function HeroBookingSection() {
     lng: number | null;
   } | null>(null);
 
+  // Within-state location (where the car is needed)
+  const [pickup, setPickup] = useState<{
+    name: string;
+    lat: number | null;
+    lng: number | null;
+  } | null>(null);
+
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -990,6 +957,7 @@ export default function HeroBookingSection() {
       if (!singleDate) missing.push("Date");
       if (!time) missing.push("Time");
     } else if (bookingType === "within-state") {
+      if (!(pickup && pickup.lat)) missing.push("Location");
       if (durationId === "monthly") {
         if (!singleDate) missing.push("Start date");
       } else {
@@ -1046,6 +1014,9 @@ export default function HeroBookingSection() {
             : durationId === "monthly"
               ? typeIds.monthly
               : typeIds.twentyFourH;
+        if (pickup?.lat && pickup?.lng) {
+          loc = { name: pickup.name, lat: pickup.lat, lng: pickup.lng };
+        }
         if (durationId === "monthly") {
           fromDate = singleDate ?? undefined;
           startTime = undefined; // monthly has no time
@@ -1126,6 +1097,11 @@ export default function HeroBookingSection() {
     if (bookingType === "within-state") {
       return (
         <div className="space-y-3">
+          <LocationField
+            label="Where do you need the car?"
+            placeholder="Enter a city, area, or address"
+            onSelect={setPickup}
+          />
           <div>
             <label className={labelClass}>Duration</label>
             <div className="flex gap-2">
