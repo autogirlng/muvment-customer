@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useLayoutEffect,
+} from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -131,6 +137,8 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
 
 const inputClass =
   "w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none focus:border-[#0673FF]";
+const barFieldClass =
+  "flex w-full items-center justify-between gap-2 bg-transparent px-3 py-2.5 text-left text-sm text-gray-800 outline-none";
 const labelClass = "block text-left text-xs font-medium text-gray-600 mb-1.5";
 const toggleClass = (active: boolean) =>
   `flex-1 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
@@ -413,26 +421,43 @@ function LocationField({
   label,
   placeholder,
   onSelect,
+  compact = false,
+  initial = null,
 }: {
   label: string;
   placeholder: string;
   onSelect: (
     loc: { name: string; lat: number | null; lng: number | null } | null,
   ) => void;
+  compact?: boolean;
+  initial?: { name: string; lat: number | null; lng: number | null } | null;
 }) {
   const search = useLocationSearch();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [display, setDisplay] = useState("");
   const anchorRef = useRef<HTMLDivElement>(null);
+  const userTypedRef = useRef(false);
+
+  // Reflect an externally supplied value (detected location, or a restored
+  // search) until the person edits the field themselves.
+  useEffect(() => {
+    if (userTypedRef.current) return;
+    if (initial && initial.name) {
+      setDisplay(initial.name);
+      setQuery(initial.name);
+    }
+  }, [initial?.name, initial?.lat, initial?.lng]);
 
   const handleQuery = (q: string) => {
+    userTypedRef.current = true;
     setQuery(q);
     setDisplay("");
     onSelect(null);
     search.handleSearchInputChange(q);
   };
   const pick = async (item: any) => {
+    userTypedRef.current = true;
     const sel = await search.handleLocationSelect(item);
     setDisplay(sel.name);
     setQuery(sel.name);
@@ -443,11 +468,13 @@ function LocationField({
 
   return (
     <div ref={anchorRef} className="relative">
-      <label className={labelClass}>{label}</label>
+      {!compact && <label className={labelClass}>{label}</label>}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`${inputClass} flex items-center justify-between text-left`}
+        className={
+          compact ? barFieldClass : `${inputClass} flex items-center justify-between text-left`
+        }
       >
         <span className={`truncate ${display ? "text-gray-800" : "text-gray-400"}`}>
           {display || placeholder}
@@ -480,21 +507,25 @@ function CategoryField({
   options,
   value,
   onChange,
+  compact = false,
 }: {
   options: DropdownOption[];
   value: string;
   onChange: (v: string) => void;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value);
   return (
     <div ref={anchorRef} className="relative">
-      <label className={labelClass}>Vehicle type</label>
+      {!compact && <label className={labelClass}>Vehicle type</label>}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`${inputClass} flex items-center justify-between text-left`}
+        className={
+          compact ? barFieldClass : `${inputClass} flex items-center justify-between text-left`
+        }
       >
         <span className="flex min-w-0 items-center gap-2">
           {selected?.icon ? (
@@ -544,12 +575,14 @@ function AirportField({
   direction,
   userLoc,
   onSelect,
+  compact = false,
 }: {
   direction: "pickup" | "dropoff";
   userLoc: { lat: number; lng: number };
   onSelect: (
     a: { name: string; lat: number | null; lng: number | null } | null,
   ) => void;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -591,16 +624,20 @@ function AirportField({
 
   return (
     <div ref={anchorRef} className="relative">
-      <label className={labelClass}>
-        {direction === "pickup" ? "Destination airport" : "Arrival airport"}
-      </label>
+      {!compact && (
+        <label className={labelClass}>
+          {direction === "pickup" ? "Destination airport" : "Arrival airport"}
+        </label>
+      )}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`${inputClass} flex items-center justify-between text-left`}
+        className={
+          compact ? barFieldClass : `${inputClass} flex items-center justify-between text-left`
+        }
       >
         <span className={`truncate ${display ? "text-gray-800" : "text-gray-400"}`}>
-          {display || "Choose an airport"}
+          {display || (compact ? "Airport" : "Choose an airport")}
         </span>
         <FaPlane className="ml-2 flex-shrink-0 text-gray-400" />
       </button>
@@ -647,9 +684,11 @@ function generateTimeSlots(startHour = 6, endHour = 24, interval = 30) {
 function TimeField({
   value,
   onChange,
+  compact = false,
 }: {
   value: string;
   onChange: (v: string) => void;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -660,7 +699,9 @@ function TimeField({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`${inputClass} flex items-center justify-between text-left`}
+        className={
+          compact ? barFieldClass : `${inputClass} flex items-center justify-between text-left`
+        }
       >
         <span className={value ? "text-gray-800" : "text-gray-400"}>
           {current ? current.display : "Select time"}
@@ -695,24 +736,28 @@ function DateField({
   value,
   onChange,
   minDate,
+  compact = false,
 }: {
   label: string;
   value: Date | null;
   onChange: (v: Date) => void;
   minDate?: Date;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   return (
     <div ref={anchorRef} className="relative">
-      <label className={labelClass}>{label}</label>
+      {!compact && <label className={labelClass}>{label}</label>}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`${inputClass} flex items-center justify-between text-left`}
+        className={
+          compact ? barFieldClass : `${inputClass} flex items-center justify-between text-left`
+        }
       >
         <span className={value ? "text-gray-800" : "text-gray-400"}>
-          {value ? format(value, "d MMM yyyy") : "Select date"}
+          {value ? format(value, "d MMM yyyy") : compact ? label : "Select date"}
         </span>
         <FaCalendarAlt className="ml-2 flex-shrink-0 text-gray-400" />
       </button>
@@ -736,28 +781,32 @@ function DateField({
 function FromUntilField({
   value,
   onChange,
+  compact = false,
 }: {
   value: any;
   onChange: (v: any) => void;
+  compact?: boolean;
 }) {
   const from: Date | null = Array.isArray(value) ? value[0] || null : null;
   const until: Date | null = Array.isArray(value) ? value[1] || null : null;
   const [openWhich, setOpenWhich] = useState<"from" | "until" | null>(null);
   const fromRef = useRef<HTMLDivElement>(null);
   const untilRef = useRef<HTMLDivElement>(null);
-  const boxClass = `${inputClass} flex items-center justify-between text-left`;
+  const boxClass = compact
+    ? barFieldClass
+    : `${inputClass} flex items-center justify-between text-left`;
 
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <div ref={fromRef} className="relative">
-        <label className={labelClass}>From</label>
+    <div className={compact ? "flex items-center gap-1" : "grid grid-cols-2 gap-3"}>
+      <div ref={fromRef} className="relative min-w-0 flex-1">
+        {!compact && <label className={labelClass}>From</label>}
         <button
           type="button"
           onClick={() => setOpenWhich("from")}
           className={boxClass}
         >
           <span className={from ? "text-gray-800" : "text-gray-400"}>
-            {from ? format(from, "d MMM yyyy") : "Select date"}
+            {from ? format(from, "d MMM") : compact ? "From" : "Select date"}
           </span>
           <FaCalendarAlt className="ml-2 flex-shrink-0 text-gray-400" />
         </button>
@@ -781,15 +830,16 @@ function FromUntilField({
           />
         </Popover>
       </div>
-      <div ref={untilRef} className="relative">
-        <label className={labelClass}>Until (optional)</label>
+      {compact && <span className="flex-shrink-0 text-gray-300">–</span>}
+      <div ref={untilRef} className="relative min-w-0 flex-1">
+        {!compact && <label className={labelClass}>Until (optional)</label>}
         <button
           type="button"
           onClick={() => setOpenWhich(from ? "until" : "from")}
           className={boxClass}
         >
           <span className={until ? "text-gray-800" : "text-gray-400"}>
-            {until ? format(until, "d MMM yyyy") : "Same day"}
+            {until ? format(until, "d MMM") : compact ? "Until" : "Same day"}
           </span>
           <FaCalendarAlt className="ml-2 flex-shrink-0 text-gray-400" />
         </button>
@@ -815,11 +865,24 @@ function FromUntilField({
   );
 }
 
-export default function HeroBookingSection() {
+function BookingSearchInner({
+  variant = "hero",
+}: {
+  variant?: "hero" | "bar";
+}) {
   const router = useRouter();
   const { location: userLoc } = useLocationDetection();
 
+  // Tracks whether the person has edited a location field, and whether we have
+  // already restored a search from the URL, so neither overwrites the other.
+  const whereTouched = useRef(false);
+  const rehydratedFromSearch = useRef(false);
+
   const [bookingType, setBookingType] = useState<BookingType>("within-state");
+
+  // Compact bar: trip-type menu open state
+  const [barTypeOpen, setBarTypeOpen] = useState(false);
+  const barTypeRef = useRef<HTMLDivElement>(null);
 
   // Airport
   const [airportDirection, setAirportDirection] = useState<
@@ -902,17 +965,13 @@ export default function HeroBookingSection() {
         };
         if (alive) setTypeIds(ids);
 
-        const [boat, interstate] = await Promise.all([
-          ids.boat
-            ? VehicleSearchService.getDestinations(ids.boat)
-            : Promise.resolve([]),
-          ids.interstate
-            ? VehicleSearchService.getDestinations(ids.interstate)
-            : Promise.resolve([]),
-        ]);
+        // Boat destinations are a fixed admin list. Interstate destinations are
+        // derived from the chosen origin, so they are fetched separately below.
+        const boat = ids.boat
+          ? await VehicleSearchService.getDestinations(ids.boat)
+          : [];
         if (alive) {
           setBoatDestinations(boat || []);
-          setInterstateDestinations(interstate || []);
         }
       } catch {
         // Leave destinations empty; the fields show an empty state.
@@ -940,7 +999,159 @@ export default function HeroBookingSection() {
     };
   }, []);
 
+  // Interstate destinations come from the chosen origin: the states that hosts
+  // based in the origin will drive to. Refetched whenever the origin changes.
+  useEffect(() => {
+    if (bookingType !== "interstate") return;
+    const lat = selectedLocation?.lat;
+    const lng = selectedLocation?.lng;
+    if (!typeIds.interstate || lat == null || lng == null) {
+      setInterstateDestinations([]);
+      return;
+    }
+    let alive = true;
+    setDestLoading(true);
+    VehicleSearchService.getInterstateDestinations(lat, lng, typeIds.interstate)
+      .then((list) => {
+        if (!alive) return;
+        const mapped = (list || []).map((d) => ({
+          id: d.stateId,
+          name: d.name,
+        }));
+        setInterstateDestinations(mapped);
+        setDestId((prev) => (mapped.some((m) => m.id === prev) ? prev : ""));
+      })
+      .finally(() => {
+        if (alive) setDestLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [
+    bookingType,
+    selectedLocation?.lat,
+    selectedLocation?.lng,
+    typeIds.interstate,
+  ]);
+
   const boatDest = boatDestinations.find((b) => b.id === boatDestId);
+
+  // Wrap the location setters so any edit (typing or picking) marks the field
+  // as touched, which stops the auto-fill from the detected location.
+  const onPickPickup = (v: typeof pickup) => {
+    whereTouched.current = true;
+    setPickup(v);
+  };
+  const onPickInterstate = (v: typeof selectedLocation) => {
+    whereTouched.current = true;
+    setSelectedLocation(v);
+  };
+  const onPickAddress = (v: typeof selectedAddress) => {
+    whereTouched.current = true;
+    setSelectedAddress(v);
+  };
+
+  // Switching trip type starts the new type's "where" fresh, so it picks up the
+  // detected location again.
+  const changeBookingType = (t: BookingType) => {
+    whereTouched.current = false;
+    setBookingType(t);
+    setError("");
+  };
+
+  // Restore a search from the results-page URL (and the saved snapshot for the
+  // bits the URL does not carry). Runs once, after the booking-type ids load.
+  useEffect(() => {
+    if (rehydratedFromSearch.current) return;
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    const hasSearch = !!(sp.get("location") || sp.get("bookingType"));
+    if (!hasSearch) return;
+    const btId = sp.get("bookingType") || "";
+    const typeIdsReady = Object.values(typeIds).some(Boolean);
+    if (btId && !typeIdsReady) return;
+
+    let snap: any = null;
+    try {
+      const raw = sessionStorage.getItem("muvment:lastSearch");
+      if (raw) snap = JSON.parse(raw);
+    } catch {
+      snap = null;
+    }
+
+    let bt: BookingType = "within-state";
+    let dur = "24h";
+    if (btId === typeIds.airport) bt = "airport";
+    else if (btId === typeIds.interstate) bt = "interstate";
+    else if (btId === typeIds.boat) bt = "boat";
+    else if (btId === typeIds.twelveH) dur = "12h";
+    else if (btId === typeIds.monthly) dur = "monthly";
+    setBookingType(bt);
+    setDurationId(dur);
+    if (snap?.airportDirection) setAirportDirection(snap.airportDirection);
+
+    const name = sp.get("location") || "";
+    const lat = Number(sp.get("lat"));
+    const lng = Number(sp.get("lng"));
+    const loc =
+      name && !Number.isNaN(lat) && !Number.isNaN(lng)
+        ? { name, lat, lng }
+        : null;
+
+    const urlDest = sp.get("destinationId") || "";
+    const urlDestState = sp.get("destinationStateId") || "";
+    if (bt === "within-state") {
+      setPickup(loc ?? snap?.pickup ?? null);
+    } else if (bt === "interstate") {
+      setSelectedLocation(loc ?? snap?.selectedLocation ?? null);
+      const d = urlDestState || snap?.destId;
+      if (d) setDestId(d);
+    } else if (bt === "boat") {
+      const d = urlDest || snap?.boatDestId;
+      if (d) setBoatDestId(d);
+    } else {
+      setSelectedAirport(loc ?? snap?.selectedAirport ?? null);
+      setSelectedAddress(
+        snap?.selectedAddress ?? {
+          name: userLoc.name,
+          lat: userLoc.lat,
+          lng: userLoc.lng,
+        },
+      );
+    }
+
+    const parseDate = (s: string | null) => {
+      if (!s) return null;
+      const d = new Date(s);
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+    const sDate = parseDate(sp.get("startDate"));
+    const eDate = parseDate(sp.get("endDate"));
+    if (bt === "within-state" && dur !== "monthly") {
+      if (sDate) setRangeValue([sDate, eDate]);
+    } else if (sDate) {
+      setSingleDate(sDate);
+    }
+
+    const st = sp.get("startTime");
+    if (st) setTime(st.slice(0, 5));
+    const cat = sp.get("category");
+    if (cat) setCategory(cat);
+
+    rehydratedFromSearch.current = true;
+    whereTouched.current = true;
+  }, [typeIds, userLoc.name]);
+
+  // Default every "where" field to the detected location until the person
+  // edits it (or a search was restored from the URL).
+  useEffect(() => {
+    if (whereTouched.current || rehydratedFromSearch.current) return;
+    if (!userLoc) return;
+    const v = { name: userLoc.name, lat: userLoc.lat, lng: userLoc.lng };
+    setPickup(v);
+    setSelectedLocation(v);
+    setSelectedAddress(v);
+  }, [userLoc.name, userLoc.lat, userLoc.lng, bookingType]);
 
   const getMissingFields = (): string[] => {
     const missing: string[] = [];
@@ -1046,6 +1257,10 @@ export default function HeroBookingSection() {
       const selectedCategory = categoryOptions.find(
         (o) => o.value === category,
       );
+      // Boat uses a curated destination id; interstate uses a destination state.
+      const destinationId = bookingType === "boat" ? boatDestId : undefined;
+      const destinationStateId =
+        bookingType === "interstate" ? destId : undefined;
       const url = await VehicleSearchService.buildSearchUrl(
         loc,
         bookingValue,
@@ -1055,11 +1270,41 @@ export default function HeroBookingSection() {
         startTime,
         endTime,
         selectedCategory?.label,
+        destinationId || undefined,
+        destinationStateId || undefined,
       );
       trackVehicleSearch({
         searchTerm: `${bookingType} ${bookingValue}`.trim(),
         location: loc.name,
       });
+      try {
+        const toIso = (d: Date | null | undefined) =>
+          d ? new Date(d).toISOString() : null;
+        const range = Array.isArray(rangeValue) ? rangeValue : [];
+        sessionStorage.setItem(
+          "muvment:lastSearch",
+          JSON.stringify({
+            bookingType,
+            durationId,
+            airportDirection,
+            pickup,
+            selectedLocation,
+            selectedAddress,
+            selectedAirport,
+            destId,
+            boatDestId,
+            singleDate: toIso(singleDate),
+            fromDate: toIso(range[0]),
+            untilDate: toIso(range[1]),
+            time,
+            category,
+            categoryName: selectedCategory?.label || "",
+            bookingValue,
+          }),
+        );
+      } catch {
+        // sessionStorage may be unavailable; the URL still carries the search.
+      }
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("app:navstart"));
       }
@@ -1100,7 +1345,8 @@ export default function HeroBookingSection() {
           <LocationField
             label="Where do you need the car?"
             placeholder="Enter a city, area, or address"
-            onSelect={setPickup}
+            onSelect={onPickPickup}
+            initial={pickup}
           />
           <div>
             <label className={labelClass}>Duration</label>
@@ -1157,7 +1403,8 @@ export default function HeroBookingSection() {
                 key="airport-address"
                 label="Pickup location"
                 placeholder="Where should the driver pick you up?"
-                onSelect={setSelectedAddress}
+                onSelect={onPickAddress}
+                initial={selectedAddress}
               />
               <AirportField
                 key="airport-field"
@@ -1178,7 +1425,8 @@ export default function HeroBookingSection() {
                 key="airport-address"
                 label="Drop-off location"
                 placeholder="Where should the driver take you?"
-                onSelect={setSelectedAddress}
+                onSelect={onPickAddress}
+                initial={selectedAddress}
               />
             </div>
           )}
@@ -1194,7 +1442,8 @@ export default function HeroBookingSection() {
           <LocationField
             label="Where are you starting from?"
             placeholder="Enter a city or address"
-            onSelect={setSelectedLocation}
+            onSelect={onPickInterstate}
+            initial={selectedLocation}
           />
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <div>
@@ -1261,6 +1510,282 @@ export default function HeroBookingSection() {
     );
   };
 
+  // ---- Compact bar layout (navbar + results page) ----
+  // Same engine as the hero; only the presentation differs.
+  const BAR_TYPE_OPTIONS: {
+    label: string;
+    type: BookingType;
+    duration?: string;
+    airportDirection?: "pickup" | "dropoff";
+  }[] = [
+    { label: "Within state · 12 hours", type: "within-state", duration: "12h" },
+    { label: "Within state · 24 hours", type: "within-state", duration: "24h" },
+    { label: "Monthly", type: "within-state", duration: "monthly" },
+    { label: "Airport pickup", type: "airport", airportDirection: "pickup" },
+    { label: "Airport drop-off", type: "airport", airportDirection: "dropoff" },
+    { label: "Interstate", type: "interstate" },
+    { label: "Boat trip", type: "boat" },
+  ];
+
+  const barTypeLabel = (() => {
+    if (bookingType === "within-state")
+      return durationId === "12h"
+        ? "Within state · 12h"
+        : durationId === "monthly"
+          ? "Monthly"
+          : "Within state · 24h";
+    if (bookingType === "airport")
+      return airportDirection === "pickup" ? "Airport pickup" : "Airport drop-off";
+    if (bookingType === "interstate") return "Interstate";
+    return "Boat trip";
+  })();
+
+  const barCell = (node: React.ReactNode) => (
+    <div className="min-w-0 flex-auto px-1">{node}</div>
+  );
+  // Date and time read at a fixed size so they never truncate.
+  const barCellFixed = (node: React.ReactNode) => (
+    <div className="flex-none px-1">{node}</div>
+  );
+
+  const barDestinationSelect = (
+    list: { id: string; name: string }[],
+    value: string,
+    onChange: (v: string) => void,
+  ) => (
+    <select
+      className="w-full truncate bg-transparent px-3 py-2.5 text-sm text-gray-800 outline-none"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={destLoading || list.length === 0}
+    >
+      <option value="">
+        {destLoading
+          ? "Loading..."
+          : list.length === 0
+            ? "No destinations"
+            : "Destination"}
+      </option>
+      {list.map((d) => (
+        <option key={d.id} value={d.id}>
+          {d.name}
+        </option>
+      ))}
+    </select>
+  );
+
+  const renderBarCells = () => {
+    if (bookingType === "within-state") {
+      return (
+        <>
+          {barCell(
+            <LocationField
+              compact
+              label="Location"
+              placeholder="Location"
+              onSelect={onPickPickup}
+              initial={pickup}
+            />,
+          )}
+          {durationId === "monthly"
+            ? barCellFixed(
+                <DateField
+                  compact
+                  label="Start date"
+                  value={singleDate}
+                  onChange={(v) => setSingleDate(v)}
+                />,
+              )
+            : barCell(
+                <FromUntilField
+                  compact
+                  value={rangeValue}
+                  onChange={setRangeValue}
+                />,
+              )}
+          {barCell(
+            <CategoryField
+              compact
+              options={categoryOptions}
+              value={category}
+              onChange={setCategory}
+            />,
+          )}
+        </>
+      );
+    }
+    if (bookingType === "airport") {
+      const airportField = (
+        <AirportField
+          compact
+          direction={airportDirection}
+          userLoc={userLoc}
+          onSelect={setSelectedAirport}
+        />
+      );
+      const addressField = (
+        <LocationField
+          compact
+          label={airportDirection === "pickup" ? "Pickup" : "Drop-off"}
+          placeholder={airportDirection === "pickup" ? "Pickup" : "Drop-off"}
+          onSelect={onPickAddress}
+          initial={selectedAddress}
+        />
+      );
+      return (
+        <>
+          {barCell(airportDirection === "pickup" ? addressField : airportField)}
+          {barCell(airportDirection === "pickup" ? airportField : addressField)}
+          {barCellFixed(
+            <DateField
+              compact
+              label="Date"
+              value={singleDate}
+              onChange={(v) => setSingleDate(v)}
+            />,
+          )}
+          {barCellFixed(<TimeField compact value={time} onChange={setTime} />)}
+          {barCell(
+            <CategoryField
+              compact
+              options={categoryOptions}
+              value={category}
+              onChange={setCategory}
+            />,
+          )}
+        </>
+      );
+    }
+    if (bookingType === "interstate") {
+      return (
+        <>
+          {barCell(
+            <LocationField
+              compact
+              label="From"
+              placeholder="From"
+              onSelect={onPickInterstate}
+              initial={selectedLocation}
+            />,
+          )}
+          {barCell(barDestinationSelect(interstateDestinations, destId, setDestId))}
+          {barCellFixed(
+            <DateField
+              compact
+              label="Date"
+              value={singleDate}
+              onChange={(v) => setSingleDate(v)}
+            />,
+          )}
+          {barCellFixed(<TimeField compact value={time} onChange={setTime} />)}
+          {barCell(
+            <CategoryField
+              compact
+              options={categoryOptions}
+              value={category}
+              onChange={setCategory}
+            />,
+          )}
+        </>
+      );
+    }
+    // boat
+    return (
+      <>
+        {barCell(barDestinationSelect(boatDestinations, boatDestId, setBoatDestId))}
+        {barCellFixed(
+          <DateField
+            compact
+            label="Date"
+            value={singleDate}
+            onChange={(v) => setSingleDate(v)}
+          />,
+        )}
+        {barCellFixed(<TimeField compact value={time} onChange={setTime} />)}
+      </>
+    );
+  };
+
+  if (variant === "bar") {
+    return (
+      <div className="w-full max-w-4xl">
+        <div className="flex w-full min-w-0 items-stretch divide-x divide-gray-200 rounded-full border border-gray-200 bg-white py-1 pl-2 pr-1 shadow-sm">
+          <div ref={barTypeRef} className="relative flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setBarTypeOpen((o) => !o)}
+              className="flex h-full items-center gap-2 px-3 py-2 text-sm font-medium text-gray-800"
+            >
+              <span className="truncate max-w-[150px]">{barTypeLabel}</span>
+              <FaChevronDown className="flex-shrink-0 text-gray-400" />
+            </button>
+            <Popover
+              open={barTypeOpen}
+              onClose={() => setBarTypeOpen(false)}
+              anchorRef={barTypeRef}
+            >
+              <div className="max-h-[65vh] overflow-y-auto lg:max-h-80">
+                {BAR_TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    onClick={() => {
+                      changeBookingType(opt.type);
+                      if (opt.duration) setDurationId(opt.duration);
+                      if (opt.airportDirection)
+                        setAirportDirection(opt.airportDirection);
+                      setBarTypeOpen(false);
+                    }}
+                    className={`block w-full rounded-lg px-3 py-2.5 text-left text-sm hover:bg-gray-50 ${
+                      opt.label === barTypeLabel
+                        ? "text-[#0673FF]"
+                        : "text-gray-800"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </Popover>
+          </div>
+
+          {renderBarCells()}
+
+          <div className="flex flex-shrink-0 items-center pl-1">
+            <button
+              type="button"
+              onClick={handleSearch}
+              disabled={isSearching}
+              title="Search"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0673FF] text-white transition-colors hover:bg-[#0560d6] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSearching ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+        {error ? (
+          <p className="mt-1 px-4 text-center text-xs text-[#D42620]">{error}</p>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full overflow-hidden mt-[5rem] md:mt-0 min-h-[calc(100svh-5rem)] lg:min-h-0 lg:h-screen">
       <BackgroundCarousel
@@ -1307,7 +1832,7 @@ export default function HeroBookingSection() {
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => setBookingType(t.id)}
+                  onClick={() => changeBookingType(t.id)}
                   className={`flex flex-row items-center justify-center gap-2 rounded-xl border p-3 text-center transition-colors lg:flex-col lg:gap-1 ${
                     active
                       ? "border-[#0673FF] bg-[#0673FF]/5"
@@ -1361,4 +1886,12 @@ export default function HeroBookingSection() {
       </div>
     </div>
   );
+}
+
+export default function HeroBookingSection() {
+  return <BookingSearchInner variant="hero" />;
+}
+
+export function BookingSearchBar() {
+  return <BookingSearchInner variant="bar" />;
 }
