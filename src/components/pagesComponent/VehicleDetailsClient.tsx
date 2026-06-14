@@ -159,35 +159,70 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   useEffect(() => {
     sessionStorage.removeItem("bookingId");
 
-    // Prefill trip 0 from the search params; time and drop-off stay for the user.
+    // Prefill the itinerary from the search params: pickup location, start date,
+    // start time, booking type, and the trip length all carry over. Drop-off is
+    // still chosen here.
     const params = new URLSearchParams(window.location.search);
     const location = params.get("location");
     const lat = params.get("lat");
     const lng = params.get("lng");
     const startDate = params.get("startDate");
+    const endDate = params.get("endDate");
+    const startTime = params.get("startTime");
     const bookingTypeParam = params.get("bookingType");
 
-    const seed: Record<string, string> = { id: "trip-0" };
-    if (bookingTypeParam) seed.bookingType = bookingTypeParam;
-    if (location) seed.pickupLocation = location;
+    const base: Record<string, string> = {};
+    if (bookingTypeParam) base.bookingType = bookingTypeParam;
+    if (location) base.pickupLocation = location;
     if (lat && lng && !isNaN(Number(lat)) && !isNaN(Number(lng))) {
-      seed.pickupCoordinates = JSON.stringify({
+      base.pickupCoordinates = JSON.stringify({
         lat: Number(lat),
         lng: Number(lng),
       });
     }
-    if (startDate) {
-      seed.tripStartDate = `${startDate}T00:00:00`;
-    }
 
-    if (Object.keys(seed).length > 1) {
-      sessionStorage.setItem("trips", JSON.stringify([seed]));
-      const { id: seedId, ...details } = seed;
-      setTrips([{ id: seedId, tripDetails: details }]);
-    } else {
+    if (Object.keys(base).length === 0 && !startDate) {
       sessionStorage.removeItem("trips");
       setTrips([{ id: "trip-0", tripDetails: {} }]);
+      return;
     }
+
+    // Trip length comes from the searched date range; defaults to a single day.
+    let days = 1;
+    if (startDate && endDate) {
+      const start = new Date(`${startDate}T00:00:00Z`).getTime();
+      const end = new Date(`${endDate}T00:00:00Z`).getTime();
+      if (!isNaN(start) && !isNaN(end) && end >= start) {
+        days = Math.min(60, Math.floor((end - start) / 86400000) + 1);
+      }
+    }
+
+    // Normalise the time to HH:mm:ss so the booking calculation can parse it.
+    const timePart =
+      startTime && startTime.length >= 4
+        ? startTime.length === 5
+          ? `${startTime}:00`
+          : startTime
+        : "";
+
+    const flat: Record<string, string>[] = [];
+    const nested: { id: string; tripDetails: Record<string, string> }[] = [];
+    for (let i = 0; i < days; i++) {
+      const id = `trip-${i}`;
+      const details: Record<string, string> = { ...base };
+      if (startDate) {
+        const d = new Date(`${startDate}T00:00:00Z`);
+        d.setUTCDate(d.getUTCDate() + i);
+        const dayStr = d.toISOString().slice(0, 10);
+        details.tripStartDate = `${dayStr}T00:00:00`;
+        if (timePart) details.tripStartTime = `${dayStr}T${timePart}`;
+      }
+      flat.push({ ...details, id });
+      nested.push({ id, tripDetails: details });
+    }
+
+    sessionStorage.setItem("trips", JSON.stringify(flat));
+    setTrips(nested);
   }, []);
 
   const check = async () => {
@@ -382,11 +417,9 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       estimatePrice();
       return;
     }
-    if (!isAuthenticated) {
-      setBookRideModal(true);
-      return;
-    }
-    router.push(`/booking/create/${vehicle.id}`);
+    router.push(
+      `/booking/create/${vehicle.id}${isAuthenticated ? "" : "?user=guest"}`,
+    );
   };
 
   const storedTrips =
@@ -426,6 +459,14 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   )
     .trim()
     .toLowerCase();
+  // Only the hourly within-city types (12h/24h) span multiple days. Airport,
+  // boat, interstate, and monthly are single-segment bookings.
+  // Multi-day applies to within-state bookings, i.e. anything that is not a
+  // single-segment type, so the day count seeded from the searched date range
+  // is kept regardless of how the within-state type is named.
+  const allowsMultiDay = !/airport|boat|interstate|month/i.test(
+    selectedBookingTypeName,
+  );
   const bookingNoteTitle = selectedBookingTypeName.includes("airport")
     ? "Airport pickup"
     : selectedBookingTypeName.includes("interstate")
@@ -454,7 +495,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     </p>
                   </div>
 
-                  {trips.length > 0 && (
+                  {allowsMultiDay && trips.length > 0 && (
                     <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#E4E7EC] bg-white px-3 py-2.5">
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-gray-800">
@@ -934,31 +975,75 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                 {vehicle.allPricingOptions?.length > 0 && (
                   <div className="space-y-2">
                     <h2 className="text-lg text-gray-800">Pricing</h2>
-                    <div className="space-y-2">
-                      {vehicle.allPricingOptions.map((opt: any) => (
+                    {(() => {
+                      const opts = vehicle.allPricingOptions || [];
+                      const isWithinState = (name: string) => {
+                        const n = (name || "").toLowerCase();
+                        return n.includes("hour") || n.includes("month");
+                      };
+                      const within = opts.filter((o: any) =>
+                        isWithinState(o.bookingTypeName),
+                      );
+                      const standalone = opts.filter(
+                        (o: any) => !isWithinState(o.bookingTypeName),
+                      );
+                      const row = (label: string, value: string, key: string) => (
                         <div
-                          key={opt.bookingTypeId}
+                          key={key}
                           className="flex justify-between items-center p-3 bg-[#F0F2F5] rounded-lg"
                         >
                           <span className="text-sm font-medium text-gray-700">
-                            {opt.bookingTypeName?.trim()}
+                            {label}
                           </span>
                           <span className="text-sm font-bold text-gray-900">
-                            {formatCurrency(Number(opt.price || 0))}
+                            {value}
                           </span>
                         </div>
-                      ))}
-                      {vehicle.extraHourlyRate ? (
-                        <div className="flex justify-between items-center p-3 bg-[#F0F2F5] rounded-lg">
-                          <span className="text-sm font-medium text-gray-700">
-                            Extra hour
-                          </span>
-                          <span className="text-sm font-bold text-gray-900">
-                            {formatCurrency(Number(vehicle.extraHourlyRate))}/hr
-                          </span>
+                      );
+                      return (
+                        <div className="space-y-4">
+                          {within.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Within state booking
+                              </p>
+                              {within.map((opt: any) =>
+                                row(
+                                  opt.bookingTypeName?.trim(),
+                                  formatCurrency(Number(opt.price || 0)),
+                                  opt.bookingTypeId,
+                                ),
+                              )}
+                              {vehicle.extraHourlyRate
+                                ? row(
+                                    "Extra hour",
+                                    `${formatCurrency(
+                                      Number(vehicle.extraHourlyRate),
+                                    )}/hr`,
+                                    "extra-hour",
+                                  )
+                                : null}
+                            </div>
+                          )}
+                          {standalone.length > 0 && (
+                            <div className="space-y-2">
+                              {within.length > 0 && (
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Other bookings
+                                </p>
+                              )}
+                              {standalone.map((opt: any) =>
+                                row(
+                                  opt.bookingTypeName?.trim(),
+                                  formatCurrency(Number(opt.price || 0)),
+                                  opt.bookingTypeId,
+                                ),
+                              )}
+                            </div>
+                          )}
                         </div>
-                      ) : null}
-                    </div>
+                      );
+                    })()}
                     <p className="text-xs text-gray-400">
                       Final price depends on your itinerary. Use Estimate Price
                       for an exact quote.
