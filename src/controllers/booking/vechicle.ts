@@ -31,6 +31,7 @@ export class VehicleSearchService {
   private static readonly DESTINATIONS = "/api/v1/public/destinations";
   private static readonly INTERSTATE_DESTINATIONS =
     "/api/v1/public/vehicles/interstate/destinations";
+  private static readonly SERVICE_AREAS = "/api/v1/public/service-areas";
 
   static async getInterstateDestinations(
     latitude: number,
@@ -56,6 +57,30 @@ export class VehicleSearchService {
       return response?.data?.[0]?.data || [];
     } catch (error) {
       console.error("Error fetching destinations:", error);
+      return [];
+    }
+  }
+
+  static async getServiceAreas(
+    latitude: number,
+    longitude: number,
+  ): Promise<
+    {
+      id: string;
+      name: string;
+      latitude: number;
+      longitude: number;
+      isOutskirts: boolean;
+    }[]
+  > {
+    try {
+      const response = await getSingleData(this.SERVICE_AREAS, {
+        latitude,
+        longitude,
+      });
+      return response?.data?.[0]?.data || [];
+    } catch (error) {
+      console.error("Error fetching service areas:", error);
       return [];
     }
   }
