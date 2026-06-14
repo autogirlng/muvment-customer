@@ -5,6 +5,7 @@ export interface VehicleSearchParams {
   longitude?: number;
   radiusInKm?: number;
   bookingTypeId?: string;
+  destinationStateId?: string;
   vehicleTypeId?: string;
   vehicleMakeId?: string;
   vehicleModelId?: string;

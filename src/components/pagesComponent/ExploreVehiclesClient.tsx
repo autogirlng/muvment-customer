@@ -219,6 +219,8 @@ function ExploreVehiclesClientContent({
       if (startTime) params.startTime = startTime;
       if (endTime) params.endTime = endTime;
       if (bookingType) params.bookingTypeId = bookingType;
+      const destinationStateId = searchParams.get("destinationStateId");
+      if (destinationStateId) params.destinationStateId = destinationStateId;
 
       if (filters.selectedVehicleTypes)
         params.vehicleTypeId = filters.selectedVehicleTypes[0];

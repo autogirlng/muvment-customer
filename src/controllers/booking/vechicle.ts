@@ -29,6 +29,26 @@ export class VehicleSearchService {
   private static readonly CUSTOMER_CATEGORIES =
     "/api/v1/public/customer-categories";
   private static readonly DESTINATIONS = "/api/v1/public/destinations";
+  private static readonly INTERSTATE_DESTINATIONS =
+    "/api/v1/public/vehicles/interstate/destinations";
+
+  static async getInterstateDestinations(
+    latitude: number,
+    longitude: number,
+    bookingTypeId: string,
+  ): Promise<{ stateId: string; name: string; country: string }[]> {
+    try {
+      const response = await getSingleData(this.INTERSTATE_DESTINATIONS, {
+        latitude,
+        longitude,
+        bookingTypeId,
+      });
+      return response?.data?.[0]?.data || [];
+    } catch (error) {
+      console.error("Error fetching interstate destinations:", error);
+      return [];
+    }
+  }
 
   static async getDestinations(bookingTypeId: string): Promise<any[]> {
     try {
@@ -202,6 +222,8 @@ export class VehicleSearchService {
     startTime?: string, // Time string in "HH:MM" format
     endTime?: string, // Time string in "HH:MM" format
     categoryName?: string,
+    destinationId?: string,
+    destinationStateId?: string,
   ) {
     const params = new URLSearchParams();
 
@@ -214,6 +236,14 @@ export class VehicleSearchService {
     // ✅ Optional params (ONLY added if they exist)
     if (bookingType) {
       params.append("bookingType", bookingType);
+    }
+
+    if (destinationId) {
+      params.append("destinationId", destinationId);
+    }
+
+    if (destinationStateId) {
+      params.append("destinationStateId", destinationStateId);
     }
 
     if (category) {

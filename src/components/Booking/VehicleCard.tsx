@@ -135,16 +135,14 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       vehicleCategory: bookingType || "",
       price: getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
     });
-    const ctx = new URLSearchParams();
-    ctx.set("vehicleType", vehicleTypeName);
-    if (bookingType) ctx.set("bookingType", bookingType);
     const current = new URLSearchParams(
       typeof window !== "undefined" ? window.location.search : "",
     );
-    ["location", "lat", "lng", "startDate", "startTime"].forEach((k) => {
-      const val = current.get(k);
-      if (val) ctx.set(k, val);
-    });
+    // Carry the whole search context forward (dates, time, category,
+    // destination, location), then set this vehicle's own specifics.
+    const ctx = new URLSearchParams(current.toString());
+    ctx.set("vehicleType", vehicleTypeName);
+    if (bookingType) ctx.set("bookingType", bookingType);
     router.push(`/booking/details/${slug || id}?${ctx.toString()}`);
   };
 
