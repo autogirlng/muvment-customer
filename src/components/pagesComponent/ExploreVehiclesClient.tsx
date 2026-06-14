@@ -19,7 +19,8 @@ import { useLocationDetection } from "@/hooks/useLocationDetection";
 import LocationPrompt from "../Booking/LocationPrompt";
 import Footer from "../HomeComponent/Footer";
 
-import { TravelState, buildStateExploreUrl } from "@/types/state";
+import { TravelState } from "@/types/state";
+import { getBookingOption } from "@/context/Constarain";
 
 interface ExploreVehiclesClientProps {
   initialVehicles: any[];
@@ -29,7 +30,6 @@ interface ExploreVehiclesClientProps {
   initialMakes: any[];
   initialModels: any[];
   initialFeatures: any[];
-  initialStates?: TravelState[];
 }
 
 const VehicleCardSkeleton: React.FC<{ viewMode: "list" | "grid" }> = ({
@@ -68,12 +68,13 @@ function ExploreVehiclesClientContent({
   initialMakes,
   initialModels,
   initialFeatures,
-  initialStates = [],
 }: ExploreVehiclesClientProps) {
   const searchParams = useSearchParams();
   const observerTarget = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [showInterstate, setShowInterstate] = useState(false);
+  const [interstateTypeId, setInterstateTypeId] = useState<string>("");
+  const [interstateStates, setInterstateStates] = useState<TravelState[]>([]);
   const pathname = usePathname();
 
   const isFirstMount = useRef(true);
@@ -117,6 +118,7 @@ function ExploreVehiclesClientContent({
   const endDate = searchParams.get("endDate");
   const endTime = searchParams.get("endTime");
   const city = searchParams.get("city");
+  const destinationStateId = searchParams.get("destinationStateId");
 
   const {
     status: locationStatus,
@@ -128,6 +130,70 @@ function ExploreVehiclesClientContent({
 
   const hasLocationParams = lat && lng;
   const PAG_SIZE = 20;
+
+  // Resolve the interstate booking type id once (same keyword match as the bar).
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { rawBookingOptions } = await getBookingOption();
+        const opts: any[] = rawBookingOptions || [];
+        const id =
+          opts.find((t) =>
+            String(t?.name || "")
+              .toLowerCase()
+              .includes("interstate"),
+          )?.id || "";
+        if (alive) setInterstateTypeId(id);
+      } catch {
+        // leave empty; the interstate prompt simply will not show
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Interstate destinations reachable from the current origin, same source as
+  // the search bar, so the prompt only offers states served from here.
+  useEffect(() => {
+    if (!interstateTypeId || !lat || !lng) {
+      setInterstateStates([]);
+      return;
+    }
+    let alive = true;
+    VehicleSearchService.getInterstateDestinations(
+      parseFloat(lat),
+      parseFloat(lng),
+      interstateTypeId,
+    )
+      .then((list) => {
+        if (!alive) return;
+        setInterstateStates(
+          (list || []).map((d) => ({
+            stateId: d.stateId,
+            stateName: d.name,
+            countryName: d.country,
+          })),
+        );
+      })
+      .catch(() => {
+        if (alive) setInterstateStates([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [interstateTypeId, lat, lng]);
+
+  // Run the origin-to-destination route search for the chosen state, preserving
+  // the full current query (origin, dates, category, and any active filters).
+  const goInterstate = (stateId: string) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (interstateTypeId) p.set("bookingType", interstateTypeId);
+    p.set("destinationStateId", stateId);
+    p.set("radiusInKm", "100");
+    router.push(`/booking/search?${p.toString()}`);
+  };
 
   const initializeFiltersFromUrl = useCallback((): FilterState => {
     const minPriceParam = searchParams.get("minPrice");
@@ -191,6 +257,8 @@ function ExploreVehiclesClientContent({
     endDate,
     endTime,
     city,
+    bookingType,
+    destinationStateId,
   ]);
 
   const performSearch = async (
@@ -219,7 +287,6 @@ function ExploreVehiclesClientContent({
       if (startTime) params.startTime = startTime;
       if (endTime) params.endTime = endTime;
       if (bookingType) params.bookingTypeId = bookingType;
-      const destinationStateId = searchParams.get("destinationStateId");
       if (destinationStateId) params.destinationStateId = destinationStateId;
 
       if (filters.selectedVehicleTypes)
@@ -472,7 +539,7 @@ function ExploreVehiclesClientContent({
             />
           </div>
 
-          {initialStates && initialStates.length > 0 && (
+          {interstateStates.length > 0 && (
             <div className="mb-4">
               <button
                 type="button"
@@ -499,10 +566,10 @@ function ExploreVehiclesClientContent({
               </button>
               {showInterstate && (
                 <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {initialStates.map((st) => (
+                  {interstateStates.map((st) => (
                     <button
                       key={st.stateId}
-                      onClick={() => router.push(buildStateExploreUrl(st))}
+                      onClick={() => goInterstate(st.stateId)}
                       className="group flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-[#0673FF] hover:text-[#0673FF]"
                     >
                       <span className="whitespace-nowrap">{st.stateName}</span>
