@@ -48,13 +48,12 @@ export async function generateMetadata({ searchParams }: PageProps) {
 export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
 
-  const [typesRes, makesRes, modelsRes, featuresRes, statesRes] =
+  const [typesRes, makesRes, modelsRes, featuresRes] =
     await Promise.all([
       VehicleSearchService.getVehicleTypes().catch(() => []),
       VehicleSearchService.getVehicleMakes().catch(() => []),
       VehicleSearchService.getVehicleModels().catch(() => []),
       VehicleSearchService.getVehicleFeatures().catch(() => []),
-      VehicleSearchService.getStates().catch(() => []),
     ]);
 
   const orderByParam = Array.isArray(params.orderBy)
@@ -130,7 +129,6 @@ export default async function Page({ searchParams }: PageProps) {
         initialMakes={makesRes || []}
         initialModels={modelsRes || []}
         initialFeatures={featuresRes || []}
-        initialStates={statesRes || []}
       />
     </>
   );
