@@ -14,6 +14,7 @@ type Props = {
   setCurrentStep: (step: number) => void;
   vehicleId: string;
   isOthers: boolean;
+  hideNavigation?: boolean;
 };
 
 export const replaceCharactersWithString = (str: string): string => {
@@ -25,6 +26,7 @@ const PersonalInformationFormOthers = ({
   currentStep,
   setCurrentStep,
   isOthers,
+  hideNavigation,
 }: Props) => {
   const [bookingInformationValues, setBookingInformationValues] =
     useState<PersonalInformationOthersValues | null>(null);
@@ -98,6 +100,7 @@ const PersonalInformationFormOthers = ({
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
         isOthers={isOthers}
+        hideNavigation={hideNavigation}
       />
     </Formik>
   );
@@ -108,6 +111,7 @@ interface PersonalInformationFormInnerProps {
   currentStep: number;
   setCurrentStep: (step: number) => void;
   isOthers: boolean;
+  hideNavigation?: boolean;
 }
 
 const PersonalInformationFormInner = ({
@@ -115,6 +119,7 @@ const PersonalInformationFormInner = ({
   currentStep,
   setCurrentStep,
   isOthers,
+  hideNavigation,
 }: PersonalInformationFormInnerProps) => {
   const {
     values,
@@ -203,15 +208,17 @@ const PersonalInformationFormInner = ({
         </>
       )}
 
-      <StepperNavigation
-        steps={steps}
-        currentStep={currentStep}
-        setCurrentStep={setCurrentStep}
-        handleSaveDraft={() => {}}
-        isSaveDraftloading={false}
-        isNextLoading={isSubmitting}
-        disableNextButton={isSubmitting}
-      />
+      {!hideNavigation && (
+        <StepperNavigation
+          steps={steps}
+          currentStep={currentStep}
+          setCurrentStep={setCurrentStep}
+          handleSaveDraft={() => {}}
+          isSaveDraftloading={false}
+          isNextLoading={isSubmitting}
+          disableNextButton={isSubmitting}
+        />
+      )}
     </Form>
   );
 };

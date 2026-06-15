@@ -155,6 +155,9 @@ const EstimatedPickupTime = ({
             Your vehicle will be delivered within {DELIVERY_WINDOW_LABEL} of
             your requested pickup time, regardless of its current location.
           </p>
+          <p className="text-xs text-gray-500">
+            All times shown are Nigeria time (WAT).
+          </p>
         </div>
       </div>
     </div>

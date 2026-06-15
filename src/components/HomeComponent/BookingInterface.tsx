@@ -904,7 +904,7 @@ function BookingSearchInner({
   const [destId, setDestId] = useState("");
 
   // Within state
-  const [durationId, setDurationId] = useState("24h");
+  const [durationId, setDurationId] = useState("12h");
   const [rangeValue, setRangeValue] = useState<any>(null);
 
   // Shared
@@ -1080,10 +1080,11 @@ function BookingSearchInner({
     }
 
     let bt: BookingType = "within-state";
-    let dur = "24h";
+    let dur = "12h";
     if (btId === typeIds.airport) bt = "airport";
     else if (btId === typeIds.interstate) bt = "interstate";
     else if (btId === typeIds.boat) bt = "boat";
+    else if (btId === typeIds.twentyFourH) dur = "24h";
     else if (btId === typeIds.twelveH) dur = "12h";
     else if (btId === typeIds.monthly) dur = "monthly";
     setBookingType(bt);
@@ -1547,6 +1548,11 @@ function BookingSearchInner({
   const barCellFixed = (node: React.ReactNode) => (
     <div className="flex-none px-1">{node}</div>
   );
+  // Optional cell (vehicle category): hidden below xl so the primary fields
+  // keep their width on small-laptop widths and do not truncate.
+  const barCellOptional = (node: React.ReactNode) => (
+    <div className="hidden min-w-0 flex-auto px-1 xl:block">{node}</div>
+  );
 
   const barDestinationSelect = (
     list: { id: string; name: string }[],
@@ -1603,7 +1609,7 @@ function BookingSearchInner({
                   onChange={setRangeValue}
                 />,
               )}
-          {barCell(
+          {barCellOptional(
             <CategoryField
               compact
               options={categoryOptions}
@@ -1645,7 +1651,7 @@ function BookingSearchInner({
             />,
           )}
           {barCellFixed(<TimeField compact value={time} onChange={setTime} />)}
-          {barCell(
+          {barCellOptional(
             <CategoryField
               compact
               options={categoryOptions}
@@ -1678,7 +1684,7 @@ function BookingSearchInner({
             />,
           )}
           {barCellFixed(<TimeField compact value={time} onChange={setTime} />)}
-          {barCell(
+          {barCellOptional(
             <CategoryField
               compact
               options={categoryOptions}

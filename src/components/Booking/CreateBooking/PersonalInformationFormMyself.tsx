@@ -16,6 +16,7 @@ type Props = {
   setCurrentStep: (step: number) => void;
   vehicleId: string;
   type: "user" | "guest";
+  hideNavigation?: boolean;
 };
 
 const PersonalInformationFormMyself = ({
@@ -24,6 +25,7 @@ const PersonalInformationFormMyself = ({
   setCurrentStep,
   vehicleId,
   type,
+  hideNavigation,
 }: Props) => {
   const [showSecondaryPhoneNumber, setShowSecondaryPhoneNumber] =
     useState<boolean>(false);
@@ -257,15 +259,17 @@ const PersonalInformationFormMyself = ({
                 : "Add secondary phone number"}
             </button>
 
-            <StepperNavigation
-              steps={steps}
-              currentStep={currentStep}
-              setCurrentStep={setCurrentStep}
-              handleSaveDraft={() => {}}
-              isSaveDraftloading={false}
-              isNextLoading={isSubmitting}
-              disableNextButton={isSubmitting}
-            />
+            {!hideNavigation && (
+              <StepperNavigation
+                steps={steps}
+                currentStep={currentStep}
+                setCurrentStep={setCurrentStep}
+                handleSaveDraft={() => {}}
+                isSaveDraftloading={false}
+                isNextLoading={isSubmitting}
+                disableNextButton={isSubmitting}
+              />
+            )}
           </Form>
         );
       }}
