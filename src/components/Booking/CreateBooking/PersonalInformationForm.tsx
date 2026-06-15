@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react"; // Import useEffect
 import PersonalInformationFormMyself from "./PersonalInformationFormMyself";
 import PersonalInformationFormOthers from "./PersonalInformationFormOthers";
-import { useAuth } from "@/context/AuthContext";
 
 type Props = {
     steps: string[];
@@ -9,6 +8,7 @@ type Props = {
     setCurrentStep: (step: number) => void;
     vehicleId: string;
     type: "user" | "guest";
+    hideNavigation?: boolean;
 };
 
 const PersonalInformationForm = ({
@@ -17,13 +17,13 @@ const PersonalInformationForm = ({
     setCurrentStep,
     vehicleId,
     type,
+    hideNavigation,
 }: Props) => {
     const [whoBookedRide, setWhoBookedRide] = useState<"myself" | "others">(
         "myself"
     );
 
     const [isOthers, setIsOthers] = useState<boolean>(whoBookedRide === "others");
-    const { isAuthenticated } = useAuth()
 
     useEffect(() => {
         setIsOthers(whoBookedRide === "others");
@@ -32,7 +32,7 @@ const PersonalInformationForm = ({
     return (
         <div className="max-w-[730px] w-full space-y-9">
             {
-                isAuthenticated && <>
+                <>
                     <h6 className="!font-bold text-base md:text-xl 3xl:text-h6">
                         Who is this ride for?
                     </h6>
@@ -55,7 +55,7 @@ const PersonalInformationForm = ({
                 </>
             }
 
-            {whoBookedRide !== "myself" && isAuthenticated ? (
+            {whoBookedRide === "others" ? (
                 <PersonalInformationFormOthers
                     steps={steps}
                     currentStep={currentStep}
@@ -63,6 +63,7 @@ const PersonalInformationForm = ({
                     vehicleId={vehicleId}
                     // type={type}
                     isOthers={isOthers}
+                    hideNavigation={hideNavigation}
                 />
             ) : (
 
@@ -72,6 +73,7 @@ const PersonalInformationForm = ({
                     setCurrentStep={setCurrentStep}
                     vehicleId={vehicleId}
                     type={type}
+                    hideNavigation={hideNavigation}
                 />
 
             )}

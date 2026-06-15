@@ -1,6 +1,21 @@
 import { useState, useEffect } from "react";
 import { Trips, TripDetails } from "@/types/vehicleDetails";
 
+// Shift a trip's start date forward by a number of days, tolerant of the value
+// format. If the value can't be parsed it is returned untouched, so a stray
+// date never crashes the itinerary.
+const shiftStartDate = (start: any, offsetDays: number): any => {
+  if (!start) return start;
+  let d = new Date(`${String(start).slice(0, 10)}T00:00:00Z`);
+  if (isNaN(d.getTime())) {
+    const alt = new Date(String(start));
+    if (isNaN(alt.getTime())) return start;
+    d = new Date(Date.UTC(alt.getFullYear(), alt.getMonth(), alt.getDate()));
+  }
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  return `${d.toISOString().slice(0, 10)}T00:00:00`;
+};
+
 export const useItineraryForm = () => {
   const [trips, setTrips] = useState<Trips[]>([]);
 
@@ -10,6 +25,9 @@ export const useItineraryForm = () => {
     return new Set(allIds);
   });
   const [isTripFormsComplete, setIsTripFormComplete] = useState<boolean>(false);
+  const [missingByTrip, setMissingByTrip] = useState<
+    { id: string; fields: string[] }[]
+  >([]);
   const [tripsVersion, setTripsVersion] = useState<number>(0);
   const [sameForAllDays, setSameForAllDays] = useState<boolean>(true);
 
@@ -22,12 +40,7 @@ export const useItineraryForm = () => {
       const next = prev.map((t, i) => {
         if (hasDate) {
           const start = (details as any).tripStartDate;
-          let dateStr = start;
-          if (start) {
-            const d = new Date(`${String(start).slice(0, 10)}T00:00:00Z`);
-            d.setUTCDate(d.getUTCDate() + i);
-            dateStr = `${d.toISOString().slice(0, 10)}T00:00:00`;
-          }
+          const dateStr = shiftStartDate(start, i);
           return {
             ...t,
             tripDetails: { ...(t.tripDetails || {}), tripStartDate: dateStr },
@@ -63,12 +76,7 @@ export const useItineraryForm = () => {
       for (let i = trips.length; i < n; i++) {
         maxNum += 1;
         const id = `trip-${maxNum}`;
-        let dateStr = baseDateStr;
-        if (baseDateStr) {
-          const d = new Date(`${String(baseDateStr).slice(0, 10)}T00:00:00Z`);
-          d.setUTCDate(d.getUTCDate() + i);
-          dateStr = `${d.toISOString().slice(0, 10)}T00:00:00`;
-        }
+        const dateStr = shiftStartDate(baseDateStr, i);
         next.push({ id, tripDetails: { ...basePlan, id, tripStartDate: dateStr } });
       }
     } else {
@@ -222,6 +230,7 @@ export const useItineraryForm = () => {
       }
       if (fields.length >= 1) missingFields.push({ id: tripId, fields });
     }
+    setMissingByTrip(missingFields);
     setIsTripFormComplete(missingFields.length === 0);
   }, [trips]);
 
@@ -249,6 +258,7 @@ export const useItineraryForm = () => {
     addTrip,
     isTripFormsComplete,
     setIsTripFormComplete,
+    missingByTrip,
     generateNextTripId,
     tripsVersion,
     applyToAllTrips,

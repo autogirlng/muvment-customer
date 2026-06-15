@@ -3,18 +3,15 @@ import { useEffect, useState } from "react";
 import cn from "classnames";
 import Image from "next/image";
 import Link from "next/link";
-import { FiArrowLeft } from "react-icons/fi";
-import Itinerary from "@/components/Booking/CreateBooking/Itinerary";
+import { FiClock, FiLock } from "react-icons/fi";
 import BookingSummary from "@/components/Booking/CreateBooking/BookingSummary";
-import PersonalInformation from "@/components/Booking/CreateBooking/Personalnformation";
-import { Stepper } from "@/components/Booking/CreateBooking/stepper";
 import Modal from "@/components/general/modal";
 import ScreenLoader from "@/components/utils/ScreenLoader";
 import { useRouter, useParams } from "next/navigation";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 
-const steps = ["Personal Information", "Itinerary", "Booking Summary"];
+const steps = ["Confirm and pay"];
 
 export default function CreateBookingPageClient() {
   const router = useRouter();
@@ -66,8 +63,12 @@ export default function CreateBookingPageClient() {
     <>
       {/* Focused checkout header (replaces the full site nav to keep the flow distraction-free) */}
       <header className="sticky top-0 z-30 bg-white border-b border-grey-100">
-        <div className="max-w-[1200px] 3xl:max-w-[1320px] mx-auto flex items-center justify-between px-6 lg:px-[52px] py-3">
-          <Link href="/" aria-label="Muvment home">
+        <div className="max-w-[1200px] 3xl:max-w-[1320px] mx-auto grid grid-cols-[1fr_auto_1fr] items-center px-6 lg:px-[52px] py-3">
+          <Link
+            href="/"
+            aria-label="Muvment home"
+            className="justify-self-start"
+          >
             <Image
               src="/images/image.png"
               alt="Muvment"
@@ -77,13 +78,16 @@ export default function CreateBookingPageClient() {
               priority
             />
           </Link>
+          <div className="hidden sm:flex items-center gap-1.5 justify-self-center text-sm font-medium text-grey-600">
+            <FiLock className="w-4 h-4 text-grey-400" />
+            <span>Secure checkout</span>
+          </div>
           <button
             type="button"
             onClick={() => setShowCancel(true)}
-            className="inline-flex items-center gap-1.5 text-sm text-grey-500 hover:text-grey-800 cursor-pointer"
+            className="justify-self-end inline-flex items-center rounded-full border border-grey-200 px-4 py-1.5 text-sm font-medium text-grey-600 hover:bg-grey-50 hover:text-grey-800 cursor-pointer"
           >
-            <FiArrowLeft className="w-4 h-4" />
-            <span>Cancel</span>
+            Cancel
           </button>
         </div>
       </header>
@@ -96,67 +100,46 @@ export default function CreateBookingPageClient() {
           )}
         >
           <h2 className="mt-2 font-bold text-black text-2xl">
-            {currentStep === 2 ? "Summary" : "Book Ride"}
+            Confirm your booking
           </h2>
 
-          <Stepper steps={steps} currentStep={currentStep}>
-            {currentStep === 0 && (
-              <PersonalInformation
-                steps={steps}
-                currentStep={currentStep}
-                setCurrentStep={handleCurrentStep}
-                vehicle={vehicle ?? null}
-                vehicleImages={vehicleImages}
-                type="user"
-              />
-            )}
-            {currentStep === 1 && (
-              <Itinerary
-                steps={steps}
-                currentStep={currentStep}
-                setCurrentStep={handleCurrentStep}
-                vehicle={vehicle ?? null}
-                vehicleImages={vehicleImages}
-              />
-            )}
-            {currentStep === 2 && (
-              <BookingSummary
-                vehicle={vehicle ?? null}
-                vehicleImages={vehicleImages}
-                perks={[]}
-                vehicleDetails={vehicle}
-                type="user"
-                steps={steps}
-                currentStep={currentStep}
-                setCurrentStep={handleCurrentStep}
-              />
-            )}
-          </Stepper>
+          <BookingSummary
+            vehicle={vehicle ?? null}
+            vehicleImages={vehicleImages}
+            perks={[]}
+            vehicleDetails={vehicle}
+            type="user"
+            steps={steps}
+            currentStep={currentStep}
+            setCurrentStep={handleCurrentStep}
+          />
         </div>
       </main>
 
       <Modal isOpen={showCancel} onClose={() => setShowCancel(false)}>
-        <div className="space-y-4 pr-6">
-          <h3 className="text-lg font-bold text-grey-900">
-            Cancel this booking?
-          </h3>
-          <p className="text-sm text-grey-600">
-            Your progress so far will be lost and you will go back to browsing.
+        <div className="text-center px-2 pt-2">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#E7F1FF]">
+            <FiClock className="h-7 w-7 text-[#0673ff]" />
+          </div>
+          <h3 className="text-xl font-bold text-grey-900">You're almost done</h3>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-grey-600">
+            You're one step away from booking this vehicle. If you leave now your
+            details won't be submitted, and the vehicle won't be held for you.
           </p>
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="mt-6 flex flex-col gap-2.5">
             <button
               type="button"
               onClick={() => setShowCancel(false)}
-              className="rounded-full border border-grey-300 px-5 py-2.5 text-sm font-medium text-grey-700 hover:bg-grey-50 cursor-pointer"
+              className="w-full rounded-full bg-[#0673ff] px-5 py-3.5 text-sm font-semibold text-white hover:opacity-90 cursor-pointer"
             >
               Keep editing
             </button>
             <button
               type="button"
-              onClick={() => router.push("/")}
-              className="rounded-full bg-[#D42620] px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 cursor-pointer"
+              onClick={() => router.back()}
+              className="w-full rounded-full px-5 py-2.5 text-sm font-medium text-grey-500 hover:text-grey-700 cursor-pointer"
             >
-              Yes, cancel
+              Leave and cancel
             </button>
           </div>
         </div>

@@ -12,6 +12,10 @@ import { TripDetails } from "@/types/vehicleDetails";
 import { StepperNavigation } from "./stepper";
 import EstimatedPickupTime from "./EstimatedPickupTime";
 import { DELIVERY_WINDOW_LABEL } from "./deliveryConfig";
+import AutocompleteSelect from "@/components/general/forms/AutoCompleteSelect";
+import TextArea from "@/components/general/forms/textarea";
+import { RIDE_PURPOSES } from "@/helpers/metadata";
+import PersonalInformationForm from "./PersonalInformationForm";
 
 type Props = {
   vehicle: any | null;
@@ -67,11 +71,26 @@ export default function BookingSummary({
 }: Props) {
   const { setTrips, trips } = useItineraryForm();
   const [bookingInfo, setBookingInfo] = useState<any>(null);
+  const [purposeOfRide, setPurposeOfRide] = useState<string>("");
+  const [extraDetails, setExtraDetails] = useState<string>("");
   const [action, setAction] = useState<{
     label: string;
     onClick: () => void;
     disabled: boolean;
+    amount?: number;
   } | null>(null);
+  const ngn = (n?: number) => `NGN ${Number(n || 0).toLocaleString()}`;
+
+  const persistAdditional = (purpose: string, extra: string) => {
+    try {
+      const stored = JSON.parse(
+        sessionStorage.getItem("userBookingInformation") || "{}",
+      );
+      stored.purposeOfRide = purpose;
+      stored.extraDetails = extra;
+      sessionStorage.setItem("userBookingInformation", JSON.stringify(stored));
+    } catch {}
+  };
 
   useEffect(() => {
     const tripsInfo = JSON.parse(
@@ -84,8 +103,31 @@ export default function BookingSummary({
 
     try {
       const stored = sessionStorage.getItem("userBookingInformation");
-      if (stored) setBookingInfo(JSON.parse(stored));
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setBookingInfo(parsed);
+        setPurposeOfRide(parsed.purposeOfRide || "");
+        setExtraDetails(parsed.extraDetails || "");
+      }
     } catch {}
+  }, []);
+
+  // Keep the contact details fresh as the user fills the form so the notice and
+  // the pay button reflect the latest input.
+  useEffect(() => {
+    let last = "";
+    const sync = () => {
+      try {
+        const stored = sessionStorage.getItem("userBookingInformation") || "";
+        if (stored !== last) {
+          last = stored;
+          setBookingInfo(stored ? JSON.parse(stored) : null);
+        }
+      } catch {}
+    };
+    sync();
+    const id = window.setInterval(sync, 600);
+    return () => window.clearInterval(id);
   }, []);
 
   const forOthers = !!bookingInfo?.isBookingForOthers;
@@ -106,9 +148,108 @@ export default function BookingSummary({
       ? `${bookingInfo?.secondaryCountryCode || ""} ${bookingInfo.secondaryPhoneNumber}`.trim()
       : "";
 
+  const summaryName =
+    [
+      vehicleDetails?.data.vehicleMakeName,
+      vehicleDetails?.data.vehicleModelName,
+    ]
+      .filter(Boolean)
+      .join(" ") || "Your vehicle";
+  const dayCount = trips?.length || 0;
+  const durationLabel =
+    dayCount > 1 ? `${dayCount} days` : dayCount === 1 ? "1 day" : "N/A";
+  const firstTrip = trips?.[0]?.tripDetails;
+  const firstPickup = (() => {
+    if (!firstTrip?.tripStartDate) return "";
+    let out = "";
+    try {
+      out = format(new Date(firstTrip.tripStartDate), "do MMM yyyy");
+    } catch {
+      return "";
+    }
+    if (firstTrip?.tripStartTime) {
+      try {
+        out += ` · ${format(new Date(firstTrip.tripStartTime), "hh:mma")}`;
+      } catch {}
+    }
+    return out;
+  })();
+
+  const phoneNumberRaw = forOthers
+    ? bookingInfo?.recipientPhoneNumber
+    : bookingInfo?.primaryPhoneNumber;
+  const missingInfo: string[] = [];
+  if (!String(recapName || "").trim())
+    missingInfo.push(forOthers ? "Recipient's full name" : "Your full name");
+  if (!String(recapEmail || "").trim())
+    missingInfo.push(forOthers ? "Recipient's email" : "Your email");
+  if (!String(phoneNumberRaw || "").trim())
+    missingInfo.push(
+      forOthers ? "Recipient's phone number" : "Your phone number",
+    );
+  const priceReady = !!action?.amount;
+
+  const completionNotice =
+    missingInfo.length > 0 ? (
+      <div className="bg-[#FFFBEB] border border-amber-200 rounded-2xl p-4">
+        <p className="text-sm font-semibold text-amber-900">
+          Add these before you can pay
+        </p>
+        <ul className="mt-2 space-y-1.5">
+          {missingInfo.map((l) => (
+            <li
+              key={l}
+              className="flex items-center gap-2 text-sm text-amber-800"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              {l}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
+
   return (
-    <div className="flex flex-col-reverse lg:flex-row items-start gap-8">
+    <div className="flex flex-col lg:flex-row items-start gap-8">
       <div className="space-y-6 w-full lg:flex-1 lg:min-w-0">
+        {completionNotice}
+        <div className="bg-white border border-[#E4E7EC] rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            {vehicleImages?.[0] ? (
+              <img
+                src={vehicleImages[0]}
+                alt={summaryName}
+                className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+              />
+            ) : null}
+            <div className="min-w-0">
+              <p className="font-semibold text-grey-900 text-sm truncate">
+                {summaryName}
+              </p>
+              {vehicleDetails?.data.year ? (
+                <p className="text-xs text-grey-500">
+                  {vehicleDetails.data.year}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className="border-t border-[#EAECF0] pt-3 space-y-2 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-grey-500">Duration</span>
+              <span className="text-grey-900 font-medium text-right">
+                {durationLabel}
+              </span>
+            </div>
+            {firstPickup ? (
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-grey-500 flex-shrink-0">Pick-up time</span>
+                <span className="text-grey-900 font-medium text-right break-words">
+                  {firstPickup}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        </div>
         <Collapse
           title={
             <p className="text-base md:text-lg font-semibold text-grey-900">
@@ -278,38 +419,33 @@ export default function BookingSummary({
           </div>
         </Collapse>
 
-        {bookingInfo && (
-          <Collapse
-            title={
-              <p className="text-base md:text-lg font-semibold text-grey-900">
-                Your Information
-              </p>
-            }
-            closeText={Icons.ic_chevron_down}
-            openText={Icons.ic_chevron_up}
-            isDefaultOpen
-            className="bg-white border border-[#E4E7EC] rounded-2xl px-5 py-4"
-          >
-            <div className="space-y-4 pt-1">
-              <InfoRow
-                label="Booking for"
-                value={forOthers ? "Someone else" : "Myself"}
-              />
-              <InfoRow label="Full name" value={recapName} />
-              <InfoRow label="Email" value={recapEmail} />
-              <InfoRow label="Phone number" value={recapPhone} />
-              {recapSecondaryPhone && (
-                <InfoRow label="Secondary phone" value={recapSecondaryPhone} />
-              )}
-            </div>
-          </Collapse>
-        )}
+        <Collapse
+          title={
+            <p className="text-base md:text-lg font-semibold text-grey-900">
+              Your Information
+            </p>
+          }
+          closeText={Icons.ic_chevron_down}
+          openText={Icons.ic_chevron_up}
+          isDefaultOpen
+          className="bg-white border border-[#E4E7EC] rounded-2xl px-5 py-4"
+        >
+          <div className="pt-1">
+            <PersonalInformationForm
+              steps={steps}
+              currentStep={currentStep}
+              setCurrentStep={setCurrentStep}
+              vehicleId={vehicleDetails?.data.id ?? ""}
+              type="user"
+              hideNavigation
+            />
+          </div>
+        </Collapse>
 
-        {bookingInfo && (
-          <Collapse
-            title={
-              <p className="text-base md:text-lg font-semibold text-grey-900">
-                Additional Details
+        <Collapse
+          title={
+            <p className="text-base md:text-lg font-semibold text-grey-900">
+              Additional Details
               </p>
             }
             closeText={Icons.ic_chevron_down}
@@ -318,21 +454,36 @@ export default function BookingSummary({
             className="bg-white border border-[#E4E7EC] rounded-2xl px-5 py-4"
           >
             <div className="space-y-4 pt-1">
-              <InfoRow
-                label="Ride purpose"
-                value={bookingInfo?.purposeOfRide || "Not specified"}
+              <AutocompleteSelect
+                id="purposeOfRide"
+                label="Ride purpose (optional)"
+                placeholder="Search or select ride purpose..."
+                profile
+                options={RIDE_PURPOSES.map((purpose) => ({
+                  value: purpose,
+                  option: purpose,
+                }))}
+                value={purposeOfRide}
+                onChange={(value) => {
+                  setPurposeOfRide(value);
+                  persistAdditional(value, extraDetails);
+                }}
               />
-              <div className="space-y-1.5">
-                <p className="text-sm md:text-base font-medium text-grey-800">
-                  Special requests
-                </p>
-                <p className="text-sm text-grey-500">
-                  {bookingInfo?.extraDetails || "None added"}
-                </p>
-              </div>
+              <TextArea
+                name="extraDetails"
+                id="extraDetails"
+                label="Special requests (optional)"
+                placeholder="e.g. child seat needed, extra luggage, preferred route"
+                value={extraDetails}
+                onChange={(e: any) => {
+                  const value =
+                    typeof e === "string" ? e : (e?.target?.value ?? "");
+                  setExtraDetails(value);
+                  persistAdditional(purposeOfRide, value);
+                }}
+              />
             </div>
-          </Collapse>
-        )}
+        </Collapse>
       </div>
       <CostBreakdown
         trips={trips}
@@ -346,8 +497,11 @@ export default function BookingSummary({
         setCurrentStep={setCurrentStep}
         submitText={action?.label || "Confirm & pay"}
         handleSubmit={action?.onClick}
-        disableSubmitButton={!action || action.disabled}
+        disableSubmitButton={
+          !action || action.disabled || (priceReady && missingInfo.length > 0)
+        }
         isSaveDraftloading={false}
+        priceText={action?.amount ? ngn(action.amount) : undefined}
       />
     </div>
   );

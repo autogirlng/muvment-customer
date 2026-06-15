@@ -122,7 +122,7 @@ export class BookingService {
       const response = await createData(
         this.BOOKINGS_URL + "/calculate",
         request,
-        { silent: true },
+        { silent: true, requireAuth: false, skipLoader: true },
       );
       if (!response || response.error || !response.data) {
         const apiMessage =

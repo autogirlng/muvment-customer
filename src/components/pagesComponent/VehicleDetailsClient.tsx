@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, ReactNode } from "react";
+import React, { useState, useEffect, useRef, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/services/vechilePriceUtiles";
 import { format } from "date-fns";
@@ -25,7 +25,6 @@ const formatPlanRange = (
     return `Day 1 to Day ${count}`;
   }
 };
-import { toast } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
 import Modal from "@/components/general/modal";
 
@@ -96,6 +95,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     toggleOpen,
     openTripIds,
     isTripFormsComplete,
+    missingByTrip,
     generateNextTripId,
     tripsVersion,
     applyToAllTrips,
@@ -104,6 +104,9 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     setSameForAllDays,
     applySharedPlanChange,
   } = useItineraryForm();
+
+  // Guards against an older in-flight estimate overwriting a newer one.
+  const estimateSeq = useRef(0);
 
   useEffect(() => {
     setPriceErrorMessage("");
@@ -141,6 +144,21 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     }
   }, [couponCode]);
 
+  // Estimate the price automatically once the trip form is complete, and re-run
+  // it whenever the trip details or coupon change. Keyed off the trip content,
+  // since field edits change trips without bumping tripsVersion; without this a
+  // change would clear the price and never recalculate it. The footer button is
+  // only used to confirm the booking.
+  const tripsSignature = JSON.stringify(trips);
+  useEffect(() => {
+    if (!isTripFormsComplete) return;
+    const timer = setTimeout(() => {
+      estimatePrice();
+    }, 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTripFormsComplete, tripsSignature, couponCode]);
+
   const generateBookingOptions = () => {
     const types: VehicleBookingOptions[] = vehicle?.allPricingOptions;
     const options = types?.map((type) => {
@@ -171,6 +189,39 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     const startTime = params.get("startTime");
     const bookingTypeParam = params.get("bookingType");
 
+    // Restore the saved itinerary when returning to the same search (for example
+    // coming back from checkout to change details) so earlier choices like the
+    // drop-off location are kept. A new search has a different signature and
+    // falls through to a fresh seed below.
+    const seedSig = JSON.stringify({
+      location,
+      lat,
+      lng,
+      startDate,
+      endDate,
+      startTime,
+      bookingType: bookingTypeParam,
+    });
+    const hasSearch = !!(location || startDate || bookingTypeParam);
+    try {
+      const savedRaw = sessionStorage.getItem("trips");
+      const saved = savedRaw ? JSON.parse(savedRaw) : null;
+      if (
+        hasSearch &&
+        sessionStorage.getItem("tripsSeedSig") === seedSig &&
+        Array.isArray(saved) &&
+        saved.length > 0
+      ) {
+        setTrips(
+          saved.map((t: Record<string, string>) => {
+            const { id, ...details } = t;
+            return { id: id || "trip-0", tripDetails: details };
+          }),
+        );
+        return;
+      }
+    } catch {}
+
     const base: Record<string, string> = {};
     if (bookingTypeParam) base.bookingType = bookingTypeParam;
     if (location) base.pickupLocation = location;
@@ -183,6 +234,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 
     if (Object.keys(base).length === 0 && !startDate) {
       sessionStorage.removeItem("trips");
+      sessionStorage.setItem("tripsSeedSig", seedSig);
       setTrips([{ id: "trip-0", tripDetails: {} }]);
       return;
     }
@@ -222,6 +274,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     }
 
     sessionStorage.setItem("trips", JSON.stringify(flat));
+    sessionStorage.setItem("tripsSeedSig", seedSig);
     setTrips(nested);
   }, []);
 
@@ -284,6 +337,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   }
 
   const estimatePrice = async () => {
+    const seq = ++estimateSeq.current;
     setIsEstimating(true);
     setPriceErrorMessage("");
     try {
@@ -376,6 +430,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       }
 
       const pricing = await BookingService.calculateBooking(data);
+      if (seq !== estimateSeq.current) return;
       sessionStorage.setItem(
         "priceEstimateId",
         pricing.data.data.calculationId,
@@ -394,6 +449,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       setPricing(pricing);
       setContinueBooking(true);
     } catch (e: any) {
+      if (seq !== estimateSeq.current) return;
       console.error("Failed to estimate price", e);
       setPriceErrorMessage(
         e?.message ||
@@ -402,24 +458,22 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       setPricing(undefined);
       setContinueBooking(false);
     } finally {
-      setIsEstimating(false);
+      if (seq === estimateSeq.current) setIsEstimating(false);
     }
   };
 
   const handlePrimaryAction = () => {
-    if (!isTripFormsComplete) {
-      toast.warning(
-        "Please complete all trip details. Make sure to select your locations from the dropdown suggestions.",
-      );
-      return;
-    }
-    if (!continueBooking) {
+    if (!isTripFormsComplete || isEstimating) return;
+    // Recover from a failed estimate without leaving the page.
+    if (priceErrorMessage && !continueBooking) {
       estimatePrice();
       return;
     }
-    router.push(
-      `/booking/create/${vehicle.id}${isAuthenticated ? "" : "?user=guest"}`,
-    );
+    if (continueBooking) {
+      router.push(
+        `/booking/create/${vehicle.id}${isAuthenticated ? "" : "?user=guest"}`,
+      );
+    }
   };
 
   const storedTrips =
@@ -797,30 +851,116 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     </>
   );
 
+  const FIELD_LABELS: Record<string, string> = {
+    tripStartDate: "Trip date",
+    tripStartTime: "Pickup time",
+    pickupLocation: "Pickup location",
+    pickupCoordinates: "Pickup location",
+    dropoffLocation: "Drop-off location",
+    dropoffCoordinates: "Drop-off location",
+  };
+  const labelsForFields = (fields: string[]) => {
+    const out: string[] = [];
+    for (const f of fields) {
+      const label = FIELD_LABELS[f];
+      if (label && !out.includes(label)) out.push(label);
+    }
+    return out;
+  };
+  const pendingByDay = (missingByTrip || [])
+    .map((m) => ({
+      day: trips.findIndex((t) => t.id === m.id) + 1,
+      labels: labelsForFields(m.fields),
+    }))
+    .filter((d) => d.labels.length > 0);
+  const pendingAllSame =
+    pendingByDay.length > 0 &&
+    pendingByDay.every(
+      (d) => d.labels.join("|") === pendingByDay[0].labels.join("|"),
+    );
+
+  const pendingChecklist =
+    !isTripFormsComplete && pendingByDay.length > 0 ? (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <p className="text-sm font-semibold text-amber-900">
+          Add these to see your price
+        </p>
+        {pendingAllSame || pendingByDay.length === 1 ? (
+          <ul className="mt-2 space-y-1.5">
+            {pendingByDay[0].labels.map((l) => (
+              <li
+                key={l}
+                className="flex items-center gap-2 text-sm text-amber-800"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                {l}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-2 space-y-2">
+            {pendingByDay.map((d) => (
+              <div key={d.day}>
+                <p className="text-xs font-semibold text-amber-900">
+                  Day {d.day}
+                </p>
+                <ul className="mt-1 space-y-1">
+                  {d.labels.map((l) => (
+                    <li
+                      key={l}
+                      className="flex items-center gap-2 text-sm text-amber-800"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                      {l}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    ) : null;
+
+  const isPricePending =
+    isTripFormsComplete && !continueBooking && !priceErrorMessage;
+  const isPriceLoading = isEstimating || isPricePending;
+  const canConfirmBooking = continueBooking && !isEstimating;
+  const canRetryEstimate =
+    isTripFormsComplete &&
+    !continueBooking &&
+    !isEstimating &&
+    !!priceErrorMessage;
+
   const bookingCTA = (
+    <>
+      {pendingChecklist && <div className="mb-3">{pendingChecklist}</div>}
                 <button
                   type="button"
                   onClick={handlePrimaryAction}
-                  disabled={isEstimating}
+                  disabled={!canConfirmBooking && !canRetryEstimate}
                   className={`w-full py-4 mt-2 text-sm font-medium text-white rounded-full shadow-md transition duration-150 flex items-center justify-center gap-2 ${
-                    isEstimating
+                    isPriceLoading
                       ? "bg-blue-600 opacity-80 cursor-wait"
-                      : !isTripFormsComplete
-                        ? "bg-blue-600/60 cursor-pointer"
-                        : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                      : canConfirmBooking || canRetryEstimate
+                        ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                        : "bg-blue-600/60 cursor-not-allowed"
                   }`}
                 >
-                  {isEstimating ? (
+                  {isPriceLoading ? (
                     <>
                       <span className="block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Estimating...
+                      Calculating price...
                     </>
-                  ) : !continueBooking || !isTripFormsComplete ? (
-                    "Estimate Price"
+                  ) : canRetryEstimate ? (
+                    "Retry"
+                  ) : canConfirmBooking ? (
+                    "Confirm booking"
                   ) : (
-                    "Continue Booking"
+                    "Complete your trip details"
                   )}
                 </button>
+    </>
   );
 
   const bookingDiscounts = vehicle?.discounts?.length > 0 && (

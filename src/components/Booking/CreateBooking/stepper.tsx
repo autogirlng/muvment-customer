@@ -113,6 +113,7 @@ export const StepperNavigation = ({
     isSaveDraftloading,
     isNextLoading,
     showSaveDraftButton,
+    priceText,
 }: {
     steps: string[];
     currentStep: number;
@@ -132,6 +133,7 @@ export const StepperNavigation = ({
     isNextLoading?: boolean;
 
     showSaveDraftButton?: boolean;
+    priceText?: string;
 }) => {
     const handleBack = () => {
         if (currentStep > 0) {
@@ -141,17 +143,27 @@ export const StepperNavigation = ({
     return (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-grey-200 py-3 sm:py-4 3xl:py-6 px-4 sm:px-8 lg:px-[52px] z-40">
             <div className="max-w-[1200px] 3xl:max-w-[1320px] mx-auto flex items-center justify-between gap-3">
-                {!(currentStep === 0) && currentStep >= 0 && (
-                    <StepperButton
-                        onClick={handleBack}
-                        className="border-2 border-grey-300 text-grey-700 hover:bg-grey-50 cursor-pointer"
-                        type="button"
-                    >
-                        {Icons.ic_chevron_left} <span>Previous</span>
-                    </StepperButton>
-                )}
+                <div className="flex items-center gap-3">
+                    {!(currentStep === 0) && currentStep >= 0 && (
+                        <StepperButton
+                            onClick={handleBack}
+                            className="border-2 border-grey-300 text-grey-700 hover:bg-grey-50 cursor-pointer"
+                            type="button"
+                        >
+                            {Icons.ic_chevron_left} <span>Previous</span>
+                        </StepperButton>
+                    )}
+                    {priceText && (
+                        <div className="flex flex-col leading-tight">
+                            <span className="text-xs text-grey-500">Total</span>
+                            <span className="text-base sm:text-lg font-bold text-grey-900">
+                                {priceText}
+                            </span>
+                        </div>
+                    )}
+                </div>
 
-                <div className="flex items-center gap-3 justify-end w-full">
+                <div className={cn("flex items-center gap-3 justify-end", priceText ? "flex-shrink-0" : "w-full")}>
                     {showSaveDraftButton && (
                         <StepperButton
                             onClick={handleSaveDraft}
@@ -166,7 +178,10 @@ export const StepperNavigation = ({
                         <StepperButton
                             onClick={handleSubmit}
                             disabled={disableSubmitButton || isSubmitloading}
-                            className="w-full sm:w-auto justify-center cursor-pointer bg-[#0673ff] text-white hover:opacity-90 disabled:bg-[#80b9ff]"
+                            className={cn(
+                                "justify-center cursor-pointer bg-[#0673ff] text-white hover:opacity-90 disabled:bg-[#80b9ff]",
+                                priceText ? "w-auto" : "w-full sm:w-auto",
+                            )}
                             type="button"
                         >
                             <span>{submitText}</span>
