@@ -18,6 +18,7 @@ import {
   FiLoader,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
+import { useAuth } from "@/context/AuthContext";
 import { getSingleData } from "@/controllers/connnector/app.callers";
 
 interface BookingSegment {
@@ -48,6 +49,12 @@ interface BookingDetails {
     email: string;
     customerPhone: string;
   };
+  recipient?: {
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+  };
+  primaryPhoneNumber?: string;
   segments?: BookingSegment[];
 }
 
@@ -94,6 +101,13 @@ const prettyStatus = (s?: string) => {
   return t.charAt(0).toUpperCase() + t.slice(1);
 };
 
+const escapeHtml = (value: unknown) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
 const StatusBadge = ({ status }: { status: string }) => {
   const confirmed = isConfirmedStatus(status);
   return (
@@ -115,6 +129,7 @@ const MAX_POLLS = 5;
 const BookingDetailsClient = () => {
   const params = useParams();
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const bookingId = (params.id as string) || "";
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
@@ -122,6 +137,12 @@ const BookingDetailsClient = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pollCount, setPollCount] = useState(0);
+  const [paymentRef, setPaymentRef] = useState("");
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    setPaymentRef(p.get("reference") || p.get("trxref") || "");
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -188,8 +209,170 @@ const BookingDetailsClient = () => {
     return () => clearTimeout(t);
   }, [booking, pollCount, bookingId]);
 
-  const handlePrint = () => {
-    if (typeof window !== "undefined") window.print();
+  const buildReceiptHtml = () => {
+    if (!booking) return "";
+    const origin =
+      typeof window !== "undefined" ? window.location.origin : "";
+    const vehicleTitle = vehicle
+      ? `${vehicle.year} ${vehicle.vehicleMakeName} ${vehicle.vehicleModelName}`
+      : booking.vehicle?.vehicleName || "Vehicle";
+    const plate = booking.vehicle?.licensePlate || "";
+    const vehicleId = booking.vehicle?.id || vehicle?.id || "";
+    const vehicleLink = vehicleId
+      ? `${origin}/booking/details/${vehicleId}`
+      : "";
+    const recipient = booking.recipient;
+    const forOthers = !!(
+      recipient?.fullName &&
+      recipient.fullName !== booking.booker?.fullName
+    );
+    const features = (vehicle?.vehicleFeatures || [])
+      .map((f) => escapeHtml(f))
+      .join(" &middot; ");
+    const rows = (booking.segments || [])
+      .map(
+        (s, i) => `
+        <tr>
+          <td class="num">${i + 1}</td>
+          <td>${escapeHtml(safeFormat(s.startDateTime, "EEE, MMM do yyyy"))}<div class="muted">${escapeHtml(s.bookingTypeName || "")}${s.duration ? " &middot; " + escapeHtml(s.duration) : ""}</div></td>
+          <td>${escapeHtml(s.pickupLocation || "N/A")}<div class="muted">${escapeHtml(safeFormat(s.startDateTime, "h:mm a"))}</div></td>
+          <td>${escapeHtml(s.dropoffLocation || "N/A")}<div class="muted">${escapeHtml(safeFormat(s.endDateTime, "h:mm a"))}</div></td>
+        </tr>`,
+      )
+      .join("");
+
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Muvment Booking ${escapeHtml(booking.invoiceNumber || booking.bookingId)}</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #111827; margin: 0; font-size: 12px; line-height: 1.5; }
+  a { color: #0673ff; text-decoration: none; }
+  .head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0673ff; padding-bottom: 14px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand img { height: 32px; width: auto; }
+  .brand .name { font-size: 16px; font-weight: 700; }
+  .doc-title { text-align: right; }
+  .doc-title h1 { font-size: 18px; margin: 0; }
+  .pill { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: #ecfdf3; color: #15803d; border: 1px solid #bbf7d0; }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; margin: 22px 0 8px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .row { display: flex; justify-content: space-between; border-bottom: 1px solid #f1f1f4; padding: 5px 0; }
+  .row .k { color: #6b7280; }
+  .row .v { font-weight: 600; text-align: right; }
+  .total { margin-top: 16px; background: #eff6ff; border: 1px solid #cfe2ff; border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .total .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #1e40af; }
+  .total .amt { font-size: 20px; font-weight: 800; color: #0673ff; }
+  .veh .vt { font-size: 15px; font-weight: 700; }
+  .veh .meta { color: #6b7280; margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; border-bottom: 1px solid #e5e7eb; padding: 6px 8px; }
+  td { padding: 8px; border-bottom: 1px solid #f1f1f4; vertical-align: top; }
+  td.num { color: #9ca3af; width: 22px; }
+  .muted { color: #6b7280; font-size: 11px; margin-top: 2px; }
+  .help { margin-top: 22px; background: #f9fafb; border: 1px solid #eceef2; border-radius: 10px; padding: 14px 16px; }
+  .help h2 { margin-top: 0; }
+  .help .line { margin: 3px 0; }
+  .fine { margin-top: 16px; color: #9ca3af; font-size: 10px; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="brand">
+      <img src="${origin}/images/image.png" alt="Muvment" />
+      <span class="name">Muvment</span>
+    </div>
+    <div class="doc-title">
+      <h1>Booking confirmation</h1>
+      <div class="pill">${escapeHtml(prettyStatus(booking.bookingStatus))}</div>
+    </div>
+  </div>
+
+  <div class="two">
+    <div>
+      <h2>Booking</h2>
+      <div class="row"><span class="k">Booking ID</span><span class="v">${escapeHtml(booking.bookingId)}</span></div>
+      <div class="row"><span class="k">Invoice</span><span class="v">${escapeHtml(booking.invoiceNumber || "N/A")}</span></div>
+      <div class="row"><span class="k">Booked on</span><span class="v">${escapeHtml(safeFormat(booking.bookedAt, "dd MMM yyyy"))}</span></div>
+    </div>
+    <div>
+      <h2>Payment</h2>
+      <div class="row"><span class="k">Method</span><span class="v">${escapeHtml((booking.paymentMethod || "Online").toString().toLowerCase().replace("_", " "))}</span></div>
+      <div class="row"><span class="k">Status</span><span class="v">${escapeHtml(prettyStatus(booking.bookingStatus))}</span></div>
+      <div class="row"><span class="k">Channel</span><span class="v">${escapeHtml((booking.channel || "Website").toString().toLowerCase())}</span></div>
+    </div>
+  </div>
+
+  <div class="total">
+    <span class="lbl">Total amount paid</span>
+    <span class="amt">${escapeHtml(formatCurrency(booking.totalPrice))}</span>
+  </div>
+
+  <h2>Vehicle</h2>
+  <div class="veh">
+    <div class="vt">${escapeHtml(vehicleTitle)}</div>
+    <div class="meta">${plate ? "Plate " + escapeHtml(plate) : ""}${vehicle?.vehicleColorName ? (plate ? " &middot; " : "") + escapeHtml(vehicle.vehicleColorName) : ""}</div>
+    ${features ? `<div class="meta">${features}</div>` : ""}
+    ${vehicle?.description ? `<div class="meta">${escapeHtml(vehicle.description)}</div>` : ""}
+    ${vehicleLink ? `<div class="meta"><a href="${vehicleLink}">View this vehicle on muvment</a></div>` : ""}
+  </div>
+
+  <h2>Trip itinerary</h2>
+  <table>
+    <thead><tr><th>#</th><th>Date</th><th>Pick-up</th><th>Drop-off</th></tr></thead>
+    <tbody>${rows || `<tr><td colspan="4" class="muted">No itinerary details.</td></tr>`}</tbody>
+  </table>
+
+  <h2>${forOthers ? "Booked by" : "Customer"}</h2>
+  <div class="row"><span class="k">Name</span><span class="v">${escapeHtml(booking.booker?.fullName || "Guest user")}</span></div>
+  <div class="row"><span class="k">Email</span><span class="v">${escapeHtml(booking.booker?.email || "N/A")}</span></div>
+  <div class="row"><span class="k">Phone</span><span class="v">${escapeHtml(booking.booker?.customerPhone || booking.primaryPhoneNumber || "N/A")}</span></div>
+  ${
+    forOthers
+      ? `
+  <h2>Customer</h2>
+  <div class="row"><span class="k">Name</span><span class="v">${escapeHtml(recipient?.fullName || "N/A")}</span></div>
+  <div class="row"><span class="k">Email</span><span class="v">${escapeHtml(recipient?.email || "N/A")}</span></div>
+  <div class="row"><span class="k">Phone</span><span class="v">${escapeHtml(recipient?.phoneNumber || "N/A")}</span></div>`
+      : ""
+  }
+
+  <div class="help">
+    <h2>Need help with this booking?</h2>
+    <div class="line">Autogirl Limited (AG Muvment)</div>
+    <div class="line">Email: <a href="mailto:info@muvment.ng">info@muvment.ng</a></div>
+    <div class="line">Call or SMS: <a href="tel:+2348167474165">+234 816 747 4165</a></div>
+    <div class="line">Web: <a href="https://muvment.ng">muvment.ng</a></div>
+    <div class="line">Terms you agreed to: <a href="${origin}/policy/terms-conditions">${origin}/policy/terms-conditions</a></div>
+  </div>
+
+  <div class="fine">
+    Confirmation of your booking and payment with Muvment by Autogirl. Generated ${escapeHtml(safeFormat(new Date().toISOString(), "dd MMM yyyy, h:mm a"))}.
+  </div>
+
+  <script>window.onload = function(){ setTimeout(function(){ window.focus(); window.print(); }, 200); };</script>
+</body>
+</html>`;
+  };
+
+  const downloadReceipt = () => {
+    if (typeof window === "undefined" || !booking) return;
+    const existing = document.getElementById("mv-receipt-frame");
+    if (existing) existing.remove();
+    const iframe = document.createElement("iframe");
+    iframe.id = "mv-receipt-frame";
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.style.cssText =
+      "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+    doc.open();
+    doc.write(buildReceiptHtml());
+    doc.close();
   };
 
   if (loading) {
@@ -236,6 +419,14 @@ const BookingDetailsClient = () => {
   }
 
   const confirmed = isConfirmedStatus(booking.bookingStatus);
+  const forOthers = !!(
+    booking.recipient?.fullName &&
+    booking.recipient.fullName !== booking.booker?.fullName
+  );
+  const vehiclePageId = booking.vehicle?.id || vehicle?.id || "";
+  const vehicleName = vehicle
+    ? `${vehicle.year} ${vehicle.vehicleMakeName} ${vehicle.vehicleModelName}`
+    : booking?.vehicle?.vehicleName || "Vehicle";
 
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
@@ -279,15 +470,17 @@ const BookingDetailsClient = () => {
           </div>
 
           <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center print:hidden">
+            {isAuthenticated && (
+              <button
+                onClick={() => router.push("/dashboard/my-booking")}
+                className="w-full sm:w-auto text-white font-semibold py-3 px-6 rounded-full hover:opacity-90 transition"
+                style={{ backgroundColor: BRAND }}
+              >
+                View my bookings
+              </button>
+            )}
             <button
-              onClick={() => router.push("/dashboard/my-booking")}
-              className="w-full sm:w-auto text-white font-semibold py-3 px-6 rounded-full hover:opacity-90 transition"
-              style={{ backgroundColor: BRAND }}
-            >
-              View my bookings
-            </button>
-            <button
-              onClick={handlePrint}
+              onClick={downloadReceipt}
               className="w-full sm:w-auto font-semibold py-3 px-6 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
             >
               <FiDownload className="w-4 h-4" />
@@ -295,6 +488,63 @@ const BookingDetailsClient = () => {
             </button>
           </div>
         </section>
+
+        {!isAuthenticated && (
+          <section className="bg-white rounded-2xl border border-[#cfe2ff] shadow-sm overflow-hidden mb-8 print:hidden">
+            <div className="md:flex items-stretch">
+              <div className="p-6 md:p-8 flex-1">
+                <span
+                  className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-3"
+                  style={{ backgroundColor: "#E7F1FF", color: "#0b4ea2" }}
+                >
+                  Save time next time
+                </span>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Create your free account to manage this booking
+                </h3>
+                <p className="text-gray-500 text-sm leading-relaxed mt-2 max-w-lg">
+                  Track this trip, rebook in a tap, and keep your details and
+                  saved trips in one place. Returning customers book their next
+                  ride in about half the time.
+                </p>
+                <div className="mt-5 flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => router.push("/auth/register")}
+                    className="text-white font-semibold py-3 px-6 rounded-full hover:opacity-90 transition"
+                    style={{ backgroundColor: BRAND }}
+                  >
+                    Create account
+                  </button>
+                  <button
+                    onClick={() => router.push("/auth/login")}
+                    className="font-semibold py-3 px-6 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 transition"
+                  >
+                    Log in
+                  </button>
+                </div>
+              </div>
+              <div
+                className="hidden md:flex items-center justify-center px-10"
+                style={{ backgroundColor: "#E7F1FF" }}
+              >
+                <div className="text-center">
+                  <div
+                    className="text-4xl font-extrabold"
+                    style={{ color: BRAND }}
+                  >
+                    50%
+                  </div>
+                  <div
+                    className="text-xs font-medium mt-1"
+                    style={{ color: "#0b4ea2" }}
+                  >
+                    faster checkout next time
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         <div className="mb-6 flex justify-between items-center print:hidden">
           <button
@@ -346,9 +596,18 @@ const BookingDetailsClient = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
                   <div>
                     <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
-                      {vehicle
-                        ? `${vehicle.year} ${vehicle.vehicleMakeName} ${vehicle.vehicleModelName}`
-                        : booking?.vehicle?.vehicleName || "Vehicle"}
+                      {vehiclePageId ? (
+                        <a
+                          href={`/booking/details/${vehiclePageId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-[#0673ff] transition-colors"
+                        >
+                          {vehicleName}
+                        </a>
+                      ) : (
+                        vehicleName
+                      )}
                     </h2>
 
                     <div className="flex items-center gap-3 mt-3">
@@ -482,44 +741,11 @@ const BookingDetailsClient = () => {
                 )}
               </div>
             </div>
-
-            {/* Contact */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
-              <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <FiUser style={{ color: BRAND }} /> Contact information
-              </h3>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="p-5 rounded-xl bg-gray-50 border border-gray-100">
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3">
-                    Primary booker
-                  </p>
-                  <div className="space-y-1">
-                    <p className="font-bold text-gray-900 text-lg">
-                      {booking.booker?.fullName || "Guest user"}
-                    </p>
-                    <p className="text-sm text-gray-600 flex items-center gap-2">
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: BRAND }}
-                      ></span>
-                      {booking.booker?.email || "N/A"}
-                    </p>
-                    <p className="text-sm text-gray-600 flex items-center gap-2">
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: BRAND }}
-                      ></span>
-                      {booking.booker?.customerPhone || "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* RIGHT: summary */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-24">
+          {/* RIGHT: summary, payment, contact */}
+          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24 lg:self-start">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-lg text-gray-900">Summary</h3>
                 <StatusBadge status={booking.bookingStatus} />
@@ -540,14 +766,6 @@ const BookingDetailsClient = () => {
                   </span>
                   <span className="font-medium text-gray-900 text-sm">
                     {safeFormat(booking.bookedAt, "dd/MM/yyyy")}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-50">
-                  <span className="text-gray-500 text-sm flex items-center gap-2">
-                    <FiShield size={16} /> Payment
-                  </span>
-                  <span className="font-medium text-gray-900 text-sm capitalize">
-                    {booking.paymentMethod?.toLowerCase().replace("_", " ")}
                   </span>
                 </div>
               </div>
@@ -580,6 +798,95 @@ const BookingDetailsClient = () => {
                   Keep invoice <strong>{booking.invoiceNumber}</strong> handy for
                   any support enquiries.
                 </p>
+              </div>
+            </div>
+
+            {/* Payment */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <h3 className="font-bold text-lg text-gray-900 mb-5 flex items-center gap-2">
+                <FiShield style={{ color: BRAND }} /> Payment
+              </h3>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center py-2.5 border-b border-gray-50">
+                  <span className="text-gray-500 text-sm">Method</span>
+                  <span className="font-medium text-gray-900 text-sm capitalize">
+                    {(booking.paymentMethod || "Online")
+                      .toLowerCase()
+                      .replace("_", " ")}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2.5 border-b border-gray-50">
+                  <span className="text-gray-500 text-sm">Channel</span>
+                  <span className="font-medium text-gray-900 text-sm capitalize">
+                    {(booking.channel || "Website").toLowerCase()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2.5 border-b border-gray-50">
+                  <span className="text-gray-500 text-sm">Status</span>
+                  <span className="font-medium text-gray-900 text-sm">
+                    {prettyStatus(booking.bookingStatus)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2.5">
+                  <span className="text-gray-500 text-sm">Amount</span>
+                  <span
+                    className="font-semibold text-sm"
+                    style={{ color: BRAND }}
+                  >
+                    {formatCurrency(booking.totalPrice)}
+                  </span>
+                </div>
+                {paymentRef && (
+                  <div className="flex justify-between items-start gap-3 pt-2.5 border-t border-gray-50">
+                    <span className="text-gray-500 text-sm shrink-0">
+                      Reference
+                    </span>
+                    <span className="font-mono text-gray-700 text-xs text-right break-all">
+                      {paymentRef}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Contact */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <h3 className="font-bold text-lg text-gray-900 mb-5 flex items-center gap-2">
+                <FiUser style={{ color: BRAND }} /> Contact
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1.5">
+                    {forOthers ? "Booked by" : "Customer"}
+                  </p>
+                  <p className="font-semibold text-gray-900">
+                    {booking.booker?.fullName || "Guest user"}
+                  </p>
+                  <p className="text-sm text-gray-600 break-words">
+                    {booking.booker?.email || "N/A"}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {booking.booker?.customerPhone ||
+                      booking.primaryPhoneNumber ||
+                      "N/A"}
+                  </p>
+                </div>
+                {forOthers && (
+                  <div className="pt-4 border-t border-gray-100">
+                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1.5">
+                      Customer
+                    </p>
+                    <p className="font-semibold text-gray-900">
+                      {booking.recipient?.fullName || "N/A"}
+                    </p>
+                    <p className="text-sm text-gray-600 break-words">
+                      {booking.recipient?.email || "N/A"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {booking.recipient?.phoneNumber || "N/A"}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

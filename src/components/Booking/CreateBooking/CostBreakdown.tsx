@@ -595,6 +595,28 @@ const CostBreakdown = ({
                 </div>
               </div>
             </div>
+
+            <p className="text-xs text-gray-500 text-center leading-relaxed mt-2">
+              By making this payment you agree to the Muvment platform&apos;s{" "}
+              <a
+                href="/policy/terms-conditions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[#0673ff] hover:underline"
+              >
+                Terms &amp; Conditions
+              </a>{" "}
+              and{" "}
+              <a
+                href="/policy/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[#0673ff] hover:underline"
+              >
+                Privacy Policy
+              </a>
+              .
+            </p>
           </section>
         )}
 
