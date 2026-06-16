@@ -366,7 +366,7 @@ export const ApiConfigurationTab = ({ orgId }: ApiConfigurationTabProps) => {
               <Link
                 href={
                   orgId
-                    ? `/dashboard/settings/submit-kyc?organizationId=${orgId}`
+                    ? `/dashboard/integrations/submit-kyc?organizationId=${orgId}`
                     : "#"
                 }
                 onClick={(e) => !orgId && e.preventDefault()} // Prevents navigation if no ID

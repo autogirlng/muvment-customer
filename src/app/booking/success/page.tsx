@@ -24,6 +24,7 @@ import cn from "classnames";
 import { createData } from "@/controllers/connnector/app.callers";
 import { BookingService } from "@/controllers/booking/bookingService";
 import Cookies from "js-cookie";
+import { useAuth } from "@/context/AuthContext";
 
 type PaymentGateway = "MONNIFY" | "PAYSTACK";
 
@@ -88,6 +89,9 @@ interface BookingResponse {
 const BookingSuccessContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const homeOrDashboard = user ? "/dashboard" : "/";
+  const doneHref = user ? "/dashboard/my-booking" : "/";
   const bookingId = searchParams.get("bookingId");
 
   const [bookingDetails, setBookingDetails] = useState<BookingResponse | null>(null);
@@ -267,10 +271,10 @@ const BookingSuccessContent = () => {
               {error || "Unable to load booking details. The booking may have expired or been cancelled."}
             </p>
             <button
-              onClick={() => router.push("/")}
+              onClick={() => router.push(homeOrDashboard)}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              Return to Home
+              {user ? "Go to dashboard" : "Return to Home"}
             </button>
           </div>
         </div>
@@ -662,10 +666,10 @@ const BookingSuccessContent = () => {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push(doneHref)}
             className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
           >
-            Return to Home
+            {user ? "Go to my bookings" : "Return to Home"}
           </button>
 
         </div>

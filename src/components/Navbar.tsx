@@ -4,6 +4,7 @@ import { guestMenuItems, menuItems } from "@/utils/MenuContent";
 import { useState, useEffect, useRef } from "react"; // Added useRef
 import { createPortal } from "react-dom";
 import { HiMenuAlt3 } from "react-icons/hi";
+import { MdDashboard } from "react-icons/md";
 import { IoLogOutOutline, IoClose, IoChevronForward } from "react-icons/io5";
 import { Avatar } from "./Avatar";
 import { NavItem } from "./NavItem";
@@ -121,6 +122,7 @@ export const Navbar = ({
   const showNavSearch = homeHero ? isScrolled || showSearchBar : true;
 
   const items = user ? menuItems : guestMenuItems;
+  const showMenu = !user; // guests use the dropdown; logged-in users use the Dashboard button
   const navListItems = items.filter(
     (i: any) => i.name !== "Sign In" && i.name !== "Sign Up",
   );
@@ -157,6 +159,16 @@ export const Navbar = ({
 
           {/* Right side */}
           <div className="flex items-center gap-3 lg:gap-4">
+            {user && (
+              <Link
+                href="/dashboard"
+                aria-label="Go to dashboard"
+                className="inline-flex items-center gap-2 border border-gray-300 rounded-full px-4 py-2 text-sm font-semibold text-gray-800 hover:border-[#0673FF] hover:text-[#0673FF] transition-colors"
+              >
+                <MdDashboard className="w-5 h-5" />
+                <span>Dashboard</span>
+              </Link>
+            )}
             {!showNavSearch && (
               <Link
                 href={exploreLink}
@@ -166,7 +178,8 @@ export const Navbar = ({
               </Link>
             )}
 
-            {/* Menu trigger */}
+            {/* Menu trigger (guests only; logged-in users use the Dashboard button) */}
+            {showMenu && (
             <div className="relative" ref={desktopMenuRef}>
               <button
                 ref={mobileButtonRef}
@@ -182,27 +195,6 @@ export const Navbar = ({
               {/* Desktop dropdown */}
               {isMenuOpen && (
                 <div className="hidden lg:block absolute right-0 z-[9999] mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2">
-                  {user && (
-                    <div className="px-4 py-3 border-b border-gray-200">
-                      <div className="flex items-center gap-3">
-                        <Avatar user={user} size="w-12 h-12" />
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {user.firstName} {user.lastName}
-                          </p>
-                          <button
-                            onClick={() =>
-                              handleNavClick("/dashboard/account/profile")
-                            }
-                            className="text-sm text-blue-600 hover:underline"
-                          >
-                            View Account
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="py-2">
                     {items.map((item: any, index: number) => {
                       if (item.name === "Explore") {
@@ -236,12 +228,14 @@ export const Navbar = ({
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Mobile full-screen menu (portaled to body to escape the nav's backdrop-filter) */}
       {mounted &&
+        showMenu &&
         isMenuOpen &&
         createPortal(
           <div
@@ -270,22 +264,6 @@ export const Navbar = ({
               <IoClose className="w-6 h-6 text-gray-700" />
             </button>
           </div>
-
-          {/* Account header (logged in) */}
-          {user && (
-            <button
-              onClick={() => handleNavClick("/dashboard/account/profile")}
-              className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 text-left"
-            >
-              <Avatar user={user} size="w-11 h-11" />
-              <div>
-                <p className="font-semibold text-gray-900">
-                  {user.firstName} {user.lastName}
-                </p>
-                <span className="text-sm text-[#0673FF]">View account</span>
-              </div>
-            </button>
-          )}
 
           {/* Links */}
           <nav className="flex-1 overflow-y-auto px-5">

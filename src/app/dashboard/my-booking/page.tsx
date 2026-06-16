@@ -7,9 +7,14 @@ import React, {
   useRef,
   useCallback,
 } from "react";
-import Image from "next/image";
-import { FiList, FiCalendar, FiSearch, FiShare2, FiPlus } from "react-icons/fi";
-import { Navbar } from "@/components/Navbar";
+import {
+  FiList,
+  FiCalendar,
+  FiSearch,
+  FiShare2,
+  FiPlus,
+  FiEye,
+} from "react-icons/fi";
 import {
   Booking,
   BookingFilters,
@@ -46,7 +51,8 @@ const BookingHistoryPage = () => {
 
   // Transform raw API item to flat booking object
   const transformItem = (item: any) => ({
-    bookingId: item.id,
+    bookingId: item.booking.bookingId,
+    segmentId: item.id,
     bookingStatus: item.booking.bookingStatus,
     invoiceNumber: item.booking.invoiceNumber,
     paymentMethod: item.booking.paymentMethod,
@@ -133,19 +139,15 @@ const BookingHistoryPage = () => {
     }
   }, [loadingMore, hasMore]);
 
-  const handleBookingClick = async (booking: Booking) => {
-    const result = await BookingService.getBookingById(
-      booking?.bookingId as string,
-    );
-    setSelectedBookings([booking]);
-    setIsModalOpen(true);
+  const handleBookingClick = (booking: Booking) => {
+    router.push(`/dashboard/booking/${booking.bookingId}`);
   };
 
   const handleShareBooking = (booking: Booking) => {
     const shareText = `Check out my booking for ${booking.vehicleName} on ${new Date(
       booking.createdAt,
     ).toLocaleDateString()}`;
-    const shareUrl = `${window.location.origin}/booking-tracking?bookingId=${booking.bookingId}`;
+    const shareUrl = `${window.location.origin}/dashboard/booking-tracking?bookingId=${booking.bookingId}`;
 
     if (navigator.share) {
       navigator.share({ title: "My Booking", text: shareText, url: shareUrl });
@@ -244,7 +246,7 @@ const BookingHistoryPage = () => {
       {
         name: "View Details",
         handleAction: (row: Booking) => handleBookingClick(row),
-        icon: FiCalendar,
+        icon: FiEye,
       },
       {
         name: "Share Booking",
@@ -283,49 +285,33 @@ const BookingHistoryPage = () => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
-      {/* Hero Banner */}
-      <div className="relative overflow-hidden h-36 sm:h-44">
-        {/* Full background image */}
-        <Image
-          src="/images/my-bookings-hero.webp"
-          alt=""
-          fill
-          className="object-cover object-center"
-          priority
-        />
-
-        {/* Content */}
-        <div className="relative z-10 h-full flex flex-col justify-end px-6 sm:px-10 pb-5">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            My Bookings
-          </h1>
-        </div>
-
-        {/* New Booking button — top right */}
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <p className="text-sm text-gray-500">
+          Track and manage all your trips.
+        </p>
         <button
           onClick={() => router.push("/booking/search")}
-          className="absolute z-10 top-4 right-4 sm:top-5 sm:right-6 cursor-pointer px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5 shadow-sm"
+          className="cursor-pointer px-4 py-2 text-white text-sm font-medium rounded-full hover:opacity-90 transition inline-flex items-center gap-1.5 shrink-0"
+          style={{ backgroundColor: "#0673ff" }}
         >
           <FiPlus className="w-4 h-4" />
-          <span>New Booking</span>
+          <span>New booking</span>
         </button>
       </div>
 
-      <div className="mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div>
 
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="sticky top-16 z-10 -mx-4 mb-4 flex flex-col justify-between gap-4 bg-gray-50 px-4 py-3 sm:-mx-6 sm:flex-row sm:items-center sm:px-6 lg:-mx-8 lg:px-8">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
             {/* View Toggle */}
-            <div className="flex bg-white rounded-lg border border-gray-200 p-1">
+            <div className="flex bg-white rounded-lg border border-gray-200 p-1 w-full sm:w-auto">
               <button
                 onClick={() => setViewMode("list")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${
+                className={`flex-1 sm:flex-initial justify-center flex items-center gap-2 px-4 py-2 rounded-md transition ${
                   viewMode === "list"
-                    ? "bg-blue-600 text-white"
+                    ? "bg-[#0673ff] text-white"
                     : "text-gray-600 hover:text-gray-900"
                 }`}
               >
@@ -334,9 +320,9 @@ const BookingHistoryPage = () => {
               </button>
               <button
                 onClick={() => setViewMode("calendar")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${
+                className={`flex-1 sm:flex-initial justify-center flex items-center gap-2 px-4 py-2 rounded-md transition ${
                   viewMode === "calendar"
-                    ? "bg-blue-600 text-white"
+                    ? "bg-[#0673ff] text-white"
                     : "text-gray-600 hover:text-gray-900"
                 }`}
               >
@@ -346,12 +332,12 @@ const BookingHistoryPage = () => {
             </div>
 
             {/* Search */}
-            <div className="relative w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
               <FiSearch className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search bookings..."
-                className="w-full sm:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0673ff] focus:border-transparent"
                 onChange={(e) =>
                   setFilters((prev) => ({
                     ...prev,
@@ -381,15 +367,19 @@ const BookingHistoryPage = () => {
         {/* Content */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0673ff] mx-auto" />
           </div>
         ) : viewMode === "list" ? (
           <div className="overflow-x-auto">
             <DataTable<Booking & { id: number }>
               columns={tableColumns}
               data={tableData as any}
-              height="max-h-[600px]"
+              height="max-h-none"
               seeMoreData={seeMoreActions}
+              onRowClick={(row) =>
+                router.push(`/dashboard/booking/${row.bookingId}`)
+              }
+              itemLabel="booking"
               hasMore={hasMore}
               loadingMore={loadingMore}
               onLoadMore={handleLoadMore}

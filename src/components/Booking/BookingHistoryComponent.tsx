@@ -8,6 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { FiList, FiCalendar, FiSearch, FiShare2 } from "react-icons/fi";
+import { useRouter } from "next/navigation";
 import {
   Booking,
   BookingFilters,
@@ -26,6 +27,7 @@ interface BookingHistoryComponentProps {
   showHeader?: boolean;
   limit?: number;
   onTotalCountChange?: (total: number) => void;
+  showControls?: boolean;
 }
 
 const PAGE_SIZE = 10;
@@ -57,8 +59,10 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   showHeader = true,
   limit,
   onTotalCountChange,
+  showControls = true,
 }) => {
   const [bookings, setBookings] = useState<any[]>([]);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -157,15 +161,14 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   }, [loading, loadingMore, hasMore]);
 
   const handleBookingClick = (booking: any) => {
-    setSelectedBookings([booking]);
-    setIsModalOpen(true);
+    router.push(`/dashboard/booking/${booking.bookingId}`);
   };
 
   const handleShareBooking = (booking: any) => {
     const shareText = `Check out my booking for ${booking.vehicleName} on ${new Date(
       booking.createdAt,
     ).toLocaleDateString()}`;
-    const shareUrl = `${window.location.origin}/booking-tracking?bookingId=${booking.bookingId}`;
+    const shareUrl = `${window.location.origin}/dashboard/booking-tracking?bookingId=${booking.bookingId}`;
 
     if (navigator.share) {
       navigator.share({ title: "My Booking", text: shareText, url: shareUrl });
@@ -301,7 +304,7 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   );
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className={showControls ? "bg-white rounded-lg shadow p-6" : ""}>
       {showHeader && (
         <div className="mb-2">
           <h2 className="text-xl font-bold text-gray-900">Booking History</h2>
@@ -309,14 +312,14 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
         </div>
       )}
 
-      {/* Controls — always visible so calendar toggle is always accessible */}
+      {showControls && (
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         {/* View Toggle */}
         <div className="flex bg-gray-100 rounded-lg overflow-hidden">
           <button
             className={`px-4 py-2 text-sm font-medium ${
               viewMode === "list"
-                ? "bg-blue-600 text-white"
+                ? "bg-[#0673ff] text-white"
                 : "text-gray-700 hover:bg-gray-200"
             }`}
             onClick={() => setViewMode("list")}
@@ -326,7 +329,7 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           <button
             className={`px-4 py-2 text-sm font-medium ${
               viewMode === "calendar"
-                ? "bg-blue-600 text-white"
+                ? "bg-[#0673ff] text-white"
                 : "text-gray-700 hover:bg-gray-200"
             }`}
             onClick={() => setViewMode("calendar")}
@@ -362,10 +365,11 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           />
         </div>
       </div>
+      )}
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
+          <div className="animate-spin h-8 w-8 border-2 border-[#0673ff] border-t-transparent rounded-full mx-auto" />
         </div>
       ) : viewMode === "list" ? (
         <DataTable<any>
@@ -373,9 +377,12 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           data={tableData}
           height="max-h-[600px]"
           seeMoreData={seeMoreActions}
+          itemLabel="booking"
+          flush={!showControls}
           hasMore={hasMore}
           loadingMore={loadingMore}
           onLoadMore={handleLoadMore}
+          onRowClick={(row) => router.push(`/dashboard/booking/${row.bookingId}`)}
         />
       ) : (
         <CalendarView bookings={bookings} onDateClick={handleDateClick} />
