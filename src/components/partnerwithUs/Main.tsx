@@ -147,10 +147,10 @@ export const PartnerWithUs = () => {
 
   const goToOnboarding = () => {
     if (user) {
-      router.push("/dashboard/settings/create-organization");
+      router.push("/dashboard/integrations/create-organization");
     } else {
       router.push(
-        "/auth/login?redirect=/dashboard/settings/create-organization",
+        "/auth/login?redirect=/dashboard/integrations/create-organization",
       );
     }
   };
@@ -216,7 +216,7 @@ export const PartnerWithUs = () => {
                 <button
                   onClick={() =>
                     router.push(
-                      "/auth/login?redirect=/dashboard/settings/create-organization",
+                      "/auth/login?redirect=/dashboard/integrations/create-organization",
                     )
                   }
                   className="text-[#5AA2FF] hover:underline font-medium"

@@ -2,36 +2,33 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Navbar } from "@/components/Navbar";
 import VehicleCard from "@/components/Booking/VehicleCard";
 import { HiViewList } from "react-icons/hi";
 import { BsFillGridFill } from "react-icons/bs";
-import Footer from "../HomeComponent/Footer";
 import { getSingleData } from "@/controllers/connnector/app.callers";
 import { FavouritesVehicleData } from "@/types/favourites";
 import { FiLoader } from "react-icons/fi";
 import Link from "next/link";
-import { CiLocationOn } from "react-icons/ci";
 import { BiHeart, BiSolidHeart } from "react-icons/bi";
-import Slider, { SlideItem } from "../utils/UtilitySlider";
+
+const BRAND = "#0673ff";
 
 export default function FavouritesVehiclesClient() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const router = useRouter();
 
   const [vehicles, setVehicles] = useState<any[]>([]);
-
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<boolean>(false);
 
   const getFavouriteVehicles = async () => {
     setLoading(true);
+    setError(false);
     try {
       const { data } = await getSingleData("/api/v1/favourite-vehicle");
-
       const { data: favoritesData } = data[0] as FavouritesVehicleData;
 
-      const vehicles = favoritesData?.vehicles?.map((vehicle) => {
+      const mapped = favoritesData?.vehicles?.map((vehicle) => {
         const {
           city,
           extraHourlyRate,
@@ -56,10 +53,9 @@ export default function FavouritesVehiclesClient() {
           bookingType: vehicle?.pricing[0]?.bookingTypeId || "",
         };
       });
-      setVehicles(vehicles);
-    } catch (error) {
-      console.error("Error fetching favourite vehicles:", error);
-
+      setVehicles(mapped || []);
+    } catch (err) {
+      console.error("Error fetching favourite vehicles:", err);
       setError(true);
     } finally {
       setLoading(false);
@@ -70,40 +66,16 @@ export default function FavouritesVehiclesClient() {
     getFavouriteVehicles();
   }, []);
 
-  const slides: SlideItem[] = [
-  {
-    image: "/images/r5.webp",
-    title: "Inspired by your favorites",
-    text: "Discover more options similar to what you've saved.",
-  },
-  {
-   image: "/images/r6.webp",
-    title: "Complete Your Plan",
-    text: "Turn your saved ideas into a confirmed booking.",
-  },
-  {
-   image: "/images/r7.webp",
-    title: "Upgrade your experience",
-    text: "Explore premium options for a more comfortable ride.",
-  },
-  {
-    image: "/images/r8.webp",
-    title: "Don't miss out",
-    text: "Your saved rides are in high demand, book before they're gone.",
-  },
-  {
-    image: "/images/r9.webp",
-    title: "Explore more options",
-    text: "Find new rides and experiences tailored to your lifestyle.",
-  },
-];
+  const wrap = "p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto";
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex items-center justify-center h-screen">
-          <FiLoader className="w-12 h-12 animate-spin text-blue-600" />
+      <div className={wrap}>
+        <div className="flex items-center justify-center py-24">
+          <FiLoader
+            className="w-12 h-12 animate-spin"
+            style={{ color: BRAND }}
+          />
         </div>
       </div>
     );
@@ -111,17 +83,15 @@ export default function FavouritesVehiclesClient() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex flex-col items-center justify-center h-screen">
-          <p className="text-xl text-red-600 mb-4">
-            An error occured. Try again later
-          </p>
+      <div className={wrap}>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center max-w-md mx-auto">
+          <p className="text-gray-600 mb-4">An error occurred. Try again later.</p>
           <button
-            onClick={() => router.back()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            onClick={getFavouriteVehicles}
+            className="px-6 py-2.5 rounded-full text-white font-semibold hover:opacity-90 transition"
+            style={{ backgroundColor: BRAND }}
           >
-            Go Back
+            Try again
           </button>
         </div>
       </div>
@@ -130,11 +100,9 @@ export default function FavouritesVehiclesClient() {
 
   if (!vehicles || vehicles.length === 0) {
     return (
-      <>
-        <Navbar />
-        <FavoritesHeader vehicles={vehicles?.length || 0} />
-
-        <div className="flex min-h-screen flex-col items-center justify-center text-center px-4">
+      <div className={wrap}>
+        <FavoritesHeader vehicles={0} />
+        <div className="flex flex-col items-center justify-center text-center px-4 py-16">
           <div className="mb-6">
             <Image
               src={"/images/empty_state.png"}
@@ -144,116 +112,81 @@ export default function FavouritesVehiclesClient() {
               className="opacity-80"
             />
           </div>
-
           <h2 className="text-xl font-semibold text-gray-800">
-            You haven't saved any cars yet
+            You haven&apos;t saved any cars yet
           </h2>
-
           <p className="mt-2 text-gray-500 max-w-sm">
-            Tap the heart icon on any car to save it there
+            Tap the heart icon on any car to save it here.
           </p>
-
           <Link
             href="/booking/search"
-            className="mt-3 px-4 py-3 bg-blue-600 text-white text-lg  rounded-xl hover:bg-blue-800 transition duration-200"
+            className="mt-5 px-6 py-3 text-white rounded-full hover:opacity-90 transition font-semibold"
+            style={{ backgroundColor: BRAND }}
           >
-            Browse Cars
+            Browse cars
           </Link>
         </div>
-      </>
+      </div>
     );
   }
+
   return (
-    <div>
-      <Navbar />
+    <div className={wrap}>
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <FavoritesHeader vehicles={vehicles.length} />
 
-      <div className="min-h-screen">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="lg:h-[1rem]"></div>
-          <div className="mb-3 flex items-center justify-between">
-            <FavoritesHeader vehicles={vehicles.length || 0} />
-
-            <div className="flex hidden lg:block items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === "list"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-                aria-label="List view"
-              >
-                <HiViewList className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === "grid"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-                aria-label="Grid view"
-              >
-                <BsFillGridFill className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          <main className="h-[calc(100vh-250px)] overflow-y-auto hide-scrollbar pb-20">
-            {loading && vehicles.length === 0 && (
-              <div className="flex items-center justify-center py-20">
-                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-
-            {!loading && vehicles.length > 0 && (
-              <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                    : "grid grid-cols-1 gap-6"
-                }
-              >
-                {vehicles &&
-                  vehicles.length > 0 &&
-                  vehicles?.map((v: any) => (
-                    <VehicleCard
-                      key={v.id}
-                      {...v}
-                      // bookingType={v.bookingType}
-                      viewMode={viewMode}
-                    />
-                  ))}
-              </div>
-            )}
-          </main>
+        <div className="hidden lg:flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode("list")}
+            className={`p-2 rounded-md transition-colors ${
+              viewMode === "list"
+                ? "bg-[#0673ff] text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+            aria-label="List view"
+          >
+            <HiViewList className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`p-2 rounded-md transition-colors ${
+              viewMode === "grid"
+                ? "bg-[#0673ff] text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+            aria-label="Grid view"
+          >
+            <BsFillGridFill className="w-5 h-5" />
+          </button>
         </div>
       </div>
-       <Slider slides={slides} automatic seconds={4} />
-      <Footer />
+
+      <div
+        className={
+          viewMode === "grid"
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            : "grid grid-cols-1 gap-6"
+        }
+      >
+        {vehicles.map((v: any) => (
+          <VehicleCard key={v.id} {...v} viewMode={viewMode} />
+        ))}
+      </div>
     </div>
   );
 }
 
-const FavoritesHeader = ({ vehicles }: { vehicles: number }) => {
-  return (
-    <>
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <span className="bg-red-100 p-2 rounded-full flex items-center justify-center">
-            {vehicles > 0 ? (
-              <BiSolidHeart className="text-red-500" size={20} />
-            ) : (
-              <BiHeart className="text-red-500" size={20} />
-            )}
-          </span>
-          My Favourites
-        </h1>
-
-        <h2 className="text-xl mt-5 font-bold text-gray-900 flex items-center gap-2">
-          {vehicles} saved cars
-        </h2>
-      </div>
-    </>
-  );
-};
+const FavoritesHeader = ({ vehicles }: { vehicles: number }) => (
+  <div className="flex items-center gap-2">
+    <span className="bg-red-50 p-2 rounded-full flex items-center justify-center">
+      {vehicles > 0 ? (
+        <BiSolidHeart className="text-red-500" size={18} />
+      ) : (
+        <BiHeart className="text-red-500" size={18} />
+      )}
+    </span>
+    <span className="text-base font-semibold text-gray-900">
+      {vehicles} saved {vehicles === 1 ? "car" : "cars"}
+    </span>
+  </div>
+);

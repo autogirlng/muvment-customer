@@ -10,6 +10,7 @@ import {
   FiClock,
   FiUser,
   FiStar,
+  FiEye,
 } from "react-icons/fi";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 
@@ -171,6 +172,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
                   {/* Action Buttons */}
                   <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() =>
+                        router.push(`/dashboard/booking/${booking.bookingId}`)
+                      }
+                      className="p-2 text-gray-500 hover:text-[#0673ff] hover:bg-[#0673ff]/5 rounded-lg transition"
+                      title="View details"
+                    >
+                      <FiEye className="w-5 h-5" />
+                    </button>
                     <button
                       onClick={() => handleRateBooking(booking.bookingId)}
                       className="p-2 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition"

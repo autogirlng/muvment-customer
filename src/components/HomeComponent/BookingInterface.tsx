@@ -868,7 +868,7 @@ function FromUntilField({
 function BookingSearchInner({
   variant = "hero",
 }: {
-  variant?: "hero" | "bar";
+  variant?: "hero" | "bar" | "modal";
 }) {
   const router = useRouter();
   const { location: userLoc } = useLocationDetection();
@@ -1712,6 +1712,62 @@ function BookingSearchInner({
     );
   };
 
+  if (variant === "modal") {
+    return (
+      <div className="w-full text-left">
+        <p className="mb-3 text-sm font-semibold text-gray-900">
+          What kind of trip are you booking?
+        </p>
+
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+          {TYPES.map((t) => {
+            const active = bookingType === t.id;
+            const Icon = t.Icon;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => changeBookingType(t.id)}
+                className={`flex flex-row items-center justify-center gap-2 rounded-xl border p-3 text-center transition-colors lg:flex-col lg:gap-1 ${
+                  active
+                    ? "border-[#0673FF] bg-[#0673FF]/5"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <Icon
+                  className={`text-lg ${
+                    active ? "text-[#0673FF]" : "text-gray-500"
+                  }`}
+                />
+                <span className="text-xs font-semibold text-gray-900">
+                  {t.label}
+                </span>
+                <span className="hidden text-[11px] leading-tight text-gray-500 lg:block">
+                  {t.hint}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-4">{renderFields()}</div>
+
+        {error ? (
+          <p className="mt-2 text-left text-xs text-[#D42620]">{error}</p>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={handleSearch}
+          disabled={isSearching}
+          className="mt-4 w-full rounded-full bg-[#0673FF] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#0560d6] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSearching ? "Searching..." : "Find a Vehicle"}
+        </button>
+      </div>
+    );
+  }
+
   if (variant === "bar") {
     return (
       <div className="w-full max-w-4xl">
@@ -1900,4 +1956,8 @@ export default function HeroBookingSection() {
 
 export function BookingSearchBar() {
   return <BookingSearchInner variant="bar" />;
+}
+
+export function BookingSearchModalForm() {
+  return <BookingSearchInner variant="modal" />;
 }

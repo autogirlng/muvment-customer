@@ -27,7 +27,7 @@ export const menuItems = [
   },
   {
     name: "Account",
-    link: "/dashboard/account/profile",
+    link: "/dashboard/settings",
     icon: MdAccountCircle,
   },
   {
@@ -42,8 +42,8 @@ export const menuItems = [
     icon: MdGroupAdd,
   },
   {
-    name: "Settings",
-    link: "/dashboard/settings",
+    name: "Integrations",
+    link: "/dashboard/integrations",
     icon: MdSettings,
   },
   {

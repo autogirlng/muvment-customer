@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { FiSearch, FiShare2, FiChevronLeft } from "react-icons/fi";
-import { Navbar } from "@/components/Navbar";
+import { FiSearch, FiShare2, FiCopy, FiCheck, FiEye } from "react-icons/fi";
 import {
   Payment,
   PaymentFilters,
@@ -24,6 +23,39 @@ interface BookingPayment extends Payment {
 }
 
 const PAGE_SIZE = 10;
+
+const ReferenceCell = ({ value }: { value: string }) => {
+  const [copied, setCopied] = useState(false);
+  if (!value) return <span className="text-sm text-gray-400">—</span>;
+  const short =
+    value.length > 14 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value;
+  const copy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    toast.success("Reference copied");
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="font-mono text-sm text-gray-700" title={value}>
+        {short}
+      </span>
+      <button
+        type="button"
+        onClick={copy}
+        aria-label="Copy reference"
+        className="shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#0673ff]"
+      >
+        {copied ? (
+          <FiCheck className="h-3.5 w-3.5" />
+        ) : (
+          <FiCopy className="h-3.5 w-3.5" />
+        )}
+      </button>
+    </div>
+  );
+};
 
 const PaymentHistoryPage = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -104,7 +136,7 @@ const PaymentHistoryPage = () => {
 
   const handleSharePayment = (payment: Payment) => {
     const shareText = `Payment for ${payment.vehicleName} - ${formatCurrency(payment.amountPaid)}`;
-    const shareUrl = `${window.location.origin}/booking-tracking?paymentId=${payment.id}&bookingId=${payment.bookingId}`;
+    const shareUrl = `${window.location.origin}/dashboard/booking-tracking?paymentId=${payment.id}&bookingId=${payment.bookingId}`;
     if (navigator.share) {
       navigator.share({ title: "Payment Receipt", text: shareText, url: shareUrl });
     } else {
@@ -171,19 +203,22 @@ const PaymentHistoryPage = () => {
 
   const columns: TableColumn<Payment>[] = useMemo(
     () => [
-      { key: "transactionReference", label: "Reference" },
       {
         key: "vehicleName",
         label: "Vehicle",
         render: (_, row) => (
-          <div className="text-sm font-medium text-gray-900">{row.vehicleName}</div>
+          <div className="text-sm font-medium text-gray-900">
+            {row.vehicleName}
+          </div>
         ),
       },
       {
-        key: "createdAt",
-        label: "Date",
+        key: "totalPayable",
+        label: "Amount",
         render: (val) => (
-          <span className="text-sm text-gray-700">{formatDate(val)}</span>
+          <span className="text-sm font-semibold text-gray-900">
+            {formatCurrency(val)}
+          </span>
         ),
       },
       {
@@ -191,25 +226,29 @@ const PaymentHistoryPage = () => {
         label: "Status",
         render: (val) => (
           <span
-            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(val)}`}
+            className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full capitalize ${getStatusColor(val)}`}
           >
-            {val}
+            {String(val ?? "").toLowerCase()}
           </span>
         ),
       },
       {
-        key: "totalPayable",
-        label: "Total Payable",
-        render: (val) => (
-          <span className="text-sm font-medium text-gray-900">{formatCurrency(val)}</span>
+        key: "paidAt",
+        label: "Date",
+        render: (_, row) => (
+          <span className="text-sm text-gray-700">
+            {formatDate(
+              row.paymentStatus === "SUCCESSFUL" && row.paidAt
+                ? row.paidAt
+                : row.createdAt,
+            )}
+          </span>
         ),
       },
       {
-        key: "amountPaid",
-        label: "Amount Paid",
-        render: (val) => (
-          <span className="text-sm font-medium text-gray-900">{formatCurrency(val)}</span>
-        ),
+        key: "transactionReference",
+        label: "Reference",
+        render: (val) => <ReferenceCell value={String(val ?? "")} />,
       },
     ],
     [],
@@ -217,8 +256,23 @@ const PaymentHistoryPage = () => {
 
   const seeMoreData: SeeMoreData[] = useMemo(
     () => [
-      { name: "Download Receipt", handleAction, icon: FaReceipt },
-      { name: "Share Payment", handleAction: handleSharePayment, icon: FiShare2 },
+      {
+        name: (row: any) =>
+          row.paymentStatus === "SUCCESSFUL" ? "Download receipt" : "Pay now",
+        handleAction,
+        icon: FaReceipt,
+      },
+      {
+        name: "View booking",
+        handleAction: (row: any) =>
+          router.push(`/dashboard/booking/${row.bookingId}`),
+        icon: FiEye,
+      },
+      {
+        name: "Share payment",
+        handleAction: handleSharePayment,
+        icon: FiShare2,
+      },
     ],
     [],
   );
@@ -232,80 +286,23 @@ const PaymentHistoryPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
-      {/* Hero Banner */}
-      <div
-        className="relative overflow-hidden h-40 sm:h-52"
-        style={{ background: "linear-gradient(135deg, #93c5fd 0%, #3b82f6 45%, #0ea5e9 100%)" }}
-      >
-        {/* Decorative card — back-right */}
-        <div className="absolute top-[-10%] right-[5%] w-52 sm:w-64 h-32 sm:h-40 rounded-2xl border border-white/30 bg-white/10 backdrop-blur-sm rotate-15" />
-        {/* Decorative card — front-right */}
-        <div className="absolute top-[10%] right-[12%] w-48 sm:w-60 h-28 sm:h-36 rounded-2xl border border-white/40 bg-white/20 backdrop-blur-sm rotate-6 shadow-xl">
-          {/* Chip */}
-          <div className="absolute top-4 left-4 w-8 h-6 rounded bg-white/40 grid grid-cols-2 gap-0.5 p-0.5">
-            <div className="bg-white/60 rounded-sm" />
-            <div className="bg-white/60 rounded-sm" />
-            <div className="bg-white/60 rounded-sm" />
-            <div className="bg-white/60 rounded-sm" />
-          </div>
-          {/* Card lines */}
-          <div className="absolute bottom-5 left-4 right-4 space-y-1.5">
-            <div className="h-1.5 bg-white/30 rounded-full w-3/4" />
-            <div className="h-1.5 bg-white/30 rounded-full w-1/2" />
-          </div>
-          {/* Toggle pill */}
-          <div className="absolute bottom-4 right-4 flex items-center gap-1">
-            <div className="w-5 h-5 rounded-full bg-white/40" />
-            <div className="w-5 h-5 rounded-full bg-white/60 -ml-2" />
-          </div>
-        </div>
-
-        {/* Flowing arrow lines */}
-        <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 800 200" preserveAspectRatio="none">
-          <path d="M0,120 Q200,60 400,100 T800,80" stroke="white" strokeWidth="2" fill="none" />
-          <path d="M0,160 Q200,100 400,140 T800,120" stroke="white" strokeWidth="1.5" fill="none" />
-          <path d="M200,0 Q300,80 250,160" stroke="white" strokeWidth="1" fill="none" />
-        </svg>
-
-        {/* Back button */}
-        <div className="relative z-10 px-6 sm:px-10 pt-4">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-1 text-white/90 hover:text-white text-sm font-medium transition"
-          >
-            <FiChevronLeft className="w-4 h-4" />
-            Back
-          </button>
-        </div>
-
-        {/* Title */}
-        <div className="relative z-10 px-6 sm:px-10 mt-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">My Payments</h1>
-        </div>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 px-6 py-5 inline-block">
+        <p className="text-sm text-gray-500 mb-1">Total payments</p>
+        <p className="text-3xl font-bold text-gray-900">
+          {totalElements !== null ? totalElements : "—"}
+        </p>
       </div>
 
-      {/* Stat Card */}
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 -mt-1">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-6 py-4 inline-block min-w-55">
-          <p className="text-xs text-gray-500 mb-1">Total Number Of Rides Booked</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {totalElements !== null ? totalElements : "—"}
-          </p>
-        </div>
-      </div>
+      <div>
 
-      <div className="mx-auto py-8 px-4 sm:px-6 lg:px-8">
-
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="sticky top-16 z-10 -mx-4 mb-4 flex flex-col justify-between gap-4 bg-gray-50 px-4 py-3 sm:-mx-6 sm:flex-row sm:items-center sm:px-6 lg:-mx-8 lg:px-8">
           <div className="relative w-full sm:w-1/2">
             <FiSearch className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search payments..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-[#0673ff] focus:border-transparent"
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, searchTerm: e.target.value }))
               }
@@ -327,17 +324,45 @@ const PaymentHistoryPage = () => {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0673ff] mx-auto" />
           </div>
         ) : (
           <DataTable<Payment>
             columns={columns}
             data={payments}
-            height="max-h-[600px]"
+            height="max-h-none"
             seeMoreData={seeMoreData}
+            itemLabel="payment"
             hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={handleLoadMore}
+            renderMobileCard={(p) => (
+              <div className="space-y-1.5">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-semibold text-gray-900">{p.vehicleName}</p>
+                  <span
+                    className={`shrink-0 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getStatusColor(
+                      p.paymentStatus,
+                    )}`}
+                  >
+                    {String(p.paymentStatus ?? "").toLowerCase()}
+                  </span>
+                </div>
+                <p className="text-xl font-bold text-gray-900">
+                  {formatCurrency(p.totalPayable)}
+                </p>
+                <div className="flex items-center justify-between gap-3 pt-0.5">
+                  <span className="text-xs text-gray-500">
+                    {formatDate(
+                      p.paymentStatus === "SUCCESSFUL" && p.paidAt
+                        ? p.paidAt
+                        : p.createdAt,
+                    )}
+                  </span>
+                  <ReferenceCell value={String(p.transactionReference ?? "")} />
+                </div>
+              </div>
+            )}
           />
         )}
       </div>

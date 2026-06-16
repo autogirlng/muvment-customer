@@ -2,13 +2,11 @@
 import { useState, Suspense } from "react";
 import {
   notFound,
-  useParams,
   useRouter,
   useSearchParams,
 } from "next/navigation";
 import { MdBusiness, MdArrowBack, MdCheckCircle } from "react-icons/md";
 import { createData } from "@/controllers/connnector/app.callers";
-import { Navbar } from "../Navbar";
 
 export const ORGANIZATION_SIZE = [
   { label: "1-10 employees", value: "1-10" },
@@ -58,7 +56,7 @@ const SubmitKYCPageContent = () => {
       await createData(`/api/v1/organizations/${organizationId}/kyc`, form);
       setSuccess(true);
       setTimeout(() => {
-        router.push("/dashboard/settings");
+        router.push("/dashboard/integrations");
       }, 2000);
     } catch (err: any) {
       setError(err?.message || "Failed to submit your kyc. Please try again.");
@@ -73,138 +71,131 @@ const SubmitKYCPageContent = () => {
 
   if (success) {
     return (
-      <div className="">
-        <Navbar />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center max-w-md w-full">
-            <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-5">
-              <MdCheckCircle className="w-9 h-9 text-green-500" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              KYC Submitted!
-            </h2>
-            <p className="text-gray-500 text-sm">
-              Your KYC is currently under review. Redirecting to settings...
-            </p>
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+            <MdCheckCircle className="h-9 w-9 text-green-500" />
           </div>
+          <h2 className="mb-2 text-2xl font-bold text-gray-900">
+            KYC submitted
+          </h2>
+          <p className="text-sm text-gray-500">
+            Your application is now under review. Redirecting to settings...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="">
-      <Navbar />
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+        <button
+          onClick={() => router.back()}
+          className="mb-6 flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-800"
+        >
+          <MdArrowBack className="h-4 w-4" /> Back
+        </button>
 
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl border border-gray-200 p-8 max-w-lg w-full">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors"
-          >
-            <MdArrowBack className="w-4 h-4" /> Back
-          </button>
-
-          <div className="flex items-center gap-3 mb-7">
-            <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center">
-              <MdBusiness className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Submit KYC</h1>
-              <p className="text-sm text-gray-400">
-                This sets up your organisation information on our platform.
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              CAC Number
-            </label>
-            <input
-              type="text"
-              name="cacNumber"
-              value={form.cacNumber}
-              onChange={handleChange}
-              placeholder="1234567"
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mt-3 mb-1.5">
-              Office Address
-            </label>
-            <input
-              type="text"
-              name="officeAddress"
-              value={form.officeAddress}
-              onChange={handleChange}
-              placeholder="No 6 off Muvment street, Lagos"
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            />
+        <div className="mb-7 flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#E7F1FF]">
+            <MdBusiness className="h-6 w-6 text-[#0673ff]" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mt-3 mb-1.5">
-              Additional Address (optional)
-            </label>
-            <input
-              type="text"
-              name="additionalAddress"
-              value={form.additionalAddress}
-              onChange={handleChange}
-              placeholder="No 7 off Muvment street, Lagos"
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mt-3 mb-1.5">
-              Services Rendered
-            </label>
-            <input
-              type="text"
-              name="servicesRendered"
-              value={form.servicesRendered}
-              onChange={handleChange}
-              placeholder="Mobility"
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mt-3 mb-1.5">
-              Organization Size
-            </label>
-            <select
-              name="organizationSize"
-              value={form.organizationSize}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
-            >
-              <option value="">Select your organization size</option>
-              {ORGANIZATION_SIZE.map((size) => (
-                <option key={size.value} value={size.value}>
-                  {size.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {error && (
-            <p className="text-red-500 mt-3 text-sm bg-red-50 px-4 py-3 rounded-xl">
-              {error}
+            <h1 className="text-xl font-bold text-gray-900">Submit KYC</h1>
+            <p className="text-sm text-gray-400">
+              This sets up your organisation information on our platform.
             </p>
-          )}
-
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="w-full bg-blue-600 text-white mt-3 py-3.5 rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {loading ? "Submitting..." : "Submit KYC"}
-          </button>
+          </div>
         </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            CAC Number
+          </label>
+          <input
+            type="text"
+            name="cacNumber"
+            value={form.cacNumber}
+            onChange={handleChange}
+            placeholder="1234567"
+            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0673ff]"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1.5 mt-3 block text-sm font-medium text-gray-700">
+            Office Address
+          </label>
+          <input
+            type="text"
+            name="officeAddress"
+            value={form.officeAddress}
+            onChange={handleChange}
+            placeholder="No 6 off Muvment street, Lagos"
+            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0673ff]"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 mt-3 block text-sm font-medium text-gray-700">
+            Additional Address (optional)
+          </label>
+          <input
+            type="text"
+            name="additionalAddress"
+            value={form.additionalAddress}
+            onChange={handleChange}
+            placeholder="No 7 off Muvment street, Lagos"
+            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0673ff]"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1.5 mt-3 block text-sm font-medium text-gray-700">
+            Services Rendered
+          </label>
+          <input
+            type="text"
+            name="servicesRendered"
+            value={form.servicesRendered}
+            onChange={handleChange}
+            placeholder="Mobility"
+            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0673ff]"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1.5 mt-3 block text-sm font-medium text-gray-700">
+            Organization Size
+          </label>
+          <select
+            name="organizationSize"
+            value={form.organizationSize}
+            onChange={handleChange}
+            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0673ff]"
+          >
+            <option value="">Select your organization size</option>
+            {ORGANIZATION_SIZE.map((size) => (
+              <option key={size.value} value={size.value}>
+                {size.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {error && (
+          <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-500">
+            {error}
+          </p>
+        )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="mt-3 w-full rounded-xl bg-[#0673ff] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#0a55c4] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? "Submitting..." : "Submit KYC"}
+        </button>
       </div>
     </div>
   );

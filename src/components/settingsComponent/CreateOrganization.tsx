@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MdBusiness, MdArrowBack, MdCheckCircle } from "react-icons/md";
 import { createData } from "@/controllers/connnector/app.callers";
-import { Navbar } from "../Navbar";
 
 export const INDUSTRIES = [
   "Technology",
@@ -116,7 +115,7 @@ export const CreateOrganizationPage = () => {
       await createData("/api/v1/organizations", form);
       setSuccess(true);
       setTimeout(() => {
-        router.push("/dashboard/settings");
+        router.push("/dashboard/integrations");
       }, 2000);
     } catch (err: any) {
       setError(
@@ -129,31 +128,26 @@ export const CreateOrganizationPage = () => {
 
   if (success) {
     return (
-      <div className="">
-        <Navbar />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center max-w-md w-full">
-            <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-5">
-              <MdCheckCircle className="w-9 h-9 text-green-500" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Organisation Created!
-            </h2>
-            <p className="text-gray-500 text-sm">
-              Your corporate account is ready. Redirecting to settings...
-            </p>
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+            <MdCheckCircle className="h-9 w-9 text-green-500" />
           </div>
+          <h2 className="mb-2 text-2xl font-bold text-gray-900">
+            Organisation created
+          </h2>
+          <p className="text-sm text-gray-500">
+            Your corporate account is ready. Next, submit your KYC so our team can
+            review it. Redirecting to settings...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="">
-      <Navbar />
-
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl border border-gray-200 p-8 max-w-lg w-full">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
           <button
             onClick={() => router.back()}
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors"
@@ -162,8 +156,8 @@ export const CreateOrganizationPage = () => {
           </button>
 
           <div className="flex items-center gap-3 mb-7">
-            <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center">
-              <MdBusiness className="w-6 h-6 text-blue-600" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#E7F1FF]">
+              <MdBusiness className="h-6 w-6 text-[#0673ff]" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">
@@ -186,7 +180,7 @@ export const CreateOrganizationPage = () => {
                 value={form.name}
                 onChange={handleChange}
                 placeholder="Acme Corp Ltd"
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0673ff] focus:border-transparent transition"
               />
             </div>
 
@@ -200,7 +194,7 @@ export const CreateOrganizationPage = () => {
                 value={form.rcNumber}
                 onChange={handleChange}
                 placeholder="RC1234567"
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0673ff] focus:border-transparent transition"
               />
             </div>
 
@@ -212,7 +206,7 @@ export const CreateOrganizationPage = () => {
                 name="industry"
                 value={form.industry}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0673ff] focus:border-transparent transition bg-white"
               >
                 <option value="">Select industry</option>
                 {INDUSTRIES.map((ind) => (
@@ -232,13 +226,12 @@ export const CreateOrganizationPage = () => {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              className="mt-2 w-full rounded-xl bg-[#0673ff] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#0a55c4] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Creating..." : "Create Organisation"}
             </button>
           </div>
         </div>
       </div>
-    </div>
   );
 };
