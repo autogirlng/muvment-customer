@@ -188,6 +188,9 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     const endDate = params.get("endDate");
     const startTime = params.get("startTime");
     const bookingTypeParam = params.get("bookingType");
+    const dropoffLocation = params.get("dropoffLocation");
+    const dropoffLat = params.get("dropoffLat");
+    const dropoffLng = params.get("dropoffLng");
 
     // Restore the saved itinerary when returning to the same search (for example
     // coming back from checkout to change details) so earlier choices like the
@@ -201,6 +204,9 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       endDate,
       startTime,
       bookingType: bookingTypeParam,
+      dropoffLocation,
+      dropoffLat,
+      dropoffLng,
     });
     const hasSearch = !!(location || startDate || bookingTypeParam);
     try {
@@ -229,6 +235,18 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       base.pickupCoordinates = JSON.stringify({
         lat: Number(lat),
         lng: Number(lng),
+      });
+    }
+    if (dropoffLocation) base.dropoffLocation = dropoffLocation;
+    if (
+      dropoffLat &&
+      dropoffLng &&
+      !isNaN(Number(dropoffLat)) &&
+      !isNaN(Number(dropoffLng))
+    ) {
+      base.dropoffCoordinates = JSON.stringify({
+        lat: Number(dropoffLat),
+        lng: Number(dropoffLng),
       });
     }
 
@@ -450,7 +468,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       setContinueBooking(true);
     } catch (e: any) {
       if (seq !== estimateSeq.current) return;
-      console.error("Failed to estimate price", e);
+      console.warn("Price estimate unavailable:", e?.message || e);
       setPriceErrorMessage(
         e?.message ||
           "We couldn't estimate the price. Please check your trip details and try again.",

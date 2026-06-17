@@ -319,6 +319,34 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           starts[starts.length - 1] ?? first.startDateTime ?? first.createdAt,
       };
     });
+
+    const now = Date.now();
+    const TERMINAL = new Set([
+      "COMPLETED",
+      "CANCELLED_BY_USER",
+      "CANCELLED_BY_HOST",
+      "CANCELLED_BY_ADMIN",
+      "NO_SHOW",
+      "FAILED_AVAILABILITY",
+    ]);
+    const ts = (d?: string) => {
+      const t = d ? new Date(d).getTime() : NaN;
+      return isNaN(t) ? 0 : t;
+    };
+    const isPast = (g: any) =>
+      TERMINAL.has(g.bookingStatus) || ts(g.lastStart) < now;
+
+    groups.sort((a, b) => {
+      const ap = isPast(a);
+      const bp = isPast(b);
+      // Upcoming and active bookings first, history after.
+      if (ap !== bp) return ap ? 1 : -1;
+      // Upcoming: soonest start first. History: most recent start first.
+      return ap
+        ? ts(b.lastStart) - ts(a.lastStart)
+        : ts(a.firstStart) - ts(b.firstStart);
+    });
+
     if (limit) groups = groups.slice(0, limit);
     return groups.map((b, i) => ({ ...b, id: i }));
   }, [bookings, limit]);

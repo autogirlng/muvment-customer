@@ -198,6 +198,7 @@ export const createData = async (
           ? {}
           : { "Content-Type": "application/json;charset=UTF-8" },
         requireAuth: options?.requireAuth ?? true,
+        silent: options?.silent,
       });
 
       if (data.err && !options?.silent) {

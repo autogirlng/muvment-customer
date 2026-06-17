@@ -12,12 +12,14 @@ class ApiClient {
       headers = {},
       requireAuth = true,
       params = {},
+      silent = false,
     }: {
       method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
       body?: Record<string, unknown> | null;
       headers?: Record<string, string>;
       requireAuth?: boolean;
       params?: Record<string, unknown>;
+      silent?: boolean;
     }
   ): Promise<[any, string]> {
     if (!this.BaseURL) {
@@ -48,7 +50,7 @@ class ApiClient {
       });
       return [response.data as any, "Request successful"];
     } catch (error: unknown) {
-      console.error("API request error:", error);
+      if (!silent) console.error("API request error:", error);
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
           const conflictMessage =
