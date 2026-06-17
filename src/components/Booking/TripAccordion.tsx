@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import DateInput from "../general/forms/DateInput";
 import TimeInput from "../general/forms/TimeInput";
 import Icons from "../general/forms/icons";
@@ -7,7 +7,7 @@ import { ReactNode } from "react";
 import cn from "classnames";
 import { format } from "date-fns";
 import AreaOfUseSelect, { SelectedArea } from "./AreaOfUseSelect";
-import { getAreasForCity } from "@/data/lagosAreas";
+import { getAreasForCity, CityArea } from "@/data/lagosAreas";
 import { GoogleMapsLocationInput } from "../general/forms/GoogleMapsLocationInput";
 import {
   ITripPerDaySelect,
@@ -91,7 +91,12 @@ const TripAccordion = ({
   const [dropoffLocation, setDropoffLocation] = useState(
     initialValues?.dropoffLocation || "",
   );
-  const dropoffTouchedRef = useRef<boolean>(!!initialValues?.dropoffLocation);
+  const [sameAsPickup, setSameAsPickup] = useState(false);
+  const [pickupCoords, setPickupCoords] = useState<string>(() => {
+    const pc = initialValues?.pickupCoordinates as any;
+    if (!pc) return "";
+    return typeof pc === "string" ? pc : JSON.stringify(pc);
+  });
   const [areaOfUse, setAreaOfUse] = useState(initialValues?.areaOfUse || "");
   const initialAreas: SelectedArea[] = (() => {
     if (!initialValues?.areasOfUse) return [];
@@ -103,7 +108,9 @@ const TripAccordion = ({
   })();
   const [selectedAreas, setSelectedAreas] =
     useState<SelectedArea[]>(initialAreas);
-  const cityAreas = getAreasForCity(vehicle?.city);
+  const [serviceAreas, setServiceAreas] = useState<CityArea[]>(() =>
+    getAreasForCity(vehicle?.city),
+  );
   const [availableTimes, setAvailableTimes] =
     useState<{ available: boolean; time: string }[]>();
   const [loadingAvailableTimes, setLoadingAvailableTimes] =
@@ -149,7 +156,7 @@ const TripAccordion = ({
         break;
       case "pickupLocation":
         setPickupLocation(value);
-        if (!dropoffTouchedRef.current) {
+        if (sameAsPickup) {
           setDropoffLocation(value);
           onChange("dropoffLocation", value);
         }
@@ -198,6 +205,47 @@ const TripAccordion = ({
     fetchAvailableTimeSlots();
   }, [vehicleId, tripStartDate]);
 
+  // Area-of-use options are dynamic to the pickup location: resolve the state
+  // from the pickup coordinates and load that state's areas, including
+  // outskirts. Falls back to the vehicle city list if the lookup is empty.
+  useEffect(() => {
+    let alive = true;
+    let lat: number | null = null;
+    let lng: number | null = null;
+    try {
+      if (pickupCoords) {
+        const c = JSON.parse(pickupCoords);
+        if (typeof c?.lat === "number" && typeof c?.lng === "number") {
+          lat = c.lat;
+          lng = c.lng;
+        }
+      }
+    } catch {}
+    if (lat === null || lng === null) {
+      setServiceAreas(getAreasForCity(vehicle?.city));
+      return;
+    }
+    VehicleSearchService.getServiceAreas(lat, lng)
+      .then((list) => {
+        if (!alive) return;
+        const mapped: CityArea[] = (list || []).map((a) => ({
+          name: a.name,
+          lat: a.latitude,
+          lng: a.longitude,
+          isOutskirts: !!a.isOutskirts,
+        }));
+        setServiceAreas(
+          mapped.length > 0 ? mapped : getAreasForCity(vehicle?.city),
+        );
+      })
+      .catch(() => {
+        if (alive) setServiceAreas(getAreasForCity(vehicle?.city));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [pickupCoords, vehicle?.city]);
+
   useEffect(() => {
     if (initialTripStartDate) {
       const formattedDate = format(initialTripStartDate, "MMM do yyyy");
@@ -206,30 +254,27 @@ const TripAccordion = ({
   }, []);
 
   useEffect(() => {
-    if (
-      initialValues?.pickupLocation &&
-      !initialValues?.dropoffLocation &&
-      !dropoffTouchedRef.current
-    ) {
-      setDropoffLocation(initialValues.pickupLocation);
-      onChange("dropoffLocation", initialValues.pickupLocation);
-      const pc = initialValues?.pickupCoordinates as any;
-      if (pc) {
-        onChange(
-          "dropoffCoordinates",
-          typeof pc === "string" ? pc : JSON.stringify(pc),
-        );
-      }
-    }
-  }, []);
+    if (tripStartTime || !tripStartDate) return;
 
-  useEffect(() => {
-    if (
-      !tripStartTime &&
-      tripStartDate &&
-      availableTimes &&
-      availableTimes.length > 0
-    ) {
+    const applyTime = (h: number, m: number) => {
+      const d = new Date(tripStartDate);
+      d.setHours(h, m, 0, 0);
+      onChange("tripStartTime", d.toString());
+    };
+
+    const typeName = (
+      bookingOptions?.find((o: any) => o.value === bookingType)?.option || ""
+    ).toLowerCase();
+    const isWithinState = /hour|month/.test(typeName);
+
+    if (isWithinState) {
+      // Within-state bookings default to 8:00 AM.
+      applyTime(8, 0);
+      return;
+    }
+
+    // Other types default to the first available slot once it loads.
+    if (availableTimes && availableTimes.length > 0) {
       const firstAvail = availableTimes.find((t) => t.available);
       if (firstAvail?.time) {
         try {
@@ -239,20 +284,28 @@ const TripAccordion = ({
           const m = parseInt(mStr, 10) || 0;
           if (ampm === "AM" && h === 12) h = 0;
           if (ampm === "PM" && h !== 12) h = h + 12;
-          if (!isNaN(h) && h >= 0 && h <= 23) {
-            const d = new Date(tripStartDate);
-            d.setHours(h, m, 0, 0);
-            onChange("tripStartTime", d.toString());
-          }
+          if (!isNaN(h) && h >= 0 && h <= 23) applyTime(h, m);
         } catch {}
       }
     }
-  }, [availableTimes]);
+  }, [availableTimes, bookingType, tripStartDate, tripStartTime, bookingOptions]);
 
   const coordinates = (type: string, value: { lat: number; lng: number }) => {
     onChange(type, JSON.stringify(value));
-    if (type === "pickupCoordinates" && !dropoffTouchedRef.current) {
-      onChange("dropoffCoordinates", JSON.stringify(value));
+    if (type === "pickupCoordinates") {
+      setPickupCoords(JSON.stringify(value));
+      if (sameAsPickup) {
+        onChange("dropoffCoordinates", JSON.stringify(value));
+      }
+    }
+  };
+
+  const handleSameAsPickup = (checked: boolean) => {
+    setSameAsPickup(checked);
+    if (checked) {
+      setDropoffLocation(pickupLocation);
+      onChange("dropoffLocation", pickupLocation);
+      if (pickupCoords) onChange("dropoffCoordinates", pickupCoords);
     }
   };
 
@@ -351,7 +404,7 @@ const TripAccordion = ({
               />
             </InputSection>
 
-            <InputSection title="Trip Start" textColor="[#0673ff]">
+            <InputSection title="Trip Start (Nigeria time)" textColor="[#0673ff]">
               <div className="flex-1 min-w-0">
                 <DateInput
                   name="startDate"
@@ -423,17 +476,28 @@ const TripAccordion = ({
             </InputSection>
 
             <InputSection title="Drop-off Location">
-              <GoogleMapsLocationInput
-                disabled={disabled}
-                value={dropoffLocation}
-                onChange={(value) => {
-                  dropoffTouchedRef.current = true;
-                  onChange("dropoffLocation", value);
-                }}
-                placeholder="Enter location"
-                coordinates={coordinates}
-                type="dropoffCoordinates"
-              />
+              <div className="w-full space-y-2">
+                <label className="flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={sameAsPickup}
+                    disabled={disabled}
+                    onChange={(e) => handleSameAsPickup(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-[#0673ff] focus:ring-[#0673ff]"
+                  />
+                  Same as pickup location
+                </label>
+                {!sameAsPickup && (
+                  <GoogleMapsLocationInput
+                    disabled={disabled}
+                    value={dropoffLocation}
+                    onChange={(value) => onChange("dropoffLocation", value)}
+                    placeholder="Enter location"
+                    coordinates={coordinates}
+                    type="dropoffCoordinates"
+                  />
+                )}
+              </div>
             </InputSection>
 
             <div>
@@ -449,9 +513,9 @@ const TripAccordion = ({
                 Tell us where you plan to drive. It helps us plan your trip and
                 apply the right pricing. Add as many areas as you like.
               </p>
-              {cityAreas.length > 0 ? (
+              {serviceAreas.length > 0 ? (
                 <AreaOfUseSelect
-                  areas={cityAreas}
+                  areas={serviceAreas}
                   value={selectedAreas}
                   city={vehicle?.city}
                   disabled={disabled}
@@ -469,6 +533,13 @@ const TripAccordion = ({
                   coordinates={coordinates}
                   type="areaOfUseCoordinates"
                 />
+              )}
+              {selectedAreas.some((a) => a.custom) && (
+                <p className="mt-1.5 text-[11px] leading-snug text-amber-600">
+                  Some areas you added by search are outside our listed service
+                  areas for this pickup. We will confirm they are serviceable
+                  before your trip.
+                </p>
               )}
             </div>
           </div>

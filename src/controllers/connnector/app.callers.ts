@@ -35,225 +35,55 @@ export class LoadingManager {
   private createLoadingElement(): void {
     this.removeLoadingElement();
 
+    if (typeof document === "undefined") return;
+
+    if (!document.getElementById("mv-loader-keyframes")) {
+      const style = document.createElement("style");
+      style.id = "mv-loader-keyframes";
+      style.textContent =
+        "@keyframes mv-spin { to { transform: rotate(360deg); } }";
+      document.head.appendChild(style);
+    }
+
     this.loadingElement = document.createElement("div");
     this.loadingElement.id = "api-loading-overlay";
     this.loadingElement.style.cssText = `
     position: fixed;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
     height: 100%;
-    backdrop-filter: blur(8px);
-    background: rgba(255, 255, 255, 0.95);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  `;
-
-    // Popup container
-    const popup = document.createElement("div");
-    popup.style.cssText = `
-    background: white;
-    padding: 40px 50px;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(226, 232, 240, 1);
+    background: #ffffff;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
-    text-align: center;
-    transform: scale(0.9);
-    animation: popIn 0.3s ease forwards;
-    min-width: 320px;
-  `;
-
-    // Logo
-    const logoContainer = document.createElement("div");
-    logoContainer.style.cssText = `
-    position: relative;
-    width: 80px;
-    height: 80px;
-  `;
-
-    const logo = document.createElement("div");
-    logo.style.cssText = `
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(145deg, #3b82f6, #2563eb);
-    display: flex;
-    align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 32px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
-    animation: glowPulse 2s infinite ease-in-out;
-    position: relative;
-    z-index: 2;
-  `;
-    logo.textContent = "M";
-
-    const logoInner = document.createElement("div");
-    logoInner.style.cssText = `
-    position: absolute;
-    inset: 8px;
-    border-radius: 50%;
-    background: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #3b82f6;
-    font-size: 28px;
-    font-weight: 900;
-  `;
-    logoInner.textContent = "M";
-    logo.appendChild(logoInner);
-    logoContainer.appendChild(logo);
-
-    // Brand name
-    const brandName = document.createElement("h2");
-    brandName.textContent = "Muvment";
-    brandName.style.cssText = `
-    margin: 0;
-    font-size: 32px;
-    font-weight: 900;
-    background: linear-gradient(90deg, #3b82f6, #2563eb);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -0.5px;
+    gap: 24px;
+    z-index: 9999;
   `;
 
-    // Message
-    const message = document.createElement("p");
-    message.textContent = "Loading your request...";
-    message.style.cssText = `
-    margin: 0;
-    font-size: 15px;
-    font-weight: 500;
-    color: #64748b;
-    animation: fadeIn 1s ease forwards;
+    const logo = document.createElement("img");
+    logo.src = "/images/image.png";
+    logo.alt = "Muvment";
+    logo.style.cssText = "width: 144px; height: auto; object-fit: contain;";
+
+    const spinner = document.createElement("span");
+    spinner.setAttribute("role", "status");
+    spinner.setAttribute("aria-label", "Loading");
+    spinner.style.cssText = `
+    display: block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #0673ff;
+    border-radius: 9999px;
+    animation: mv-spin 0.8s linear infinite;
   `;
 
-    // Road container
-    const roadContainer = document.createElement("div");
-    roadContainer.style.cssText = `
-    width: 280px;
-    height: 80px;
-    position: relative;
-    margin-top: 10px;
-  `;
-
-    // Road
-    const road = document.createElement("div");
-    road.style.cssText = `
-    width: 100%;
-    height: 4px;
-    background: #e2e8f0;
-    border-radius: 4px;
-    position: absolute;
-    bottom: 10px;
-    overflow: hidden;
-  `;
-
-    const roadGlow = document.createElement("div");
-    roadGlow.style.cssText = `
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.4), transparent);
-    animation: roadShine 2s linear infinite;
-  `;
-    road.appendChild(roadGlow);
-
-    // Car
-    const car = document.createElement("div");
-    car.style.cssText = `
-    position: absolute;
-    bottom: 10px;
-    left: 0;
-    animation: carDrive 3s ease-in-out infinite;
-  `;
-
-    const carImage = document.createElement("img");
-    carImage.src = "/images/spinner.png"; // <-- replace with your actual image path
-    carImage.alt = "car";
-    carImage.style.cssText = `
-    width: 80px;
-    height: auto;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-    transform: scaleX(1); /* make sure the car faces right */
-  `;
-
-    // Exhaust smoke
-    const smoke = document.createElement("div");
-    smoke.style.cssText = `
-    position: absolute;
-    left: -10px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 20px;
-    height: 8px;
-    background: rgba(148, 163, 184, 0.3);
-    border-radius: 50%;
-    filter: blur(4px);
-    animation: exhaust 1s ease-out infinite;
-  `;
-
-    car.appendChild(smoke);
-    car.appendChild(carImage);
-    roadContainer.appendChild(road);
-    roadContainer.appendChild(car);
-
-    // Animations
-    const style = document.createElement("style");
-    style.textContent = `
-    @keyframes glowPulse {
-      0%, 100% { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3); }
-      50% { box-shadow: 0 4px 30px rgba(59, 130, 246, 0.5); }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes popIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    @keyframes roadShine {
-      from { transform: translateX(-100%); }
-      to { transform: translateX(200%); }
-    }
-    @keyframes carDrive {
-      0% { left: 0; }
-      100% { left: calc(100% - 90px); }
-    }
-    @keyframes exhaust {
-      0% {
-        opacity: 0.5;
-        transform: translateY(-50%) scale(0);
-        left: -8px;
-      }
-      100% {
-        opacity: 0;
-        transform: translateY(-50%) scale(1.5);
-        left: -25px;
-      }
-    }
-  `;
-    document.head.appendChild(style);
-
-    // Assemble
-    popup.appendChild(logoContainer);
-    popup.appendChild(brandName);
-    popup.appendChild(message);
-    popup.appendChild(roadContainer);
-    this.loadingElement.appendChild(popup);
+    this.loadingElement.appendChild(logo);
+    this.loadingElement.appendChild(spinner);
     document.body.appendChild(this.loadingElement);
   }
+
 
   private removeLoadingElement(): void {
     if (this.loadingElement) {
@@ -351,9 +181,9 @@ export const deleteWithParams = async (path: string, params?: any) => {
 export const createData = async (
   path: string,
   body: any,
-  options?: { silent?: boolean },
+  options?: { silent?: boolean; requireAuth?: boolean; skipLoader?: boolean },
 ) => {
-  return withLoading(async () => {
+  const run = async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
     // const validation = validateDataInput(body);
     // if (validation.error) return validation;
@@ -367,7 +197,8 @@ export const createData = async (
         headers: isFormData
           ? {}
           : { "Content-Type": "application/json;charset=UTF-8" },
-        requireAuth: true,
+        requireAuth: options?.requireAuth ?? true,
+        silent: options?.silent,
       });
 
       if (data.err && !options?.silent) {
@@ -378,7 +209,8 @@ export const createData = async (
     } catch (error) {
       return NetworkService.handleApiError(error);
     }
-  });
+  };
+  return options?.skipLoader ? run() : withLoading(run);
 };
 
 export const createDataWithParams = async (path: string, params?: any) => {

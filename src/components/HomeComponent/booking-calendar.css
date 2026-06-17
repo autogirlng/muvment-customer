@@ -1,0 +1,98 @@
+.mv-cal .react-calendar {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.mv-cal .react-calendar__navigation {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  margin-bottom: 0.25rem;
+}
+
+.mv-cal .react-calendar__navigation button {
+  min-width: 36px;
+  background: none;
+  border-radius: 9999px;
+  color: #1d2939;
+  font-size: 0.95rem;
+}
+
+.mv-cal .react-calendar__navigation button:enabled:hover,
+.mv-cal .react-calendar__navigation button:enabled:focus {
+  background-color: #f2f4f7;
+}
+
+.mv-cal .react-calendar__navigation button:disabled {
+  background: none;
+  opacity: 0.4;
+}
+
+.mv-cal .react-calendar__navigation__label {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.mv-cal .react-calendar__month-view__weekdays {
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #98a2b3;
+}
+
+.mv-cal .react-calendar__month-view__weekdays__weekday {
+  padding: 0.4rem 0;
+  text-align: center;
+}
+
+.mv-cal abbr {
+  text-decoration: none;
+}
+
+.mv-cal .react-calendar__tile {
+  padding: 0.5rem 0;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  color: #1d2939;
+  background: none;
+}
+
+.mv-cal .react-calendar__tile:enabled:hover,
+.mv-cal .react-calendar__tile:enabled:focus {
+  background-color: #f2f4f7;
+}
+
+.mv-cal .react-calendar__tile--now {
+  background-color: #eef5ff;
+}
+
+.mv-cal .react-calendar__month-view__days__day--neighboringMonth {
+  color: #cbd2dc;
+}
+
+.mv-cal .react-calendar__tile--active,
+.mv-cal .react-calendar__tile--hasActive,
+.mv-cal .react-calendar__tile--rangeStart,
+.mv-cal .react-calendar__tile--rangeEnd {
+  background-color: #0673ff !important;
+  color: #ffffff;
+}
+
+.mv-cal .react-calendar__tile--range {
+  background-color: #e7f0ff;
+  color: #0560d6;
+  border-radius: 0;
+}
+
+.mv-cal .react-calendar__tile--rangeStart {
+  border-top-left-radius: 9999px;
+  border-bottom-left-radius: 9999px;
+}
+
+.mv-cal .react-calendar__tile--rangeEnd {
+  border-top-right-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+}

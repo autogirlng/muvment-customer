@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, ReactNode } from "react";
+import React, { useState, useEffect, useRef, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/services/vechilePriceUtiles";
 import { format } from "date-fns";
@@ -25,7 +25,6 @@ const formatPlanRange = (
     return `Day 1 to Day ${count}`;
   }
 };
-import { toast } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
 import Modal from "@/components/general/modal";
 
@@ -96,6 +95,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     toggleOpen,
     openTripIds,
     isTripFormsComplete,
+    missingByTrip,
     generateNextTripId,
     tripsVersion,
     applyToAllTrips,
@@ -104,6 +104,9 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     setSameForAllDays,
     applySharedPlanChange,
   } = useItineraryForm();
+
+  // Guards against an older in-flight estimate overwriting a newer one.
+  const estimateSeq = useRef(0);
 
   useEffect(() => {
     setPriceErrorMessage("");
@@ -141,6 +144,21 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     }
   }, [couponCode]);
 
+  // Estimate the price automatically once the trip form is complete, and re-run
+  // it whenever the trip details or coupon change. Keyed off the trip content,
+  // since field edits change trips without bumping tripsVersion; without this a
+  // change would clear the price and never recalculate it. The footer button is
+  // only used to confirm the booking.
+  const tripsSignature = JSON.stringify(trips);
+  useEffect(() => {
+    if (!isTripFormsComplete) return;
+    const timer = setTimeout(() => {
+      estimatePrice();
+    }, 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTripFormsComplete, tripsSignature, couponCode]);
+
   const generateBookingOptions = () => {
     const types: VehicleBookingOptions[] = vehicle?.allPricingOptions;
     const options = types?.map((type) => {
@@ -159,35 +177,123 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   useEffect(() => {
     sessionStorage.removeItem("bookingId");
 
-    // Prefill trip 0 from the search params; time and drop-off stay for the user.
+    // Prefill the itinerary from the search params: pickup location, start date,
+    // start time, booking type, and the trip length all carry over. Drop-off is
+    // still chosen here.
     const params = new URLSearchParams(window.location.search);
     const location = params.get("location");
     const lat = params.get("lat");
     const lng = params.get("lng");
     const startDate = params.get("startDate");
+    const endDate = params.get("endDate");
+    const startTime = params.get("startTime");
     const bookingTypeParam = params.get("bookingType");
+    const dropoffLocation = params.get("dropoffLocation");
+    const dropoffLat = params.get("dropoffLat");
+    const dropoffLng = params.get("dropoffLng");
 
-    const seed: Record<string, string> = { id: "trip-0" };
-    if (bookingTypeParam) seed.bookingType = bookingTypeParam;
-    if (location) seed.pickupLocation = location;
+    // Restore the saved itinerary when returning to the same search (for example
+    // coming back from checkout to change details) so earlier choices like the
+    // drop-off location are kept. A new search has a different signature and
+    // falls through to a fresh seed below.
+    const seedSig = JSON.stringify({
+      location,
+      lat,
+      lng,
+      startDate,
+      endDate,
+      startTime,
+      bookingType: bookingTypeParam,
+      dropoffLocation,
+      dropoffLat,
+      dropoffLng,
+    });
+    const hasSearch = !!(location || startDate || bookingTypeParam);
+    try {
+      const savedRaw = sessionStorage.getItem("trips");
+      const saved = savedRaw ? JSON.parse(savedRaw) : null;
+      if (
+        hasSearch &&
+        sessionStorage.getItem("tripsSeedSig") === seedSig &&
+        Array.isArray(saved) &&
+        saved.length > 0
+      ) {
+        setTrips(
+          saved.map((t: Record<string, string>) => {
+            const { id, ...details } = t;
+            return { id: id || "trip-0", tripDetails: details };
+          }),
+        );
+        return;
+      }
+    } catch {}
+
+    const base: Record<string, string> = {};
+    if (bookingTypeParam) base.bookingType = bookingTypeParam;
+    if (location) base.pickupLocation = location;
     if (lat && lng && !isNaN(Number(lat)) && !isNaN(Number(lng))) {
-      seed.pickupCoordinates = JSON.stringify({
+      base.pickupCoordinates = JSON.stringify({
         lat: Number(lat),
         lng: Number(lng),
       });
     }
-    if (startDate) {
-      seed.tripStartDate = `${startDate}T00:00:00`;
+    if (dropoffLocation) base.dropoffLocation = dropoffLocation;
+    if (
+      dropoffLat &&
+      dropoffLng &&
+      !isNaN(Number(dropoffLat)) &&
+      !isNaN(Number(dropoffLng))
+    ) {
+      base.dropoffCoordinates = JSON.stringify({
+        lat: Number(dropoffLat),
+        lng: Number(dropoffLng),
+      });
     }
 
-    if (Object.keys(seed).length > 1) {
-      sessionStorage.setItem("trips", JSON.stringify([seed]));
-      const { id: seedId, ...details } = seed;
-      setTrips([{ id: seedId, tripDetails: details }]);
-    } else {
+    if (Object.keys(base).length === 0 && !startDate) {
       sessionStorage.removeItem("trips");
+      sessionStorage.setItem("tripsSeedSig", seedSig);
       setTrips([{ id: "trip-0", tripDetails: {} }]);
+      return;
     }
+
+    // Trip length comes from the searched date range; defaults to a single day.
+    let days = 1;
+    if (startDate && endDate) {
+      const start = new Date(`${startDate}T00:00:00Z`).getTime();
+      const end = new Date(`${endDate}T00:00:00Z`).getTime();
+      if (!isNaN(start) && !isNaN(end) && end >= start) {
+        days = Math.min(60, Math.floor((end - start) / 86400000) + 1);
+      }
+    }
+
+    // Normalise the time to HH:mm:ss so the booking calculation can parse it.
+    const timePart =
+      startTime && startTime.length >= 4
+        ? startTime.length === 5
+          ? `${startTime}:00`
+          : startTime
+        : "";
+
+    const flat: Record<string, string>[] = [];
+    const nested: { id: string; tripDetails: Record<string, string> }[] = [];
+    for (let i = 0; i < days; i++) {
+      const id = `trip-${i}`;
+      const details: Record<string, string> = { ...base };
+      if (startDate) {
+        const d = new Date(`${startDate}T00:00:00Z`);
+        d.setUTCDate(d.getUTCDate() + i);
+        const dayStr = d.toISOString().slice(0, 10);
+        details.tripStartDate = `${dayStr}T00:00:00`;
+        if (timePart) details.tripStartTime = `${dayStr}T${timePart}`;
+      }
+      flat.push({ ...details, id });
+      nested.push({ id, tripDetails: details });
+    }
+
+    sessionStorage.setItem("trips", JSON.stringify(flat));
+    sessionStorage.setItem("tripsSeedSig", seedSig);
+    setTrips(nested);
   }, []);
 
   const check = async () => {
@@ -249,6 +355,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   }
 
   const estimatePrice = async () => {
+    const seq = ++estimateSeq.current;
     setIsEstimating(true);
     setPriceErrorMessage("");
     try {
@@ -341,6 +448,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       }
 
       const pricing = await BookingService.calculateBooking(data);
+      if (seq !== estimateSeq.current) return;
       sessionStorage.setItem(
         "priceEstimateId",
         pricing.data.data.calculationId,
@@ -356,10 +464,11 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       } else {
         sessionStorage.removeItem("couponCode");
       }
-      setPricing(pricing);
+      setPricing(pricing as unknown as EstimatedBookingPrice);
       setContinueBooking(true);
     } catch (e: any) {
-      console.error("Failed to estimate price", e);
+      if (seq !== estimateSeq.current) return;
+      console.warn("Price estimate unavailable:", e?.message || e);
       setPriceErrorMessage(
         e?.message ||
           "We couldn't estimate the price. Please check your trip details and try again.",
@@ -367,26 +476,22 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       setPricing(undefined);
       setContinueBooking(false);
     } finally {
-      setIsEstimating(false);
+      if (seq === estimateSeq.current) setIsEstimating(false);
     }
   };
 
   const handlePrimaryAction = () => {
-    if (!isTripFormsComplete) {
-      toast.warning(
-        "Please complete all trip details. Make sure to select your locations from the dropdown suggestions.",
-      );
-      return;
-    }
-    if (!continueBooking) {
+    if (!isTripFormsComplete || isEstimating) return;
+    // Recover from a failed estimate without leaving the page.
+    if (priceErrorMessage && !continueBooking) {
       estimatePrice();
       return;
     }
-    if (!isAuthenticated) {
-      setBookRideModal(true);
-      return;
+    if (continueBooking) {
+      router.push(
+        `/booking/create/${vehicle.id}${isAuthenticated ? "" : "?user=guest"}`,
+      );
     }
-    router.push(`/booking/create/${vehicle.id}`);
   };
 
   const storedTrips =
@@ -426,6 +531,14 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   )
     .trim()
     .toLowerCase();
+  // Only the hourly within-city types (12h/24h) span multiple days. Airport,
+  // boat, interstate, and monthly are single-segment bookings.
+  // Multi-day applies to within-state bookings, i.e. anything that is not a
+  // single-segment type, so the day count seeded from the searched date range
+  // is kept regardless of how the within-state type is named.
+  const allowsMultiDay = !/airport|boat|interstate|month/i.test(
+    selectedBookingTypeName,
+  );
   const bookingNoteTitle = selectedBookingTypeName.includes("airport")
     ? "Airport pickup"
     : selectedBookingTypeName.includes("interstate")
@@ -454,7 +567,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     </p>
                   </div>
 
-                  {trips.length > 0 && (
+                  {allowsMultiDay && trips.length > 0 && (
                     <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#E4E7EC] bg-white px-3 py-2.5">
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-gray-800">
@@ -756,30 +869,116 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     </>
   );
 
+  const FIELD_LABELS: Record<string, string> = {
+    tripStartDate: "Trip date",
+    tripStartTime: "Pickup time",
+    pickupLocation: "Pickup location",
+    pickupCoordinates: "Pickup location",
+    dropoffLocation: "Drop-off location",
+    dropoffCoordinates: "Drop-off location",
+  };
+  const labelsForFields = (fields: string[]) => {
+    const out: string[] = [];
+    for (const f of fields) {
+      const label = FIELD_LABELS[f];
+      if (label && !out.includes(label)) out.push(label);
+    }
+    return out;
+  };
+  const pendingByDay = (missingByTrip || [])
+    .map((m) => ({
+      day: trips.findIndex((t) => t.id === m.id) + 1,
+      labels: labelsForFields(m.fields),
+    }))
+    .filter((d) => d.labels.length > 0);
+  const pendingAllSame =
+    pendingByDay.length > 0 &&
+    pendingByDay.every(
+      (d) => d.labels.join("|") === pendingByDay[0].labels.join("|"),
+    );
+
+  const pendingChecklist =
+    !isTripFormsComplete && pendingByDay.length > 0 ? (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <p className="text-sm font-semibold text-amber-900">
+          Add these to see your price
+        </p>
+        {pendingAllSame || pendingByDay.length === 1 ? (
+          <ul className="mt-2 space-y-1.5">
+            {pendingByDay[0].labels.map((l) => (
+              <li
+                key={l}
+                className="flex items-center gap-2 text-sm text-amber-800"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                {l}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-2 space-y-2">
+            {pendingByDay.map((d) => (
+              <div key={d.day}>
+                <p className="text-xs font-semibold text-amber-900">
+                  Day {d.day}
+                </p>
+                <ul className="mt-1 space-y-1">
+                  {d.labels.map((l) => (
+                    <li
+                      key={l}
+                      className="flex items-center gap-2 text-sm text-amber-800"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                      {l}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    ) : null;
+
+  const isPricePending =
+    isTripFormsComplete && !continueBooking && !priceErrorMessage;
+  const isPriceLoading = isEstimating || isPricePending;
+  const canConfirmBooking = continueBooking && !isEstimating;
+  const canRetryEstimate =
+    isTripFormsComplete &&
+    !continueBooking &&
+    !isEstimating &&
+    !!priceErrorMessage;
+
   const bookingCTA = (
+    <>
+      {pendingChecklist && <div className="mb-3">{pendingChecklist}</div>}
                 <button
                   type="button"
                   onClick={handlePrimaryAction}
-                  disabled={isEstimating}
+                  disabled={!canConfirmBooking && !canRetryEstimate}
                   className={`w-full py-4 mt-2 text-sm font-medium text-white rounded-full shadow-md transition duration-150 flex items-center justify-center gap-2 ${
-                    isEstimating
+                    isPriceLoading
                       ? "bg-blue-600 opacity-80 cursor-wait"
-                      : !isTripFormsComplete
-                        ? "bg-blue-600/60 cursor-pointer"
-                        : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                      : canConfirmBooking || canRetryEstimate
+                        ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                        : "bg-blue-600/60 cursor-not-allowed"
                   }`}
                 >
-                  {isEstimating ? (
+                  {isPriceLoading ? (
                     <>
                       <span className="block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Estimating...
+                      Calculating price...
                     </>
-                  ) : !continueBooking || !isTripFormsComplete ? (
-                    "Estimate Price"
+                  ) : canRetryEstimate ? (
+                    "Retry"
+                  ) : canConfirmBooking ? (
+                    "Confirm booking"
                   ) : (
-                    "Continue Booking"
+                    "Complete your trip details"
                   )}
                 </button>
+    </>
   );
 
   const bookingDiscounts = vehicle?.discounts?.length > 0 && (
@@ -934,31 +1133,75 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                 {vehicle.allPricingOptions?.length > 0 && (
                   <div className="space-y-2">
                     <h2 className="text-lg text-gray-800">Pricing</h2>
-                    <div className="space-y-2">
-                      {vehicle.allPricingOptions.map((opt: any) => (
+                    {(() => {
+                      const opts = vehicle.allPricingOptions || [];
+                      const isWithinState = (name: string) => {
+                        const n = (name || "").toLowerCase();
+                        return n.includes("hour") || n.includes("month");
+                      };
+                      const within = opts.filter((o: any) =>
+                        isWithinState(o.bookingTypeName),
+                      );
+                      const standalone = opts.filter(
+                        (o: any) => !isWithinState(o.bookingTypeName),
+                      );
+                      const row = (label: string, value: string, key: string) => (
                         <div
-                          key={opt.bookingTypeId}
+                          key={key}
                           className="flex justify-between items-center p-3 bg-[#F0F2F5] rounded-lg"
                         >
                           <span className="text-sm font-medium text-gray-700">
-                            {opt.bookingTypeName?.trim()}
+                            {label}
                           </span>
                           <span className="text-sm font-bold text-gray-900">
-                            {formatCurrency(Number(opt.price || 0))}
+                            {value}
                           </span>
                         </div>
-                      ))}
-                      {vehicle.extraHourlyRate ? (
-                        <div className="flex justify-between items-center p-3 bg-[#F0F2F5] rounded-lg">
-                          <span className="text-sm font-medium text-gray-700">
-                            Extra hour
-                          </span>
-                          <span className="text-sm font-bold text-gray-900">
-                            {formatCurrency(Number(vehicle.extraHourlyRate))}/hr
-                          </span>
+                      );
+                      return (
+                        <div className="space-y-4">
+                          {within.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Within state booking
+                              </p>
+                              {within.map((opt: any) =>
+                                row(
+                                  opt.bookingTypeName?.trim(),
+                                  formatCurrency(Number(opt.price || 0)),
+                                  opt.bookingTypeId,
+                                ),
+                              )}
+                              {vehicle.extraHourlyRate
+                                ? row(
+                                    "Extra hour",
+                                    `${formatCurrency(
+                                      Number(vehicle.extraHourlyRate),
+                                    )}/hr`,
+                                    "extra-hour",
+                                  )
+                                : null}
+                            </div>
+                          )}
+                          {standalone.length > 0 && (
+                            <div className="space-y-2">
+                              {within.length > 0 && (
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Other bookings
+                                </p>
+                              )}
+                              {standalone.map((opt: any) =>
+                                row(
+                                  opt.bookingTypeName?.trim(),
+                                  formatCurrency(Number(opt.price || 0)),
+                                  opt.bookingTypeId,
+                                ),
+                              )}
+                            </div>
+                          )}
                         </div>
-                      ) : null}
-                    </div>
+                      );
+                    })()}
                     <p className="text-xs text-gray-400">
                       Final price depends on your itinerary. Use Estimate Price
                       for an exact quote.

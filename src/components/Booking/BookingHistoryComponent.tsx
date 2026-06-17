@@ -7,7 +7,9 @@ import React, {
   useRef,
   useCallback,
 } from "react";
-import { FiList, FiCalendar, FiSearch, FiShare2 } from "react-icons/fi";
+import { FiList, FiCalendar, FiSearch, FiShare2, FiEye } from "react-icons/fi";
+import { useRouter } from "next/navigation";
+import { customerBookingStatus } from "@/utils/bookingStatus";
 import {
   Booking,
   BookingFilters,
@@ -26,6 +28,7 @@ interface BookingHistoryComponentProps {
   showHeader?: boolean;
   limit?: number;
   onTotalCountChange?: (total: number) => void;
+  showControls?: boolean;
 }
 
 const PAGE_SIZE = 10;
@@ -57,8 +60,10 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   showHeader = true,
   limit,
   onTotalCountChange,
+  showControls = true,
 }) => {
   const [bookings, setBookings] = useState<any[]>([]);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -82,20 +87,20 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
         const response = await BookingService.getMyBookings({
           ...filters,
           page: pageNumber,
-          size: PAGE_SIZE,
+          size: limit ? Math.max(limit * 6, PAGE_SIZE) : PAGE_SIZE,
         });
         const content = response.data.content;
         const totalPages: number = response.data.totalPages ?? 1;
         const totalElements: number = response.data.totalElements ?? 0;
-        let transformed = content.map(transformItem);
+        const transformed = content.map(transformItem);
 
         if (reset && onTotalCountChange) {
           onTotalCountChange(totalElements);
         }
 
-        // If a limit is set (e.g. dashboard widget), cap results and disable further loading
+        // For the dashboard widget (limit set) we load one larger page and group
+        // on the client; for the full list we paginate normally.
         if (limit) {
-          transformed = transformed.slice(0, limit);
           setHasMore(false);
         } else {
           setHasMore(pageNumber + 1 < totalPages);
@@ -157,15 +162,14 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
   }, [loading, loadingMore, hasMore]);
 
   const handleBookingClick = (booking: any) => {
-    setSelectedBookings([booking]);
-    setIsModalOpen(true);
+    router.push(`/dashboard/booking/${booking.bookingId}`);
   };
 
   const handleShareBooking = (booking: any) => {
     const shareText = `Check out my booking for ${booking.vehicleName} on ${new Date(
       booking.createdAt,
     ).toLocaleDateString()}`;
-    const shareUrl = `${window.location.origin}/booking-tracking?bookingId=${booking.bookingId}`;
+    const shareUrl = `${window.location.origin}/track-booking?bookingId=${booking.bookingId}`;
 
     if (navigator.share) {
       navigator.share({ title: "My Booking", text: shareText, url: shareUrl });
@@ -197,20 +201,6 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
       day: "numeric",
     });
 
-  const getStatusColor = (status: string) => {
-    const statusColors: Record<string, string> = {
-      PENDING_PAYMENT: "bg-yellow-100 text-yellow-800",
-      CONFIRMED: "bg-green-100 text-green-800",
-      FAILED_AVAILABILITY: "bg-red-100 text-red-800",
-      CANCELLED_BY_USER: "bg-gray-100 text-gray-800",
-      CANCELLED_BY_HOST: "bg-gray-100 text-gray-800",
-      CANCELLED_BY_ADMIN: "bg-gray-100 text-gray-800",
-      COMPLETED: "bg-blue-100 text-blue-800",
-      NO_SHOW: "bg-orange-100 text-orange-800",
-    };
-    return statusColors[status] || "bg-gray-100 text-gray-800";
-  };
-
   const tableColumns: TableColumn<any>[] = useMemo(
     () => [
       {
@@ -219,35 +209,48 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
         render: (value: string, row: any) => (
           <div>
             <div className="text-sm font-medium text-gray-900">{value}</div>
-            <div className="text-sm text-gray-500">{row.city}</div>
+            <div className="text-sm text-gray-500">
+              {row.segmentCount > 1 ? `${row.segmentCount} trips` : row.city}
+            </div>
           </div>
         ),
       },
       {
         key: "createdAt",
         label: "Date",
-        render: (value: string) => (
-          <span className="text-sm text-gray-900">{formatDate(value)}</span>
-        ),
+        render: (_value: string, row: any) =>
+          row.segmentCount > 1 ? (
+            <span className="text-sm text-gray-900">
+              {formatDate(row.firstStart)} - {formatDate(row.lastStart)}
+            </span>
+          ) : (
+            <span className="text-sm text-gray-900">
+              {formatDate(row.firstStart || row.createdAt)}
+            </span>
+          ),
       },
       {
         key: "bookingStatus",
         label: "Status",
-        render: (value: string) => (
-          <span
-            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-              value,
-            )}`}
-          >
-            {value?.replace(/_/g, " ")}
-          </span>
-        ),
+        render: (value: string) => {
+          const s = customerBookingStatus(value);
+          return (
+            <span
+              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${s.classes}`}
+            >
+              {s.label}
+            </span>
+          );
+        },
       },
       {
         key: "bookingType",
         label: "Type",
-        render: (value: string) => (
-          <span className="text-sm text-gray-900">{value}</span>
+        render: (value: string, row: any) => (
+          <span className="text-sm text-gray-900">
+            {value}
+            {row.segmentCount > 1 ? ` × ${row.segmentCount}` : ""}
+          </span>
         ),
       },
       {
@@ -295,13 +298,61 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
     [],
   );
 
-  const tableData = useMemo(
-    () => bookings.map((b, i) => ({ ...b, id: i })),
-    [bookings],
-  );
+  const tableData = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const b of bookings as any[]) {
+      const key = b.bookingId ?? b.segmentId;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(b);
+    }
+    let groups = Array.from(map.values()).map((segs) => {
+      const first = segs[0];
+      const starts = segs
+        .map((s) => s.startDateTime)
+        .filter(Boolean)
+        .sort();
+      return {
+        ...first,
+        segmentCount: segs.length,
+        firstStart: starts[0] ?? first.startDateTime ?? first.createdAt,
+        lastStart:
+          starts[starts.length - 1] ?? first.startDateTime ?? first.createdAt,
+      };
+    });
+
+    const now = Date.now();
+    const TERMINAL = new Set([
+      "COMPLETED",
+      "CANCELLED_BY_USER",
+      "CANCELLED_BY_HOST",
+      "CANCELLED_BY_ADMIN",
+      "NO_SHOW",
+      "FAILED_AVAILABILITY",
+    ]);
+    const ts = (d?: string) => {
+      const t = d ? new Date(d).getTime() : NaN;
+      return isNaN(t) ? 0 : t;
+    };
+    const isPast = (g: any) =>
+      TERMINAL.has(g.bookingStatus) || ts(g.lastStart) < now;
+
+    groups.sort((a, b) => {
+      const ap = isPast(a);
+      const bp = isPast(b);
+      // Upcoming and active bookings first, history after.
+      if (ap !== bp) return ap ? 1 : -1;
+      // Upcoming: soonest start first. History: most recent start first.
+      return ap
+        ? ts(b.lastStart) - ts(a.lastStart)
+        : ts(a.firstStart) - ts(b.firstStart);
+    });
+
+    if (limit) groups = groups.slice(0, limit);
+    return groups.map((b, i) => ({ ...b, id: i }));
+  }, [bookings, limit]);
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className={showControls ? "bg-white rounded-lg shadow p-6" : ""}>
       {showHeader && (
         <div className="mb-2">
           <h2 className="text-xl font-bold text-gray-900">Booking History</h2>
@@ -309,14 +360,14 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
         </div>
       )}
 
-      {/* Controls — always visible so calendar toggle is always accessible */}
+      {showControls && (
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         {/* View Toggle */}
         <div className="flex bg-gray-100 rounded-lg overflow-hidden">
           <button
             className={`px-4 py-2 text-sm font-medium ${
               viewMode === "list"
-                ? "bg-blue-600 text-white"
+                ? "bg-[#0673ff] text-white"
                 : "text-gray-700 hover:bg-gray-200"
             }`}
             onClick={() => setViewMode("list")}
@@ -326,7 +377,7 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           <button
             className={`px-4 py-2 text-sm font-medium ${
               viewMode === "calendar"
-                ? "bg-blue-600 text-white"
+                ? "bg-[#0673ff] text-white"
                 : "text-gray-700 hover:bg-gray-200"
             }`}
             onClick={() => setViewMode("calendar")}
@@ -362,10 +413,11 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           />
         </div>
       </div>
+      )}
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
+          <div className="animate-spin h-8 w-8 border-2 border-[#0673ff] border-t-transparent rounded-full mx-auto" />
         </div>
       ) : viewMode === "list" ? (
         <DataTable<any>
@@ -373,9 +425,74 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           data={tableData}
           height="max-h-[600px]"
           seeMoreData={seeMoreActions}
+          itemLabel="booking"
+          flush={!showControls}
           hasMore={hasMore}
           loadingMore={loadingMore}
           onLoadMore={handleLoadMore}
+          onRowClick={(row) => router.push(`/dashboard/booking/${row.bookingId}`)}
+          isFiltered={
+            showControls && !!(filters.searchTerm || filters.bookingStatus)
+          }
+          hideMobileActions
+          renderMobileCard={(row: any) => {
+            const s = customerBookingStatus(row.bookingStatus);
+            return (
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-gray-900">
+                      {row.vehicleName}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${s.classes}`}
+                      >
+                        {s.label}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {row.segmentCount > 1
+                          ? `${formatDate(row.firstStart)} - ${formatDate(row.lastStart)}`
+                          : formatDate(row.firstStart || row.createdAt)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {row.bookingType}
+                      {row.segmentCount > 1 ? ` × ${row.segmentCount}` : ""}
+                    </p>
+                  </div>
+                  <p className="shrink-0 text-base font-bold text-gray-900">
+                    {formatCurrency(row.price)}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleBookingClick(row);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0673ff] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                  >
+                    <FiEye className="h-3.5 w-3.5" />
+                    View details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShareBooking(row);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-[#0673ff] hover:underline"
+                  >
+                    <FiShare2 className="h-3.5 w-3.5" />
+                    Share
+                  </button>
+                </div>
+              </div>
+            );
+          }}
         />
       ) : (
         <CalendarView bookings={bookings} onDateClick={handleDateClick} />

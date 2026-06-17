@@ -9,6 +9,7 @@ import ApiClient from "../connnector/appClient";
 export interface Payment {
   id: string;
   bookingId: string;
+  invoiceNumber?: string;
   paymentStatus: string;
   paymentProvider: string;
   transactionReference: string;
@@ -110,6 +111,12 @@ export class PaymentService {
     await ApiClient.downloadFile(
       `/api/v1/admin/invoices/${bookingId}/download-receipt`,
       `receipt-${bookingId}.pdf`
+    );
+  }
+
+  static async getReceiptBlob(bookingId: string): Promise<Blob> {
+    return ApiClient.fetchFileBlob(
+      `/api/v1/admin/invoices/${bookingId}/download-receipt`
     );
   }
 }

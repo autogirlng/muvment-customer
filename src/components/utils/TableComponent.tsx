@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { TbDots } from "react-icons/tb";
+import { FiInbox, FiSearch } from "react-icons/fi";
 
 export interface TableColumn<T> {
   key: keyof T;
@@ -10,7 +11,7 @@ export interface TableColumn<T> {
 }
 
 export interface SeeMoreData {
-  name: string;
+  name: string | ((row: any) => string);
   handleAction?: (row: any) => void;
   icon: React.ElementType;
 }
@@ -21,9 +22,19 @@ interface DataTableProps<T> {
   height?: string;
   title?: string;
   seeMoreData?: SeeMoreData[];
+  onRowClick?: (row: T) => void;
+  renderMobileCard?: (row: T) => React.ReactNode;
   onLoadMore?: () => void;
   hasMore?: boolean;
   loadingMore?: boolean;
+  itemLabel?: string;
+  emptyTitle?: string;
+  emptyMessage?: string;
+  isFiltered?: boolean;
+  filteredTitle?: string;
+  filteredMessage?: string;
+  hideMobileActions?: boolean;
+  flush?: boolean;
 }
 
 // ─── ActionMenu ───────────────────────────────────────────────────────────────
@@ -119,12 +130,18 @@ function ActionMenu({ row, actions }: { row: any; actions: SeeMoreData[] }) {
           }}
           className="w-44 bg-white shadow-xl border border-gray-200 rounded-lg p-1"
         >
-          {actions.map((action, i) => (
+          {actions.map((action, i) => {
+            const Icon = action.icon;
+            const label =
+              typeof action.name === "function"
+                ? action.name(row)
+                : action.name;
+            return (
             <button
               key={i}
               type="button"
               className="w-full flex items-center gap-2 px-3 py-3 cursor-pointer hover:bg-gray-100 active:bg-gray-200 rounded-md touch-manipulation select-none text-left"
-              // Mark interaction start — prevents the outside handler from
+              // Mark interaction start, prevents the outside handler from
               // closing the menu before the action fires on touch devices
               onTouchStart={() => {
                 interactingRef.current = true;
@@ -146,12 +163,13 @@ function ActionMenu({ row, actions }: { row: any; actions: SeeMoreData[] }) {
                 }
               }}
             >
-              <action.icon className="text-base text-gray-600 flex-shrink-0" />
+              <Icon className="text-base text-gray-600 flex-shrink-0" />
               <span className="text-sm text-gray-700 whitespace-nowrap">
-                {action.name}
+                {label}
               </span>
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
     </>
@@ -165,10 +183,27 @@ export default function DataTable<T extends { id: string | number }>({
   height = "max-h-[400px]",
   title = "",
   seeMoreData,
+  onRowClick,
+  renderMobileCard,
   onLoadMore,
   hasMore = false,
   loadingMore = false,
+  itemLabel = "result",
+  emptyTitle,
+  emptyMessage,
+  isFiltered = false,
+  filteredTitle,
+  filteredMessage,
+  hideMobileActions = false,
+  flush = false,
 }: DataTableProps<T>): React.ReactElement {
+  const pluralLabel = itemLabel.endsWith("s") ? itemLabel : `${itemLabel}s`;
+  const resolvedEmptyTitle = emptyTitle ?? `No ${pluralLabel} yet`;
+  const resolvedEmptyMessage =
+    emptyMessage ?? `When you have ${pluralLabel}, they will appear here.`;
+  const resolvedFilteredTitle = filteredTitle ?? "No results found";
+  const resolvedFilteredMessage =
+    filteredMessage ?? "Try adjusting your search or filters.";
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const uniqueRows = useMemo(() => {
@@ -179,6 +214,15 @@ export default function DataTable<T extends { id: string | number }>({
       return true;
     });
   }, [data]);
+
+  const showFilteredEmpty = isFiltered && uniqueRows.length === 0;
+  const EmptyIcon = showFilteredEmpty ? FiSearch : FiInbox;
+  const emptyHeading = showFilteredEmpty
+    ? resolvedFilteredTitle
+    : resolvedEmptyTitle;
+  const emptyBody = showFilteredEmpty
+    ? resolvedFilteredMessage
+    : resolvedEmptyMessage;
 
   useEffect(() => {
     if (!onLoadMore) return;
@@ -194,77 +238,102 @@ export default function DataTable<T extends { id: string | number }>({
 
   const loadingRow = (
     <div className="flex justify-center items-center py-4 gap-2 text-gray-500 text-sm">
-      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0673ff]" />
       Loading more...
     </div>
   );
 
-  const endMessage = (
-    <div className="flex justify-center items-center py-4 text-gray-500 text-sm">
-      End of results
-    </div>
-  );
-
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden w-full">
+    <div
+      className={
+        flush
+          ? "w-full"
+          : "bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden w-full"
+      }
+    >
       {title && (
-        <div className="py-3 border-b border-gray-200">
+        <div className="px-4 py-3 border-b border-gray-200">
           <h2 className="text-base md:text-lg font-semibold text-gray-900">{title}</h2>
         </div>
       )}
 
       {/* ── Mobile / Tablet Card View ── */}
-      <div className={`lg:hidden overflow-y-auto ${height} py-2`}>
+      <div
+        className={`lg:hidden ${flush ? "" : `overflow-y-auto ${height}`} py-2`}
+      >
         {uniqueRows.length === 0 ? (
-          <div className="text-center text-gray-500 text-sm py-6">No data found</div>
+          <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+              <EmptyIcon className="h-6 w-6 text-gray-400" />
+            </div>
+            <p className="mt-3 font-semibold text-gray-900">{emptyHeading}</p>
+            <p className="mt-1 text-sm text-gray-500">{emptyBody}</p>
+          </div>
         ) : (
           uniqueRows.map((row) => (
             <div
               key={row.id}
-              className="bg-white border border-gray-200 rounded-lg px-4 mb-3 shadow-sm"
+              className={
+                flush
+                  ? "py-4 border-b border-gray-100 last:border-0"
+                  : "px-4 py-4 border-b border-gray-100 last:border-0"
+              }
             >
-              {seeMoreData && (
-                <div className="flex justify-end items-center pt-1">
-                  <ActionMenu row={row} actions={seeMoreData} />
-                </div>
-              )}
-
-              <div className="flex-1 space-y-3 mb-2">
-                {columns.map((column, colIndex) => (
-                  <div
-                    key={String(column.key)}
-                    className={`flex justify-between items-center pb-3 ${
-                      colIndex < columns.length - 1 ? "border-b border-gray-200" : ""
-                    }`}
-                  >
-                    <span className="text-xs font-semibold text-gray-600 uppercase">
-                      {column.label}
-                    </span>
-                    <span className="text-sm text-gray-900 font-medium ml-4 text-right">
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : (row[column.key] as React.ReactNode)}
-                    </span>
+              <div
+                className={onRowClick ? "cursor-pointer" : ""}
+                onClick={() => onRowClick?.(row)}
+              >
+                {renderMobileCard ? (
+                  renderMobileCard(row)
+                ) : (
+                  <div className="space-y-2">
+                    {columns.map((column, colIndex) => (
+                      <div
+                        key={colIndex}
+                        className="flex justify-between items-center gap-3"
+                      >
+                        <span className="text-xs text-gray-500">
+                          {column.label}
+                        </span>
+                        <span className="text-sm text-gray-900 font-medium text-right">
+                          {column.render
+                            ? column.render(row[column.key], row)
+                            : (row[column.key] as React.ReactNode)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
+
+              {!hideMobileActions &&
+                seeMoreData &&
+                seeMoreData.length > 0 && (
+                  <div
+                    className="mt-2 flex justify-end"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ActionMenu row={row} actions={seeMoreData} />
+                  </div>
+                )}
             </div>
           ))
         )}
 
         <div ref={sentinelRef} className="h-1" />
         {loadingMore && loadingRow}
-        {!hasMore && uniqueRows.length > 0 && endMessage}
       </div>
 
       {/* ── Desktop Table View ── */}
-      <div className={`hidden lg:block overflow-y-auto ${height}`}>
+      <div
+        className={`hidden lg:block overflow-x-auto ${flush ? "" : `overflow-y-auto ${height}`}`}
+      >
         <table className="min-w-full border-collapse">
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
             <tr>
-              {columns.map((column) => (
+              {columns.map((column, colIndex) => (
                 <th
-                  key={String(column.key)}
+                  key={colIndex}
                   className="px-4 py-3 text-left text-sm font-semibold text-gray-900 whitespace-nowrap"
                 >
                   {column.label}
@@ -283,17 +352,31 @@ export default function DataTable<T extends { id: string | number }>({
               <tr>
                 <td
                   colSpan={columns.length + (seeMoreData ? 1 : 0)}
-                  className="text-center py-6 text-gray-500 text-sm"
+                  className="py-14"
                 >
-                  No data found
+                  <div className="flex flex-col items-center justify-center px-6 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                      <EmptyIcon className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <p className="mt-3 font-semibold text-gray-900">
+                      {emptyHeading}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-500">{emptyBody}</p>
+                  </div>
                 </td>
               </tr>
             ) : (
               uniqueRows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50 transition-colors text-sm">
-                  {columns.map((column) => (
+                <tr
+                  key={row.id}
+                  onClick={() => onRowClick?.(row)}
+                  className={`hover:bg-gray-50 transition-colors text-sm ${
+                    onRowClick ? "cursor-pointer" : ""
+                  }`}
+                >
+                  {columns.map((column, colIndex) => (
                     <td
-                      key={String(column.key)}
+                      key={colIndex}
                       className="px-4 py-3 text-gray-700 whitespace-nowrap"
                     >
                       {column.render
@@ -302,7 +385,10 @@ export default function DataTable<T extends { id: string | number }>({
                     </td>
                   ))}
                   {seeMoreData && (
-                    <td className="px-4 py-3">
+                    <td
+                      className="px-4 py-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <ActionMenu row={row} actions={seeMoreData} />
                     </td>
                   )}
@@ -315,19 +401,21 @@ export default function DataTable<T extends { id: string | number }>({
         <div ref={sentinelRef} className="h-1" />
         {loadingMore && (
           <div className="flex justify-center items-center py-4 gap-2 text-gray-500 text-sm">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0673ff]" />
             Loading more...
           </div>
         )}
-        {!hasMore && uniqueRows.length > 0 && endMessage}
       </div>
 
-      <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-        <p className="text-xs md:text-sm text-gray-600">
-          Showing {uniqueRows.length} record{uniqueRows.length !== 1 ? "s" : ""}
-          {hasMore ? " — scroll for more" : " — all loaded"}
-        </p>
-      </div>
+      {!flush && (
+        <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+          <p className="text-xs md:text-sm text-gray-600">
+            {uniqueRows.length} {itemLabel}
+            {uniqueRows.length !== 1 ? "s" : ""}
+            {hasMore ? " · scroll to load more" : ""}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

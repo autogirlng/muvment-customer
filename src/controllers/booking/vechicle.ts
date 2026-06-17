@@ -28,6 +28,62 @@ export class VehicleSearchService {
   private static readonly VEHICLE_DETAILS_SLUG = "/api/v1/public/vehicles/slug";
   private static readonly CUSTOMER_CATEGORIES =
     "/api/v1/public/customer-categories";
+  private static readonly DESTINATIONS = "/api/v1/public/destinations";
+  private static readonly INTERSTATE_DESTINATIONS =
+    "/api/v1/public/vehicles/interstate/destinations";
+  private static readonly SERVICE_AREAS = "/api/v1/public/service-areas";
+
+  static async getInterstateDestinations(
+    latitude: number,
+    longitude: number,
+    bookingTypeId: string,
+  ): Promise<{ stateId: string; name: string; country: string }[]> {
+    try {
+      const response = await getSingleData(this.INTERSTATE_DESTINATIONS, {
+        latitude,
+        longitude,
+        bookingTypeId,
+      });
+      return response?.data?.[0]?.data || [];
+    } catch (error) {
+      console.error("Error fetching interstate destinations:", error);
+      return [];
+    }
+  }
+
+  static async getDestinations(bookingTypeId: string): Promise<any[]> {
+    try {
+      const response = await getSingleData(this.DESTINATIONS, { bookingTypeId });
+      return response?.data?.[0]?.data || [];
+    } catch (error) {
+      console.error("Error fetching destinations:", error);
+      return [];
+    }
+  }
+
+  static async getServiceAreas(
+    latitude: number,
+    longitude: number,
+  ): Promise<
+    {
+      id: string;
+      name: string;
+      latitude: number;
+      longitude: number;
+      isOutskirts: boolean;
+    }[]
+  > {
+    try {
+      const response = await getSingleData(this.SERVICE_AREAS, {
+        latitude,
+        longitude,
+      });
+      return response?.data?.[0]?.data || [];
+    } catch (error) {
+      console.error("Error fetching service areas:", error);
+      return [];
+    }
+  }
 
   static async getCustomerCategories(): Promise<any[]> {
     try {
@@ -127,7 +183,7 @@ export class VehicleSearchService {
       const response = await getSingleData(
         `${this.VEHICLE_DETAILS}/${vehicleId}`,
       );
-      return response?.data || null;
+      return response?.data?.[0]?.data || null;
     } catch (error) {
       console.error("Error fetching vehicle details:", error);
       throw error;
@@ -190,6 +246,9 @@ export class VehicleSearchService {
     untilDate?: Date,
     startTime?: string, // Time string in "HH:MM" format
     endTime?: string, // Time string in "HH:MM" format
+    categoryName?: string,
+    destinationId?: string,
+    destinationStateId?: string,
   ) {
     const params = new URLSearchParams();
 
@@ -204,8 +263,20 @@ export class VehicleSearchService {
       params.append("bookingType", bookingType);
     }
 
+    if (destinationId) {
+      params.append("destinationId", destinationId);
+    }
+
+    if (destinationStateId) {
+      params.append("destinationStateId", destinationStateId);
+    }
+
     if (category) {
-      params.append("vehicleTypeId", category);
+      params.append("category", category);
+    }
+
+    if (categoryName) {
+      params.append("categoryName", categoryName);
     }
 
     // Add date and time separately

@@ -6,9 +6,28 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-const getVehicle = cache((slug: string) =>
-  VehicleSearchService.getVehicleBySlug(slug),
-);
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const getVehicle = cache(async (slugOrId: string) => {
+  const looksLikeId = UUID_RE.test(slugOrId);
+  try {
+    const primary = looksLikeId
+      ? await VehicleSearchService.getVehicleById(slugOrId)
+      : await VehicleSearchService.getVehicleBySlug(slugOrId);
+    if (primary) return primary;
+  } catch (error) {
+    console.error("Vehicle lookup failed, trying the other key:", error);
+  }
+  try {
+    return looksLikeId
+      ? await VehicleSearchService.getVehicleBySlug(slugOrId)
+      : await VehicleSearchService.getVehicleById(slugOrId);
+  } catch (error) {
+    console.error("Vehicle fallback lookup failed:", error);
+    return null;
+  }
+});
 
 interface PageProps {
   params: Promise<{

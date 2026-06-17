@@ -5,10 +5,29 @@ import { personalInformationMyselfSchema } from "@/utils/validationSchema";
 import { PersonalInformationMyselfValues } from "@/types/booking";
 import PhoneNumberAndCountryField from "@/components/general/forms/phoneNumberAndCountryField";
 import { getCountryCallingCode } from "react-phone-number-input";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { ProfileService } from "@/controllers/user/profile.service";
 import { replaceCharactersWithString } from "./PersonalInformationFormOthers";
 import PersistBookingDraft from "./PersistBookingDraft";
+
+const splitPhone = (raw?: string) => {
+  if (!raw) return { country: "NG", countryCode: "+234", local: "" };
+  const e164 = raw.startsWith("+") ? raw : "+" + raw.replace(/^0+/, "");
+  const parsed = parsePhoneNumberFromString(e164);
+  if (parsed && parsed.country) {
+    return {
+      country: parsed.country as string,
+      countryCode: "+" + parsed.countryCallingCode,
+      local: parsed.nationalNumber as string,
+    };
+  }
+  let local = raw.replace(/[^\d]/g, "");
+  if (local.startsWith("234")) local = local.slice(3);
+  local = local.replace(/^0+/, "");
+  return { country: "NG", countryCode: "+234", local };
+};
 
 type Props = {
   steps: string[];
@@ -16,6 +35,7 @@ type Props = {
   setCurrentStep: (step: number) => void;
   vehicleId: string;
   type: "user" | "guest";
+  hideNavigation?: boolean;
 };
 
 const PersonalInformationFormMyself = ({
@@ -24,6 +44,7 @@ const PersonalInformationFormMyself = ({
   setCurrentStep,
   vehicleId,
   type,
+  hideNavigation,
 }: Props) => {
   const [showSecondaryPhoneNumber, setShowSecondaryPhoneNumber] =
     useState<boolean>(false);
@@ -31,6 +52,35 @@ const PersonalInformationFormMyself = ({
     useState<PersonalInformationMyselfValues | null>(null);
 
   const { user } = useAuth();
+
+  const [profilePhone, setProfilePhone] = useState<string>("");
+
+  // The login response doesn't include the phone number, so when the signed-in
+  // user has none on the auth object, pull it from their profile to prefill.
+  useEffect(() => {
+    if (!user || user.phoneNumber) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await ProfileService.getMyProfile();
+        const respData: any = response?.data;
+        const first = Array.isArray(respData) ? respData[0] : respData;
+        const profileData: any = first && (first.data ?? first);
+        const phone = profileData?.phoneNumber || "";
+        if (!cancelled && phone) setProfilePhone(phone);
+      } catch {
+        // best effort; leave the field empty if the profile can't be loaded
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const userPhone = useMemo(
+    () => splitPhone(user?.phoneNumber || profilePhone),
+    [user, profilePhone],
+  );
 
   const initialValues = useMemo(
     () => ({
@@ -41,9 +91,10 @@ const PersonalInformationFormMyself = ({
           : ""),
       guestEmail: bookingInformationValues?.guestEmail || user?.email || "",
       primaryPhoneNumber:
-        bookingInformationValues?.primaryPhoneNumber || user?.phoneNumber || "",
-      country: bookingInformationValues?.country || "NG",
-      countryCode: bookingInformationValues?.countryCode || "+234",
+        bookingInformationValues?.primaryPhoneNumber || userPhone.local || "",
+      country: bookingInformationValues?.country || userPhone.country || "NG",
+      countryCode:
+        bookingInformationValues?.countryCode || userPhone.countryCode || "+234",
       secondaryPhoneNumber:
         bookingInformationValues?.secondaryPhoneNumber || "",
       secondaryCountry: bookingInformationValues?.secondaryCountry || "NG",
@@ -51,7 +102,7 @@ const PersonalInformationFormMyself = ({
         bookingInformationValues?.secondaryCountryCode || "+234",
       isBookingForOthers: false,
     }),
-    [bookingInformationValues, user],
+    [bookingInformationValues, user, userPhone],
   );
 
   useEffect(() => {
@@ -257,15 +308,17 @@ const PersonalInformationFormMyself = ({
                 : "Add secondary phone number"}
             </button>
 
-            <StepperNavigation
-              steps={steps}
-              currentStep={currentStep}
-              setCurrentStep={setCurrentStep}
-              handleSaveDraft={() => {}}
-              isSaveDraftloading={false}
-              isNextLoading={isSubmitting}
-              disableNextButton={isSubmitting}
-            />
+            {!hideNavigation && (
+              <StepperNavigation
+                steps={steps}
+                currentStep={currentStep}
+                setCurrentStep={setCurrentStep}
+                handleSaveDraft={() => {}}
+                isSaveDraftloading={false}
+                isNextLoading={isSubmitting}
+                disableNextButton={isSubmitting}
+              />
+            )}
           </Form>
         );
       }}

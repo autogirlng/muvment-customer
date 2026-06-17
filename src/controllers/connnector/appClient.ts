@@ -12,12 +12,14 @@ class ApiClient {
       headers = {},
       requireAuth = true,
       params = {},
+      silent = false,
     }: {
       method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
       body?: Record<string, unknown> | null;
       headers?: Record<string, string>;
       requireAuth?: boolean;
       params?: Record<string, unknown>;
+      silent?: boolean;
     }
   ): Promise<[any, string]> {
     if (!this.BaseURL) {
@@ -48,10 +50,14 @@ class ApiClient {
       });
       return [response.data as any, "Request successful"];
     } catch (error: unknown) {
-      console.error("API request error:", error);
+      if (!silent) console.error("API request error:", error);
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 409) {
-          return [409, "A conflict occured"];
+          const conflictMessage =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "A conflict occurred";
+          return [{ err: conflictMessage, status: 409 }, conflictMessage];
         }
         let message =
           error.response?.data.data ||
@@ -138,6 +144,35 @@ class ApiClient {
       }
       throw new Error("An unknown error occurred");
     }
+  }
+
+  static async fetchFileBlob(
+    url: string,
+    params?: Record<string, unknown>
+  ): Promise<Blob> {
+    if (!this.BaseURL) {
+      throw new Error("NEXT_PUBLIC_API_URL is not defined");
+    }
+
+    let token: string | undefined;
+    if (typeof window !== "undefined") {
+      token = Cookies.get("muvment_access_token");
+    }
+
+    const requestHeaders: Record<string, string> = {};
+    if (token) {
+      requestHeaders["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await axios({
+      url: `${this.BaseURL}${url}`,
+      method: "GET",
+      headers: requestHeaders,
+      params,
+      responseType: "blob",
+    });
+
+    return response.data as Blob;
   }
 }
 

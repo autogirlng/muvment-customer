@@ -1,425 +1,351 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import {
-  FiMapPin,
-  FiBook,
-  FiCreditCard,
-  FiChevronRight,
-  FiCalendar,
-} from "react-icons/fi";
-import { VehicleSearchService } from "@/controllers/booking/vechicle";
-import { useLocationSearch } from "@/hooks/useLocationSearch";
-import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
-import { BookingService } from "@/controllers/booking/bookingService";
+import React, { useState, useEffect } from "react";
+import { FiArrowRight, FiMapPin, FiPlus, FiUser } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import { getBookingOption } from "@/context/Constarain";
+import { useAuth } from "@/context/AuthContext";
+import { BookingService } from "@/controllers/booking/bookingService";
+import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
 import {
-  ProfileService,
-  UserProfile,
-} from "@/controllers/user/profile.service";
+  customerBookingStatus,
+  customerTripStatus,
+} from "@/utils/bookingStatus";
 
-interface StatCardProps {
-  title: string;
-  value: number | string;
-  icon: React.ReactNode;
-  iconBgColor: string;
-  onViewDetails: () => void;
-}
+const BRAND = "#0673ff";
 
-const StatCard: React.FC<StatCardProps> = ({
-  title,
-  value,
-  icon,
-  iconBgColor,
-  onViewDetails,
-}) => {
-  return (
-    <div className="bg-white rounded-lg border border-blue-300 shadow-[-8px_0_20px_-10px_#0673FF] p-6">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <p className="text-gray-600 text-sm mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
-        </div>
-        <div className={`${iconBgColor} p-3 rounded-lg`}>{icon}</div>
-      </div>
-      <button
-        onClick={onViewDetails}
-        className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
-      >
-        View Details
-        <FiChevronRight className="w-4 h-4" />
-      </button>
-    </div>
-  );
+const ngn = (n?: number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 0,
+  }).format(n || 0);
+
+const compactNgn = (n?: number) => {
+  const v = n || 0;
+  if (v >= 1_000_000_000)
+    return `₦${(v / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
+  if (v >= 1_000_000)
+    return `₦${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  return ngn(v);
+};
+
+const UPCOMING = ["CONFIRMED", "PENDING_PAYMENT"];
+
+const formatDate = (d?: string) => {
+  if (!d) return "";
+  const dt = new Date(d);
+  return isNaN(dt.getTime())
+    ? ""
+    : dt.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+};
+
+const prettyStatus = (s?: string) => (s ? customerBookingStatus(s).label : "");
+
+type Trip = {
+  bookingId: string;
+  segmentId?: string;
+  status: string;
+  vehicleName: string;
+  startDateTime?: string;
+  pickup?: string;
+  dropoff?: string;
+  kind: "active" | "upcoming" | "latest";
+};
+
+const deriveHighlight = (rows: any[]): Trip | null => {
+  const now = Date.now();
+  const make = (b: any, kind: Trip["kind"]): Trip => ({
+    bookingId: b.bookingId,
+    segmentId: b.segmentId,
+    status: b.status,
+    vehicleName: b.vehicleName,
+    startDateTime: b.startDateTime,
+    pickup: b.pickup,
+    dropoff: b.dropoff,
+    kind,
+  });
+
+  const active = rows.find((b) => b.status === "IN_PROGRESS");
+  if (active) return make(active, "active");
+
+  const upcoming = rows
+    .filter(
+      (b) =>
+        UPCOMING.includes(b.status) &&
+        b.startDateTime &&
+        new Date(b.startDateTime).getTime() >= now,
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.startDateTime).getTime() -
+        new Date(b.startDateTime).getTime(),
+    )[0];
+  if (upcoming) return make(upcoming, "upcoming");
+
+  return rows[0] ? make(rows[0], "latest") : null;
+};
+
+const TRIP_LABEL: Record<Trip["kind"], string> = {
+  active: "Active trip",
+  upcoming: "Your next trip",
+  latest: "Latest booking",
 };
 
 export default function Dashboard(): React.ReactElement {
   const router = useRouter();
-  const [bookingType, setBookingType] = useState<string>("12-hours");
-  const [fromDate, setFromDate] = useState<Date>(new Date());
-  const [untilDate, setUntilDate] = useState<Date>(new Date());
-  const [category, setCategory] = useState<string>("suv-electric");
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [userData, setProfile] = useState<UserProfile | null>(null);
-  // Location state
-  const [searchValue, setSearchValue] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState<{
-    name: string;
-    lat: number | null;
-    lng: number | null;
-  } | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [categoryOptions, setcategoryOptions] = useState<{
-    value: any;
-    label: string;
-  }[]>([]);
-  const [bookingOptions, setBookingOptions] = useState<any[]>([]);
+  const { user } = useAuth();
   const [stats, setStats] = useState<{
     bookings: number;
-    payments: number;
+    trips: number;
+    paymentsTotal: number;
   }>({
     bookings: 0,
-    payments: 0,
+    trips: 0,
+    paymentsTotal: 0,
   });
-  const locationDropdownRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const {
-    showLocationDropdown,
-    setShowLocationDropdown,
-    locationSuggestions,
-    isLoadingPlaces,
-    searchError,
-    handleLocationSelect,
-    handleSearchInputFocus,
-    handleSearchInputChange,
-  } = useLocationSearch();
-
-  const getBookingOptions = async () => {
-    const data = await getBookingOption();
-    setBookingOptions(data.dropdownOptions);
-  };
-
-  const getvechileType = async () => {
-    const result = await VehicleSearchService.getVechielType();
-    const transformedOptions = result.map((item: any) => ({
-      value: item.id,
-      label: item.name.replace("_", " "),
-    }));
-
-    setcategoryOptions(transformedOptions);
-  };
-
-  const getUserData = async () => {
-    const response = await ProfileService.getMyProfile();
-    let profileData: UserProfile | null = null;
-    const respData = response?.data;
-    if (Array.isArray(respData)) {
-      const first = respData[0];
-      profileData = (first && (first.data ?? first)) as UserProfile | null;
-    } else {
-      profileData = respData as UserProfile | null;
-    }
-
-    setProfile(profileData as UserProfile);
-  };
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [tripInfo, setTripInfo] = useState<any | null>(null);
+  const [tripLoading, setTripLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const load = async () => {
       try {
-        await Promise.all([
-          getvechileType(),
-          getBookingOptions(),
-          getUserData(),
-        ]);
-      } catch (error) {
-        console.error("Error fetching data:", error);
+        const metrics = await BookingService.getDashboardMetrics();
+        setStats({
+          bookings: metrics.bookings,
+          trips: metrics.trips,
+          paymentsTotal: metrics.paymentsTotal,
+        });
+      } catch (e) {
+        console.error("Error loading counts:", e);
       }
     };
-
-    fetchData();
+    load();
   }, []);
 
-  // Handle clicks outside location dropdown
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        locationDropdownRef.current &&
-        !locationDropdownRef.current.contains(event.target as Node) &&
-        searchInputRef.current &&
-        !searchInputRef.current.contains(event.target as Node)
-      ) {
-        setShowLocationDropdown(false);
+    const loadTrip = async () => {
+      try {
+        const res: any = await BookingService.getMyBookings({
+          page: 0,
+          size: 10,
+        } as any);
+        const content: any[] = res?.data?.content ?? [];
+        const mapped = content.map((item) => ({
+          bookingId: item.booking?.bookingId,
+          segmentId: item.id,
+          status: item.booking?.bookingStatus,
+          vehicleName: item.vehicle?.name || "Vehicle",
+          startDateTime: item.startDateTime,
+          pickup: item.pickupLocationString,
+          dropoff: item.dropoffLocationString,
+        }));
+        setTrip(deriveHighlight(mapped));
+      } catch (e) {
+        console.error("Error loading trip:", e);
+      } finally {
+        setTripLoading(false);
       }
     };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [setShowLocationDropdown]);
-
-  const handleDateSelect = (date: Date, type: "from" | "until"): void => {
-    if (type === "from") {
-      setFromDate(date);
-      if (date > untilDate) {
-        setUntilDate(date);
-      }
-    } else {
-      setUntilDate(date);
-    }
-    setOpenDropdown(null);
-  };
-
-  const handleDropdownToggle = (dropdownId: string): void => {
-    setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
-  };
-
-  const handleViewMore = useCallback(
-    (route: string) => {
-      router.push(route);
-    },
-    [router]
-  );
-
-  const handleSearchInputChangeEvent = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = e.target.value;
-    setSearchValue(value);
-    handleSearchInputChange(value);
-    setErrorMessage("");
-  };
-
-  const onLocationSelect = async (location: any) => {
-    const selected = await handleLocationSelect(location);
-    setSelectedLocation(selected);
-    setSearchValue(selected.name);
-  };
-
-  const handleSearch = async () => {
-    setErrorMessage("");
-    if (!searchValue.trim()) {
-      setErrorMessage("Please enter a location");
-      return;
-    }
-
-    if (!selectedLocation || !selectedLocation.lat || !selectedLocation.lng) {
-      setErrorMessage("Please select a valid location from the suggestions");
-      return;
-    }
-
-    setIsSearching(true);
-
-    try {
-      const searchUrl = await VehicleSearchService.buildSearchUrl(
-        {
-          name: selectedLocation.name,
-          lat: selectedLocation.lat,
-          lng: selectedLocation.lng,
-        },
-        bookingType,
-        category,
-        fromDate,
-        untilDate
-      );
-      router.push(searchUrl);
-    } catch (error) {
-      setErrorMessage("Failed to search vehicles. Please try again.");
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleDashboardLoad = async () => {
-    try {
-      const response = await BookingService.getDashboardCounts();
-      setStats((prev) => ({ ...prev, payments: response.payments }));
-    } catch (error) {
-      console.error("Error loading dashboard data:", error);
-    }
-  };
+    loadTrip();
+  }, []);
 
   useEffect(() => {
-    handleDashboardLoad();
-  }, []);
+    const sid = trip?.segmentId;
+    if (!sid) return;
+    let cancelled = false;
+    (async () => {
+      const info = await BookingService.getTripBySegment(sid);
+      if (!cancelled) setTripInfo(info);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [trip?.segmentId]);
 
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
-    year: "numeric",
     month: "long",
     day: "numeric",
   });
 
+  const openBook = () =>
+    window.dispatchEvent(new CustomEvent("muvment:open-book"));
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl relative">
-        <div className="max-w-8xl mx-auto px-4 md:px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-sm md:text-2xl font-bold mb-2">
-                Hi, {userData?.firstName}
-              </h1>
-              <p className="text-blue-100 text-sm">Book your next rental car</p>
-              <p className="text-blue-100 text-xs mt-1">{currentDate}</p>
-            </div>
-            {/* <div className="hidden md:block absolute right-0">
-              <Image src="/images/b.png" alt="Logo" width={200} height={700} />
-            </div> */}
-          </div>
+    <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-5 md:space-y-6">
+      {/* Greeting */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
+            Welcome back{user?.firstName ? `, ${user.firstName}` : ""}
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">{currentDate}</p>
         </div>
+        {(tripLoading || trip) && (
+          <button
+            onClick={openBook}
+            className="hidden shrink-0 sm:inline-flex items-center gap-1.5 text-white text-sm font-semibold px-4 py-2.5 rounded-full hover:opacity-90 transition"
+            style={{ backgroundColor: BRAND }}
+          >
+            <FiPlus className="w-4 h-4" />
+            <span>Book a vehicle</span>
+          </button>
+        )}
       </div>
 
-      <div className=" mx-auto  py-6 md:py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-          <StatCard
-            title="Total Bookings"
-            value={stats.bookings}
-            icon={<FiBook className="w-6 h-6 text-blue-600" />}
-            iconBgColor="bg-blue-100"
-            onViewDetails={() => handleViewMore("/dashboard/my-booking")}
-          />
-          <StatCard
-            title="Payments"
-            value={stats.payments}
-            icon={<FiCreditCard className="w-6 h-6 text-blue-600" />}
-            iconBgColor="bg-blue-100"
-            onViewDetails={() => handleViewMore("/dashboard/payment")}
-          />
-          {/* <StatCard
-            title="Pending Actions"
-            value={stats.bookings}
-            icon={<FiCalendar className="w-6 h-6 text-blue-600" />}
-            iconBgColor="bg-blue-100"
-            onViewDetails={() => handleViewMore("/dashboard/pending")}
-          /> */}
-        </div>
-
-        {/* Booking Form */}
-        {/* <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">
-            Book a car
-          </h2>
-          <div className="space-y-4">
-       
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="relative">
-                <label className="block text-sm text-gray-600 mb-2">
-                  Booking Location
-                </label>
-                <div className="flex items-center px-3 md:px-4 py-3 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
-                  <FiMapPin className="w-4 h-4 text-gray-500 mr-2 md:mr-3 flex-shrink-0" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Enter location"
-                    value={searchValue}
-                    onChange={handleSearchInputChangeEvent}
-                    onFocus={handleSearchInputFocus}
-                    className="w-full bg-transparent focus:outline-none text-sm text-gray-700 placeholder-gray-500"
-                  />
-                </div>
-
-                <LocationDropdown
-                  isOpen={showLocationDropdown}
-                  suggestions={locationSuggestions}
-                  isLoading={isLoadingPlaces}
-                  error={searchError}
-                  onLocationSelect={onLocationSelect}
-                  dropdownRef={locationDropdownRef}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 mb-2">
-                  Pickup Date
-                </label>
-                <div className="relative">
-                  <DashboardCalendar
-                    selectedDate={fromDate}
-                    onDateSelect={(date: Date) =>
-                      handleDateSelect(date, "from")
-                    }
-                    minDate={new Date()}
-                    className="left-0"
-                  />
-                </div>
-              </div>
+      {/* Highlight trip / book prompt */}
+      {tripLoading ? (
+        <div className="h-40 rounded-2xl bg-white border border-gray-200 shadow-sm animate-pulse" />
+      ) : trip ? (
+        <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+          <div
+            className="px-5 py-4 text-white"
+            style={{
+              background: "linear-gradient(135deg, #0673ff 0%, #0a55c4 100%)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs uppercase tracking-wide text-white/80">
+                {TRIP_LABEL[trip.kind]}
+              </p>
+              {(tripInfo?.tripStatus || trip.status) && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white/20">
+                  {tripInfo?.tripStatus
+                    ? customerTripStatus(tripInfo.tripStatus).label
+                    : prettyStatus(trip.status)}
+                </span>
+              )}
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-2">
-                  Category
-                </label>
-                <DashboardDropdown
-                  options={categoryOptions}
-                  selectedValue={category}
-                  onSelect={setCategory}
-                  placeholder="Choose category"
-                  isOpen={openDropdown === "category"}
-                  onToggle={() => handleDropdownToggle("category")}
-                />
+            <p className="text-lg font-bold mt-1">{trip.vehicleName}</p>
+            {trip.startDateTime && (
+              <p className="text-sm text-white/80">
+                {formatDate(trip.startDateTime)}
+              </p>
+            )}
+          </div>
+          <div className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 space-y-2">
+                {(trip.pickup || trip.dropoff) && (
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <FiMapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                    <span className="truncate">
+                      {trip.pickup || "—"}
+                      {trip.dropoff ? ` → ${trip.dropoff}` : ""}
+                    </span>
+                  </div>
+                )}
+                {tripInfo?.driverAssigned && tripInfo?.driverName && (
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <FiUser className="h-4 w-4 shrink-0 text-gray-400" />
+                    <span className="truncate">
+                      {tripInfo.driverName}
+                      {tripInfo.driverPhoneNumber ? (
+                        <>
+                          {" · "}
+                          <a
+                            href={`tel:${tripInfo.driverPhoneNumber}`}
+                            className="font-medium text-[#0673ff] hover:underline"
+                          >
+                            {tripInfo.driverPhoneNumber}
+                          </a>
+                        </>
+                      ) : null}
+                    </span>
+                  </div>
+                )}
               </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 mb-2">
-                  Returned Date
-                </label>
-                <div className="relative">
-                  <DashboardCalendar
-                    selectedDate={untilDate}
-                    onDateSelect={(date: Date) =>
-                      handleDateSelect(date, "until")
-                    }
-                    minDate={fromDate}
-                    className="left-0"
-                  />
-                </div>
-              </div>
-            </div>
-
-    
-            <div className="flex justify-center pt-2">
               <button
-                onClick={handleSearch}
-                disabled={isSearching}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-12 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() =>
+                  router.push(
+                    trip.segmentId
+                      ? `/dashboard/booking/${trip.bookingId}/trip/${trip.segmentId}`
+                      : `/dashboard/booking/${trip.bookingId}`,
+                  )
+                }
+                className="shrink-0 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                style={{ backgroundColor: BRAND }}
               >
-                {isSearching ? "Searching..." : "Search"}
+                View trip details
               </button>
             </div>
           </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-6 text-center">
+          <p className="text-gray-900 font-semibold">No trips yet</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Book a vehicle to see your trip here.
+          </p>
+          <button
+            onClick={openBook}
+            className="mt-4 inline-flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-full hover:opacity-90 transition"
+            style={{ backgroundColor: BRAND }}
+          >
+            Book a vehicle <FiArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
-      
-          {errorMessage && (
-            <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-              <div className="flex items-center gap-2">
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span className="font-medium text-sm">{errorMessage}</span>
-              </div>
-            </div>
+      {/* Compact stats strip */}
+      <div className="grid grid-cols-3 divide-x divide-gray-100 bg-white rounded-2xl border border-gray-200 shadow-sm">
+        <button
+          onClick={() => router.push("/dashboard/my-booking")}
+          className="min-w-0 p-3 text-left hover:bg-gray-50 transition rounded-l-2xl sm:p-4"
+        >
+          <p className="text-[11px] text-gray-500 sm:text-xs">Total bookings</p>
+          <p className="text-base font-bold text-gray-900 sm:text-xl">
+            {stats.bookings}
+          </p>
+        </button>
+        <button
+          onClick={() => router.push("/dashboard/my-booking")}
+          className="min-w-0 p-3 text-left hover:bg-gray-50 transition sm:p-4"
+        >
+          <p className="text-[11px] text-gray-500 sm:text-xs">Total trips</p>
+          <p className="text-base font-bold text-gray-900 sm:text-xl">
+            {stats.trips}
+          </p>
+        </button>
+        <button
+          onClick={() => router.push("/dashboard/payment")}
+          className="min-w-0 p-3 text-left hover:bg-gray-50 transition rounded-r-2xl sm:p-4"
+        >
+          <p className="text-[11px] text-gray-500 sm:text-xs">Payments</p>
+          <p
+            title={ngn(stats.paymentsTotal)}
+            className="truncate text-base font-bold text-gray-900 sm:text-xl"
+          >
+            {compactNgn(stats.paymentsTotal)}
+          </p>
+        </button>
+      </div>
+
+      {/* Recent bookings */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold text-gray-900">Recent bookings</h3>
+          {stats.trips > 0 && (
+            <button
+              onClick={() => router.push("/dashboard/my-booking")}
+              className="text-sm font-medium hover:underline"
+              style={{ color: BRAND }}
+            >
+              View all
+            </button>
           )}
-        </div> */}
-
-        {/* Booking Log */}
+        </div>
         <BookingHistoryComponent
           showHeader={false}
+          showControls={false}
           limit={4}
           onTotalCountChange={(total) =>
-            setStats((prev) => ({ ...prev, bookings: total }))
+            setStats((prev) => ({ ...prev, trips: total }))
           }
         />
       </div>

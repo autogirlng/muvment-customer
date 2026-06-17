@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { FiSearch, FiShare2, FiChevronLeft } from "react-icons/fi";
-import { Navbar } from "@/components/Navbar";
+import { FiSearch, FiShare2, FiCopy, FiCheck, FiEye, FiCreditCard } from "react-icons/fi";
 import {
   Payment,
   PaymentFilters,
@@ -13,7 +12,7 @@ import DataTable, {
   SeeMoreData,
   TableColumn,
 } from "@/components/utils/TableComponent";
-import Dropdown from "@/components/utils/DropdownCustom";
+import StatusFilter from "@/components/utils/StatusFilter";
 import { toast } from "react-toastify";
 import { FaReceipt } from "react-icons/fa6";
 import { BookingService } from "@/controllers/booking/bookingService";
@@ -25,15 +24,47 @@ interface BookingPayment extends Payment {
 
 const PAGE_SIZE = 10;
 
+const ReferenceCell = ({ value }: { value: string }) => {
+  const [copied, setCopied] = useState(false);
+  if (!value) return <span className="text-sm text-gray-400">—</span>;
+  const short =
+    value.length > 14 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value;
+  const copy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    toast.success("Copied");
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="font-mono text-sm text-gray-700" title={value}>
+        {short}
+      </span>
+      <button
+        type="button"
+        onClick={copy}
+        aria-label="Copy reference"
+        className="shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#0673ff]"
+      >
+        {copied ? (
+          <FiCheck className="h-3.5 w-3.5" />
+        ) : (
+          <FiCopy className="h-3.5 w-3.5" />
+        )}
+      </button>
+    </div>
+  );
+};
+
 const PaymentHistoryPage = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [totalElements, setTotalElements] = useState<number | null>(null);
+  const [totalSpent, setTotalSpent] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<Omit<PaymentFilters, "page" | "size">>({});
-  const [isStatusOpen, setIsStatusOpen] = useState(false);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
@@ -53,7 +84,6 @@ const PaymentHistoryPage = () => {
         const totalPages: number = response.data.totalPages ?? 1;
 
         setPayments((prev) => (reset ? content : [...prev, ...content]));
-        if (reset) setTotalElements(response.data.totalItems ?? null);
         setHasMore(pageNumber + 1 < totalPages);
       } catch (error) {
         console.error("Error loading payments:", error);
@@ -73,6 +103,26 @@ const PaymentHistoryPage = () => {
     fetchPage(0, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.paymentStatus]);
+
+  // Total amount spent across all successful payments (independent of filters)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await PaymentService.getMyPayments({ page: 0, size: 1000 });
+        const all: Payment[] = res.data.content ?? [];
+        const sum = all
+          .filter((p) => String(p.paymentStatus).toUpperCase() === "SUCCESSFUL")
+          .reduce((s, p) => s + (Number(p.amountPaid) || 0), 0);
+        if (active) setTotalSpent(sum);
+      } catch (error) {
+        console.error("Error computing total spent:", error);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Debounced search
   useEffect(() => {
@@ -102,14 +152,39 @@ const PaymentHistoryPage = () => {
     }
   }, [loadingMore, hasMore]);
 
-  const handleSharePayment = (payment: Payment) => {
-    const shareText = `Payment for ${payment.vehicleName} - ${formatCurrency(payment.amountPaid)}`;
-    const shareUrl = `${window.location.origin}/booking-tracking?paymentId=${payment.id}&bookingId=${payment.bookingId}`;
-    if (navigator.share) {
-      navigator.share({ title: "Payment Receipt", text: shareText, url: shareUrl });
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      toast.success("Payment tracking link copied to clipboard!");
+  const handleSharePayment = async (payment: Payment) => {
+    if (payment.paymentStatus !== "SUCCESSFUL") {
+      return toast.warn("Receipt is available once payment is successful.");
+    }
+    const filename = `muvment-receipt-${payment.transactionReference || payment.id}.pdf`;
+    try {
+      const blob = await PaymentService.getReceiptBlob(payment.bookingId);
+      const file = new File([blob], filename, { type: "application/pdf" });
+      const nav: any = typeof navigator !== "undefined" ? navigator : undefined;
+
+      if (nav?.canShare && nav.canShare({ files: [file] })) {
+        try {
+          await nav.share({
+            files: [file],
+            title: "Payment receipt",
+            text: `Payment receipt for ${payment.vehicleName}`,
+          });
+        } catch (err: any) {
+          if (err?.name !== "AbortError") throw err;
+        }
+        return;
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Receipt downloaded. You can share the PDF from your files.");
+    } catch (error) {
+      console.error("Error sharing receipt:", error);
+      toast.error("Could not prepare the receipt to share.");
     }
   };
 
@@ -171,19 +246,22 @@ const PaymentHistoryPage = () => {
 
   const columns: TableColumn<Payment>[] = useMemo(
     () => [
-      { key: "transactionReference", label: "Reference" },
       {
         key: "vehicleName",
         label: "Vehicle",
         render: (_, row) => (
-          <div className="text-sm font-medium text-gray-900">{row.vehicleName}</div>
+          <div className="text-sm font-medium text-gray-900">
+            {row.vehicleName}
+          </div>
         ),
       },
       {
-        key: "createdAt",
-        label: "Date",
+        key: "totalPayable",
+        label: "Amount",
         render: (val) => (
-          <span className="text-sm text-gray-700">{formatDate(val)}</span>
+          <span className="text-sm font-semibold text-gray-900">
+            {formatCurrency(val)}
+          </span>
         ),
       },
       {
@@ -191,25 +269,29 @@ const PaymentHistoryPage = () => {
         label: "Status",
         render: (val) => (
           <span
-            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(val)}`}
+            className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full capitalize ${getStatusColor(val)}`}
           >
-            {val}
+            {String(val ?? "").toLowerCase()}
           </span>
         ),
       },
       {
-        key: "totalPayable",
-        label: "Total Payable",
-        render: (val) => (
-          <span className="text-sm font-medium text-gray-900">{formatCurrency(val)}</span>
+        key: "paidAt",
+        label: "Date",
+        render: (_, row) => (
+          <span className="text-sm text-gray-700">
+            {formatDate(
+              row.paymentStatus === "SUCCESSFUL" && row.paidAt
+                ? row.paidAt
+                : row.createdAt,
+            )}
+          </span>
         ),
       },
       {
-        key: "amountPaid",
-        label: "Amount Paid",
-        render: (val) => (
-          <span className="text-sm font-medium text-gray-900">{formatCurrency(val)}</span>
-        ),
+        key: "invoiceNumber",
+        label: "Invoice",
+        render: (val) => <ReferenceCell value={String(val ?? "")} />,
       },
     ],
     [],
@@ -217,9 +299,20 @@ const PaymentHistoryPage = () => {
 
   const seeMoreData: SeeMoreData[] = useMemo(
     () => [
-      { name: "Download Receipt", handleAction, icon: FaReceipt },
-      { name: "Share Payment", handleAction: handleSharePayment, icon: FiShare2 },
+      {
+        name: (row: any) =>
+          row.paymentStatus === "SUCCESSFUL" ? "Download receipt" : "Pay now",
+        handleAction,
+        icon: FaReceipt,
+      },
+      {
+        name: "View booking",
+        handleAction: (row: any) =>
+          router.push(`/dashboard/booking/${row.bookingId}`),
+        icon: FiEye,
+      },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -232,112 +325,143 @@ const PaymentHistoryPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
-      {/* Hero Banner */}
-      <div
-        className="relative overflow-hidden h-40 sm:h-52"
-        style={{ background: "linear-gradient(135deg, #93c5fd 0%, #3b82f6 45%, #0ea5e9 100%)" }}
-      >
-        {/* Decorative card — back-right */}
-        <div className="absolute top-[-10%] right-[5%] w-52 sm:w-64 h-32 sm:h-40 rounded-2xl border border-white/30 bg-white/10 backdrop-blur-sm rotate-15" />
-        {/* Decorative card — front-right */}
-        <div className="absolute top-[10%] right-[12%] w-48 sm:w-60 h-28 sm:h-36 rounded-2xl border border-white/40 bg-white/20 backdrop-blur-sm rotate-6 shadow-xl">
-          {/* Chip */}
-          <div className="absolute top-4 left-4 w-8 h-6 rounded bg-white/40 grid grid-cols-2 gap-0.5 p-0.5">
-            <div className="bg-white/60 rounded-sm" />
-            <div className="bg-white/60 rounded-sm" />
-            <div className="bg-white/60 rounded-sm" />
-            <div className="bg-white/60 rounded-sm" />
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="flex w-full items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-5 shadow-sm sm:px-6">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#E7F1FF]">
+            <FiCreditCard className="h-6 w-6 text-[#0673ff]" />
           </div>
-          {/* Card lines */}
-          <div className="absolute bottom-5 left-4 right-4 space-y-1.5">
-            <div className="h-1.5 bg-white/30 rounded-full w-3/4" />
-            <div className="h-1.5 bg-white/30 rounded-full w-1/2" />
-          </div>
-          {/* Toggle pill */}
-          <div className="absolute bottom-4 right-4 flex items-center gap-1">
-            <div className="w-5 h-5 rounded-full bg-white/40" />
-            <div className="w-5 h-5 rounded-full bg-white/60 -ml-2" />
+          <div>
+            <p className="text-sm text-gray-500">Total spent</p>
+            <p className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              {formatCurrency(totalSpent)}
+            </p>
           </div>
         </div>
-
-        {/* Flowing arrow lines */}
-        <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 800 200" preserveAspectRatio="none">
-          <path d="M0,120 Q200,60 400,100 T800,80" stroke="white" strokeWidth="2" fill="none" />
-          <path d="M0,160 Q200,100 400,140 T800,120" stroke="white" strokeWidth="1.5" fill="none" />
-          <path d="M200,0 Q300,80 250,160" stroke="white" strokeWidth="1" fill="none" />
-        </svg>
-
-        {/* Back button */}
-        <div className="relative z-10 px-6 sm:px-10 pt-4">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-1 text-white/90 hover:text-white text-sm font-medium transition"
-          >
-            <FiChevronLeft className="w-4 h-4" />
-            Back
-          </button>
-        </div>
-
-        {/* Title */}
-        <div className="relative z-10 px-6 sm:px-10 mt-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">My Payments</h1>
-        </div>
+        <p className="hidden max-w-xs text-right text-sm text-gray-400 sm:block">
+          Every booking transaction on your account, with receipts and
+          references in one place.
+        </p>
       </div>
 
-      {/* Stat Card */}
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 -mt-1">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-6 py-4 inline-block min-w-55">
-          <p className="text-xs text-gray-500 mb-1">Total Number Of Rides Booked</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {totalElements !== null ? totalElements : "—"}
-          </p>
-        </div>
-      </div>
+      <div>
 
-      <div className="mx-auto py-8 px-4 sm:px-6 lg:px-8">
-
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div className="relative w-full sm:w-1/2">
+        <div className="sticky top-16 z-20 -mx-4 mb-4 flex items-center gap-3 bg-gray-50 px-4 py-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="relative flex-1">
             <FiSearch className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search payments..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-[#0673ff] focus:border-transparent"
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, searchTerm: e.target.value }))
               }
             />
           </div>
 
-          <Dropdown
+          <StatusFilter
             options={statusOptions}
-            selectedValue={filters.paymentStatus}
-            onSelect={(value) =>
+            value={filters.paymentStatus}
+            onChange={(value) =>
               setFilters((prev) => ({ ...prev, paymentStatus: value }))
             }
-            isOpen={isStatusOpen}
-            onToggle={() => setIsStatusOpen(!isStatusOpen)}
-            placeholder="Filter by status"
-            className="w-full sm:w-64 border border-gray-300 rounded-lg p-3"
           />
         </div>
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0673ff] mx-auto" />
           </div>
         ) : (
           <DataTable<Payment>
             columns={columns}
             data={payments}
-            height="max-h-[600px]"
+            height="max-h-none"
             seeMoreData={seeMoreData}
+            itemLabel="payment"
+            isFiltered={!!(filters.searchTerm || filters.paymentStatus)}
+            hideMobileActions
             hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={handleLoadMore}
+            renderMobileCard={(p) => {
+              const isSuccess = p.paymentStatus === "SUCCESSFUL";
+              const isPending = p.paymentStatus === "PENDING";
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-gray-900">
+                        {p.vehicleName}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${getStatusColor(
+                            p.paymentStatus,
+                          )}`}
+                        >
+                          {String(p.paymentStatus ?? "").toLowerCase()}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(
+                            isSuccess && p.paidAt ? p.paidAt : p.createdAt,
+                          )}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className="text-xs text-gray-400">Invoice</span>
+                        <ReferenceCell
+                          value={String(p.invoiceNumber ?? "")}
+                        />
+                      </div>
+                    </div>
+                    <p className="shrink-0 text-base font-bold text-gray-900">
+                      {formatCurrency(p.totalPayable)}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
+                    {isSuccess ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSharePayment(p);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#0673ff] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                      >
+                        <FiShare2 className="h-3.5 w-3.5" />
+                        Share receipt
+                      </button>
+                    ) : isPending ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          makePayment(p as any);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#0673ff] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                      >
+                        <FaReceipt className="h-3.5 w-3.5" />
+                        Pay now
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/booking/${p.bookingId}`);
+                      }}
+                      className="text-xs font-medium text-[#0673ff] hover:underline"
+                    >
+                      View booking
+                    </button>
+                  </div>
+                </div>
+              );
+            }}
           />
         )}
       </div>

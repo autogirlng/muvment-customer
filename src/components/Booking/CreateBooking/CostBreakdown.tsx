@@ -91,6 +91,7 @@ const CostBreakdown = ({
     label: string;
     onClick: () => void;
     disabled: boolean;
+    amount?: number;
   }) => void;
 }) => {
   const [estimatedPriceId, setEstimatedPriceId] = useState<string>("");
@@ -100,6 +101,7 @@ const CostBreakdown = ({
   const [paymentGateway, setPaymentGateway] =
     useState<PaymentGateway>("PAYSTACK");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [unavailable, setUnavailable] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const router = useRouter();
 
@@ -111,6 +113,15 @@ const CostBreakdown = ({
 
   const estimatePrice = async () => {
     setErrorMessage("");
+    setUnavailable(false);
+
+    if (!vehicleId) {
+      setPriceReEstimated(false);
+      setErrorMessage(
+        "We couldn't load this vehicle. Please go back and select it again.",
+      );
+      return;
+    }
 
     const tripSegments: any[] = [];
     for (const trip of trips || []) {
@@ -226,7 +237,31 @@ const CostBreakdown = ({
       );
     } catch {
       setErrorMessage(
-        "Your details are missing. Please go back and complete the personal information step.",
+        "Your details are missing. Please complete the contact details above.",
+      );
+      return;
+    }
+
+    const stripZero = (value: string) => (value || "").replace(/^0+/, "");
+
+    if (userBookingInfo.isBookingForOthers) {
+      if (
+        !userBookingInfo.recipientFullName?.trim() ||
+        !userBookingInfo.recipientEmail?.trim() ||
+        !userBookingInfo.recipientPhoneNumber?.trim()
+      ) {
+        setErrorMessage(
+          "Please complete the recipient's name, email, and phone number above before paying.",
+        );
+        return;
+      }
+    } else if (
+      !userBookingInfo.guestFullName?.trim() ||
+      !userBookingInfo.guestEmail?.trim() ||
+      !userBookingInfo.primaryPhoneNumber?.trim()
+    ) {
+      setErrorMessage(
+        "Please complete your name, email, and phone number above before paying.",
       );
       return;
     }
@@ -238,13 +273,21 @@ const CostBreakdown = ({
       data = {
         calculationId,
         primaryPhoneNumber:
-          userBookingInfo.countryCode + userBookingInfo.recipientPhoneNumber ||
+          userBookingInfo.countryCode +
+            stripZero(userBookingInfo.recipientPhoneNumber) || "",
+        guestFullName:
+          userBookingInfo.guestFullName?.trim() ||
+          userBookingInfo.recipientFullName ||
+          "",
+        guestEmail:
+          userBookingInfo.guestEmail?.trim() ||
+          userBookingInfo.recipientEmail ||
           "",
         recipientFullName: userBookingInfo.recipientFullName || "",
         recipientEmail: userBookingInfo.recipientEmail || "",
         recipientPhoneNumber:
-          userBookingInfo.countryCode + userBookingInfo.recipientPhoneNumber ||
-          "",
+          userBookingInfo.countryCode +
+            stripZero(userBookingInfo.recipientPhoneNumber) || "",
         extraDetails: userBookingInfo.extraDetails || "N/A",
         isBookingForOthers: userBookingInfo.isBookingForOthers,
         purposeOfRide: userBookingInfo.purposeOfRide || "N/A",
@@ -255,14 +298,14 @@ const CostBreakdown = ({
       if (userBookingInfo.recipientSecondaryPhoneNumber) {
         data.recipientSecondaryPhoneNumber =
           userBookingInfo.secondaryCountryCode +
-          userBookingInfo.recipientSecondaryPhoneNumber;
+          stripZero(userBookingInfo.recipientSecondaryPhoneNumber);
       }
     } else {
       data = {
         calculationId,
         primaryPhoneNumber:
-          userBookingInfo.countryCode + userBookingInfo.primaryPhoneNumber ||
-          "",
+          userBookingInfo.countryCode +
+            stripZero(userBookingInfo.primaryPhoneNumber) || "",
         extraDetails: userBookingInfo.extraDetails || "N/A",
         isBookingForOthers: userBookingInfo.isBookingForOthers,
         purposeOfRide: userBookingInfo.purposeOfRide || "N/A",
@@ -275,19 +318,21 @@ const CostBreakdown = ({
       if (userBookingInfo.secondaryPhoneNumber) {
         data.secondaryPhoneNumber =
           userBookingInfo.secondaryCountryCode +
-          userBookingInfo.secondaryPhoneNumber;
+          stripZero(userBookingInfo.secondaryPhoneNumber);
       }
     }
 
     setIsProcessing(true);
     setErrorMessage("");
+    setUnavailable(false);
 
     try {
       const booking: any = await createData("/api/v1/bookings", data, {
         silent: true,
       });
 
-      if (booking?.data === 409) {
+      if (booking?.status === 409) {
+        setUnavailable(true);
         setErrorMessage(
           "This vehicle is no longer available for the selected time. Please choose another time.",
         );
@@ -381,24 +426,45 @@ const CostBreakdown = ({
         label: "Processing...",
         onClick: () => {},
         disabled: true,
+        amount: pricing?.data?.data?.finalPrice,
       });
       return;
     }
 
-    if (priceReEstimated) {
+    if (unavailable) {
+      onActionChange({
+        label: "Change trip details",
+        onClick: () => router.back(),
+        disabled: false,
+        amount: pricing?.data?.data?.finalPrice,
+      });
+      return;
+    }
+
+    const hasPrice = !!pricing?.data?.data?.finalPrice;
+    if (hasPrice) {
       onActionChange({
         label: "Confirm & pay",
         onClick: () => processPaymentRef.current(),
         disabled: false,
+        amount: pricing?.data?.data?.finalPrice,
       });
     } else {
       onActionChange({
         label: errorMessage ? "Try again" : "Calculate price",
         onClick: () => estimateRef.current(),
         disabled: false,
+        amount: pricing?.data?.data?.finalPrice,
       });
     }
-  }, [priceReEstimated, onActionChange, isProcessing, errorMessage]);
+  }, [
+    priceReEstimated,
+    onActionChange,
+    isProcessing,
+    errorMessage,
+    unavailable,
+    pricing?.data?.data?.finalPrice,
+  ]);
 
   return (
     <>
@@ -413,10 +479,12 @@ const CostBreakdown = ({
               <p className="text-sm text-[#912018]">{errorMessage}</p>
               <button
                 type="button"
-                onClick={() => estimateRef.current()}
+                onClick={() =>
+                  unavailable ? router.back() : estimateRef.current()
+                }
                 className="text-sm font-medium text-[#0673ff] hover:underline"
               >
-                Try again
+                {unavailable ? "Change trip details" : "Try again"}
               </button>
             </div>
           </div>
@@ -535,6 +603,28 @@ const CostBreakdown = ({
                 </div>
               </div>
             </div>
+
+            <p className="text-xs text-gray-500 text-center leading-relaxed mt-2">
+              By making this payment you agree to the Muvment platform&apos;s{" "}
+              <a
+                href="/policy/terms-conditions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[#0673ff] hover:underline"
+              >
+                Terms &amp; Conditions
+              </a>{" "}
+              and{" "}
+              <a
+                href="/policy/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[#0673ff] hover:underline"
+              >
+                Privacy Policy
+              </a>
+              .
+            </p>
           </section>
         )}
 

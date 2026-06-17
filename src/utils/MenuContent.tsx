@@ -8,11 +8,13 @@ import {
   MdAccountCircle,
   MdGroupAdd,
   MdEventAvailable,
+  MdRoute,
   MdQuestionMark,
   MdOutlineAppBlocking,
   MdInfoOutline,
   MdMailOutline,
   MdVolunteerActivism,
+  MdLocationSearching,
 } from "react-icons/md";
 import { FiLogIn, FiUserPlus } from "react-icons/fi";
 
@@ -26,8 +28,13 @@ export const menuItems = [
     icon: MdEventAvailable,
   },
   {
+    name: "My Trips",
+    link: "/dashboard/my-trips",
+    icon: MdRoute,
+  },
+  {
     name: "Account",
-    link: "/dashboard/account/profile",
+    link: "/dashboard/settings",
     icon: MdAccountCircle,
   },
   {
@@ -42,8 +49,8 @@ export const menuItems = [
     icon: MdGroupAdd,
   },
   {
-    name: "Settings",
-    link: "/dashboard/settings",
+    name: "Integrations",
+    link: "/dashboard/integrations",
     icon: MdSettings,
   },
   {
@@ -61,6 +68,7 @@ export const guestMenuItems = [
   { name: "Our Impact", link: "/impact", icon: MdVolunteerActivism },
   { name: "FAQ", link: "/faq", icon: MdQuestionMark },
   { name: "Contact us", link: "/contact-us", icon: MdMailOutline },
+  { name: "Track booking", link: "/track-booking", icon: MdLocationSearching },
   { name: "Sign In", link: "/auth/login", icon: FiLogIn },
   { name: "Sign Up", link: "/auth/register", icon: FiUserPlus },
 ];

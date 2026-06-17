@@ -1,14 +1,20 @@
 "use client";
 
-import { Navbar } from "@/components/Navbar";
 import DataTable, { TableColumn } from "@/components/utils/TableComponent";
 import {
   ProfileService,
   UserProfile,
 } from "@/controllers/user/profile.service";
 import { ReferralService } from "@/controllers/utils/referalService";
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { FiCopy, FiShare2, FiUser } from "react-icons/fi";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  FiCopy,
+  FiCheck,
+  FiShare2,
+  FiUserPlus,
+  FiGift,
+  FiChevronDown,
+} from "react-icons/fi";
 
 interface ReferralData {
   id: string;
@@ -25,7 +31,123 @@ interface ReferralData {
   };
   creditedAmount: number;
 }
+
 const PAGE_SIZE = 10;
+
+const formatNaira = (amount?: number) =>
+  typeof amount === "number" ? `₦${amount.toLocaleString("en-NG")}` : "₦0";
+
+const compactNaira = (amount?: number) => {
+  const v = amount || 0;
+  if (v >= 1_000_000_000)
+    return `₦${(v / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
+  if (v >= 1_000_000)
+    return `₦${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  return formatNaira(v);
+};
+
+const StatCard = ({
+  label,
+  value,
+  title,
+}: {
+  label: string;
+  value: string;
+  title?: string;
+}) => (
+  <div className="min-w-0 rounded-2xl border border-gray-200 bg-white p-3 text-center shadow-sm sm:p-4">
+    <p
+      title={title}
+      className="truncate text-lg font-bold text-gray-900 sm:text-2xl"
+    >
+      {value}
+    </p>
+    <p className="mt-0.5 text-xs text-gray-500 sm:text-sm">{label}</p>
+  </div>
+);
+
+const columns: TableColumn<ReferralData>[] = [
+  {
+    key: "referee",
+    label: "Name",
+    render: (value) => {
+      const initials =
+        `${value?.firstName?.[0] ?? ""}${value?.lastName?.[0] ?? ""}`.toUpperCase() ||
+        "?";
+      const name = `${value?.firstName ?? ""} ${value?.lastName ?? ""}`.trim();
+      return (
+        <div className="flex items-center gap-3">
+          <div
+            className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0"
+            style={{ backgroundColor: "#0673ff" }}
+          >
+            {initials}
+          </div>
+          <span className="font-medium text-gray-900">{name || "—"}</span>
+        </div>
+      );
+    },
+  },
+  {
+    key: "referee",
+    label: "Email",
+    render: (value) => (
+      <span className="text-sm text-gray-700">{value?.email || "—"}</span>
+    ),
+  },
+  {
+    key: "referee",
+    label: "Phone",
+    render: (value) => (
+      <span className="text-sm text-gray-700">{value?.phoneNumber || "—"}</span>
+    ),
+  },
+  {
+    key: "creditedAmount",
+    label: "Status",
+    render: (_value, row) => {
+      const earned = (row.creditedAmount ?? 0) > 0;
+      return (
+        <span
+          className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${
+            earned
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-amber-50 text-amber-700 border border-amber-200"
+          }`}
+        >
+          {earned ? "Earned" : "Pending"}
+        </span>
+      );
+    },
+  },
+  {
+    key: "creditedAmount",
+    label: "Reward",
+    render: (value) => (
+      <span className="text-sm font-semibold text-gray-900">
+        {formatNaira(value)}
+      </span>
+    ),
+  },
+];
+
+const HOW_IT_WORKS = [
+  {
+    icon: FiShare2,
+    title: "Share your code",
+    desc: "Generate your code above, then send it to friends or share your personal link.",
+  },
+  {
+    icon: FiUserPlus,
+    title: "They sign up and book",
+    desc: "Your friend creates an account with your code and takes their first trip.",
+  },
+  {
+    icon: FiGift,
+    title: "You earn ₦5,000",
+    desc: "Once their first trip is confirmed, you get a ₦5,000 bonus.",
+  },
+];
 
 export default function ReferralPage() {
   const [referrals, setReferrals] = useState<ReferralData[]>([]);
@@ -37,11 +159,11 @@ export default function ReferralPage() {
 
   const [referralCode, setReferralCode] = useState("");
   const [referralLink, setReferralLink] = useState("");
-  const [copySuccess, setCopySuccess] = useState(false);
-  const [userData, setProfile] = useState<UserProfile | null>(null);
+  const [copySuccess, setCopySuccess] = useState<"code" | "link" | null>(null);
+  const [howOpen, setHowOpen] = useState(false);
+  const [, setProfile] = useState<UserProfile | null>(null);
   const [codeGenerated, setCodeGenerated] = useState(false);
 
-  // Fetch profile once on mount (and after code generation)
   const fetchProfile = useCallback(async () => {
     try {
       const response = await ProfileService.getMyProfile();
@@ -60,7 +182,7 @@ export default function ReferralPage() {
       if (profileData?.referralCode) {
         setReferralCode(profileData.referralCode);
         setReferralLink(
-          `${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/register?code=${profileData.referralCode}`,
+          `${process.env.NEXT_PUBLIC_VERCEL_URL || (typeof window !== "undefined" ? window.location.origin : "")}/auth/register?code=${profileData.referralCode}`,
         );
       }
     } catch (error) {
@@ -68,29 +190,33 @@ export default function ReferralPage() {
     }
   }, []);
 
-  // Fetch a page of referred users
-const fetchReferralPage = useCallback(async (pageNumber: number, reset = false) => {
-  try {
-    reset ? setLoading(true) : setLoadingMore(true);
+  const fetchReferralPage = useCallback(
+    async (pageNumber: number, reset = false) => {
+      try {
+        reset ? setLoading(true) : setLoadingMore(true);
 
-    const result = await ReferralService.getMyReferees({ page: pageNumber, size: PAGE_SIZE });
-    const data = result?.data?.data ?? result?.data;
-    const content: ReferralData[] = data?.referees ?? [];
-    const totalPages: number = data?.totalPages ?? 1;
-    const totalElements: number = data?.totalElements ?? content.length;
+        const result = await ReferralService.getMyReferees({
+          page: pageNumber,
+          size: PAGE_SIZE,
+        });
+        const data = result?.data?.data ?? result?.data;
+        const content: ReferralData[] = data?.referees ?? [];
+        const totalPages: number = data?.totalPages ?? 1;
+        const totalElements: number = data?.totalElements ?? content.length;
 
-    setReferrals((prev) => (reset ? content : [...prev, ...content]));
-    setTotalReferrals(totalElements);
-    setHasMore(pageNumber + 1 < totalPages);
-  } catch (error) {
-    console.error("Error fetching referral data:", error);
-  } finally {
-    setLoading(false);
-    setLoadingMore(false);
-  }
-}, []);
+        setReferrals((prev) => (reset ? content : [...prev, ...content]));
+        setTotalReferrals(totalElements);
+        setHasMore(pageNumber + 1 < totalPages);
+      } catch (error) {
+        console.error("Error fetching referral data:", error);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [],
+  );
 
-  // Initial load
   useEffect(() => {
     fetchProfile();
     setPage(0);
@@ -99,7 +225,6 @@ const fetchReferralPage = useCallback(async (pageNumber: number, reset = false) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeGenerated]);
 
-  // Load next page when page increments
   useEffect(() => {
     if (page === 0) return;
     fetchReferralPage(page);
@@ -114,19 +239,19 @@ const fetchReferralPage = useCallback(async (pageNumber: number, reset = false) 
 
   const generateReferralCode = async () => {
     await ReferralService.generateReferralCode();
-    setCodeGenerated(true);
+    setCodeGenerated((v) => !v);
   };
 
   const handleCopyCode = () => {
     if (referralCode) navigator.clipboard.writeText(referralCode);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
+    setCopySuccess("code");
+    setTimeout(() => setCopySuccess(null), 2000);
   };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralLink);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
+    setCopySuccess("link");
+    setTimeout(() => setCopySuccess(null), 2000);
   };
 
   const handleShare = async () => {
@@ -143,139 +268,244 @@ const fetchReferralPage = useCallback(async (pageNumber: number, reset = false) 
     }
   };
 
-const columns: TableColumn<ReferralData>[] = [
-  {
-    key: "referee",
-    label: "First Name",
-    render: (value) => <span className="font-medium">{value.firstName}</span>,
-  },
-  {
-    key: "referee",
-    label: "Last Name",
-    render: (value) => <span className="font-medium">{value.lastName}</span>,
-  },
-  {
-    key: "referee",
-    label: "Email",
-    render: (value) => <span className="text-sm text-gray-700">{value.email}</span>,
-  },
-  {
-    key: "referee",
-    label: "Phone Number",
-    render: (value) => <span className="text-sm text-gray-700">{value.phoneNumber}</span>,
-  },
-];
+  const rewardedCount = referrals.filter(
+    (r) => (r.creditedAmount ?? 0) > 0,
+  ).length;
+  const totalEarned = referrals.reduce(
+    (sum, r) => sum + (r.creditedAmount || 0),
+    0,
+  );
 
   return (
-    <div className="w-full min-h-screen">
-      <Navbar />
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-        <div className="max-w-7xl mx-auto w-full">
-          <div className="mb-8 text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-              Referrals
-            </h1>
-            <p className="text-gray-600 text-sm sm:text-base">
-              Share your referral code and earn rewards when your friends join
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto w-full max-w-5xl space-y-6">
+        {/* Share card */}
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div
+            className="p-5 text-white sm:p-6"
+            style={{
+              background: "linear-gradient(135deg, #0673ff 0%, #0a55c4 100%)",
+            }}
+          >
+            <h2 className="text-lg font-bold sm:text-xl">
+              Invite friends, earn ₦5,000
+            </h2>
+            <p className="mt-1 text-sm text-white/85">
+              Share your code or link. When a friend signs up and takes their
+              first trip, you earn ₦5,000.
             </p>
           </div>
 
-          {/* Referral Info Section */}
-          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 text-center sm:text-left">
-              Your Referral Code
-            </h2>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-              {/* Referral Code */}
+          <div className="p-5 sm:p-6">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Referral Code
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Referral code
                 </label>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <input
                     type="text"
-                    value={userData?.referralCode ?? ""}
+                    value={referralCode}
                     readOnly
-                    className="w-full sm:flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono text-base sm:text-lg"
+                    placeholder="Not generated yet"
+                    className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-2.5 font-mono text-base sm:flex-1"
                   />
                   {!referralCode ? (
                     <button
                       onClick={generateReferralCode}
-                      className="flex items-center cursor-pointer justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0673ff] px-4 py-2.5 font-medium text-white transition hover:opacity-90"
                     >
-                      <FiCopy />
                       Generate
                     </button>
                   ) : (
                     <button
                       onClick={handleCopyCode}
-                      className="flex items-center cursor-pointer justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0673ff] px-4 py-2.5 font-medium text-white transition hover:opacity-90"
                     >
-                      <FiCopy />
-                      {copySuccess ? "Copied!" : "Copy"}
+                      {copySuccess === "code" ? <FiCheck /> : <FiCopy />}{" "}
+                      {copySuccess === "code" ? "Copied!" : "Copy"}
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Referral Link */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Referral Link
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Referral link
                 </label>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <input
                     type="text"
                     value={referralLink}
                     readOnly
-                    className="w-full sm:flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm truncate"
+                    placeholder="Generate a code to get your link"
+                    className="w-full truncate rounded-xl border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm sm:flex-1"
                   />
-                  <button
-                    onClick={handleShare}
-                    className="flex items-center cursor-pointer justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    <FiShare2 />
-                    Share
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCopyLink}
+                      disabled={!referralLink}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 sm:flex-none"
+                    >
+                      {copySuccess === "link" ? <FiCheck /> : <FiCopy />}{" "}
+                      {copySuccess === "link" ? "Copied!" : "Copy"}
+                    </button>
+                    <button
+                      onClick={handleShare}
+                      disabled={!referralLink}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0673ff] px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50 sm:flex-none"
+                    >
+                      <FiShare2 /> Share
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-              <div className="bg-blue-50 rounded-lg p-4 text-center sm:text-left">
-                <p className="text-sm text-blue-600 font-medium mb-1">
-                  Total Referrals
-                </p>
-                <p className="text-2xl sm:text-3xl font-bold text-blue-900">
-                  {totalReferrals}
-                </p>
-              </div>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          <StatCard label="Referrals" value={String(totalReferrals)} />
+          <StatCard label="Rewarded" value={String(rewardedCount)} />
+          <StatCard
+            label="Earned"
+            value={compactNaira(totalEarned)}
+            title={formatNaira(totalEarned)}
+          />
+        </div>
+
+        {/* How it works */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <button
+            type="button"
+            onClick={() => setHowOpen((o) => !o)}
+            aria-expanded={howOpen}
+            className="flex w-full items-center justify-between gap-3 text-left"
+          >
+            <div>
+              <h3 className="text-base font-bold text-gray-900">How it works</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Invite friends and earn a reward when they join and take their
+                first trip.
+              </p>
             </div>
-          </div>
+            <FiChevronDown
+              className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${
+                howOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
 
-          {/* Table Section */}
-          <div className="overflow-x-auto">
-            {loading ? (
-              <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-                <p className="mt-4 text-gray-600">Loading referrals...</p>
+          {howOpen && (
+            <>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                {HOW_IT_WORKS.map((step, i) => {
+                  const Icon = step.icon;
+                  return (
+                    <div
+                      key={step.title}
+                      className="rounded-xl border border-gray-100 bg-gray-50 p-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E7F1FF]">
+                          <Icon className="h-4 w-4 text-[#0673ff]" />
+                        </div>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                          Step {i + 1}
+                        </span>
+                      </div>
+                      <p className="mt-3 font-semibold text-gray-900">
+                        {step.title}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-500">{step.desc}</p>
+                    </div>
+                  );
+                })}
               </div>
-            ) : (
-              <div className="min-w-[700px] sm:min-w-full">
-                <DataTable<ReferralData>
-                  columns={columns}
-                  data={referrals}
-                  title="Your Referrals"
-                  height="max-h-[500px]"
-                  hasMore={hasMore}
-                  loadingMore={loadingMore}
-                  onLoadMore={handleLoadMore}
-                />
-              </div>
-            )}
-          </div>
+              <p className="mt-4 rounded-xl bg-[#E7F1FF] px-4 py-3 text-xs leading-relaxed text-gray-600">
+                The ₦5,000 bonus is applied as a discount on a trip and is valid
+                for one month after it is earned. Each friend who has earned you
+                a bonus shows in the Reward column, and your total shows under
+                Earned.
+              </p>
+            </>
+          )}
+        </div>
+
+        {/* Referrals list */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Your referrals
+          </h3>
+          {loading ? (
+            <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+              <div className="mx-auto inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-[#0673ff]" />
+              <p className="mt-4 text-gray-600">Loading referrals...</p>
+            </div>
+          ) : referrals.length === 0 ? (
+            <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+              <p className="font-semibold text-gray-900">No referrals yet</p>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
+                Share your link with friends. Once they sign up with your code,
+                they will show up here.
+              </p>
+            </div>
+          ) : (
+            <DataTable<ReferralData>
+              columns={columns}
+              data={referrals}
+              itemLabel="referral"
+              height="max-h-none"
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              onLoadMore={handleLoadMore}
+              renderMobileCard={(row) => {
+                const r = row.referee;
+                const initials =
+                  `${r?.firstName?.[0] ?? ""}${r?.lastName?.[0] ?? ""}`.toUpperCase() ||
+                  "?";
+                const name =
+                  `${r?.firstName ?? ""} ${r?.lastName ?? ""}`.trim() || "—";
+                const earned = (row.creditedAmount ?? 0) > 0;
+                return (
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                      style={{ backgroundColor: "#0673ff" }}
+                    >
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate font-semibold text-gray-900">
+                          {name}
+                        </p>
+                        <span
+                          className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            earned
+                              ? "border border-green-200 bg-green-50 text-green-700"
+                              : "border border-amber-200 bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          {earned ? "Earned" : "Pending"}
+                        </span>
+                      </div>
+                      <p className="truncate text-sm text-gray-500">
+                        {r?.email || "—"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {r?.phoneNumber || "—"}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-gray-900">
+                        {formatNaira(row.creditedAmount)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+          )}
         </div>
       </div>
     </div>

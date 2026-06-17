@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 // Configuration - easy to maintain
 const WHATSAPP_CONFIG = {
@@ -18,6 +19,7 @@ const INSTAGRAM_CONFIG = {
 };
 
 export default function WhatsAppChat() {
+  const pathname = usePathname();
   const [showWidget, setShowWidget] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -57,6 +59,7 @@ export default function WhatsAppChat() {
     setIsOpen(!isOpen);
   };
 
+  if (pathname?.startsWith("/dashboard")) return null;
   if (!showWidget) return null;
 
   return (
