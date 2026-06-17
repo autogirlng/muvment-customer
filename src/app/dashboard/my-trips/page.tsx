@@ -129,7 +129,7 @@ const MyTripsPage = () => {
   }, [trips]);
 
   const openTrip = (t: Trip) =>
-    router.push(`/dashboard/booking/${t.bookingId}?trip=${t.segmentId}`);
+    router.push(`/dashboard/booking/${t.bookingId}/trip/${t.segmentId}`);
 
   const TripCard = ({ t }: { t: Trip }) => {
     const info = tripInfo[t.segmentId];

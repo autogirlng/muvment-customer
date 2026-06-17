@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FiArrowRight, FiMapPin, FiPlus } from "react-icons/fi";
+import { FiArrowRight, FiMapPin, FiPlus, FiUser } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { BookingService } from "@/controllers/booking/bookingService";
 import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
-import { customerBookingStatus } from "@/utils/bookingStatus";
+import {
+  customerBookingStatus,
+  customerTripStatus,
+} from "@/utils/bookingStatus";
 
 const BRAND = "#0673ff";
 
@@ -44,6 +47,7 @@ const prettyStatus = (s?: string) => (s ? customerBookingStatus(s).label : "");
 
 type Trip = {
   bookingId: string;
+  segmentId?: string;
   status: string;
   vehicleName: string;
   startDateTime?: string;
@@ -56,6 +60,7 @@ const deriveHighlight = (rows: any[]): Trip | null => {
   const now = Date.now();
   const make = (b: any, kind: Trip["kind"]): Trip => ({
     bookingId: b.bookingId,
+    segmentId: b.segmentId,
     status: b.status,
     vehicleName: b.vehicleName,
     startDateTime: b.startDateTime,
@@ -103,6 +108,7 @@ export default function Dashboard(): React.ReactElement {
     paymentsTotal: 0,
   });
   const [trip, setTrip] = useState<Trip | null>(null);
+  const [tripInfo, setTripInfo] = useState<any | null>(null);
   const [tripLoading, setTripLoading] = useState(true);
 
   useEffect(() => {
@@ -131,6 +137,7 @@ export default function Dashboard(): React.ReactElement {
         const content: any[] = res?.data?.content ?? [];
         const mapped = content.map((item) => ({
           bookingId: item.booking?.bookingId,
+          segmentId: item.id,
           status: item.booking?.bookingStatus,
           vehicleName: item.vehicle?.name || "Vehicle",
           startDateTime: item.startDateTime,
@@ -146,6 +153,19 @@ export default function Dashboard(): React.ReactElement {
     };
     loadTrip();
   }, []);
+
+  useEffect(() => {
+    const sid = trip?.segmentId;
+    if (!sid) return;
+    let cancelled = false;
+    (async () => {
+      const info = await BookingService.getTripBySegment(sid);
+      if (!cancelled) setTripInfo(info);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [trip?.segmentId]);
 
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -169,12 +189,11 @@ export default function Dashboard(): React.ReactElement {
         {(tripLoading || trip) && (
           <button
             onClick={openBook}
-            className="shrink-0 inline-flex items-center gap-1.5 text-white text-sm font-semibold px-4 py-2.5 rounded-full hover:opacity-90 transition"
+            className="hidden shrink-0 sm:inline-flex items-center gap-1.5 text-white text-sm font-semibold px-4 py-2.5 rounded-full hover:opacity-90 transition"
             style={{ backgroundColor: BRAND }}
           >
             <FiPlus className="w-4 h-4" />
-            <span className="sm:hidden">Book</span>
-            <span className="hidden sm:inline">Book a vehicle</span>
+            <span>Book a vehicle</span>
           </button>
         )}
       </div>
@@ -194,9 +213,11 @@ export default function Dashboard(): React.ReactElement {
               <p className="text-xs uppercase tracking-wide text-white/80">
                 {TRIP_LABEL[trip.kind]}
               </p>
-              {trip.status && (
+              {(tripInfo?.tripStatus || trip.status) && (
                 <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white/20">
-                  {prettyStatus(trip.status)}
+                  {tripInfo?.tripStatus
+                    ? customerTripStatus(tripInfo.tripStatus).label
+                    : prettyStatus(trip.status)}
                 </span>
               )}
             </div>
@@ -207,33 +228,50 @@ export default function Dashboard(): React.ReactElement {
               </p>
             )}
           </div>
-          <div className="p-4 space-y-3">
-            {(trip.pickup || trip.dropoff) && (
-              <div className="flex items-start gap-2 text-sm text-gray-700">
-                <FiMapPin className="h-4 w-4 mt-0.5 shrink-0 text-gray-400" />
-                <span>
-                  {trip.pickup || "—"}
-                  {trip.dropoff ? ` → ${trip.dropoff}` : ""}
-                </span>
+          <div className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 space-y-2">
+                {(trip.pickup || trip.dropoff) && (
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <FiMapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                    <span className="truncate">
+                      {trip.pickup || "—"}
+                      {trip.dropoff ? ` → ${trip.dropoff}` : ""}
+                    </span>
+                  </div>
+                )}
+                {tripInfo?.driverAssigned && tripInfo?.driverName && (
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <FiUser className="h-4 w-4 shrink-0 text-gray-400" />
+                    <span className="truncate">
+                      {tripInfo.driverName}
+                      {tripInfo.driverPhoneNumber ? (
+                        <>
+                          {" · "}
+                          <a
+                            href={`tel:${tripInfo.driverPhoneNumber}`}
+                            className="font-medium text-[#0673ff] hover:underline"
+                          >
+                            {tripInfo.driverPhoneNumber}
+                          </a>
+                        </>
+                      ) : null}
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
-            <div className="flex gap-2">
-              <button
-                onClick={() => router.push(`/dashboard/booking/${trip.bookingId}`)}
-                className="flex-1 text-white py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition"
-                style={{ backgroundColor: BRAND }}
-              >
-                View details
-              </button>
               <button
                 onClick={() =>
                   router.push(
-                    `/dashboard/booking-tracking?bookingId=${trip.bookingId}`,
+                    trip.segmentId
+                      ? `/dashboard/booking/${trip.bookingId}/trip/${trip.segmentId}`
+                      : `/dashboard/booking/${trip.bookingId}`,
                   )
                 }
-                className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-50 transition"
+                className="shrink-0 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                style={{ backgroundColor: BRAND }}
               >
-                Track
+                View trip details
               </button>
             </div>
           </div>

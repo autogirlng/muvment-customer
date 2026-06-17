@@ -28,6 +28,7 @@ const footerNav: FooterNavProps[] = [
       { name: "About us", link: "/about-us" },
       { name: "Impact", link: "/impact" },
       { name: "Contact us", link: "/contact-us" },
+      { name: "Track booking", link: "/track-booking" },
       { name: "FAQs", link: "/faq" },
       { name: "Blog", link: "/blog" },
     ],

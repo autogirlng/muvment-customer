@@ -97,6 +97,18 @@ export class BookingService {
     }
   }
 
+  static async getBookingByInvoice(invoiceNumber: string): Promise<any> {
+    try {
+      const response = await getSingleData(
+        `${this.BOOKINGS_URL}/invoice/${encodeURIComponent(invoiceNumber)}`,
+      );
+      return response?.data || null;
+    } catch (error) {
+      console.error("Error fetching booking by invoice:", error);
+      throw error;
+    }
+  }
+
   static async getTripBySegment(segmentId: string): Promise<any | null> {
     try {
       const response = await getSingleData(

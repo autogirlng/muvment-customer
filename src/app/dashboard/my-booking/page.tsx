@@ -44,6 +44,9 @@ const BookingHistoryPage = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedBookings, setSelectedBookings] = useState<Booking[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [calendarTrips, setCalendarTrips] = useState<any[]>([]);
+  const [calendarLoaded, setCalendarLoaded] = useState(false);
+  const [calendarLoading, setCalendarLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<Omit<BookingFilters, "page" | "size">>(
     {},
@@ -143,6 +146,37 @@ const BookingHistoryPage = () => {
     }
   }, [loadingMore, hasMore]);
 
+  // The calendar needs every trip, not just the loaded list pages, so it fetches
+  // the full set once the calendar view is opened and whenever the status filter
+  // changes.
+  useEffect(() => {
+    if (viewMode !== "calendar") return;
+    let cancelled = false;
+    const loadAll = async () => {
+      try {
+        setCalendarLoading(true);
+        const response = await BookingService.getMyBookings({
+          bookingStatus: filters.bookingStatus,
+          page: 0,
+          size: 1000,
+        });
+        if (cancelled) return;
+        const content = response.data.content || [];
+        setCalendarTrips(content.map(transformItem));
+        setCalendarLoaded(true);
+      } catch (error) {
+        console.error("Error loading calendar trips:", error);
+      } finally {
+        if (!cancelled) setCalendarLoading(false);
+      }
+    };
+    loadAll();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, filters.bookingStatus]);
+
   const handleBookingClick = (booking: Booking) => {
     router.push(`/dashboard/booking/${booking.bookingId}`);
   };
@@ -151,7 +185,7 @@ const BookingHistoryPage = () => {
     const shareText = `Check out my booking for ${booking.vehicleName} on ${new Date(
       booking.createdAt,
     ).toLocaleDateString()}`;
-    const shareUrl = `${window.location.origin}/dashboard/booking-tracking?bookingId=${booking.bookingId}`;
+    const shareUrl = `${window.location.origin}/track-booking?bookingId=${booking.bookingId}`;
 
     if (navigator.share) {
       navigator.share({ title: "My Booking", text: shareText, url: shareUrl });
@@ -161,7 +195,15 @@ const BookingHistoryPage = () => {
     }
   };
 
-  const handleDateClick = (_date: Date, dateBookings: Booking[]) => {
+  const handleDateClick = (_date: Date, dateBookings: any[]) => {
+    if (dateBookings.length === 1) {
+      const t: any = dateBookings[0];
+      const segId = t.segmentId || t.id;
+      if (t.bookingId && segId) {
+        router.push(`/dashboard/booking/${t.bookingId}/trip/${segId}`);
+        return;
+      }
+    }
     if (dateBookings.length > 0) {
       setSelectedBookings(dateBookings);
       setIsModalOpen(true);
@@ -289,6 +331,26 @@ const BookingHistoryPage = () => {
       };
     });
   }, [bookings]);
+
+  // Calendar search runs over the full loaded trip set so results are instant.
+  const calendarFiltered = useMemo(() => {
+    const q = (filters.searchTerm || "").trim().toLowerCase();
+    if (!q) return calendarTrips;
+    return calendarTrips.filter((t) => {
+      const hay = [
+        t.vehicleName,
+        t.bookingType,
+        t.pickupLocationString,
+        t.dropoffLocationString,
+        t.invoiceNumber,
+        customerBookingStatus(t.bookingStatus).label,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [calendarTrips, filters.searchTerm]);
 
 
   return (
@@ -446,7 +508,16 @@ const BookingHistoryPage = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <CalendarView bookings={bookings} onDateClick={handleDateClick} />
+            {calendarLoading && !calendarLoaded ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0673ff] mx-auto" />
+              </div>
+            ) : (
+              <CalendarView
+                bookings={calendarFiltered}
+                onDateClick={handleDateClick}
+              />
+            )}
           </div>
         )}
 

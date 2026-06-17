@@ -58,3 +58,78 @@ export const CUSTOMER_STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "CANCELLED_BY_USER", label: "Cancelled" },
   { value: "NO_SHOW", label: "No show" },
 ];
+
+// Collapses every backend booking state into the smaller customer-facing group
+// used by the calendar. All cancellation variants and a failed availability
+// read as a single "Cancelled".
+export const customerStatusKey = (status?: string): string => {
+  const v = (status || "").toUpperCase();
+  if (v === "PENDING_PAYMENT") return "PENDING_PAYMENT";
+  if (v === "CONFIRMED") return "CONFIRMED";
+  if (v === "IN_PROGRESS") return "IN_PROGRESS";
+  if (v === "COMPLETED") return "COMPLETED";
+  if (v === "NO_SHOW") return "NO_SHOW";
+  if (v.includes("CANCEL") || v === "FAILED_AVAILABILITY") return "CANCELLED";
+  return "OTHER";
+};
+
+type CalendarStyle = { label: string; dot: string; cell: string; text: string };
+
+export const CUSTOMER_CALENDAR_STYLES: Record<string, CalendarStyle> = {
+  PENDING_PAYMENT: {
+    label: "Pending payment",
+    dot: "bg-amber-500",
+    cell: "bg-amber-50 border-amber-200 hover:bg-amber-100",
+    text: "text-amber-800",
+  },
+  CONFIRMED: {
+    label: "Confirmed",
+    dot: "bg-green-500",
+    cell: "bg-green-50 border-green-200 hover:bg-green-100",
+    text: "text-green-800",
+  },
+  IN_PROGRESS: {
+    label: "Ongoing",
+    dot: "bg-blue-500",
+    cell: "bg-blue-50 border-blue-200 hover:bg-blue-100",
+    text: "text-blue-800",
+  },
+  COMPLETED: {
+    label: "Completed",
+    dot: "bg-indigo-500",
+    cell: "bg-indigo-50 border-indigo-200 hover:bg-indigo-100",
+    text: "text-indigo-800",
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    dot: "bg-rose-500",
+    cell: "bg-rose-50 border-rose-200 hover:bg-rose-100",
+    text: "text-rose-800",
+  },
+  NO_SHOW: {
+    label: "No show",
+    dot: "bg-orange-500",
+    cell: "bg-orange-50 border-orange-200 hover:bg-orange-100",
+    text: "text-orange-800",
+  },
+  OTHER: {
+    label: "Other",
+    dot: "bg-gray-400",
+    cell: "bg-gray-50 border-gray-200 hover:bg-gray-100",
+    text: "text-gray-700",
+  },
+};
+
+export const customerCalendarStyle = (status?: string): CalendarStyle =>
+  CUSTOMER_CALENDAR_STYLES[customerStatusKey(status)] ||
+  CUSTOMER_CALENDAR_STYLES.OTHER;
+
+// Legend order shown under the calendar (OTHER is intentionally omitted).
+export const CUSTOMER_CALENDAR_LEGEND: string[] = [
+  "PENDING_PAYMENT",
+  "CONFIRMED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
+  "NO_SHOW",
+];
