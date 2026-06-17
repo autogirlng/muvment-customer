@@ -1878,7 +1878,7 @@ function BookingSearchInner({
   }
 
   return (
-    <div className="relative w-full overflow-hidden mt-[5rem] md:mt-0 min-h-[calc(100svh-5rem)] lg:min-h-0 lg:h-screen">
+    <div className="relative w-full overflow-hidden mt-[5rem] lg:mt-0 min-h-[calc(100svh-5rem)] lg:min-h-0 lg:h-screen">
       <BackgroundCarousel
         images={HERO_IMAGES}
         alts={HERO_ALTS}
@@ -1886,7 +1886,7 @@ function BookingSearchInner({
         overlay="bg-gradient-to-b from-gray-900/75 via-gray-900/55 to-gray-900/75"
       />
 
-      <div className="relative z-10 flex min-h-[calc(100svh-5rem)] flex-col items-center justify-center px-4 py-10 text-center lg:min-h-screen lg:px-8">
+      <div className="relative z-10 flex min-h-[calc(100svh-5rem)] flex-col items-center justify-start px-4 py-10 text-center lg:min-h-screen lg:justify-center lg:px-8">
         <h1 className="max-w-4xl text-3xl font-bold leading-tight text-white lg:whitespace-nowrap lg:text-5xl">
           Rent Cars<br className="lg:hidden" /> in Nigeria's Top Cities
         </h1>
@@ -1964,7 +1964,6 @@ function BookingSearchInner({
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-white/85">
           {[
-            "Free cancellation window",
             "Verified professional drivers",
             "Fuel included on chauffeured trips",
           ].map((t) => (
