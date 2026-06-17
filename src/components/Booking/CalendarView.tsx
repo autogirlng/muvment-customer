@@ -2,40 +2,19 @@
 
 import React, { useState, useMemo } from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import {
+  customerStatusKey,
+  customerCalendarStyle,
+  CUSTOMER_CALENDAR_STYLES,
+  CUSTOMER_CALENDAR_LEGEND,
+} from "@/utils/bookingStatus";
 
 interface CalendarProps {
-  bookings: Array<{
-    createdAt: string;
-    bookingStatus: string;
-    vehicleName: string;
-    price: number;
-  }>;
+  bookings: any[];
   onDateClick: (date: Date, bookings: any[]) => void;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  PENDING_PAYMENT: "bg-yellow-500",
-  CONFIRMED: "bg-green-500",
-  FAILED_AVAILABILITY: "bg-red-500",
-  CANCELLED_BY_USER: "bg-gray-500",
-  CANCELLED_BY_HOST: "bg-gray-400",
-  CANCELLED_BY_ADMIN: "bg-gray-600",
-  IN_PROGRESS: "bg-purple-500",
-  COMPLETED: "bg-blue-500",
-  NO_SHOW: "bg-orange-500",
-};
-
-const STATUS_BG_COLORS: Record<string, string> = {
-  PENDING_PAYMENT: "bg-yellow-100 border-yellow-300 hover:bg-yellow-200",
-  CONFIRMED: "bg-green-100 border-green-300 hover:bg-green-200",
-  FAILED_AVAILABILITY: "bg-red-100 border-red-300 hover:bg-red-200",
-  CANCELLED_BY_USER: "bg-gray-100 border-gray-300 hover:bg-gray-200",
-  CANCELLED_BY_HOST: "bg-gray-100 border-gray-300 hover:bg-gray-200",
-  CANCELLED_BY_ADMIN: "bg-gray-100 border-gray-300 hover:bg-gray-200",
-  IN_PROGRESS: "bg-purple-100 border-purple-300 hover:bg-purple-200",
-  COMPLETED: "bg-blue-100 border-blue-300 hover:bg-blue-200",
-  NO_SHOW: "bg-orange-100 border-orange-300 hover:bg-orange-200",
-};
+const tripDate = (b: any): string => b?.startDateTime || b?.createdAt || "";
 
 export const CalendarView: React.FC<CalendarProps> = ({
   bookings,
@@ -64,34 +43,35 @@ export const CalendarView: React.FC<CalendarProps> = ({
 
     while (current <= endDate) {
       const date = new Date(current);
-      const dateBookings = bookings.filter((booking) => {
-        const bookingDate = new Date(booking.createdAt);
-        return bookingDate.toDateString() === date.toDateString();
+      const dayTrips = bookings.filter((b) => {
+        const d = tripDate(b);
+        if (!d) return false;
+        return new Date(d).toDateString() === date.toDateString();
       });
 
-      const dominantStatus =
-        dateBookings.length > 0
-          ? dateBookings.reduce((acc, booking) => {
-            acc[booking.bookingStatus] =
-              (acc[booking.bookingStatus] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>)
-          : {};
+      const counts = dayTrips.reduce(
+        (acc, b) => {
+          const key = customerStatusKey(b.bookingStatus);
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
 
-      const mainStatus =
-        Object.keys(dominantStatus).length > 0
-          ? Object.keys(dominantStatus).reduce((a, b) =>
-            dominantStatus[a] > dominantStatus[b] ? a : b
-          )
+      const mainKey =
+        Object.keys(counts).length > 0
+          ? Object.keys(counts).reduce((a, b) => (counts[a] > counts[b] ? a : b))
           : null;
 
       days.push({
         date: new Date(date),
-        bookings: dateBookings,
-        statuses: [...new Set(dateBookings.map((b) => b.bookingStatus))],
-        mainStatus,
+        trips: dayTrips,
+        statusKeys: [
+          ...new Set(dayTrips.map((b) => customerStatusKey(b.bookingStatus))),
+        ],
+        mainKey,
         isCurrentMonth: date.getMonth() === month,
-        bookingCount: dateBookings.length,
+        tripCount: dayTrips.length,
       });
 
       current.setDate(current.getDate() + 1);
@@ -99,7 +79,6 @@ export const CalendarView: React.FC<CalendarProps> = ({
 
     return days;
   }, [currentDate, bookings]);
-
 
   const navigateMonth = (direction: "prev" | "next") => {
     setCurrentDate((prev) => {
@@ -114,30 +93,11 @@ export const CalendarView: React.FC<CalendarProps> = ({
     setShowYearMonthPicker(false);
   };
 
-  const getStatusColor = (status: string) =>
-    STATUS_COLORS[status] || "bg-gray-400";
+  const cellClasses = (key: string | null) =>
+    key ? customerCalendarStyle(key).cell : "bg-white border-[#d0d5dd]";
 
-  const getStatusBgColor = (status: string | null) =>
-    status
-      ? STATUS_BG_COLORS[status] ||
-      "bg-gray-50 border-gray-200 hover:bg-gray-100"
-      : "bg-white";
-
-  const getStatusTextColor = (status: string | null) => {
-    if (!status) return "text-gray-400";
-    const map: Record<string, string> = {
-      PENDING_PAYMENT: "text-yellow-800",
-      CONFIRMED: "text-green-800",
-      FAILED_AVAILABILITY: "text-red-800",
-      CANCELLED_BY_USER: "text-gray-800",
-      CANCELLED_BY_HOST: "text-gray-800",
-      CANCELLED_BY_ADMIN: "text-gray-800",
-      IN_PROGRESS: "text-purple-800",
-      COMPLETED: "text-blue-800",
-      NO_SHOW: "text-orange-800",
-    };
-    return map[status] || "text-gray-800";
-  };
+  const textClasses = (key: string | null) =>
+    key ? customerCalendarStyle(key).text : "text-gray-400";
 
   const formatMonthYear = (date: Date) =>
     date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -162,12 +122,13 @@ export const CalendarView: React.FC<CalendarProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 sm:p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => navigateMonth("prev")}
           className="p-2 hover:bg-gray-100 rounded-lg transition"
+          aria-label="Previous month"
         >
           <FiChevronLeft className="w-5 h-5" />
         </button>
@@ -175,7 +136,7 @@ export const CalendarView: React.FC<CalendarProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowYearMonthPicker(!showYearMonthPicker)}
-            className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition"
+            className="text-xl font-semibold text-gray-900 transition hover:text-[#0673ff]"
           >
             {formatMonthYear(currentDate)}
           </button>
@@ -190,7 +151,7 @@ export const CalendarView: React.FC<CalendarProps> = ({
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0673ff]"
                   >
                     {years.map((year) => (
                       <option key={year}>{year}</option>
@@ -204,7 +165,7 @@ export const CalendarView: React.FC<CalendarProps> = ({
                   <select
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#0673ff]"
                   >
                     {months.map((m, i) => (
                       <option key={m} value={i}>
@@ -222,7 +183,7 @@ export const CalendarView: React.FC<CalendarProps> = ({
                   </button>
                   <button
                     onClick={goToYearMonth}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                    className="flex-1 px-3 py-2 bg-[#0673ff] text-white rounded-md hover:opacity-90 transition"
                   >
                     Go
                   </button>
@@ -235,6 +196,7 @@ export const CalendarView: React.FC<CalendarProps> = ({
         <button
           onClick={() => navigateMonth("next")}
           className="p-2 hover:bg-gray-100 rounded-lg transition"
+          aria-label="Next month"
         >
           <FiChevronRight className="w-5 h-5" />
         </button>
@@ -254,133 +216,85 @@ export const CalendarView: React.FC<CalendarProps> = ({
 
       {/* Days */}
       <div className="grid grid-cols-7 gap-1">
-        {/* {calendarDays.map((day, index) => (
-          <div
-            key={index}
-            onClick={() =>
-              day.bookingCount > 0 && onDateClick(day.date, day.bookings)
-            }
-            className={`
-              min-h-[72px] sm:min-h-[100px] md:min-h-[120px] py-2 border border-[#d0d5dd] transition
-              ${getStatusBgColor(day.mainStatus)}
-              ${!day.isCurrentMonth ? "opacity-60" : ""}
-              ${day.bookingCount > 0 ? "cursor-pointer" : "cursor-default"}
-            `}
-          >
-            <div
-              className={`text-sm text-end m-2 me-2 ${day.mainStatus ? getStatusTextColor(day.mainStatus) : ""
-                }`}
-            >
-              {day.date.getDate()}
-            </div>
-
-            {day.bookingCount > 0 && (
-              <div className="space-y-1">
-                {day.statuses.slice(0, 3).map((status, i) => (
-                  <div
-                    key={i}
-                    className={`h-2 rounded-full ${getStatusColor(status)}`}
-                    title={status.replace(/_/g, " ")}
-                  />
-                ))}
-                {day.statuses.length > 3 && (
-                  <div
-                    className={`text-xs text-center ${getStatusTextColor(
-                      day.mainStatus
-                    )}`}
-                  >
-                    +{day.statuses.length - 3} more
-                  </div>
-                )}
-                <div
-                  className={`text-xs text-center font-medium ${getStatusTextColor(
-                    day.mainStatus
-                  )}`}
-                >
-                  {day.bookingCount} booking
-                  {day.bookingCount > 1 ? "s" : ""}
-                </div>
-              </div>
-            )}
-          </div>
-        ))} */}
         {calendarDays.map((day, index) => (
           <div
             key={index}
             onClick={() =>
-              day.bookingCount > 0 && onDateClick(day.date, day.bookings)
+              day.tripCount > 0 && onDateClick(day.date, day.trips)
             }
             className={`
-      min-h-[72px] sm:min-h-[100px] md:min-h-[120px]
-      p-1 sm:p-2
-      border border-[#d0d5dd]
-      transition
-      active:scale-[0.98]
-      ${getStatusBgColor(day.mainStatus)}
-      ${!day.isCurrentMonth ? "opacity-60" : ""}
-      ${day.bookingCount > 0 ? "cursor-pointer" : "cursor-default"}
-    `}
+              min-h-[72px] sm:min-h-[100px] md:min-h-[120px]
+              p-1 sm:p-2
+              border
+              transition
+              active:scale-[0.98]
+              ${cellClasses(day.mainKey)}
+              ${!day.isCurrentMonth ? "opacity-60" : ""}
+              ${day.tripCount > 0 ? "cursor-pointer" : "cursor-default"}
+            `}
           >
             {/* Date */}
             <div
-              className={`text-xs sm:text-sm text-end mb-0.5 sm:mb-1 ${day.mainStatus ? getStatusTextColor(day.mainStatus) : ""
-                }`}
+              className={`text-xs sm:text-sm text-end mb-0.5 sm:mb-1 ${
+                day.mainKey ? textClasses(day.mainKey) : ""
+              }`}
             >
               {day.date.getDate()}
             </div>
 
-            {day.bookingCount > 0 && (
+            {day.tripCount > 0 && (
               <div className="space-y-0.5 sm:space-y-1">
                 {/* Status bars */}
-                {day.statuses.slice(0, 3).map((status, i) => (
+                {day.statusKeys.slice(0, 3).map((key, i) => (
                   <div
                     key={i}
                     className={`
-              h-1 sm:h-2
-              rounded-full
-              ${getStatusColor(status)}
-              ${i > 0 ? "hidden sm:block" : ""}
-            `}
-                    title={status.replace(/_/g, " ")}
+                      h-1 sm:h-2
+                      rounded-full
+                      ${customerCalendarStyle(key).dot}
+                      ${i > 0 ? "hidden sm:block" : ""}
+                    `}
+                    title={customerCalendarStyle(key).label}
                   />
                 ))}
 
                 {/* + more (hidden on mobile) */}
-                {day.statuses.length > 3 && (
+                {day.statusKeys.length > 3 && (
                   <div
-                    className={`hidden sm:block text-xs text-center ${getStatusTextColor(day.mainStatus)
-                      }`}
+                    className={`hidden sm:block text-xs text-center ${textClasses(
+                      day.mainKey,
+                    )}`}
                   >
-                    +{day.statuses.length - 3} more
+                    +{day.statusKeys.length - 3} more
                   </div>
                 )}
 
-                {/* Booking count (hidden on mobile) */}
+                {/* Trip count (hidden on mobile) */}
                 <div
-                  className={`hidden sm:block text-xs text-center font-medium ${getStatusTextColor(day.mainStatus)
-                    }`}
+                  className={`hidden sm:block text-xs text-center font-medium ${textClasses(
+                    day.mainKey,
+                  )}`}
                 >
-                  {day.bookingCount} booking
-                  {day.bookingCount > 1 ? "s" : ""}
+                  {day.tripCount} trip
+                  {day.tripCount > 1 ? "s" : ""}
                 </div>
               </div>
             )}
           </div>
         ))}
-
       </div>
 
       {/* Legend */}
       <div className="mt-6 pt-4 border-t border-gray-200">
-        <h3 className="text-sm font-medium text-gray-900 mb-3">
-          Status Legend
-        </h3>
+        <h3 className="text-sm font-medium text-gray-900 mb-3">Status legend</h3>
         <div className="flex flex-wrap gap-3">
-          {Object.entries(STATUS_COLORS).map(([status, color]) => (
-            <div key={status} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${color}`} />
-              <span className="text-xs text-gray-600 capitalize">
-                {status.toLowerCase().replace(/_/g, " ")}
+          {CUSTOMER_CALENDAR_LEGEND.map((key) => (
+            <div key={key} className="flex items-center gap-2">
+              <div
+                className={`w-3 h-3 rounded-full ${CUSTOMER_CALENDAR_STYLES[key].dot}`}
+              />
+              <span className="text-xs text-gray-600">
+                {CUSTOMER_CALENDAR_STYLES[key].label}
               </span>
             </div>
           ))}

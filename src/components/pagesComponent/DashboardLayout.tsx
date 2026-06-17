@@ -37,11 +37,6 @@ const NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: FiGrid, exact: true },
   { label: "My bookings", href: "/dashboard/my-booking", icon: FiCalendar },
   { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
-  {
-    label: "Booking tracking",
-    href: "/dashboard/booking-tracking",
-    icon: FiMapPin,
-  },
   { label: "Favourites", href: "/dashboard/favourites", icon: FiHeart },
   { label: "Payment", href: "/dashboard/payment", icon: FiCreditCard },
   { label: "Refer a friend", href: "/dashboard/refer-a-friend", icon: FiGift },
@@ -53,11 +48,6 @@ const NAV: NavItem[] = [
 // Secondary destinations shown in the mobile "More" sheet.
 const MORE_ITEMS: NavItem[] = [
   { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
-  {
-    label: "Booking tracking",
-    href: "/dashboard/booking-tracking",
-    icon: FiMapPin,
-  },
   { label: "Favourites", href: "/dashboard/favourites", icon: FiHeart },
   { label: "Refer a friend", href: "/dashboard/refer-a-friend", icon: FiGift },
   { label: "Integrations", href: "/dashboard/integrations", icon: FiLink },
@@ -68,7 +58,6 @@ const TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/dashboard/my-booking": "My bookings",
   "/dashboard/booking": "Booking details",
-  "/dashboard/booking-tracking": "Booking tracking",
   "/dashboard/favourites": "Favourites",
   "/dashboard/payment": "Payment",
   "/dashboard/refer-a-friend": "Refer a friend",

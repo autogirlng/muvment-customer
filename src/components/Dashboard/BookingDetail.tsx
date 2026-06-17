@@ -16,6 +16,7 @@ import {
   FiX,
   FiCopy,
   FiCheck,
+  FiChevronRight,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { getSingleData } from "@/controllers/connnector/app.callers";
@@ -95,23 +96,6 @@ const Row: React.FC<{
       </p>
     </div>
   </div>
-);
-
-const driverValue = (trip: any): React.ReactNode => (
-  <span>
-    {trip?.driverName || "Assigned"}
-    {trip?.driverPhoneNumber ? (
-      <>
-        {" · "}
-        <a
-          href={`tel:${trip.driverPhoneNumber}`}
-          className="text-[#0673ff] hover:underline"
-        >
-          {trip.driverPhoneNumber}
-        </a>
-      </>
-    ) : null}
-  </span>
 );
 
 export default function BookingDetail(): React.ReactElement {
@@ -198,7 +182,7 @@ export default function BookingDetail(): React.ReactElement {
     const shareText = `My Muvment booking for ${name}${
       segment?.startDateTime ? ` on ${fmt(segment.startDateTime)}` : ""
     }`;
-    const shareUrl = `${window.location.origin}/dashboard/booking-tracking?bookingId=${bookingId}`;
+    const shareUrl = `${window.location.origin}/track-booking?bookingId=${bookingId}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "My Booking", text: shareText, url: shareUrl });
@@ -259,11 +243,6 @@ export default function BookingDetail(): React.ReactElement {
 
   const segment = booking.segments?.[0];
   const segments = (booking.segments || []) as any[];
-  const soloId = segment?.segmentId || segment?.id;
-  const soloTrip = soloId ? trips[soloId] : undefined;
-  const soloStatus = soloTrip?.tripStatus
-    ? customerTripStatus(soloTrip.tripStatus)
-    : customerBookingStatus(segment?.bookingStatus || booking?.bookingStatus);
   const photo =
     vehicle?.photos?.find((p: any) => p.isPrimary)?.cloudinaryUrl ||
     vehicle?.photos?.[0]?.cloudinaryUrl ||
@@ -359,29 +338,35 @@ export default function BookingDetail(): React.ReactElement {
         </div>
       </div>
 
-      {/* Trip details */}
-      {segments.length > 1 ? (
-        <Card title={`Trips (${segments.length})`}>
-          <div className="space-y-3">
-            {segments.map((seg: any, i: number) => {
-              const segId = seg.segmentId || seg.id;
-              const focused = !!focusTripId && segId === focusTripId;
-              const trip = trips[segId];
-              const st = trip?.tripStatus
-                ? customerTripStatus(trip.tripStatus)
-                : customerBookingStatus(seg.bookingStatus || booking.bookingStatus);
-              return (
-                <div
-                  key={segId || i}
-                  id={`trip-${segId}`}
-                  className={`rounded-xl border bg-gray-50 p-4 transition-colors ${
-                    focused
-                      ? "border-[#0673ff] ring-2 ring-[#0673ff]/40"
-                      : "border-gray-100"
-                  }`}
-                >
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
+      {/* Trips: navigable list, one card per trip, each opens the trip page */}
+      <Card title={segments.length > 1 ? `Trips (${segments.length})` : "Trip"}>
+        <div className="space-y-3">
+          {segments.map((seg: any, i: number) => {
+            const sid = seg.segmentId || seg.id;
+            const focused = !!focusTripId && sid === focusTripId;
+            const trip = trips[sid];
+            const st = trip?.tripStatus
+              ? customerTripStatus(trip.tripStatus)
+              : customerBookingStatus(
+                  seg.bookingStatus || booking.bookingStatus,
+                );
+            return (
+              <button
+                key={sid || i}
+                id={`trip-${sid}`}
+                type="button"
+                onClick={() =>
+                  router.push(`/dashboard/booking/${bookingId}/trip/${sid}`)
+                }
+                className={`block w-full rounded-xl border bg-gray-50 p-4 text-left transition hover:bg-gray-100 ${
+                  focused
+                    ? "border-[#0673ff] ring-2 ring-[#0673ff]/40"
+                    : "border-gray-100"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                         Trip {i + 1}
                       </span>
@@ -391,93 +376,39 @@ export default function BookingDetail(): React.ReactElement {
                         {st.label}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-500">
-                      {seg.duration || booking.bookingType}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-                    <Row
-                      icon={<FiCalendar className="h-4 w-4" />}
-                      label="Starts"
-                      value={fmt(seg.startDateTime, true)}
-                    />
-                    <Row
-                      icon={<FiCalendar className="h-4 w-4" />}
-                      label="Ends"
-                      value={fmt(seg.endDateTime, true)}
-                    />
-                    <Row
-                      icon={<FiMapPin className="h-4 w-4" />}
-                      label="Pickup"
-                      value={seg.pickupLocation}
-                    />
-                    <Row
-                      icon={<FiMapPin className="h-4 w-4" />}
-                      label="Drop-off"
-                      value={seg.dropoffLocation}
-                    />
-                    {trip?.driverAssigned && (
-                      <Row
-                        icon={<FiUser className="h-4 w-4" />}
-                        label="Driver"
-                        value={driverValue(trip)}
-                      />
+                    <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-900">
+                      <FiCalendar className="h-4 w-4 shrink-0 text-gray-400" />
+                      {fmt(seg.startDateTime, true)}
+                    </p>
+                    {(seg.pickupLocation || seg.dropoffLocation) && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
+                        <FiMapPin className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">
+                          {seg.pickupLocation || "Pickup"}
+                        </span>
+                        <FiArrowRight className="h-3 w-3 shrink-0" />
+                        <span className="truncate">
+                          {seg.dropoffLocation || "Drop-off"}
+                        </span>
+                      </p>
+                    )}
+                    {trip?.driverAssigned && trip?.driverName && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
+                        <FiUser className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{trip.driverName}</span>
+                      </p>
                     )}
                   </div>
+                  <span className="mt-0.5 flex shrink-0 items-center gap-1 text-xs font-semibold text-[#0673ff]">
+                    Details
+                    <FiChevronRight className="h-4 w-4" />
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        </Card>
-      ) : (
-        <Card title="Trip details">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-            <Row
-              icon={<FiClock className="h-4 w-4" />}
-              label="Status"
-              value={
-                <span
-                  className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${soloStatus.classes}`}
-                >
-                  {soloStatus.label}
-                </span>
-              }
-            />
-            <Row
-              icon={<FiCalendar className="h-4 w-4" />}
-              label="Starts"
-              value={fmt(segment?.startDateTime, true)}
-            />
-            <Row
-              icon={<FiCalendar className="h-4 w-4" />}
-              label="Ends"
-              value={fmt(segment?.endDateTime, true)}
-            />
-            <Row
-              icon={<FiClock className="h-4 w-4" />}
-              label="Duration"
-              value={segment?.duration}
-            />
-            <Row
-              icon={<FiMapPin className="h-4 w-4" />}
-              label="Pickup"
-              value={segment?.pickupLocation}
-            />
-            <Row
-              icon={<FiMapPin className="h-4 w-4" />}
-              label="Drop-off"
-              value={segment?.dropoffLocation}
-            />
-            {soloTrip?.driverAssigned && (
-              <Row
-                icon={<FiUser className="h-4 w-4" />}
-                label="Driver"
-                value={driverValue(soloTrip)}
-              />
-            )}
-          </div>
-        </Card>
-      )}
+              </button>
+            );
+          })}
+        </div>
+      </Card>
 
       {/* Vehicle */}
       {vehicle && (
