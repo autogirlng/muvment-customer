@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/context/AuthContext";
 import { guestMenuItems, menuItems } from "@/utils/MenuContent";
+import { hasIntegrationAccess } from "@/utils/access";
 import { useState, useEffect, useRef } from "react"; // Added useRef
 import { createPortal } from "react-dom";
 import { HiMenuAlt3 } from "react-icons/hi";
@@ -121,7 +122,10 @@ export const Navbar = ({
   // where the hero already carries the search; it reveals on scroll there.
   const showNavSearch = homeHero ? isScrolled || showSearchBar : true;
 
-  const items = user ? menuItems : guestMenuItems;
+  const items = (user ? menuItems : guestMenuItems).filter(
+    (i: any) =>
+      i.link !== "/dashboard/integrations" || hasIntegrationAccess(user),
+  );
   const showMenu = !user; // guests use the dropdown; logged-in users use the Dashboard button
   const navListItems = items.filter(
     (i: any) => i.name !== "Sign In" && i.name !== "Sign Up",

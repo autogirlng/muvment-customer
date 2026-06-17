@@ -10,6 +10,7 @@ import {
   getSingleData,
   getTableData,
 } from "../connnector/app.callers";
+import { PaymentService } from "./paymentService";
 
 export interface Booking {
   id?: string;
@@ -60,6 +61,7 @@ export class BookingService {
     "/api/v1/bookings/service-pricing";
   private static readonly BOOKINGS_URL = "/api/v1/public/bookings";
   private static readonly PAYMENT_URL = "/api/v1/payments";
+  private static readonly TRIPS_URL = "/api/v1/trips";
   private static readonly BOOKING_TYPE =
     "/api/v1/booking-types?isDefaultActive=true";
   private static readonly INITIATE_PAYMENT = "/api/v1/payments/initiate";
@@ -95,16 +97,53 @@ export class BookingService {
     }
   }
 
-  static async getDashboardCounts(): Promise<{ payments: number }> {
+  static async getTripBySegment(segmentId: string): Promise<any | null> {
     try {
-      const paymentRes = await getSingleData(`${this.PAYMENT_URL}`);
-      const paymentResData = paymentRes?.data[0].data;
-      const payments = paymentResData?.totalElements ?? 0;
-      return { payments };
+      const response = await getSingleData(
+        `${this.TRIPS_URL}/by-segment/${segmentId}`,
+      );
+      return response?.data?.[0]?.data || null;
     } catch (error) {
-      console.error("Error fetching payment count:", error);
-      throw error;
+      // Endpoint may not be live yet, or no trip exists for this segment.
+      return null;
     }
+  }
+
+  static async getDashboardMetrics(): Promise<{
+    bookings: number;
+    trips: number;
+    paymentsTotal: number;
+  }> {
+    let bookings = 0;
+    let trips = 0;
+    let paymentsTotal = 0;
+
+    try {
+      const segBody = await this.getMyBookings({ page: 0, size: 1000 } as any);
+      const content: any[] = segBody?.data?.content ?? [];
+      trips = segBody?.data?.totalElements ?? content.length;
+      const ids = new Set(
+        content.map((s) => s?.booking?.bookingId).filter(Boolean),
+      );
+      bookings = ids.size;
+    } catch (error) {
+      console.error("Error loading booking metrics:", error);
+    }
+
+    try {
+      const payBody: any = await PaymentService.getMyPayments({
+        page: 0,
+        size: 1000,
+      } as any);
+      const payContent: any[] = payBody?.data?.content ?? [];
+      paymentsTotal = payContent
+        .filter((p) => String(p?.paymentStatus).toUpperCase() === "SUCCESSFUL")
+        .reduce((sum, p) => sum + (Number(p?.amountPaid) || 0), 0);
+    } catch (error) {
+      console.error("Error loading payment metrics:", error);
+    }
+
+    return { bookings, trips, paymentsTotal };
   }
 
   static async getBookingType(): Promise<any> {

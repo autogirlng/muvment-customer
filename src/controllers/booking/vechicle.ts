@@ -183,7 +183,7 @@ export class VehicleSearchService {
       const response = await getSingleData(
         `${this.VEHICLE_DETAILS}/${vehicleId}`,
       );
-      return response?.data || null;
+      return response?.data?.[0]?.data || null;
     } catch (error) {
       console.error("Error fetching vehicle details:", error);
       throw error;

@@ -60,6 +60,7 @@ export default function EditProfilePage() {
   const [country, setCountry] = useState("NG");
   const [countryCode, setCountryCode] = useState("+234");
   const [errors, setErrors] = useState<Partial<ProfileFormData>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [imageState, setImageState] = useState<ImageUploadState>({
     file: null,
     preview: null,
@@ -164,6 +165,7 @@ export default function EditProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
     if (!validateForm()) return;
     setUpdating(true);
     try {
@@ -173,7 +175,15 @@ export default function EditProfilePage() {
       });
       router.push("/dashboard/settings");
     } catch (error) {
-      console.error("Failed to update profile:", error);
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to update profile. Please try again.";
+      if (/phone/i.test(message)) {
+        setErrors((prev) => ({ ...prev, phoneNumber: message }));
+      } else {
+        setSubmitError(message);
+      }
     } finally {
       setUpdating(false);
     }
@@ -367,6 +377,12 @@ export default function EditProfilePage() {
           </div>
         </div>
       </form>
+
+      {submitError && (
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+          {submitError}
+        </p>
+      )}
 
       {/* Actions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">

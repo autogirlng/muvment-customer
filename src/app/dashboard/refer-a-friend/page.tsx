@@ -7,7 +7,14 @@ import {
 } from "@/controllers/user/profile.service";
 import { ReferralService } from "@/controllers/utils/referalService";
 import React, { useState, useEffect, useCallback } from "react";
-import { FiCopy, FiShare2 } from "react-icons/fi";
+import {
+  FiCopy,
+  FiCheck,
+  FiShare2,
+  FiUserPlus,
+  FiGift,
+  FiChevronDown,
+} from "react-icons/fi";
 
 interface ReferralData {
   id: string;
@@ -30,9 +37,31 @@ const PAGE_SIZE = 10;
 const formatNaira = (amount?: number) =>
   typeof amount === "number" ? `₦${amount.toLocaleString("en-NG")}` : "₦0";
 
-const StatCard = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-3 text-center shadow-sm sm:p-4">
-    <p className="text-lg font-bold text-gray-900 sm:text-2xl">{value}</p>
+const compactNaira = (amount?: number) => {
+  const v = amount || 0;
+  if (v >= 1_000_000_000)
+    return `₦${(v / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
+  if (v >= 1_000_000)
+    return `₦${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  return formatNaira(v);
+};
+
+const StatCard = ({
+  label,
+  value,
+  title,
+}: {
+  label: string;
+  value: string;
+  title?: string;
+}) => (
+  <div className="min-w-0 rounded-2xl border border-gray-200 bg-white p-3 text-center shadow-sm sm:p-4">
+    <p
+      title={title}
+      className="truncate text-lg font-bold text-gray-900 sm:text-2xl"
+    >
+      {value}
+    </p>
     <p className="mt-0.5 text-xs text-gray-500 sm:text-sm">{label}</p>
   </div>
 );
@@ -74,19 +103,22 @@ const columns: TableColumn<ReferralData>[] = [
     ),
   },
   {
-    key: "referee",
+    key: "creditedAmount",
     label: "Status",
-    render: (value) => (
-      <span
-        className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${
-          value?.active
-            ? "bg-green-50 text-green-700 border border-green-200"
-            : "bg-amber-50 text-amber-700 border border-amber-200"
-        }`}
-      >
-        {value?.active ? "Active" : "Pending"}
-      </span>
-    ),
+    render: (_value, row) => {
+      const earned = (row.creditedAmount ?? 0) > 0;
+      return (
+        <span
+          className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${
+            earned
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-amber-50 text-amber-700 border border-amber-200"
+          }`}
+        >
+          {earned ? "Earned" : "Pending"}
+        </span>
+      );
+    },
   },
   {
     key: "creditedAmount",
@@ -96,6 +128,24 @@ const columns: TableColumn<ReferralData>[] = [
         {formatNaira(value)}
       </span>
     ),
+  },
+];
+
+const HOW_IT_WORKS = [
+  {
+    icon: FiShare2,
+    title: "Share your code",
+    desc: "Generate your code above, then send it to friends or share your personal link.",
+  },
+  {
+    icon: FiUserPlus,
+    title: "They sign up and book",
+    desc: "Your friend creates an account with your code and takes their first trip.",
+  },
+  {
+    icon: FiGift,
+    title: "You earn ₦5,000",
+    desc: "Once their first trip is confirmed, you get a ₦5,000 bonus.",
   },
 ];
 
@@ -109,7 +159,8 @@ export default function ReferralPage() {
 
   const [referralCode, setReferralCode] = useState("");
   const [referralLink, setReferralLink] = useState("");
-  const [copySuccess, setCopySuccess] = useState(false);
+  const [copySuccess, setCopySuccess] = useState<"code" | "link" | null>(null);
+  const [howOpen, setHowOpen] = useState(false);
   const [, setProfile] = useState<UserProfile | null>(null);
   const [codeGenerated, setCodeGenerated] = useState(false);
 
@@ -193,14 +244,14 @@ export default function ReferralPage() {
 
   const handleCopyCode = () => {
     if (referralCode) navigator.clipboard.writeText(referralCode);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
+    setCopySuccess("code");
+    setTimeout(() => setCopySuccess(null), 2000);
   };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralLink);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
+    setCopySuccess("link");
+    setTimeout(() => setCopySuccess(null), 2000);
   };
 
   const handleShare = async () => {
@@ -217,7 +268,9 @@ export default function ReferralPage() {
     }
   };
 
-  const activeCount = referrals.filter((r) => r.referee?.active).length;
+  const rewardedCount = referrals.filter(
+    (r) => (r.creditedAmount ?? 0) > 0,
+  ).length;
   const totalEarned = referrals.reduce(
     (sum, r) => sum + (r.creditedAmount || 0),
     0,
@@ -235,11 +288,11 @@ export default function ReferralPage() {
             }}
           >
             <h2 className="text-lg font-bold sm:text-xl">
-              Invite friends, earn rewards
+              Invite friends, earn ₦5,000
             </h2>
             <p className="mt-1 text-sm text-white/85">
-              Share your code or link. When a friend signs up with it, you earn
-              rewards.
+              Share your code or link. When a friend signs up and takes their
+              first trip, you earn ₦5,000.
             </p>
           </div>
 
@@ -269,7 +322,8 @@ export default function ReferralPage() {
                       onClick={handleCopyCode}
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0673ff] px-4 py-2.5 font-medium text-white transition hover:opacity-90"
                     >
-                      <FiCopy /> {copySuccess ? "Copied!" : "Copy"}
+                      {copySuccess === "code" ? <FiCheck /> : <FiCopy />}{" "}
+                      {copySuccess === "code" ? "Copied!" : "Copy"}
                     </button>
                   )}
                 </div>
@@ -293,7 +347,8 @@ export default function ReferralPage() {
                       disabled={!referralLink}
                       className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 sm:flex-none"
                     >
-                      <FiCopy /> Copy
+                      {copySuccess === "link" ? <FiCheck /> : <FiCopy />}{" "}
+                      {copySuccess === "link" ? "Copied!" : "Copy"}
                     </button>
                     <button
                       onClick={handleShare}
@@ -312,8 +367,70 @@ export default function ReferralPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <StatCard label="Referrals" value={String(totalReferrals)} />
-          <StatCard label="Active" value={String(activeCount)} />
-          <StatCard label="Earned" value={formatNaira(totalEarned)} />
+          <StatCard label="Rewarded" value={String(rewardedCount)} />
+          <StatCard
+            label="Earned"
+            value={compactNaira(totalEarned)}
+            title={formatNaira(totalEarned)}
+          />
+        </div>
+
+        {/* How it works */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <button
+            type="button"
+            onClick={() => setHowOpen((o) => !o)}
+            aria-expanded={howOpen}
+            className="flex w-full items-center justify-between gap-3 text-left"
+          >
+            <div>
+              <h3 className="text-base font-bold text-gray-900">How it works</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Invite friends and earn a reward when they join and take their
+                first trip.
+              </p>
+            </div>
+            <FiChevronDown
+              className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${
+                howOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {howOpen && (
+            <>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                {HOW_IT_WORKS.map((step, i) => {
+                  const Icon = step.icon;
+                  return (
+                    <div
+                      key={step.title}
+                      className="rounded-xl border border-gray-100 bg-gray-50 p-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E7F1FF]">
+                          <Icon className="h-4 w-4 text-[#0673ff]" />
+                        </div>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                          Step {i + 1}
+                        </span>
+                      </div>
+                      <p className="mt-3 font-semibold text-gray-900">
+                        {step.title}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-500">{step.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-4 rounded-xl bg-[#E7F1FF] px-4 py-3 text-xs leading-relaxed text-gray-600">
+                The ₦5,000 bonus is applied as a discount on a trip and is valid
+                for one month after it is earned. Each friend who has earned you
+                a bonus shows in the Reward column, and your total shows under
+                Earned.
+              </p>
+            </>
+          )}
         </div>
 
         {/* Referrals list */}
@@ -343,6 +460,50 @@ export default function ReferralPage() {
               hasMore={hasMore}
               loadingMore={loadingMore}
               onLoadMore={handleLoadMore}
+              renderMobileCard={(row) => {
+                const r = row.referee;
+                const initials =
+                  `${r?.firstName?.[0] ?? ""}${r?.lastName?.[0] ?? ""}`.toUpperCase() ||
+                  "?";
+                const name =
+                  `${r?.firstName ?? ""} ${r?.lastName ?? ""}`.trim() || "—";
+                const earned = (row.creditedAmount ?? 0) > 0;
+                return (
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                      style={{ backgroundColor: "#0673ff" }}
+                    >
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate font-semibold text-gray-900">
+                          {name}
+                        </p>
+                        <span
+                          className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            earned
+                              ? "border border-green-200 bg-green-50 text-green-700"
+                              : "border border-amber-200 bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          {earned ? "Earned" : "Pending"}
+                        </span>
+                      </div>
+                      <p className="truncate text-sm text-gray-500">
+                        {r?.email || "—"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {r?.phoneNumber || "—"}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-gray-900">
+                        {formatNaira(row.creditedAmount)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }}
             />
           )}
         </div>

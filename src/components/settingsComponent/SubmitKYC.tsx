@@ -1,12 +1,9 @@
 "use client";
 import { useState, Suspense } from "react";
-import {
-  notFound,
-  useRouter,
-  useSearchParams,
-} from "next/navigation";
+import { notFound, useRouter, useSearchParams } from "next/navigation";
 import { MdBusiness, MdArrowBack, MdCheckCircle } from "react-icons/md";
 import { createData } from "@/controllers/connnector/app.callers";
+import { INDUSTRIES } from "@/components/settingsComponent/CreateOrganization";
 
 export const ORGANIZATION_SIZE = [
   { label: "1-10 employees", value: "1-10" },
@@ -18,48 +15,86 @@ export const ORGANIZATION_SIZE = [
   { label: "5,000+ employees", value: "5000+" },
 ];
 
+type Fields = {
+  cacNumber: string;
+  officeAddress: string;
+  additionalAddress: string;
+  servicesRendered: string;
+  organizationSize: string;
+};
+
+type FieldErrors = Partial<Record<keyof Fields, string>>;
+
 const SubmitKYCPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<Fields>({
     cacNumber: "",
     officeAddress: "",
     additionalAddress: "",
-    organizationSize: "",
     servicesRendered: "",
+    organizationSize: "",
   });
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState(false);
   const organizationId = searchParams.get("organizationId");
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setError("");
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+    setSubmitError("");
+  };
+
+  const validate = (): FieldErrors => {
+    const next: FieldErrors = {};
+    const cac = form.cacNumber.trim();
+    if (!cac) {
+      next.cacNumber = "CAC number is required";
+    } else if (!/^\d{4,}$/.test(cac)) {
+      next.cacNumber = "Enter a valid CAC number (digits only)";
+    }
+    if (!form.officeAddress.trim()) {
+      next.officeAddress = "Office address is required";
+    } else if (form.officeAddress.trim().length < 5) {
+      next.officeAddress = "Enter a complete office address";
+    }
+    if (!form.servicesRendered) {
+      next.servicesRendered = "Select the service you render";
+    }
+    if (!form.organizationSize) {
+      next.organizationSize = "Select your organization size";
+    }
+    return next;
   };
 
   const handleSubmit = async () => {
-    if (
-      !form.cacNumber ||
-      !form.officeAddress ||
-      !form.servicesRendered ||
-      !form.organizationSize
-    ) {
-      setError("Fill all non-optional fields");
+    const found = validate();
+    if (Object.keys(found).length > 0) {
+      setErrors(found);
       return;
     }
 
     try {
       setLoading(true);
-      await createData(`/api/v1/organizations/${organizationId}/kyc`, form);
+      await createData(`/api/v1/organizations/${organizationId}/kyc`, {
+        ...form,
+        cacNumber: form.cacNumber.trim(),
+        officeAddress: form.officeAddress.trim(),
+        additionalAddress: form.additionalAddress.trim(),
+      });
       setSuccess(true);
       setTimeout(() => {
         router.push("/dashboard/integrations");
       }, 2000);
     } catch (err: any) {
-      setError(err?.message || "Failed to submit your kyc. Please try again.");
+      setSubmitError(
+        err?.message || "Failed to submit your KYC. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -80,12 +115,19 @@ const SubmitKYCPageContent = () => {
             KYC submitted
           </h2>
           <p className="text-sm text-gray-500">
-            Your application is now under review. Redirecting to settings...
+            Your application is now under review. Redirecting...
           </p>
         </div>
       </div>
     );
   }
+
+  const fieldClass = (hasError?: string) =>
+    `w-full rounded-xl border px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:outline-none focus:ring-2 ${
+      hasError
+        ? "border-red-400 focus:ring-red-400"
+        : "border-gray-300 focus:border-transparent focus:ring-[#0673ff]"
+    }`;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -109,93 +151,119 @@ const SubmitKYCPageContent = () => {
           </div>
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            CAC Number
-          </label>
-          <input
-            type="text"
-            name="cacNumber"
-            value={form.cacNumber}
-            onChange={handleChange}
-            placeholder="1234567"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0673ff]"
-          />
-        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              CAC Number
+            </label>
+            <input
+              type="text"
+              name="cacNumber"
+              inputMode="numeric"
+              value={form.cacNumber}
+              onChange={handleChange}
+              placeholder="1234567"
+              className={fieldClass(errors.cacNumber)}
+            />
+            {errors.cacNumber && (
+              <p className="mt-1 text-xs text-red-500">{errors.cacNumber}</p>
+            )}
+          </div>
 
-        <div>
-          <label className="mb-1.5 mt-3 block text-sm font-medium text-gray-700">
-            Office Address
-          </label>
-          <input
-            type="text"
-            name="officeAddress"
-            value={form.officeAddress}
-            onChange={handleChange}
-            placeholder="No 6 off Muvment street, Lagos"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0673ff]"
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 mt-3 block text-sm font-medium text-gray-700">
-            Additional Address (optional)
-          </label>
-          <input
-            type="text"
-            name="additionalAddress"
-            value={form.additionalAddress}
-            onChange={handleChange}
-            placeholder="No 7 off Muvment street, Lagos"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0673ff]"
-          />
-        </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Office Address
+            </label>
+            <input
+              type="text"
+              name="officeAddress"
+              value={form.officeAddress}
+              onChange={handleChange}
+              placeholder="No 6 off Muvment street, Lagos"
+              className={fieldClass(errors.officeAddress)}
+            />
+            {errors.officeAddress && (
+              <p className="mt-1 text-xs text-red-500">{errors.officeAddress}</p>
+            )}
+          </div>
 
-        <div>
-          <label className="mb-1.5 mt-3 block text-sm font-medium text-gray-700">
-            Services Rendered
-          </label>
-          <input
-            type="text"
-            name="servicesRendered"
-            value={form.servicesRendered}
-            onChange={handleChange}
-            placeholder="Mobility"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0673ff]"
-          />
-        </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Additional Address{" "}
+              <span className="font-normal text-gray-400">(optional)</span>
+            </label>
+            <input
+              type="text"
+              name="additionalAddress"
+              value={form.additionalAddress}
+              onChange={handleChange}
+              placeholder="No 7 off Muvment street, Lagos"
+              className={fieldClass()}
+            />
+          </div>
 
-        <div>
-          <label className="mb-1.5 mt-3 block text-sm font-medium text-gray-700">
-            Organization Size
-          </label>
-          <select
-            name="organizationSize"
-            value={form.organizationSize}
-            onChange={handleChange}
-            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0673ff]"
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Services Rendered
+            </label>
+            <select
+              name="servicesRendered"
+              value={form.servicesRendered}
+              onChange={handleChange}
+              className={fieldClass(errors.servicesRendered) + " bg-white"}
+            >
+              <option value="">Select the service you render</option>
+              {INDUSTRIES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+            {errors.servicesRendered && (
+              <p className="mt-1 text-xs text-red-500">
+                {errors.servicesRendered}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Organization Size
+            </label>
+            <select
+              name="organizationSize"
+              value={form.organizationSize}
+              onChange={handleChange}
+              className={fieldClass(errors.organizationSize) + " bg-white"}
+            >
+              <option value="">Select your organization size</option>
+              {ORGANIZATION_SIZE.map((size) => (
+                <option key={size.value} value={size.value}>
+                  {size.label}
+                </option>
+              ))}
+            </select>
+            {errors.organizationSize && (
+              <p className="mt-1 text-xs text-red-500">
+                {errors.organizationSize}
+              </p>
+            )}
+          </div>
+
+          {submitError && (
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-500">
+              {submitError}
+            </p>
+          )}
+
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full rounded-xl bg-[#0673ff] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#0a55c4] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <option value="">Select your organization size</option>
-            {ORGANIZATION_SIZE.map((size) => (
-              <option key={size.value} value={size.value}>
-                {size.label}
-              </option>
-            ))}
-          </select>
+            {loading ? "Submitting..." : "Submit KYC"}
+          </button>
         </div>
-
-        {error && (
-          <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-500">
-            {error}
-          </p>
-        )}
-
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="mt-3 w-full rounded-xl bg-[#0673ff] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#0a55c4] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? "Submitting..." : "Submit KYC"}
-        </button>
       </div>
     </div>
   );

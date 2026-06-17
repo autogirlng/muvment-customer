@@ -13,6 +13,7 @@ interface DropdownProps {
   isOpen?: boolean;
   onToggle?: () => void;
   customTrigger?: React.ReactNode;
+  menuAlign?: "left" | "right";
 }
 
 const Dropdown: React.FC<DropdownProps> = ({
@@ -24,6 +25,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   isOpen = false,
   onToggle,
   customTrigger,
+  menuAlign = "left",
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const selectedOption = options.find((opt) => opt.value === selectedValue);
@@ -97,7 +99,7 @@ const Dropdown: React.FC<DropdownProps> = ({
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className={`absolute left-0 w-full min-w-[12rem] bg-white border border-gray-200 rounded-lg shadow-lg z-50 animate-fadeIn overflow-y-auto ${
+          className={`absolute ${menuAlign === "right" ? "right-0" : "left-0"} w-full min-w-[12rem] bg-white border border-gray-200 rounded-lg shadow-lg z-50 animate-fadeIn overflow-y-auto ${
             dropUp ? "bottom-full mb-1" : "top-full mt-1"
           }`}
           style={{ maxHeight: menuMaxHeight }}

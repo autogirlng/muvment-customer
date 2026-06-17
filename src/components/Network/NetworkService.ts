@@ -12,12 +12,14 @@ export default class NetworkService {
     data: any | null;
     message: string;
     error: boolean;
+    status?: number;
   } {
     if (response.err) {
       return {
         data: null,
         message: response.err || "No response received from server.",
         error: true,
+        status: response.status,
       };
     }
 

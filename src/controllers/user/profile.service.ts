@@ -41,6 +41,13 @@ export class ProfileService {
     if (!response) {
       throw new Error("Failed to update profile");
     }
+    if ((response as any).error) {
+      throw new Error((response as any).message || "Failed to update profile");
+    }
+    const payload = (response as any).data ?? response;
+    if (payload?.status === "FAILED" || payload?.errorCode) {
+      throw new Error(payload.message || "Failed to update profile");
+    }
     return response as { data: UserProfile };
   }
 
