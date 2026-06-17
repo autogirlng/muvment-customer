@@ -9,6 +9,7 @@ import ApiClient from "../connnector/appClient";
 export interface Payment {
   id: string;
   bookingId: string;
+  invoiceNumber?: string;
   paymentStatus: string;
   paymentProvider: string;
   transactionReference: string;

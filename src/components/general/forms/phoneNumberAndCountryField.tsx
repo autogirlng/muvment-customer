@@ -71,7 +71,7 @@ const PhoneNumberAndCountryField = ({
     )}
 
     <div className="flex items-stretch gap-2">
-      <div className="shrink-0 w-[140px]">
+      <div className="shrink-0 w-[100px] sm:w-[140px]">
         <CountryCodeSelect
           value={selectValue}
           onChange={selectOnChange}

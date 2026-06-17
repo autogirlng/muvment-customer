@@ -30,18 +30,27 @@ export default function CreateBookingPageClient() {
 
   const fetchVehicleDetails = async () => {
     try {
-      const data = await VehicleSearchService.getVehicleById(
+      const result = await VehicleSearchService.getVehicleById(
         params?.id as string,
       );
-      const vehicleData = data as VehicleDetailsPublic[];
 
-      if (vehicleData.length > 0) {
-        const photos = vehicleData[0].data.photos.map(
-          (photo) => photo.cloudinaryUrl,
-        );
+      // The endpoint returns the vehicle object directly. Stay tolerant of an
+      // array or an already-wrapped shape so a backend change can't break this.
+      let v: any = result;
+      if (Array.isArray(v)) v = v[0];
+      if (v && v.data && v.data.id) v = v.data;
+
+      if (v && v.id) {
+        const wrapped = { data: v } as VehicleDetailsPublic;
+        const photos = (v.photos || []).map((photo: any) => photo.cloudinaryUrl);
         setVehicleImages(photos);
-        setVehicle(vehicleData[0]);
+        setVehicle(wrapped);
+      } else {
+        setVehicle(null);
       }
+    } catch (error) {
+      console.error("Failed to load vehicle:", error);
+      setVehicle(null);
     } finally {
       setLoading(false);
     }
@@ -59,6 +68,37 @@ export default function CreateBookingPageClient() {
     return <ScreenLoader />;
   }
 
+  if (!vehicle) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <h2 className="text-xl font-bold text-gray-900">
+          We couldn&apos;t load this vehicle
+        </h2>
+        <p className="mt-2 max-w-sm text-sm text-gray-500">
+          It may no longer be available. Please go back and choose another
+          vehicle.
+        </p>
+        <div className="mt-5 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex items-center rounded-full border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+          >
+            Go back
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+            style={{ backgroundColor: "#0673ff" }}
+          >
+            Browse vehicles
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Focused checkout header (replaces the full site nav to keep the flow distraction-free) */}
@@ -72,9 +112,9 @@ export default function CreateBookingPageClient() {
             <Image
               src="/images/image.png"
               alt="Muvment"
-              width={130}
-              height={36}
-              className="h-8 w-auto object-contain"
+              width={1451}
+              height={165}
+              className="h-auto w-[132px] sm:w-[160px]"
               priority
             />
           </Link>

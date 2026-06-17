@@ -8,6 +8,7 @@ import { getCountryCallingCode } from "react-phone-number-input";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { ProfileService } from "@/controllers/user/profile.service";
 import { replaceCharactersWithString } from "./PersonalInformationFormOthers";
 import PersistBookingDraft from "./PersistBookingDraft";
 
@@ -52,7 +53,34 @@ const PersonalInformationFormMyself = ({
 
   const { user } = useAuth();
 
-  const userPhone = useMemo(() => splitPhone(user?.phoneNumber), [user]);
+  const [profilePhone, setProfilePhone] = useState<string>("");
+
+  // The login response doesn't include the phone number, so when the signed-in
+  // user has none on the auth object, pull it from their profile to prefill.
+  useEffect(() => {
+    if (!user || user.phoneNumber) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await ProfileService.getMyProfile();
+        const respData: any = response?.data;
+        const first = Array.isArray(respData) ? respData[0] : respData;
+        const profileData: any = first && (first.data ?? first);
+        const phone = profileData?.phoneNumber || "";
+        if (!cancelled && phone) setProfilePhone(phone);
+      } catch {
+        // best effort; leave the field empty if the profile can't be loaded
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const userPhone = useMemo(
+    () => splitPhone(user?.phoneNumber || profilePhone),
+    [user, profilePhone],
+  );
 
   const initialValues = useMemo(
     () => ({

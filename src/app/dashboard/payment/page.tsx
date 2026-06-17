@@ -33,7 +33,7 @@ const ReferenceCell = ({ value }: { value: string }) => {
     e.stopPropagation();
     navigator.clipboard.writeText(value);
     setCopied(true);
-    toast.success("Reference copied");
+    toast.success("Copied");
     setTimeout(() => setCopied(false), 1500);
   };
   return (
@@ -289,8 +289,8 @@ const PaymentHistoryPage = () => {
         ),
       },
       {
-        key: "transactionReference",
-        label: "Reference",
+        key: "invoiceNumber",
+        label: "Invoice",
         render: (val) => <ReferenceCell value={String(val ?? "")} />,
       },
     ],
@@ -409,9 +409,9 @@ const PaymentHistoryPage = () => {
                         </span>
                       </div>
                       <div className="mt-1 flex items-center gap-1.5">
-                        <span className="text-xs text-gray-400">Ref</span>
+                        <span className="text-xs text-gray-400">Invoice</span>
                         <ReferenceCell
-                          value={String(p.transactionReference ?? "")}
+                          value={String(p.invoiceNumber ?? "")}
                         />
                       </div>
                     </div>

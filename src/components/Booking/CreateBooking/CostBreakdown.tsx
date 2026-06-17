@@ -115,6 +115,14 @@ const CostBreakdown = ({
     setErrorMessage("");
     setUnavailable(false);
 
+    if (!vehicleId) {
+      setPriceReEstimated(false);
+      setErrorMessage(
+        "We couldn't load this vehicle. Please go back and select it again.",
+      );
+      return;
+    }
+
     const tripSegments: any[] = [];
     for (const trip of trips || []) {
       const pickup = parseCoordinates(trip?.tripDetails?.pickupCoordinates);

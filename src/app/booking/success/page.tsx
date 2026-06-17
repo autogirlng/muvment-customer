@@ -221,10 +221,11 @@ const BookingSuccessContent = () => {
   };
 
   const copyBookingId = () => {
-    if (bookingId) {
-      navigator.clipboard.writeText(bookingId);
+    const ref = bookingDetails?.invoiceNumber || bookingId;
+    if (ref) {
+      navigator.clipboard.writeText(ref);
       setCopied(true);
-      toast.success("Booking ID copied to clipboard!");
+      toast.success("Invoice number copied to clipboard!");
       setTimeout(() => setCopied(false), 3000);
     }
   };
@@ -302,13 +303,13 @@ const BookingSuccessContent = () => {
           </p>
         </div>
 
-        {/* Booking ID and Status Banner */}
+        {/* Invoice number and Status Banner */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 max-w-3xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <FiCheckCircle className="w-5 h-5 text-blue-600" />
               <span className="text-sm text-blue-800">
-                Booking ID: <span className="font-mono font-bold">{bookingDetails.bookingId}</span>
+                Invoice number: <span className="font-mono font-bold">{bookingDetails.invoiceNumber}</span>
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -320,13 +321,13 @@ const BookingSuccessContent = () => {
                 className="flex items-center gap-2 text-sm bg-white px-4 py-2 rounded-lg border border-blue-200 hover:bg-blue-100 transition"
               >
                 <FiCopy className="w-4 h-4" />
-                {copied ? "Copied!" : "Copy ID"}
+                {copied ? "Copied!" : "Copy invoice"}
               </button>
             </div>
           </div>
           <div className="mt-2 text-center sm:text-left">
             <p className="text-xs text-blue-600">
-              Invoice: {bookingDetails.invoiceNumber} | Booked: {formatDate(bookingDetails.bookedAt)}
+              Booked: {formatDate(bookingDetails.bookedAt)}
             </p>
           </div>
         </div>
@@ -655,7 +656,7 @@ const BookingSuccessContent = () => {
                 )}
 
                 <p className="text-xs text-gray-500 text-center mt-4">
-                  You can also pay later using this Booking ID: {bookingDetails.bookingId.substring(0,8)}...
+                  You can also pay later using your invoice number: {bookingDetails.invoiceNumber}
                 </p>
 
               </div>

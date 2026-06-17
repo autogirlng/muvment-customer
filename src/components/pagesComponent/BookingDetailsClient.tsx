@@ -294,7 +294,6 @@ const BookingDetailsClient = () => {
   <div class="two">
     <div>
       <h2>Booking</h2>
-      <div class="row"><span class="k">Booking ID</span><span class="v">${escapeHtml(booking.bookingId)}</span></div>
       <div class="row"><span class="k">Invoice</span><span class="v">${escapeHtml(booking.invoiceNumber || "N/A")}</span></div>
       <div class="row"><span class="k">Booked on</span><span class="v">${escapeHtml(safeFormat(booking.bookedAt, "dd MMM yyyy"))}</span></div>
     </div>
@@ -316,7 +315,6 @@ const BookingDetailsClient = () => {
     <div class="vt">${escapeHtml(vehicleTitle)}</div>
     <div class="meta">${plate ? "Plate " + escapeHtml(plate) : ""}${vehicle?.vehicleColorName ? (plate ? " &middot; " : "") + escapeHtml(vehicle.vehicleColorName) : ""}</div>
     ${features ? `<div class="meta">${features}</div>` : ""}
-    ${vehicle?.description ? `<div class="meta">${escapeHtml(vehicle.description)}</div>` : ""}
     ${vehicleLink ? `<div class="meta"><a href="${vehicleLink}">View this vehicle on muvment</a></div>` : ""}
   </div>
 
@@ -462,9 +460,9 @@ const BookingDetailsClient = () => {
           <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
             <StatusBadge status={booking.bookingStatus} />
             <span className="text-xs text-gray-500">
-              Booking ID:{" "}
+              Invoice number:{" "}
               <span className="font-mono" style={{ color: BRAND }}>
-                {bookingId}
+                {booking.invoiceNumber || "N/A"}
               </span>
             </span>
           </div>
