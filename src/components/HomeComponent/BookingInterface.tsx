@@ -1205,16 +1205,38 @@ function BookingSearchInner({
       let untilDate: Date | undefined;
       let startTime: string | undefined = time || undefined;
       let endTime: string | undefined;
+      let airportDropoff: { name: string; lat: number; lng: number } | null =
+        null;
 
       if (bookingType === "airport") {
         bookingValue = typeIds.airport;
         fromDate = singleDate ?? undefined;
-        if (selectedAirport?.lat && selectedAirport?.lng) {
-          loc = {
-            name: selectedAirport.name,
-            lat: selectedAirport.lat,
-            lng: selectedAirport.lng,
-          };
+        const air = selectedAirport;
+        const addr = selectedAddress;
+        if (airportDirection === "pickup") {
+          // Ride to the airport: pickup is the address, drop-off is the airport.
+          if (addr?.lat && addr?.lng) {
+            loc = {
+              name: addr.name || "Pickup location",
+              lat: addr.lat,
+              lng: addr.lng,
+            };
+          }
+          if (air?.lat && air?.lng) {
+            airportDropoff = { name: air.name, lat: air.lat, lng: air.lng };
+          }
+        } else {
+          // Ride from the airport: pickup is the airport, drop-off is the address.
+          if (air?.lat && air?.lng) {
+            loc = { name: air.name, lat: air.lat, lng: air.lng };
+          }
+          if (addr?.lat && addr?.lng) {
+            airportDropoff = {
+              name: addr.name || "Drop-off location",
+              lat: addr.lat,
+              lng: addr.lng,
+            };
+          }
         }
       } else if (bookingType === "boat") {
         bookingValue = typeIds.boat;
@@ -1306,10 +1328,17 @@ function BookingSearchInner({
       } catch {
         // sessionStorage may be unavailable; the URL still carries the search.
       }
+      let finalUrl = url;
+      if (airportDropoff) {
+        const sep = url.includes("?") ? "&" : "?";
+        finalUrl = `${url}${sep}dropoffLocation=${encodeURIComponent(
+          airportDropoff.name,
+        )}&dropoffLat=${airportDropoff.lat}&dropoffLng=${airportDropoff.lng}`;
+      }
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("app:navstart"));
       }
-      router.push(url);
+      router.push(finalUrl);
     } catch {
       setError("Could not start the search. Please try again.");
     } finally {

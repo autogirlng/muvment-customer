@@ -638,45 +638,39 @@ function ExploreVehiclesClientContent({
               </div>
             )}
 
-            {!loading &&
-              vehicles.length === 0 &&
-              recommendedVehicles.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <p className="text-lg font-semibold text-gray-900">
-                    No vehicles match your search
-                  </p>
-                  <p className="mt-1 max-w-md text-sm text-gray-500">
-                    Try removing some filters, or broadening your location and
-                    dates.
+            {!loading && vehicles.length === 0 && (
+              <>
+                <div className="mb-6 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                  <p className="text-sm text-gray-700">
+                    No vehicles match your search.
                   </p>
                   <button
                     onClick={handleClearAll}
-                    className="mt-5 rounded-full bg-[#0673FF] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0560d6]"
+                    className="text-sm font-semibold text-[#0673FF] hover:underline"
                   >
                     Clear filters
                   </button>
                 </div>
-              )}
 
-            {!loading &&
-              vehicles.length === 0 &&
-              recommendedVehicles.length > 0 && (
-                <div className="mt-10">
-                  <h2 className="text-xl font-semibold mb-4 text-gray-800">
-                    Recommended Cars
-                  </h2>
-                  <div className={gridClass}>
-                    {recommendedVehicles.map((v: any) => (
-                      <VehicleCard
-                        key={v.id}
-                        {...v}
-                        bookingType={bookingType}
-                        viewMode={viewMode}
-                      />
-                    ))}
+                {recommendedVehicles.length > 0 && (
+                  <div>
+                    <h2 className="mb-4 text-lg font-semibold text-gray-800">
+                      Recommended cars
+                    </h2>
+                    <div className={gridClass}>
+                      {recommendedVehicles.map((v: any) => (
+                        <VehicleCard
+                          key={v.id}
+                          {...v}
+                          bookingType={bookingType}
+                          viewMode={viewMode}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </>
+            )}
           </main>
         </div>
       </div>

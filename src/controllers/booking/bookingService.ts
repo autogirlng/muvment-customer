@@ -169,28 +169,23 @@ export class BookingService {
   }
 
   static async calculateBooking(request: BookingCalculationRequest) {
-    try {
-      const response = await createData(
-        this.BOOKINGS_URL + "/calculate",
-        request,
-        { silent: true, requireAuth: false, skipLoader: true },
+    const response = await createData(
+      this.BOOKINGS_URL + "/calculate",
+      request,
+      { silent: true, requireAuth: false, skipLoader: true },
+    );
+    if (!response || response.error || !response.data) {
+      const apiMessage =
+        response &&
+        typeof response.message === "string" &&
+        response.message !== "Success"
+          ? response.message
+          : "";
+      throw new Error(
+        apiMessage || "We couldn't calculate the price for this trip.",
       );
-      if (!response || response.error || !response.data) {
-        const apiMessage =
-          response &&
-          typeof response.message === "string" &&
-          response.message !== "Success"
-            ? response.message
-            : "";
-        throw new Error(
-          apiMessage || "We couldn't calculate the price for this trip.",
-        );
-      }
-      return response;
-    } catch (error) {
-      console.error("Booking calculation error:", error);
-      throw error;
     }
+    return response;
   }
 
   static async createBooking(bookingData: any) {
