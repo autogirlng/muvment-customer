@@ -10,16 +10,59 @@ import React, { useState, useMemo, useEffect } from "react";
 import { FiMapPin, FiUser, FiDroplet, FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa6";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
-import { IoInformationCircleOutline } from "react-icons/io5";
 import { getBookingOption } from "@/context/Constarain";
 import { clarityEvent } from "@/services/clarity";
 import { trackVehicleView } from "@/services/analytics";
 import { useAuth } from "@/context/AuthContext";
 import { FavouriteService } from "@/controllers/favourites/favouriteService";
 import { Spinner } from "../general/spinner";
+
 interface VehicleCardPropsExtended extends VehicleCardProps {
   viewMode?: "list" | "grid";
 }
+
+const ImagePlaceholder = ({ size }: { size: string }) => (
+  <div className="flex h-full w-full items-center justify-center">
+    <svg
+      className={`${size} text-gray-400`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+  </div>
+);
+
+const SpecChips = ({
+  willProvideDriver,
+  willProvideFuel,
+  numberOfSeats,
+}: {
+  willProvideDriver?: boolean;
+  willProvideFuel?: boolean;
+  numberOfSeats?: number;
+}) => (
+  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-700">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1">
+      <FiUser className="h-3.5 w-3.5 flex-shrink-0 text-gray-500" />
+      {willProvideDriver ? "Driver" : "No driver"}
+    </span>
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1">
+      <FiDroplet className="h-3.5 w-3.5 flex-shrink-0 text-gray-500" />
+      {willProvideFuel ? "Fuel" : "No fuel"}
+    </span>
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1">
+      <MdAirlineSeatReclineNormal className="h-3.5 w-3.5 flex-shrink-0 text-gray-500" />
+      {numberOfSeats || 0} seats
+    </span>
+  </div>
+);
 
 const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   id,
@@ -50,7 +93,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       );
   }, [photos]);
 
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentImageIndex] = useState(0);
   const [bookingOptions, setBookingOptions] = useState<any[]>([]);
   const [favouriteStatus, setFavouriteStatus] = useState<boolean>(false);
   const [loadingFavouriteStatus, setLoadingFavouriteStatus] =
@@ -64,24 +107,6 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     getBookingOptions();
   }, []);
 
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (images.length > 0) {
-      setCurrentImageIndex((prev) =>
-        prev === images.length - 1 ? 0 : prev + 1,
-      );
-    }
-  };
-
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (images.length > 0) {
-      setCurrentImageIndex((prev) =>
-        prev === 0 ? images.length - 1 : prev - 1,
-      );
-    }
-  };
-
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     clarityEvent("vehicle_favorited", {
@@ -91,7 +116,6 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       vehicleType: vehicleTypeName,
     });
 
-    // Add like functionality here
     setLoadingFavouriteStatus(true);
     try {
       if (favouriteStatus) {
@@ -138,8 +162,6 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     const current = new URLSearchParams(
       typeof window !== "undefined" ? window.location.search : "",
     );
-    // Carry the whole search context forward (dates, time, category,
-    // destination, location), then set this vehicle's own specifics.
     const ctx = new URLSearchParams(current.toString());
     ctx.set("vehicleType", vehicleTypeName);
     if (bookingType) ctx.set("bookingType", bookingType);
@@ -148,302 +170,142 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
 
   const currentImage = images[currentImageIndex];
 
-  // Grid View Component
+  const LikeButton = ({ overlay }: { overlay?: boolean }) => (
+    <button
+      onClick={handleLike}
+      aria-label="Add to favorites"
+      className={
+        overlay
+          ? "absolute right-2 top-2 z-10 flex items-center justify-center rounded-full bg-white/95 p-1.5 backdrop-blur-sm transition-colors hover:bg-white"
+          : "flex flex-shrink-0 items-center justify-center rounded-full p-2 transition-colors hover:bg-gray-100"
+      }
+    >
+      {loadingFavouriteStatus ? (
+        <Spinner />
+      ) : favouriteStatus ? (
+        <FaHeart className="h-5 w-5 cursor-pointer text-red-500" />
+      ) : (
+        <FiHeart className="h-5 w-5 cursor-pointer text-gray-600" />
+      )}
+    </button>
+  );
+
+  const CityBadge = () => (
+    <div className="absolute left-3 top-3 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 backdrop-blur-sm">
+      <FiMapPin className="h-3.5 w-3.5 text-gray-700" />
+      <span className="text-xs font-semibold uppercase text-gray-700">
+        {city || "N/A"}
+      </span>
+    </div>
+  );
+
+  const PriceBlock = () => (
+    <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-xs text-gray-500">
+          {getDisplayLabel(bookingType, bookingOptions)}
+        </p>
+        <p className="text-lg font-bold text-gray-900">
+          {formatCurrency(
+            getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
+          )}
+        </p>
+      </div>
+      {extraHourlyRate > 0 && (
+        <div className="text-right">
+          <p className="text-xs text-gray-500">Extra hours</p>
+          <p className="text-sm font-semibold text-gray-900">
+            {formatCurrency(extraHourlyRate)}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  // Grid View
   if (viewMode === "grid") {
     return (
       <div
         onClick={handleCardClick}
-        className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
+        className="group flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:shadow-lg"
       >
-        {/* Image Section */}
-        <div className="relative w-full h-[180px] bg-gray-100">
+        <div className="relative h-[180px] w-full bg-gray-100">
           {currentImage ? (
             <img
               src={currentImage}
               alt={name || "Vehicle"}
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <svg
-                className="w-12 h-12 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
+            <ImagePlaceholder size="h-12 w-12" />
           )}
-
-          {/* City Badge */}
-          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md flex items-center gap-1">
-            <FiMapPin className="w-3 h-3 text-gray-700" />
-            <span className="text-xs font-medium text-gray-700 uppercase">
-              {city || "N/A"}
-            </span>
-          </div>
-
-          {isAuthenticated && (
-            <>
-              {/* Like Button */}
-              <button
-                onClick={handleLike}
-                className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors flex items-center justify-center "
-                aria-label="Add to favorites"
-              >
-                {loadingFavouriteStatus ? (
-                  <Spinner />
-                ) : favouriteStatus ? (
-                  <FaHeart className="w-4 h-4 text-red-500 cursor-pointer" />
-                ) : (
-                  <FiHeart className="w-4 h-4 text-gray-700 cursor-pointer" />
-                )}
-              </button>
-            </>
-          )}
+          <CityBadge />
+          {isAuthenticated && <LikeButton overlay />}
         </div>
 
-        {/* Content Section */}
-        <div className="p-4 space-y-3">
-          {/* Title */}
-          <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
-
-          {/* Pricing */}
-          <div className="flex items-center gap-4">
-            <div>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-600">
-                  {getDisplayLabel(bookingType, bookingOptions)}
-                </span>
-                {/* <IoInformationCircleOutline className="w-3 h-3 text-gray-400" /> */}
-              </div>
-              <p className="text-base font-semibold text-gray-900">
-                {formatCurrency(
-                  getDisplayPrice(
-                    bookingType,
-                    allPricingOptions,
-                    bookingOptions,
-                  ),
-                )}
-              </p>
-            </div>
-            {extraHourlyRate > 0 && (
-              <div>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-600">Extra hours</span>
-                  {/* <IoInformationCircleOutline className="w-3 h-3 text-gray-400" /> */}
-                </div>
-                <p className="text-base font-semibold text-gray-900">
-                  {formatCurrency(extraHourlyRate)}
-                </p>
-              </div>
-            )}
+        <div className="flex flex-1 flex-col gap-3 p-4">
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-semibold text-gray-900">
+              {name}
+            </h3>
+            <p className="mt-0.5 text-sm text-gray-500">
+              {vehicleTypeName.replaceAll("_", " ")}
+            </p>
           </div>
-
-          {/* Vehicle Type */}
-          <p className="text-sm text-gray-600">
-            {vehicleTypeName.replaceAll("_", " ")}
-          </p>
-
-          {/* Features */}
-          <div className="space-y-2 pt-2">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2 text-gray-700">
-                <FiUser className="w-4 h-4" />
-                <span>
-                  Driver available: {willProvideDriver ? "Yes" : "No"}
-                </span>
-              </div>
-              {/* <div className="flex items-center gap-2 text-gray-700">
-                <FiUser className="w-4 h-4" />
-                <span>Transmission: Manual</span>
-              </div> */}
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2 text-gray-700">
-                <FiDroplet className="w-4 h-4" />
-                <span>Fuel available: {willProvideFuel ? "Yes" : "No"}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-700">
-                <MdAirlineSeatReclineNormal className="w-4 h-4" />
-                <span>Seats: {numberOfSeats || 0}</span>
-              </div>
-            </div>
+          <SpecChips
+            willProvideDriver={willProvideDriver}
+            willProvideFuel={willProvideFuel}
+            numberOfSeats={numberOfSeats}
+          />
+          <div className="mt-auto">
+            <PriceBlock />
           </div>
         </div>
       </div>
     );
   }
 
-  // List View Component
+  // List View
   return (
     <div
       onClick={handleCardClick}
-      className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer relative hover:shadow-md transition-all duration-300 flex flex-col lg:flex-row lg:h-[180px]"
+      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:shadow-md sm:h-[180px] sm:flex-row"
     >
-      {/* Image Section */}
-      <div className="relative w-full lg:w-[260px] h-[200px] lg:h-full bg-gray-100 flex-shrink-0">
+      <div className="relative h-[180px] w-full flex-shrink-0 bg-gray-100 sm:h-auto sm:w-[200px] md:w-[240px]">
         {currentImage ? (
           <img
             src={currentImage}
             alt={name || "Vehicle"}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <svg
-              className="w-16 h-16 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
+          <ImagePlaceholder size="h-16 w-16" />
         )}
-
-        {/* City Badge */}
-        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded flex items-center gap-1">
-          <FiMapPin className="w-3.5 h-3.5 text-gray-700" />
-          <span className="text-xs font-semibold text-gray-700 uppercase">
-            {city || "N/A"}
-          </span>
-        </div>
+        <CityBadge />
       </div>
 
-      {/* Content Section */}
-      <div className="flex-1 flex flex-col lg:flex-row lg:items-center p-4 lg:p-0 gap-4 lg:gap-0">
-        {/* Left Content */}
-        <div className="flex-1 lg:px-6 lg:py-4">
-          {/* Title */}
-          <h3 className="text-lg lg:text-xl font-semibold text-gray-900 mb-2.5">
-            {name}
-          </h3>
-
-          {/* Pricing */}
-          <div className="flex items-start gap-8 mb-2.5">
-            <div>
-              <div className="flex items-center gap-1 mb-1">
-                <span className="text-xs text-gray-600">
-                  {getDisplayLabel(bookingType, bookingOptions)}
-                </span>
-                {/* <IoInformationCircleOutline className="w-3.5 h-3.5 text-gray-400" /> */}
-              </div>
-              <p className="text-base font-semibold text-gray-900">
-                {formatCurrency(
-                  getDisplayPrice(
-                    bookingType,
-                    allPricingOptions,
-                    bookingOptions,
-                  ),
-                )}
-              </p>
-            </div>
-            {extraHourlyRate > 0 && (
-              <div>
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs text-gray-600">Extra hours</span>
-                  {/* <IoInformationCircleOutline className="w-3.5 h-3.5 text-gray-400" /> */}
-                </div>
-                <p className="text-base font-semibold text-gray-900">
-                  {formatCurrency(extraHourlyRate)}
-                </p>
-              </div>
-            )}
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-semibold text-gray-900 sm:text-lg">
+              {name}
+            </h3>
+            <p className="mt-0.5 text-sm text-gray-500">
+              {vehicleTypeName.replaceAll("_", " ")}
+            </p>
           </div>
-
-          {/* Vehicle Type */}
-          <p className="text-sm text-gray-600">
-            {vehicleTypeName.replaceAll("_", " ")}
-          </p>
+          {isAuthenticated && <LikeButton />}
         </div>
 
-        {/* Vertical Divider */}
-        <div className="hidden lg:block w-px h-28 bg-gray-200 flex-shrink-0"></div>
+        <SpecChips
+          willProvideDriver={willProvideDriver}
+          willProvideFuel={willProvideFuel}
+          numberOfSeats={numberOfSeats}
+        />
 
-        {/* Right Content - Features */}
-        <div className="flex flex-col gap-3 lg:px-6 lg:py-4 lg:min-w-[380px]">
-          <div className="flex items-center gap-8 text-sm text-gray-700">
-            <div className="flex items-center gap-2">
-              <FiUser className="w-4 h-4" />
-              <span>
-                Driver available:{" "}
-                <strong>{willProvideDriver ? "Yes" : "No"}</strong>
-              </span>
-            </div>
-            {/* <div className="flex items-center gap-2">
-              <FiUser className="w-4 h-4" />
-              <span>
-                Transmission: <strong>Manual</strong>
-              </span>
-            </div> */}
-          </div>
-          <div className="flex items-center gap-8 text-sm text-gray-700">
-            <div className="flex items-center gap-2">
-              <FiDroplet className="w-4 h-4" />
-              <span>
-                Fuel available:{" "}
-                <strong>{willProvideFuel ? "Yes" : "No"}</strong>
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MdAirlineSeatReclineNormal className="w-4 h-4" />
-              <span>
-                Seats: <strong>{numberOfSeats || 0}</strong>
-              </span>
-            </div>
-          </div>
+        <div className="mt-auto">
+          <PriceBlock />
         </div>
-
-        {isAuthenticated && (
-          <>
-            {/* Vertical Divider */}
-            <div className="hidden lg:block w-px h-28 bg-gray-200 flex-shrink-0"></div>
-
-            {/* Like Button */}
-            <div className="hidden lg:flex items-center justify-center px-5">
-              <button
-                onClick={handleLike}
-                className="p-2 hover:bg-gray-100 cursor-pointer rounded-full transition-colors"
-                aria-label="Add to favorites"
-              >
-                {loadingFavouriteStatus ? (
-                  <Spinner />
-                ) : favouriteStatus ? (
-                  <FaHeart className="w-4 h-4 text-red-500 cursor-pointer" />
-                ) : (
-                  <FiHeart className="w-4 h-4 text-gray-700 cursor-pointer" />
-                )}
-              </button>
-            </div>
-
-            {/* Mobile Like Button */}
-            <button
-              onClick={handleLike}
-              className="lg:hidden absolute top-2 right-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors flex items-center justify-center z-10"
-              aria-label="Add to favorites"
-            >
-              {loadingFavouriteStatus ? (
-                <Spinner />
-              ) : favouriteStatus ? (
-                <FaHeart className="w-4 h-4 text-red-500 cursor-pointer" />
-              ) : (
-                <FiHeart className="w-4 h-4 text-gray-700 cursor-pointer" />
-              )}
-            </button>
-          </>
-        )}
       </div>
     </div>
   );

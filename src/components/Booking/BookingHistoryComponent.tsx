@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { FiList, FiCalendar, FiSearch, FiShare2 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import { customerBookingStatus } from "@/utils/bookingStatus";
 import {
   Booking,
   BookingFilters,
@@ -86,20 +87,20 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
         const response = await BookingService.getMyBookings({
           ...filters,
           page: pageNumber,
-          size: PAGE_SIZE,
+          size: limit ? Math.max(limit * 6, PAGE_SIZE) : PAGE_SIZE,
         });
         const content = response.data.content;
         const totalPages: number = response.data.totalPages ?? 1;
         const totalElements: number = response.data.totalElements ?? 0;
-        let transformed = content.map(transformItem);
+        const transformed = content.map(transformItem);
 
         if (reset && onTotalCountChange) {
           onTotalCountChange(totalElements);
         }
 
-        // If a limit is set (e.g. dashboard widget), cap results and disable further loading
+        // For the dashboard widget (limit set) we load one larger page and group
+        // on the client; for the full list we paginate normally.
         if (limit) {
-          transformed = transformed.slice(0, limit);
           setHasMore(false);
         } else {
           setHasMore(pageNumber + 1 < totalPages);
@@ -200,20 +201,6 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
       day: "numeric",
     });
 
-  const getStatusColor = (status: string) => {
-    const statusColors: Record<string, string> = {
-      PENDING_PAYMENT: "bg-yellow-100 text-yellow-800",
-      CONFIRMED: "bg-green-100 text-green-800",
-      FAILED_AVAILABILITY: "bg-red-100 text-red-800",
-      CANCELLED_BY_USER: "bg-gray-100 text-gray-800",
-      CANCELLED_BY_HOST: "bg-gray-100 text-gray-800",
-      CANCELLED_BY_ADMIN: "bg-gray-100 text-gray-800",
-      COMPLETED: "bg-blue-100 text-blue-800",
-      NO_SHOW: "bg-orange-100 text-orange-800",
-    };
-    return statusColors[status] || "bg-gray-100 text-gray-800";
-  };
-
   const tableColumns: TableColumn<any>[] = useMemo(
     () => [
       {
@@ -222,35 +209,48 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
         render: (value: string, row: any) => (
           <div>
             <div className="text-sm font-medium text-gray-900">{value}</div>
-            <div className="text-sm text-gray-500">{row.city}</div>
+            <div className="text-sm text-gray-500">
+              {row.segmentCount > 1 ? `${row.segmentCount} trips` : row.city}
+            </div>
           </div>
         ),
       },
       {
         key: "createdAt",
         label: "Date",
-        render: (value: string) => (
-          <span className="text-sm text-gray-900">{formatDate(value)}</span>
-        ),
+        render: (_value: string, row: any) =>
+          row.segmentCount > 1 ? (
+            <span className="text-sm text-gray-900">
+              {formatDate(row.firstStart)} - {formatDate(row.lastStart)}
+            </span>
+          ) : (
+            <span className="text-sm text-gray-900">
+              {formatDate(row.firstStart || row.createdAt)}
+            </span>
+          ),
       },
       {
         key: "bookingStatus",
         label: "Status",
-        render: (value: string) => (
-          <span
-            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-              value,
-            )}`}
-          >
-            {value?.replace(/_/g, " ")}
-          </span>
-        ),
+        render: (value: string) => {
+          const s = customerBookingStatus(value);
+          return (
+            <span
+              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${s.classes}`}
+            >
+              {s.label}
+            </span>
+          );
+        },
       },
       {
         key: "bookingType",
         label: "Type",
-        render: (value: string) => (
-          <span className="text-sm text-gray-900">{value}</span>
+        render: (value: string, row: any) => (
+          <span className="text-sm text-gray-900">
+            {value}
+            {row.segmentCount > 1 ? ` × ${row.segmentCount}` : ""}
+          </span>
         ),
       },
       {
@@ -298,10 +298,30 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
     [],
   );
 
-  const tableData = useMemo(
-    () => bookings.map((b, i) => ({ ...b, id: i })),
-    [bookings],
-  );
+  const tableData = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const b of bookings as any[]) {
+      const key = b.bookingId ?? b.segmentId;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(b);
+    }
+    let groups = Array.from(map.values()).map((segs) => {
+      const first = segs[0];
+      const starts = segs
+        .map((s) => s.startDateTime)
+        .filter(Boolean)
+        .sort();
+      return {
+        ...first,
+        segmentCount: segs.length,
+        firstStart: starts[0] ?? first.startDateTime ?? first.createdAt,
+        lastStart:
+          starts[starts.length - 1] ?? first.startDateTime ?? first.createdAt,
+      };
+    });
+    if (limit) groups = groups.slice(0, limit);
+    return groups.map((b, i) => ({ ...b, id: i }));
+  }, [bookings, limit]);
 
   return (
     <div className={showControls ? "bg-white rounded-lg shadow p-6" : ""}>
@@ -383,6 +403,38 @@ const BookingHistoryComponent: React.FC<BookingHistoryComponentProps> = ({
           loadingMore={loadingMore}
           onLoadMore={handleLoadMore}
           onRowClick={(row) => router.push(`/dashboard/booking/${row.bookingId}`)}
+          isFiltered={
+            showControls && !!(filters.searchTerm || filters.bookingStatus)
+          }
+          renderMobileCard={(row: any) => {
+            const s = customerBookingStatus(row.bookingStatus);
+            return (
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-900">
+                    {row.vehicleName}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {row.segmentCount > 1
+                      ? `${formatDate(row.firstStart)} - ${formatDate(row.lastStart)}`
+                      : formatDate(row.firstStart || row.createdAt)}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {row.bookingType}
+                    {row.segmentCount > 1 ? ` × ${row.segmentCount}` : ""}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900">
+                    {formatCurrency(row.price)}
+                  </p>
+                </div>
+                <span
+                  className={`inline-flex shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${s.classes}`}
+                >
+                  {s.label}
+                </span>
+              </div>
+            );
+          }}
         />
       ) : (
         <CalendarView bookings={bookings} onDateClick={handleDateClick} />

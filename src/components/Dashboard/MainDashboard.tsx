@@ -6,8 +6,25 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { BookingService } from "@/controllers/booking/bookingService";
 import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
+import { customerBookingStatus } from "@/utils/bookingStatus";
 
 const BRAND = "#0673ff";
+
+const ngn = (n?: number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 0,
+  }).format(n || 0);
+
+const compactNgn = (n?: number) => {
+  const v = n || 0;
+  if (v >= 1_000_000_000)
+    return `₦${(v / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
+  if (v >= 1_000_000)
+    return `₦${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  return ngn(v);
+};
 
 const UPCOMING = ["CONFIRMED", "PENDING_PAYMENT"];
 
@@ -23,8 +40,7 @@ const formatDate = (d?: string) => {
       });
 };
 
-const prettyStatus = (s?: string) =>
-  s ? s.replace(/_/g, " ").toLowerCase().replace(/^./, (c) => c.toUpperCase()) : "";
+const prettyStatus = (s?: string) => (s ? customerBookingStatus(s).label : "");
 
 type Trip = {
   bookingId: string;
@@ -77,9 +93,14 @@ const TRIP_LABEL: Record<Trip["kind"], string> = {
 export default function Dashboard(): React.ReactElement {
   const router = useRouter();
   const { user } = useAuth();
-  const [stats, setStats] = useState<{ bookings: number; payments: number }>({
+  const [stats, setStats] = useState<{
+    bookings: number;
+    trips: number;
+    paymentsTotal: number;
+  }>({
     bookings: 0,
-    payments: 0,
+    trips: 0,
+    paymentsTotal: 0,
   });
   const [trip, setTrip] = useState<Trip | null>(null);
   const [tripLoading, setTripLoading] = useState(true);
@@ -87,8 +108,12 @@ export default function Dashboard(): React.ReactElement {
   useEffect(() => {
     const load = async () => {
       try {
-        const counts = await BookingService.getDashboardCounts();
-        setStats((prev) => ({ ...prev, payments: counts.payments }));
+        const metrics = await BookingService.getDashboardMetrics();
+        setStats({
+          bookings: metrics.bookings,
+          trips: metrics.trips,
+          paymentsTotal: metrics.paymentsTotal,
+        });
       } catch (e) {
         console.error("Error loading counts:", e);
       }
@@ -230,20 +255,36 @@ export default function Dashboard(): React.ReactElement {
       )}
 
       {/* Compact stats strip */}
-      <div className="grid grid-cols-2 divide-x divide-gray-100 bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <div className="grid grid-cols-3 divide-x divide-gray-100 bg-white rounded-2xl border border-gray-200 shadow-sm">
         <button
           onClick={() => router.push("/dashboard/my-booking")}
-          className="p-4 text-left hover:bg-gray-50 transition rounded-l-2xl"
+          className="min-w-0 p-3 text-left hover:bg-gray-50 transition rounded-l-2xl sm:p-4"
         >
-          <p className="text-xs text-gray-500">Total bookings</p>
-          <p className="text-xl font-bold text-gray-900">{stats.bookings}</p>
+          <p className="text-[11px] text-gray-500 sm:text-xs">Total bookings</p>
+          <p className="text-base font-bold text-gray-900 sm:text-xl">
+            {stats.bookings}
+          </p>
+        </button>
+        <button
+          onClick={() => router.push("/dashboard/my-booking")}
+          className="min-w-0 p-3 text-left hover:bg-gray-50 transition sm:p-4"
+        >
+          <p className="text-[11px] text-gray-500 sm:text-xs">Total trips</p>
+          <p className="text-base font-bold text-gray-900 sm:text-xl">
+            {stats.trips}
+          </p>
         </button>
         <button
           onClick={() => router.push("/dashboard/payment")}
-          className="p-4 text-left hover:bg-gray-50 transition rounded-r-2xl"
+          className="min-w-0 p-3 text-left hover:bg-gray-50 transition rounded-r-2xl sm:p-4"
         >
-          <p className="text-xs text-gray-500">Payments</p>
-          <p className="text-xl font-bold text-gray-900">{stats.payments}</p>
+          <p className="text-[11px] text-gray-500 sm:text-xs">Payments</p>
+          <p
+            title={ngn(stats.paymentsTotal)}
+            className="truncate text-base font-bold text-gray-900 sm:text-xl"
+          >
+            {compactNgn(stats.paymentsTotal)}
+          </p>
         </button>
       </div>
 
@@ -251,20 +292,22 @@ export default function Dashboard(): React.ReactElement {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-bold text-gray-900">Recent bookings</h3>
-          <button
-            onClick={() => router.push("/dashboard/my-booking")}
-            className="text-sm font-medium hover:underline"
-            style={{ color: BRAND }}
-          >
-            View all
-          </button>
+          {stats.trips > 0 && (
+            <button
+              onClick={() => router.push("/dashboard/my-booking")}
+              className="text-sm font-medium hover:underline"
+              style={{ color: BRAND }}
+            >
+              View all
+            </button>
+          )}
         </div>
         <BookingHistoryComponent
           showHeader={false}
           showControls={false}
           limit={4}
           onTotalCountChange={(total) =>
-            setStats((prev) => ({ ...prev, bookings: total }))
+            setStats((prev) => ({ ...prev, trips: total }))
           }
         />
       </div>

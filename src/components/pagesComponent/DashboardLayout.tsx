@@ -4,11 +4,13 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { hasIntegrationAccess } from "@/utils/access";
 import { BookingSearchModalForm } from "@/components/HomeComponent/BookingInterface";
 import ScreenLoader from "@/components/utils/ScreenLoader";
 import {
   FiGrid,
   FiCalendar,
+  FiNavigation,
   FiMapPin,
   FiHeart,
   FiCreditCard,
@@ -34,6 +36,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: FiGrid, exact: true },
   { label: "My bookings", href: "/dashboard/my-booking", icon: FiCalendar },
+  { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
   {
     label: "Booking tracking",
     href: "/dashboard/booking-tracking",
@@ -49,6 +52,7 @@ const NAV: NavItem[] = [
 
 // Secondary destinations shown in the mobile "More" sheet.
 const MORE_ITEMS: NavItem[] = [
+  { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
   {
     label: "Booking tracking",
     href: "/dashboard/booking-tracking",
@@ -169,6 +173,7 @@ const DashboardLayoutClient = ({
     `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`.toUpperCase() ||
     "U";
   const moreActive = MORE_ITEMS.some((m) => pathActive(pathname, m.href));
+  const canIntegrate = hasIntegrationAccess(user);
 
   const logoutNow = () => {
     logout();
@@ -184,7 +189,9 @@ const DashboardLayoutClient = ({
         <img src="/images/image.png" alt="Muvment" className="h-7 w-auto" />
       </Link>
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {NAV.map((item) => {
+        {NAV.filter(
+          (item) => canIntegrate || item.href !== "/dashboard/integrations",
+        ).map((item) => {
           const active = pathActive(pathname, item.href, item.exact);
           const Icon = item.icon;
           return (
@@ -214,7 +221,7 @@ const DashboardLayoutClient = ({
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-[100dvh] bg-gray-50">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-30">
         {sidebar}
@@ -319,7 +326,9 @@ const DashboardLayoutClient = ({
               </button>
             </div>
             <div className="divide-y divide-gray-50">
-              {MORE_ITEMS.map((m) => {
+              {MORE_ITEMS.filter(
+                (m) => canIntegrate || m.href !== "/dashboard/integrations",
+              ).map((m) => {
                 const Icon = m.icon;
                 const active = pathActive(pathname, m.href);
                 return (

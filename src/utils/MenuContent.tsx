@@ -8,6 +8,7 @@ import {
   MdAccountCircle,
   MdGroupAdd,
   MdEventAvailable,
+  MdRoute,
   MdQuestionMark,
   MdOutlineAppBlocking,
   MdInfoOutline,
@@ -24,6 +25,11 @@ export const menuItems = [
     name: "My Bookings",
     link: "/dashboard/my-booking",
     icon: MdEventAvailable,
+  },
+  {
+    name: "My Trips",
+    link: "/dashboard/my-trips",
+    icon: MdRoute,
   },
   {
     name: "Account",

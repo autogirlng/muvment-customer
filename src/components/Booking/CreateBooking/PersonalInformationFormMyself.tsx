@@ -5,10 +5,28 @@ import { personalInformationMyselfSchema } from "@/utils/validationSchema";
 import { PersonalInformationMyselfValues } from "@/types/booking";
 import PhoneNumberAndCountryField from "@/components/general/forms/phoneNumberAndCountryField";
 import { getCountryCallingCode } from "react-phone-number-input";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { replaceCharactersWithString } from "./PersonalInformationFormOthers";
 import PersistBookingDraft from "./PersistBookingDraft";
+
+const splitPhone = (raw?: string) => {
+  if (!raw) return { country: "NG", countryCode: "+234", local: "" };
+  const e164 = raw.startsWith("+") ? raw : "+" + raw.replace(/^0+/, "");
+  const parsed = parsePhoneNumberFromString(e164);
+  if (parsed && parsed.country) {
+    return {
+      country: parsed.country as string,
+      countryCode: "+" + parsed.countryCallingCode,
+      local: parsed.nationalNumber as string,
+    };
+  }
+  let local = raw.replace(/[^\d]/g, "");
+  if (local.startsWith("234")) local = local.slice(3);
+  local = local.replace(/^0+/, "");
+  return { country: "NG", countryCode: "+234", local };
+};
 
 type Props = {
   steps: string[];
@@ -34,6 +52,8 @@ const PersonalInformationFormMyself = ({
 
   const { user } = useAuth();
 
+  const userPhone = useMemo(() => splitPhone(user?.phoneNumber), [user]);
+
   const initialValues = useMemo(
     () => ({
       guestFullName:
@@ -43,9 +63,10 @@ const PersonalInformationFormMyself = ({
           : ""),
       guestEmail: bookingInformationValues?.guestEmail || user?.email || "",
       primaryPhoneNumber:
-        bookingInformationValues?.primaryPhoneNumber || user?.phoneNumber || "",
-      country: bookingInformationValues?.country || "NG",
-      countryCode: bookingInformationValues?.countryCode || "+234",
+        bookingInformationValues?.primaryPhoneNumber || userPhone.local || "",
+      country: bookingInformationValues?.country || userPhone.country || "NG",
+      countryCode:
+        bookingInformationValues?.countryCode || userPhone.countryCode || "+234",
       secondaryPhoneNumber:
         bookingInformationValues?.secondaryPhoneNumber || "",
       secondaryCountry: bookingInformationValues?.secondaryCountry || "NG",
@@ -53,7 +74,7 @@ const PersonalInformationFormMyself = ({
         bookingInformationValues?.secondaryCountryCode || "+234",
       isBookingForOthers: false,
     }),
-    [bookingInformationValues, user],
+    [bookingInformationValues, user, userPhone],
   );
 
   useEffect(() => {

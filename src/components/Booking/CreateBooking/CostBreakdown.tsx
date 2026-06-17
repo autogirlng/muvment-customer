@@ -323,7 +323,7 @@ const CostBreakdown = ({
         silent: true,
       });
 
-      if (booking?.data === 409) {
+      if (booking?.status === 409) {
         setUnavailable(true);
         setErrorMessage(
           "This vehicle is no longer available for the selected time. Please choose another time.",

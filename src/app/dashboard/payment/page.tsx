@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { FiSearch, FiShare2, FiCopy, FiCheck, FiEye } from "react-icons/fi";
+import { FiSearch, FiShare2, FiCopy, FiCheck, FiEye, FiCreditCard } from "react-icons/fi";
 import {
   Payment,
   PaymentFilters,
@@ -12,7 +12,7 @@ import DataTable, {
   SeeMoreData,
   TableColumn,
 } from "@/components/utils/TableComponent";
-import Dropdown from "@/components/utils/DropdownCustom";
+import StatusFilter from "@/components/utils/StatusFilter";
 import { toast } from "react-toastify";
 import { FaReceipt } from "react-icons/fa6";
 import { BookingService } from "@/controllers/booking/bookingService";
@@ -59,13 +59,12 @@ const ReferenceCell = ({ value }: { value: string }) => {
 
 const PaymentHistoryPage = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [totalElements, setTotalElements] = useState<number | null>(null);
+  const [totalSpent, setTotalSpent] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<Omit<PaymentFilters, "page" | "size">>({});
-  const [isStatusOpen, setIsStatusOpen] = useState(false);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
@@ -85,7 +84,6 @@ const PaymentHistoryPage = () => {
         const totalPages: number = response.data.totalPages ?? 1;
 
         setPayments((prev) => (reset ? content : [...prev, ...content]));
-        if (reset) setTotalElements(response.data.totalItems ?? null);
         setHasMore(pageNumber + 1 < totalPages);
       } catch (error) {
         console.error("Error loading payments:", error);
@@ -105,6 +103,26 @@ const PaymentHistoryPage = () => {
     fetchPage(0, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.paymentStatus]);
+
+  // Total amount spent across all successful payments (independent of filters)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await PaymentService.getMyPayments({ page: 0, size: 1000 });
+        const all: Payment[] = res.data.content ?? [];
+        const sum = all
+          .filter((p) => String(p.paymentStatus).toUpperCase() === "SUCCESSFUL")
+          .reduce((s, p) => s + (Number(p.amountPaid) || 0), 0);
+        if (active) setTotalSpent(sum);
+      } catch (error) {
+        console.error("Error computing total spent:", error);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Debounced search
   useEffect(() => {
@@ -134,14 +152,39 @@ const PaymentHistoryPage = () => {
     }
   }, [loadingMore, hasMore]);
 
-  const handleSharePayment = (payment: Payment) => {
-    const shareText = `Payment for ${payment.vehicleName} - ${formatCurrency(payment.amountPaid)}`;
-    const shareUrl = `${window.location.origin}/dashboard/booking-tracking?paymentId=${payment.id}&bookingId=${payment.bookingId}`;
-    if (navigator.share) {
-      navigator.share({ title: "Payment Receipt", text: shareText, url: shareUrl });
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      toast.success("Payment tracking link copied to clipboard!");
+  const handleSharePayment = async (payment: Payment) => {
+    if (payment.paymentStatus !== "SUCCESSFUL") {
+      return toast.warn("Receipt is available once payment is successful.");
+    }
+    const filename = `muvment-receipt-${payment.transactionReference || payment.id}.pdf`;
+    try {
+      const blob = await PaymentService.getReceiptBlob(payment.bookingId);
+      const file = new File([blob], filename, { type: "application/pdf" });
+      const nav: any = typeof navigator !== "undefined" ? navigator : undefined;
+
+      if (nav?.canShare && nav.canShare({ files: [file] })) {
+        try {
+          await nav.share({
+            files: [file],
+            title: "Payment receipt",
+            text: `Payment receipt for ${payment.vehicleName}`,
+          });
+        } catch (err: any) {
+          if (err?.name !== "AbortError") throw err;
+        }
+        return;
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Receipt downloaded. You can share the PDF from your files.");
+    } catch (error) {
+      console.error("Error sharing receipt:", error);
+      toast.error("Could not prepare the receipt to share.");
     }
   };
 
@@ -268,12 +311,8 @@ const PaymentHistoryPage = () => {
           router.push(`/dashboard/booking/${row.bookingId}`),
         icon: FiEye,
       },
-      {
-        name: "Share payment",
-        handleAction: handleSharePayment,
-        icon: FiShare2,
-      },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -287,17 +326,28 @@ const PaymentHistoryPage = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 px-6 py-5 inline-block">
-        <p className="text-sm text-gray-500 mb-1">Total payments</p>
-        <p className="text-3xl font-bold text-gray-900">
-          {totalElements !== null ? totalElements : "—"}
+      <div className="flex w-full items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-5 shadow-sm sm:px-6">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#E7F1FF]">
+            <FiCreditCard className="h-6 w-6 text-[#0673ff]" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Total spent</p>
+            <p className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              {formatCurrency(totalSpent)}
+            </p>
+          </div>
+        </div>
+        <p className="hidden max-w-xs text-right text-sm text-gray-400 sm:block">
+          Every booking transaction on your account, with receipts and
+          references in one place.
         </p>
       </div>
 
       <div>
 
-        <div className="sticky top-16 z-10 -mx-4 mb-4 flex flex-col justify-between gap-4 bg-gray-50 px-4 py-3 sm:-mx-6 sm:flex-row sm:items-center sm:px-6 lg:-mx-8 lg:px-8">
-          <div className="relative w-full sm:w-1/2">
+        <div className="sticky top-16 z-20 -mx-4 mb-4 flex items-center gap-3 bg-gray-50 px-4 py-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="relative flex-1">
             <FiSearch className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
             <input
               type="text"
@@ -309,16 +359,12 @@ const PaymentHistoryPage = () => {
             />
           </div>
 
-          <Dropdown
+          <StatusFilter
             options={statusOptions}
-            selectedValue={filters.paymentStatus}
-            onSelect={(value) =>
+            value={filters.paymentStatus}
+            onChange={(value) =>
               setFilters((prev) => ({ ...prev, paymentStatus: value }))
             }
-            isOpen={isStatusOpen}
-            onToggle={() => setIsStatusOpen(!isStatusOpen)}
-            placeholder="Filter by status"
-            className="w-full sm:w-64 border border-gray-300 rounded-lg p-3"
           />
         </div>
 
@@ -333,36 +379,89 @@ const PaymentHistoryPage = () => {
             height="max-h-none"
             seeMoreData={seeMoreData}
             itemLabel="payment"
+            isFiltered={!!(filters.searchTerm || filters.paymentStatus)}
+            hideMobileActions
             hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={handleLoadMore}
-            renderMobileCard={(p) => (
-              <div className="space-y-1.5">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-semibold text-gray-900">{p.vehicleName}</p>
-                  <span
-                    className={`shrink-0 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getStatusColor(
-                      p.paymentStatus,
-                    )}`}
-                  >
-                    {String(p.paymentStatus ?? "").toLowerCase()}
-                  </span>
-                </div>
-                <p className="text-xl font-bold text-gray-900">
-                  {formatCurrency(p.totalPayable)}
-                </p>
-                <div className="flex items-center justify-between gap-3 pt-0.5">
-                  <span className="text-xs text-gray-500">
-                    {formatDate(
-                      p.paymentStatus === "SUCCESSFUL" && p.paidAt
-                        ? p.paidAt
-                        : p.createdAt,
+            renderMobileCard={(p) => {
+              const isSuccess = p.paymentStatus === "SUCCESSFUL";
+              const isPending = p.paymentStatus === "PENDING";
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-gray-900">
+                        {p.vehicleName}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${getStatusColor(
+                            p.paymentStatus,
+                          )}`}
+                        >
+                          {String(p.paymentStatus ?? "").toLowerCase()}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(
+                            isSuccess && p.paidAt ? p.paidAt : p.createdAt,
+                          )}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className="text-xs text-gray-400">Ref</span>
+                        <ReferenceCell
+                          value={String(p.transactionReference ?? "")}
+                        />
+                      </div>
+                    </div>
+                    <p className="shrink-0 text-base font-bold text-gray-900">
+                      {formatCurrency(p.totalPayable)}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
+                    {isSuccess ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSharePayment(p);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#0673ff] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                      >
+                        <FiShare2 className="h-3.5 w-3.5" />
+                        Share receipt
+                      </button>
+                    ) : isPending ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          makePayment(p as any);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#0673ff] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                      >
+                        <FaReceipt className="h-3.5 w-3.5" />
+                        Pay now
+                      </button>
+                    ) : (
+                      <span />
                     )}
-                  </span>
-                  <ReferenceCell value={String(p.transactionReference ?? "")} />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/booking/${p.bookingId}`);
+                      }}
+                      className="text-xs font-medium text-[#0673ff] hover:underline"
+                    >
+                      View booking
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            }}
           />
         )}
       </div>

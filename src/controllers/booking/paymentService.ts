@@ -112,6 +112,12 @@ export class PaymentService {
       `receipt-${bookingId}.pdf`
     );
   }
+
+  static async getReceiptBlob(bookingId: string): Promise<Blob> {
+    return ApiClient.fetchFileBlob(
+      `/api/v1/admin/invoices/${bookingId}/download-receipt`
+    );
+  }
 }
 // Add this to your PaymentService or create a new ReceiptService
 

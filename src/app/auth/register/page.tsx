@@ -175,18 +175,28 @@ function SignupContent() {
       const response = await AuthService.signup(signupData);
       const dupMessage =
         response.message || (response.data as any)?.message || "";
-      const alreadyRegistered = /already/i.test(dupMessage);
-      if (response.error || alreadyRegistered) {
-        toast.error(
-          alreadyRegistered
-            ? "This email is already registered. Try signing in instead."
-            : response.message || "Signup failed. Please try again."
-        );
-        if (alreadyRegistered) {
+      const errorCode = (response.data as any)?.errorCode || "";
+      const isDuplicate =
+        /already|in use|duplicate/i.test(dupMessage) ||
+        errorCode === "DUPLICATE_KEY";
+      if (response.error || isDuplicate) {
+        const isPhoneDup = /phone/i.test(dupMessage);
+        const isEmailDup = /email/i.test(dupMessage);
+        if (isPhoneDup) {
+          const phoneMsg =
+            dupMessage || "This phone number is already in use by another account.";
+          toast.error(phoneMsg);
+          setErrors((prev) => ({ ...prev, phoneNumber: phoneMsg }));
+        } else if (isEmailDup || (isDuplicate && !isPhoneDup)) {
+          toast.error(
+            "This email is already registered. Try signing in instead."
+          );
           setErrors((prev) => ({
             ...prev,
             email: "This email is already registered.",
           }));
+        } else {
+          toast.error(response.message || "Signup failed. Please try again.");
         }
       } else {
         toast.success(response.data.message || "Account created successfully!");

@@ -41,6 +41,7 @@ export default function FavouritesVehiclesClient() {
         } = vehicle;
         return {
           id,
+          slug: (vehicle as any)?.slug,
           city,
           extraHourlyRate,
           willProvideDriver,

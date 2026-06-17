@@ -22,13 +22,17 @@ import {
 } from "@/controllers/booking/bookingService";
 import { CalendarView } from "@/components/Booking/CalendarView";
 import { BookingModal } from "@/components/Booking/BookingModal";
-import Dropdown from "@/components/utils/DropdownCustom";
+import StatusFilter from "@/components/utils/StatusFilter";
 import DataTable, {
   SeeMoreData,
   TableColumn,
 } from "@/components/utils/TableComponent";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import {
+  customerBookingStatus,
+  CUSTOMER_STATUS_FILTERS,
+} from "@/utils/bookingStatus";
 
 type ViewMode = "list" | "calendar";
 
@@ -177,55 +181,56 @@ const BookingHistoryPage = () => {
       day: "numeric",
     });
 
-  const getStatusColor = (status: string) => {
-    const statusColors: Record<string, string> = {
-      PENDING_PAYMENT: "bg-yellow-100 text-yellow-800",
-      CONFIRMED: "bg-green-100 text-green-800",
-      FAILED_AVAILABILITY: "bg-red-100 text-red-800",
-      CANCELLED_BY_USER: "bg-gray-100 text-gray-800",
-      CANCELLED_BY_HOST: "bg-gray-100 text-gray-800",
-      CANCELLED_BY_ADMIN: "bg-gray-100 text-gray-800",
-      COMPLETED: "bg-blue-100 text-blue-800",
-      NO_SHOW: "bg-orange-100 text-orange-800",
-    };
-    return statusColors[status] || "bg-gray-100 text-gray-800";
-  };
-
   const tableColumns: TableColumn<Booking & { id: number }>[] = useMemo(
     () => [
       {
         key: "vehicleName",
         label: "Vehicle",
-        render: (value: string, row: Booking & { id: number }) => (
+        render: (value: string, row: any) => (
           <div>
             <div className="text-sm font-medium text-gray-900">{value}</div>
-            <div className="text-sm text-gray-500">{row.city}</div>
+            <div className="text-sm text-gray-500">
+              {row.segmentCount > 1 ? `${row.segmentCount} trips` : row.city}
+            </div>
           </div>
         ),
       },
       {
         key: "createdAt",
         label: "Date",
-        render: (value: string) => (
-          <span className="text-sm text-gray-900">{formatDate(value)}</span>
-        ),
+        render: (_value: string, row: any) =>
+          row.segmentCount > 1 ? (
+            <span className="text-sm text-gray-900">
+              {formatDate(row.firstStart)} - {formatDate(row.lastStart)}
+            </span>
+          ) : (
+            <span className="text-sm text-gray-900">
+              {formatDate(row.firstStart || row.createdAt)}
+            </span>
+          ),
       },
       {
         key: "bookingStatus",
         label: "Status",
-        render: (value: string) => (
-          <span
-            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(value)}`}
-          >
-            {value.replace(/_/g, " ")}
-          </span>
-        ),
+        render: (value: string) => {
+          const s = customerBookingStatus(value);
+          return (
+            <span
+              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${s.classes}`}
+            >
+              {s.label}
+            </span>
+          );
+        },
       },
       {
         key: "bookingType",
         label: "Type",
-        render: (value: string) => (
-          <span className="text-sm text-gray-900">{value}</span>
+        render: (value: string, row: any) => (
+          <span className="text-sm text-gray-900">
+            {value}
+            {row.segmentCount > 1 ? ` × ${row.segmentCount}` : ""}
+          </span>
         ),
       },
       {
@@ -257,36 +262,38 @@ const BookingHistoryPage = () => {
     [],
   );
 
-  const statusOptions = useMemo(
-    () => [
-      { value: "", label: "All Status" },
-      { value: "PENDING_PAYMENT", label: "Pending Payment" },
-      { value: "CONFIRMED", label: "Confirmed" },
-      { value: "FAILED_AVAILABILITY", label: "Failed Availability" },
-      { value: "CANCELLED_BY_USER", label: "Cancelled by User" },
-      { value: "CANCELLED_BY_HOST", label: "Cancelled by Host" },
-      { value: "CANCELLED_BY_ADMIN", label: "Cancelled by Admin" },
-      { value: "IN_PROGRESS", label: "In Progress" },
-      { value: "COMPLETED", label: "Completed" },
-      { value: "NO_SHOW", label: "No Show" },
-    ],
-    [],
-  );
+  const statusOptions = CUSTOMER_STATUS_FILTERS;
 
-  const tableData = useMemo(
-    () =>
-      bookings.map((booking, index) => ({
-        ...(booking as Omit<Booking, "id">),
+  // Group segments into one row per parent booking for the list view.
+  // The calendar keeps the raw per-day segments.
+  const groupedBookings = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const b of bookings as any[]) {
+      const key = b.bookingId ?? b.segmentId;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(b);
+    }
+    return Array.from(map.values()).map((segs, index) => {
+      const first = segs[0];
+      const starts = segs
+        .map((s) => s.startDateTime)
+        .filter(Boolean)
+        .sort();
+      return {
+        ...first,
         id: index,
-      })),
-    [bookings],
-  );
+        segmentCount: segs.length,
+        firstStart: starts[0] ?? first.startDateTime ?? first.createdAt,
+        lastStart:
+          starts[starts.length - 1] ?? first.startDateTime ?? first.createdAt,
+      };
+    });
+  }, [bookings]);
 
-  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="hidden sm:flex items-center justify-between gap-4 mb-6">
         <p className="text-sm text-gray-500">
           Track and manage all your trips.
         </p>
@@ -303,36 +310,36 @@ const BookingHistoryPage = () => {
       <div>
 
         {/* Controls */}
-        <div className="sticky top-16 z-10 -mx-4 mb-4 flex flex-col justify-between gap-4 bg-gray-50 px-4 py-3 sm:-mx-6 sm:flex-row sm:items-center sm:px-6 lg:-mx-8 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
-            {/* View Toggle */}
-            <div className="flex bg-white rounded-lg border border-gray-200 p-1 w-full sm:w-auto">
-              <button
-                onClick={() => setViewMode("list")}
-                className={`flex-1 sm:flex-initial justify-center flex items-center gap-2 px-4 py-2 rounded-md transition ${
-                  viewMode === "list"
-                    ? "bg-[#0673ff] text-white"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                <FiList className="w-4 h-4" />
-                List
-              </button>
-              <button
-                onClick={() => setViewMode("calendar")}
-                className={`flex-1 sm:flex-initial justify-center flex items-center gap-2 px-4 py-2 rounded-md transition ${
-                  viewMode === "calendar"
-                    ? "bg-[#0673ff] text-white"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                <FiCalendar className="w-4 h-4" />
-                Calendar
-              </button>
-            </div>
+        <div className="sticky top-16 z-10 -mx-4 mb-4 flex flex-col gap-3 bg-gray-50 px-4 py-3 sm:-mx-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:-mx-8 lg:px-8">
+          {/* View Toggle */}
+          <div className="flex bg-white rounded-lg border border-gray-200 p-1 w-full sm:w-auto">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex-1 sm:flex-initial justify-center flex items-center gap-2 px-4 py-2 rounded-md transition ${
+                viewMode === "list"
+                  ? "bg-[#0673ff] text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <FiList className="w-4 h-4" />
+              List
+            </button>
+            <button
+              onClick={() => setViewMode("calendar")}
+              className={`flex-1 sm:flex-initial justify-center flex items-center gap-2 px-4 py-2 rounded-md transition ${
+                viewMode === "calendar"
+                  ? "bg-[#0673ff] text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <FiCalendar className="w-4 h-4" />
+              Calendar
+            </button>
+          </div>
 
-            {/* Search */}
-            <div className="relative w-full sm:w-64">
+          {/* Search + Filter */}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64 sm:flex-none">
               <FiSearch className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
               <input
                 type="text"
@@ -346,20 +353,12 @@ const BookingHistoryPage = () => {
                 }
               />
             </div>
-          </div>
-
-          {/* Filter Dropdown */}
-          <div className="w-full sm:w-48">
-            <Dropdown
+            <StatusFilter
               options={statusOptions}
-              selectedValue={filters.bookingStatus}
-              onSelect={(value) =>
+              value={filters.bookingStatus}
+              onChange={(value) =>
                 setFilters((prev) => ({ ...prev, bookingStatus: value }))
               }
-              placeholder="All Status"
-              className="w-full"
-              isOpen={statusDropdownOpen}
-              onToggle={() => setStatusDropdownOpen(!statusDropdownOpen)}
             />
           </div>
         </div>
@@ -373,16 +372,76 @@ const BookingHistoryPage = () => {
           <div className="overflow-x-auto">
             <DataTable<Booking & { id: number }>
               columns={tableColumns}
-              data={tableData as any}
+              data={groupedBookings as any}
               height="max-h-none"
               seeMoreData={seeMoreActions}
               onRowClick={(row) =>
                 router.push(`/dashboard/booking/${row.bookingId}`)
               }
               itemLabel="booking"
+              isFiltered={!!(filters.searchTerm || filters.bookingStatus)}
+              hideMobileActions
               hasMore={hasMore}
               loadingMore={loadingMore}
               onLoadMore={handleLoadMore}
+              renderMobileCard={(row: any) => {
+                const s = customerBookingStatus(row.bookingStatus);
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-gray-900">
+                          {row.vehicleName}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${s.classes}`}
+                          >
+                            {s.label}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {row.segmentCount > 1
+                              ? `${formatDate(row.firstStart)} - ${formatDate(row.lastStart)}`
+                              : formatDate(row.firstStart || row.createdAt)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {row.bookingType}
+                          {row.segmentCount > 1 ? ` × ${row.segmentCount}` : ""}
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-base font-bold text-gray-900">
+                        {formatCurrency(row.price)}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBookingClick(row);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#0673ff] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                      >
+                        <FiEye className="h-3.5 w-3.5" />
+                        View details
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShareBooking(row);
+                        }}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-[#0673ff] hover:underline"
+                      >
+                        <FiShare2 className="h-3.5 w-3.5" />
+                        Share
+                      </button>
+                    </div>
+                  </div>
+                );
+              }}
             />
           </div>
         ) : (

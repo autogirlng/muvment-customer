@@ -8,27 +8,32 @@ import {
   UserProfile,
 } from "@/controllers/user/profile.service";
 import {
-  FiEdit2,
   FiUser,
   FiLock,
   FiCheckCircle,
   FiEye,
   FiEyeOff,
+  FiHelpCircle,
+  FiChevronDown,
 } from "react-icons/fi";
 import { FaUser } from "react-icons/fa";
+import SupportTab from "@/components/Dashboard/SupportTab";
 
 const BRAND = "#0673ff";
 
-type TabKey = "profile" | "security";
+type TabKey = "profile" | "security" | "support";
 
 const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
   { key: "profile", label: "Profile", icon: FiUser },
   { key: "security", label: "Account security", icon: FiLock },
+  { key: "support", label: "Support", icon: FiHelpCircle },
 ];
 
 export default function SettingsPage() {
   const router = useRouter();
   const [active, setActive] = useState<TabKey>("profile");
+  const [tabMenuOpen, setTabMenuOpen] = useState(false);
+  const tabMenuRef = React.useRef<HTMLDivElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,13 +64,71 @@ export default function SettingsPage() {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    if (!tabMenuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (tabMenuRef.current && !tabMenuRef.current.contains(e.target as Node)) {
+        setTabMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [tabMenuOpen]);
+
+  const activeTab = TABS.find((t) => t.key === active) ?? TABS[0];
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
       <p className="text-sm text-gray-500 mb-5">
-        Manage your profile and account security.
+        Manage your profile, security, and support.
       </p>
 
-      <div className="flex gap-1 border-b border-gray-200 mb-6">
+      <div className="sticky top-16 z-10 -mx-4 mb-6 bg-gray-50 px-4 pt-2 pb-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div ref={tabMenuRef} className="relative sm:hidden">
+        <button
+          type="button"
+          onClick={() => setTabMenuOpen((o) => !o)}
+          className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 shadow-sm"
+        >
+          <span className="flex items-center gap-2">
+            <activeTab.icon className="h-4 w-4 text-[#0673ff]" />
+            {activeTab.label}
+          </span>
+          <FiChevronDown
+            className={`h-4 w-4 text-gray-400 transition-transform ${
+              tabMenuOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        {tabMenuOpen && (
+          <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = active === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    setActive(tab.key);
+                    setTabMenuOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-[#E7F1FF] text-[#0673ff]"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="hidden gap-1 rounded-xl bg-gray-100 p-1 sm:inline-flex">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = active === tab.key;
@@ -73,17 +136,18 @@ export default function SettingsPage() {
             <button
               key={tab.key}
               onClick={() => setActive(tab.key)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors ${
+              className={`flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 isActive
-                  ? "border-[#0673ff] text-[#0673ff]"
-                  : "border-transparent text-gray-500 hover:text-gray-800"
+                  ? "bg-white text-[#0673ff] shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
               }`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 shrink-0" />
               {tab.label}
             </button>
           );
         })}
+      </div>
       </div>
 
       {active === "profile" && (
@@ -96,6 +160,7 @@ export default function SettingsPage() {
         />
       )}
       {active === "security" && <SecurityTab />}
+      {active === "support" && <SupportTab />}
     </div>
   );
 }
@@ -153,16 +218,6 @@ const ProfileTab = ({
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={onEdit}
-          className="px-6 py-2.5 rounded-full border font-medium transition hover:bg-[#0673ff] hover:text-white"
-          style={{ borderColor: BRAND, color: BRAND }}
-        >
-          Edit profile
-        </button>
-      </div>
-
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="flex flex-col lg:flex-row">
           <div className="flex-1 p-6 sm:p-8">
@@ -170,7 +225,7 @@ const ProfileTab = ({
               <p className="text-sm font-semibold text-gray-900 mb-3">
                 Profile picture
               </p>
-              <div className="relative w-20 h-20">
+              <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
                   {picture ? (
                     <img
@@ -186,11 +241,9 @@ const ProfileTab = ({
                 </div>
                 <button
                   onClick={onEdit}
-                  aria-label="Edit profile picture"
-                  className="absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center shadow-md hover:opacity-90 transition"
-                  style={{ backgroundColor: BRAND }}
+                  className="rounded-full border border-[#0673ff] px-4 py-1.5 text-sm font-medium text-[#0673ff] transition-colors hover:bg-[#0673ff] hover:text-white"
                 >
-                  <FiEdit2 className="text-white w-3 h-3" />
+                  Edit profile
                 </button>
               </div>
             </div>

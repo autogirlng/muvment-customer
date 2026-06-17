@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { TbDots } from "react-icons/tb";
+import { FiInbox, FiSearch } from "react-icons/fi";
 
 export interface TableColumn<T> {
   key: keyof T;
@@ -27,6 +28,12 @@ interface DataTableProps<T> {
   hasMore?: boolean;
   loadingMore?: boolean;
   itemLabel?: string;
+  emptyTitle?: string;
+  emptyMessage?: string;
+  isFiltered?: boolean;
+  filteredTitle?: string;
+  filteredMessage?: string;
+  hideMobileActions?: boolean;
   flush?: boolean;
 }
 
@@ -182,8 +189,21 @@ export default function DataTable<T extends { id: string | number }>({
   hasMore = false,
   loadingMore = false,
   itemLabel = "result",
+  emptyTitle,
+  emptyMessage,
+  isFiltered = false,
+  filteredTitle,
+  filteredMessage,
+  hideMobileActions = false,
   flush = false,
 }: DataTableProps<T>): React.ReactElement {
+  const pluralLabel = itemLabel.endsWith("s") ? itemLabel : `${itemLabel}s`;
+  const resolvedEmptyTitle = emptyTitle ?? `No ${pluralLabel} yet`;
+  const resolvedEmptyMessage =
+    emptyMessage ?? `When you have ${pluralLabel}, they will appear here.`;
+  const resolvedFilteredTitle = filteredTitle ?? "No results found";
+  const resolvedFilteredMessage =
+    filteredMessage ?? "Try adjusting your search or filters.";
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const uniqueRows = useMemo(() => {
@@ -194,6 +214,15 @@ export default function DataTable<T extends { id: string | number }>({
       return true;
     });
   }, [data]);
+
+  const showFilteredEmpty = isFiltered && uniqueRows.length === 0;
+  const EmptyIcon = showFilteredEmpty ? FiSearch : FiInbox;
+  const emptyHeading = showFilteredEmpty
+    ? resolvedFilteredTitle
+    : resolvedEmptyTitle;
+  const emptyBody = showFilteredEmpty
+    ? resolvedFilteredMessage
+    : resolvedEmptyMessage;
 
   useEffect(() => {
     if (!onLoadMore) return;
@@ -233,7 +262,13 @@ export default function DataTable<T extends { id: string | number }>({
         className={`lg:hidden ${flush ? "" : `overflow-y-auto ${height}`} py-2`}
       >
         {uniqueRows.length === 0 ? (
-          <div className="text-center text-gray-500 text-sm py-6">No data found</div>
+          <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+              <EmptyIcon className="h-6 w-6 text-gray-400" />
+            </div>
+            <p className="mt-3 font-semibold text-gray-900">{emptyHeading}</p>
+            <p className="mt-1 text-sm text-gray-500">{emptyBody}</p>
+          </div>
         ) : (
           uniqueRows.map((row) => (
             <div
@@ -271,35 +306,16 @@ export default function DataTable<T extends { id: string | number }>({
                 )}
               </div>
 
-              {seeMoreData && seeMoreData.length > 0 && (
-                <div
-                  className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 gap-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {seeMoreData.map((action, i) => {
-                    const Icon = action.icon;
-                    const label =
-                      typeof action.name === "function"
-                        ? action.name(row)
-                        : action.name;
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => action.handleAction?.(row)}
-                        className={`inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${
-                          i === 0
-                            ? "col-span-2 bg-[#0673ff] text-white hover:opacity-90"
-                            : "border border-gray-200 text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        <Icon className="w-4 h-4 shrink-0" />
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              {!hideMobileActions &&
+                seeMoreData &&
+                seeMoreData.length > 0 && (
+                  <div
+                    className="mt-2 flex justify-end"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ActionMenu row={row} actions={seeMoreData} />
+                  </div>
+                )}
             </div>
           ))
         )}
@@ -310,7 +326,7 @@ export default function DataTable<T extends { id: string | number }>({
 
       {/* ── Desktop Table View ── */}
       <div
-        className={`hidden lg:block ${flush ? "" : `overflow-y-auto ${height}`}`}
+        className={`hidden lg:block overflow-x-auto ${flush ? "" : `overflow-y-auto ${height}`}`}
       >
         <table className="min-w-full border-collapse">
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
@@ -336,9 +352,17 @@ export default function DataTable<T extends { id: string | number }>({
               <tr>
                 <td
                   colSpan={columns.length + (seeMoreData ? 1 : 0)}
-                  className="text-center py-6 text-gray-500 text-sm"
+                  className="py-14"
                 >
-                  No data found
+                  <div className="flex flex-col items-center justify-center px-6 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                      <EmptyIcon className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <p className="mt-3 font-semibold text-gray-900">
+                      {emptyHeading}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-500">{emptyBody}</p>
+                  </div>
                 </td>
               </tr>
             ) : (

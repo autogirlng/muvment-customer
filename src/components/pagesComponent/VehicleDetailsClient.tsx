@@ -446,7 +446,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       } else {
         sessionStorage.removeItem("couponCode");
       }
-      setPricing(pricing);
+      setPricing(pricing as unknown as EstimatedBookingPrice);
       setContinueBooking(true);
     } catch (e: any) {
       if (seq !== estimateSeq.current) return;
