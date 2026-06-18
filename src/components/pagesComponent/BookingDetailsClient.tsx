@@ -16,7 +16,10 @@ import {
   FiBox,
   FiInfo,
   FiLoader,
+  FiAlertCircle,
 } from "react-icons/fi";
+import { toast } from "react-toastify";
+import { BookingService } from "@/controllers/booking/bookingService";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { getSingleData } from "@/controllers/connnector/app.callers";
@@ -95,6 +98,34 @@ const safeFormat = (dateString: string | undefined | null, fmt: string) => {
 const isConfirmedStatus = (s?: string) =>
   s === "CONFIRMED" || s === "SUCCESSFUL" || s === "PAID";
 
+const isFailedStatus = (s?: string) =>
+  s === "ABANDONED" ||
+  s === "FAILED" ||
+  s === "CANCELLED" ||
+  s === "EXPIRED";
+
+const paymentHeader = (s?: string) => {
+  if (isConfirmedStatus(s)) {
+    return {
+      title: "Payment successful",
+      subtitle:
+        "Your booking is confirmed. A professional driver will be assigned to you shortly, and you'll be notified once everything is set.",
+    };
+  }
+  if (isFailedStatus(s)) {
+    return {
+      title: "Payment not completed",
+      subtitle:
+        "This booking has not been paid for. You can complete the payment to confirm it.",
+    };
+  }
+  return {
+    title: "Payment pending",
+    subtitle:
+      "We have not received your payment yet. If you have just paid, it can take a moment to reflect. You can also complete the payment below.",
+  };
+};
+
 const prettyStatus = (s?: string) => {
   if (!s) return "Pending";
   const t = s.replace(/_/g, " ").toLowerCase();
@@ -138,6 +169,7 @@ const BookingDetailsClient = () => {
   const [error, setError] = useState("");
   const [pollCount, setPollCount] = useState(0);
   const [paymentRef, setPaymentRef] = useState("");
+  const [initiatingPayment, setInitiatingPayment] = useState(false);
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -417,6 +449,32 @@ const BookingDetailsClient = () => {
   }
 
   const confirmed = isConfirmedStatus(booking.bookingStatus);
+  const canPay = !confirmed; // pending or failed/abandoned
+  const header = paymentHeader(booking.bookingStatus);
+
+  const completePayment = async () => {
+    if (!booking?.bookingId) return;
+    setInitiatingPayment(true);
+    try {
+      const res = await BookingService.initiatePayment({
+        bookingId: booking.bookingId,
+      });
+      const url =
+        (res?.data as any)?.paymentUrl ||
+        (res?.data as any)?.authorizationUrl ||
+        (res?.data as any)?.checkoutUrl;
+      if (url) {
+        window.location.href = url;
+      } else {
+        toast.error("Could not start the payment. Please try again.");
+        setInitiatingPayment(false);
+      }
+    } catch {
+      toast.error("Could not start the payment. Please try again.");
+      setInitiatingPayment(false);
+    }
+  };
+
   const forOthers = !!(
     booking.recipient?.fullName &&
     booking.recipient.fullName !== booking.booker?.fullName
@@ -439,6 +497,10 @@ const BookingDetailsClient = () => {
             <div className="mx-auto mb-5 inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500">
               <FiCheckCircle className="w-11 h-11 text-white" strokeWidth={2.5} />
             </div>
+          ) : isFailedStatus(booking.bookingStatus) ? (
+            <div className="mx-auto mb-5 inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-50">
+              <FiAlertCircle className="w-11 h-11 text-amber-500" strokeWidth={2} />
+            </div>
           ) : (
             <div
               className="mx-auto mb-5 inline-flex items-center justify-center w-20 h-20 rounded-full"
@@ -449,12 +511,10 @@ const BookingDetailsClient = () => {
           )}
 
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            {confirmed ? "Payment successful" : "Payment received"}
+            {header.title}
           </h1>
           <p className="text-gray-500 text-sm md:text-base leading-relaxed mt-3 max-w-xl mx-auto">
-            {confirmed
-              ? "Your booking is confirmed. A professional driver will be assigned to you shortly, and you'll be notified once everything is set."
-              : "We're confirming your booking now. This usually takes a moment, no need to refresh."}
+            {header.subtitle}
           </p>
 
           <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
@@ -468,11 +528,25 @@ const BookingDetailsClient = () => {
           </div>
 
           <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center print:hidden">
+            {canPay && (
+              <button
+                onClick={completePayment}
+                disabled={initiatingPayment}
+                className="w-full sm:w-auto text-white font-semibold py-3 px-6 rounded-full hover:opacity-90 transition disabled:opacity-60"
+                style={{ backgroundColor: BRAND }}
+              >
+                {initiatingPayment ? "Starting payment..." : "Complete payment"}
+              </button>
+            )}
             {isAuthenticated && (
               <button
                 onClick={() => router.push("/dashboard/my-booking")}
-                className="w-full sm:w-auto text-white font-semibold py-3 px-6 rounded-full hover:opacity-90 transition"
-                style={{ backgroundColor: BRAND }}
+                className={`w-full sm:w-auto font-semibold py-3 px-6 rounded-full transition ${
+                  canPay
+                    ? "border border-gray-200 text-gray-700 hover:bg-gray-50"
+                    : "text-white hover:opacity-90"
+                }`}
+                style={canPay ? undefined : { backgroundColor: BRAND }}
               >
                 View my bookings
               </button>

@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import TopRatedBadge from "@/components/Booking/TopRatedBadge";
+import { useFeaturedVehicleIds } from "@/hooks/useFeaturedVehicleIds";
 import {
   FiArrowLeft,
   FiArrowRight,
@@ -55,6 +57,7 @@ export default function TripDetailContent({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
+  const featuredIds = useFeaturedVehicleIds();
 
   useEffect(() => {
     const load = async () => {
@@ -158,6 +161,10 @@ export default function TripDetailContent({
     "";
   const vehicleName =
     vehicle?.name || segment?.vehicle?.vehicleName || "Vehicle";
+  const vehicleIdForFeatured = vehicle?.id || segment?.vehicle?.id;
+  const isFeatured = vehicleIdForFeatured
+    ? featuredIds.has(vehicleIdForFeatured)
+    : false;
   const tripType = segment?.bookingTypeName || booking.bookingType || "Trip";
 
   const goToTrip = (s: any) =>
@@ -216,6 +223,7 @@ export default function TripDetailContent({
           <h2 className="mt-0.5 truncate text-xl font-bold text-gray-900">
             {vehicleName}
           </h2>
+          {isFeatured && <TopRatedBadge className="mt-1" />}
           <p className="text-sm text-gray-500">{tripType}</p>
           <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
             <FiCalendar className="h-4 w-4 text-gray-400" />

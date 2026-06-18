@@ -11,6 +11,10 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicleservice";
 import LoginPromptModal from "../Booking/Loginpromptmodal";
+import {
+  setPendingFavourite,
+  FAVOURITES_CHANGED_EVENT,
+} from "@/utils/pendingFavourite";
 
 interface TopRatedVehiclesProps {
   bookingId?: string;
@@ -84,8 +88,24 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
     loadFavourites();
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    const onChanged = (e: Event) => {
+      const id = (e as CustomEvent).detail?.id as string | undefined;
+      if (!id) return;
+      setFavouriteIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+    };
+    window.addEventListener(FAVOURITES_CHANGED_EVENT, onChanged);
+    return () =>
+      window.removeEventListener(FAVOURITES_CHANGED_EVENT, onChanged);
+  }, []);
+
   const handleToggleFavourite = async (vehicleId: string) => {
     if (!isAuthenticated) {
+      setPendingFavourite(vehicleId);
       setShowLoginModal(true);
       return;
     }
@@ -178,7 +198,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
 
           <div className="flex flex-shrink-0 items-center gap-2">
             <Link
-              href={`/booking/search${bookingId ? `?bookingType=${bookingId}` : ""}`}
+              href="/booking/search?featured=true"
               className="mr-1 hidden text-sm font-medium text-[#0673FF] hover:underline lg:block"
             >
               See all
