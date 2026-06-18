@@ -7,7 +7,7 @@ import {
 import { VehicleCardProps } from "@/types/vehicle";
 import { useRouter } from "next/navigation";
 import React, { useState, useMemo, useEffect } from "react";
-import { FiMapPin, FiUser, FiDroplet, FiHeart } from "react-icons/fi";
+import { FiMapPin, FiUser, FiDroplet, FiHeart, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa6";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
 import { getBookingOption } from "@/context/Constarain";
@@ -16,6 +16,13 @@ import { trackVehicleView } from "@/services/analytics";
 import { useAuth } from "@/context/AuthContext";
 import { FavouriteService } from "@/controllers/favourites/favouriteService";
 import { Spinner } from "../general/spinner";
+import LoginPromptModal from "@/components/Booking/Loginpromptmodal";
+import TopRatedBadge from "@/components/Booking/TopRatedBadge";
+import { useFeaturedVehicleIds } from "@/hooks/useFeaturedVehicleIds";
+import {
+  setPendingFavourite,
+  FAVOURITES_CHANGED_EVENT,
+} from "@/utils/pendingFavourite";
 
 interface VehicleCardPropsExtended extends VehicleCardProps {
   viewMode?: "list" | "grid";
@@ -81,6 +88,8 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
 }) => {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
+  const featuredIds = useFeaturedVehicleIds();
+  const isFeatured = featuredIds.has(id);
 
   const images = useMemo(() => {
     if (!photos || photos.length === 0) return [];
@@ -93,11 +102,12 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       );
   }, [photos]);
 
-  const [currentImageIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [bookingOptions, setBookingOptions] = useState<any[]>([]);
   const [favouriteStatus, setFavouriteStatus] = useState<boolean>(false);
   const [loadingFavouriteStatus, setLoadingFavouriteStatus] =
     useState<boolean>(false);
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
   const getBookingOptions = async () => {
     const data = await getBookingOption();
@@ -109,6 +119,13 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (!isAuthenticated) {
+      setPendingFavourite(id);
+      setShowLoginModal(true);
+      return;
+    }
+
     clarityEvent("vehicle_favorited", {
       vehicleId: id,
       name,
@@ -145,6 +162,16 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     }
   }, []);
 
+  useEffect(() => {
+    const onChanged = (e: Event) => {
+      const changedId = (e as CustomEvent).detail?.id as string | undefined;
+      if (changedId && changedId === id) setFavouriteStatus(true);
+    };
+    window.addEventListener(FAVOURITES_CHANGED_EVENT, onChanged);
+    return () =>
+      window.removeEventListener(FAVOURITES_CHANGED_EVENT, onChanged);
+  }, [id]);
+
   const handleCardClick = () => {
     clarityEvent("vehicle_view", {
       vehicleId: id,
@@ -169,6 +196,40 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   };
 
   const currentImage = images[currentImageIndex];
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? images.length - 1 : prev - 1,
+    );
+  };
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) =>
+      prev === images.length - 1 ? 0 : prev + 1,
+    );
+  };
+
+  const ImageArrows = () =>
+    images.length > 1 ? (
+      <>
+        <button
+          onClick={prevImage}
+          aria-label="Previous image"
+          className="absolute bottom-2 left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-colors hover:bg-white"
+        >
+          <FiChevronLeft className="h-4 w-4 text-gray-700" />
+        </button>
+        <button
+          onClick={nextImage}
+          aria-label="Next image"
+          className="absolute bottom-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-colors hover:bg-white"
+        >
+          <FiChevronRight className="h-4 w-4 text-gray-700" />
+        </button>
+      </>
+    ) : null;
 
   const LikeButton = ({ overlay }: { overlay?: boolean }) => (
     <button
@@ -229,6 +290,13 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
         onClick={handleCardClick}
         className="group flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:shadow-lg"
       >
+        <span onClick={(e) => e.stopPropagation()}>
+          <LoginPromptModal
+            isOpen={showLoginModal}
+            onClose={() => setShowLoginModal(false)}
+            vehicleName={name}
+          />
+        </span>
         <div className="relative h-[180px] w-full bg-gray-100">
           {currentImage ? (
             <img
@@ -240,7 +308,8 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             <ImagePlaceholder size="h-12 w-12" />
           )}
           <CityBadge />
-          {isAuthenticated && <LikeButton overlay />}
+          <ImageArrows />
+          <LikeButton overlay />
         </div>
 
         <div className="flex flex-1 flex-col gap-3 p-4">
@@ -248,9 +317,12 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             <h3 className="truncate text-base font-semibold text-gray-900">
               {name}
             </h3>
-            <p className="mt-0.5 text-sm text-gray-500">
-              {vehicleTypeName.replaceAll("_", " ")}
-            </p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              <p className="text-sm text-gray-500">
+                {vehicleTypeName.replaceAll("_", " ")}
+              </p>
+              {isFeatured && <TopRatedBadge />}
+            </div>
           </div>
           <SpecChips
             willProvideDriver={willProvideDriver}
@@ -271,6 +343,13 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       onClick={handleCardClick}
       className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:shadow-md sm:h-[180px] sm:flex-row"
     >
+      <span onClick={(e) => e.stopPropagation()}>
+        <LoginPromptModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          vehicleName={name}
+        />
+      </span>
       <div className="relative h-[180px] w-full flex-shrink-0 bg-gray-100 sm:h-auto sm:w-[200px] md:w-[240px]">
         {currentImage ? (
           <img
@@ -282,6 +361,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
           <ImagePlaceholder size="h-16 w-16" />
         )}
         <CityBadge />
+        <ImageArrows />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
@@ -290,11 +370,14 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             <h3 className="truncate text-base font-semibold text-gray-900 sm:text-lg">
               {name}
             </h3>
-            <p className="mt-0.5 text-sm text-gray-500">
-              {vehicleTypeName.replaceAll("_", " ")}
-            </p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              <p className="text-sm text-gray-500">
+                {vehicleTypeName.replaceAll("_", " ")}
+              </p>
+              {isFeatured && <TopRatedBadge />}
+            </div>
           </div>
-          {isAuthenticated && <LikeButton />}
+          {<LikeButton />}
         </div>
 
         <SpecChips
