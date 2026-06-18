@@ -40,6 +40,9 @@ interface SimplifiedFilterBarProps {
   totalCount: number;
   maxPrice?: number;
   minPrice?: number;
+  bookingTypeOptions?: { value: string; label: string }[];
+  bookingTypeValue?: string;
+  onBookingTypeChange?: (value: string) => void;
 }
 
 const FilterDropdownButton: React.FC<{
@@ -164,6 +167,9 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   totalCount,
   maxPrice,
   minPrice,
+  bookingTypeOptions,
+  bookingTypeValue,
+  onBookingTypeChange,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -206,6 +212,12 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
   const isYearsActive = filterState.selectedYears !== undefined;
   const isSeatsActive = filterState.selectedSeats !== undefined;
   const isFeaturesActive = filterState.selectedFeatures !== undefined;
+
+  const bookingTypeOpts = bookingTypeOptions ?? [];
+  const isBookingTypeActive = !!bookingTypeValue;
+  const selectedBookingTypeLabel = bookingTypeOpts.find(
+    (o) => o.value === bookingTypeValue,
+  )?.label;
 
   const hasActiveFilters =
     isSortActive ||
@@ -250,6 +262,45 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
               hasActiveFilters ? "pr-28" : ""
             }`}
           >
+          {bookingTypeOpts.length > 0 && onBookingTypeChange && (
+            <FilterDropdownButton
+              id="booking-type"
+              isOpen={openDropdown === "booking-type"}
+              onToggle={() => toggleDropdown("booking-type")}
+              label="Booking type"
+              selectedLabel={selectedBookingTypeLabel}
+              count={isBookingTypeActive ? 1 : 0}
+              isActive={isBookingTypeActive}
+            >
+              {openDropdown === "booking-type" && (
+                <div className="flex flex-col">
+                  {[{ value: "", label: "All booking types" }, ...bookingTypeOpts].map(
+                    (opt) => {
+                      const active = (bookingTypeValue || "") === opt.value;
+                      return (
+                        <button
+                          key={opt.value || "all"}
+                          type="button"
+                          onClick={() => {
+                            onBookingTypeChange(opt.value);
+                            closeAllDropdowns();
+                          }}
+                          className={`rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                            active
+                              ? "bg-[#0673FF] text-white"
+                              : "text-gray-700 hover:bg-gray-100"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    },
+                  )}
+                </div>
+              )}
+            </FilterDropdownButton>
+          )}
+
           <FilterDropdownButton
             id="price"
             isOpen={openDropdown === "price"}
@@ -481,6 +532,9 @@ export const SimplifiedFilterBar: React.FC<SimplifiedFilterBarProps> = ({
           totalCount={totalCount}
           maxPrice={maxPrice}
           minPrice={minPrice}
+          bookingTypeOptions={bookingTypeOptions}
+          bookingTypeValue={bookingTypeValue}
+          onBookingTypeChange={onBookingTypeChange}
         />
       )}
     </>
@@ -564,6 +618,9 @@ const MobileFilterDrawer: React.FC<
   totalCount,
   maxPrice,
   minPrice,
+  bookingTypeOptions,
+  bookingTypeValue,
+  onBookingTypeChange,
 }) => {
   const [tempFilterState, setTempFilterState] =
     useState<FilterState>(filterState);
@@ -695,6 +752,36 @@ const MobileFilterDrawer: React.FC<
 
       {/* Collapsible sections */}
       <div className="flex-1 overflow-y-auto overscroll-contain">
+        {(bookingTypeOptions?.length ?? 0) > 0 && onBookingTypeChange && (
+          <AccordionSection
+            title="Booking type"
+            summary={
+              bookingTypeOptions?.find((o) => o.value === bookingTypeValue)
+                ?.label
+            }
+            isOpen={openSection === "booking-type"}
+            onToggle={() => toggleSection("booking-type")}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: "", label: "All booking types" },
+                ...(bookingTypeOptions ?? []),
+              ].map((opt) => (
+                <FilterChip
+                  key={opt.value || "all"}
+                  active={(bookingTypeValue || "") === opt.value}
+                  onClick={() => {
+                    onBookingTypeChange(opt.value);
+                    setOpenSection(null);
+                  }}
+                >
+                  {opt.label}
+                </FilterChip>
+              ))}
+            </div>
+          </AccordionSection>
+        )}
+
         <AccordionSection
           title="Sort by"
           summary={isSortActive ? VEHICLE_ORDER_BY_LABELS[tempOrderBy] : undefined}

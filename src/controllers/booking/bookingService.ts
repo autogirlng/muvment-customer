@@ -172,7 +172,7 @@ export class BookingService {
   static async getAllBookingTypes(): Promise<any[]> {
     try {
       const response = await getTableData(`${this.BOOKING_TYPE_ALL}`);
-      return response?.data || [];
+      return response?.data?.data || [];
     } catch (error) {
       console.error("Error fetching all booking types:", error);
       return [];
