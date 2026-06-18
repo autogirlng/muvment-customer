@@ -95,7 +95,18 @@ const TrackBookingClient = () => {
       let data = isUuid ? await tryById() : await tryByInvoice();
       if (!data) data = isUuid ? await tryByInvoice() : await tryById();
       const raw = unwrap(data);
-      if (!raw) {
+      const isRealBooking =
+        raw &&
+        typeof raw === "object" &&
+        !raw.err &&
+        raw.status !== "FAILED" &&
+        Boolean(
+          raw.bookingId ||
+            raw.invoiceNumber ||
+            raw.bookingStatus ||
+            Array.isArray(raw.segments),
+        );
+      if (!isRealBooking) {
         setError(true);
         return;
       }
@@ -177,6 +188,7 @@ const TrackBookingClient = () => {
 
       <div className="mx-auto max-w-5xl px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8">
         {/* Header + search */}
+        {!booking && (
         <div className="rounded-3xl bg-gradient-to-br from-[#0673FF] to-[#0a328f] px-6 py-10 text-white shadow-lg sm:px-10 sm:py-12">
           <h1 className="text-2xl font-bold sm:text-3xl">Track your booking</h1>
           <p className="mt-2 max-w-xl text-sm text-white/85 sm:text-base">
@@ -201,7 +213,17 @@ const TrackBookingClient = () => {
               Track
             </button>
           </div>
+          {trackId && error && !loading && (
+            <div className="mt-4 flex max-w-xl items-start gap-2 rounded-xl bg-white/15 px-4 py-3 text-sm text-white">
+              <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                We couldn&apos;t find a booking for &quot;{trackId}&quot;. Please
+                check the invoice number and enter a valid one.
+              </span>
+            </div>
+          )}
         </div>
+        )}
 
         {/* Results */}
         <div className="mt-8">
@@ -215,34 +237,6 @@ const TrackBookingClient = () => {
                 Loading booking status...
               </p>
             </div>
-          ) : trackId && error ? (
-            <div className="mx-auto max-w-xl rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
-                <FiAlertCircle className="h-7 w-7 text-amber-500" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">
-                We couldn&apos;t find that booking
-              </h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
-                Check the reference and try again. If it was booked moments ago,
-                it may still be processing.
-              </p>
-              <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
-                <button
-                  onClick={() => load(trackId)}
-                  className="rounded-full px-5 py-2.5 font-semibold text-white transition hover:opacity-90"
-                  style={{ backgroundColor: BRAND }}
-                >
-                  Try again
-                </button>
-                <button
-                  onClick={reset}
-                  className="rounded-full border border-gray-200 px-5 py-2.5 font-semibold text-gray-700 transition hover:bg-gray-50"
-                >
-                  Track another
-                </button>
-              </div>
-            </div>
           ) : booking ? (
             <>
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -254,9 +248,10 @@ const TrackBookingClient = () => {
                 </p>
                 <button
                   onClick={reset}
-                  className="text-sm font-medium hover:underline"
-                  style={{ color: BRAND }}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition hover:bg-blue-50"
+                  style={{ borderColor: BRAND, color: BRAND }}
                 >
+                  <FiSearch className="h-4 w-4" />
                   Track another
                 </button>
               </div>
@@ -630,7 +625,7 @@ const TrackBookingClient = () => {
                 </div>
               </div>
             </>
-          ) : (
+          ) : trackId && error ? null : (
             <div className="grid gap-4 sm:grid-cols-2">
               {/* Book a vehicle */}
               <div className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">

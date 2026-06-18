@@ -56,17 +56,17 @@ const CountryCodeSelect = ({
         className={
           buttonClassName ||
           (disabled
-            ? "flex items-center justify-between w-full h-[56px] px-4 rounded-[12px] border border-gray-200 bg-gray-50 text-sm text-gray-900 cursor-not-allowed"
-            : `flex items-center justify-between w-full h-[56px] px-4 rounded-[12px] border bg-white text-sm text-gray-900 outline-none transition-colors focus:ring-2 focus:ring-[#0673FF] ${
+            ? "flex items-center justify-between w-full h-[56px] px-3 sm:px-4 rounded-[12px] border border-gray-200 bg-gray-50 text-sm text-gray-900 cursor-not-allowed"
+            : `flex items-center justify-between w-full h-[56px] px-3 sm:px-4 rounded-[12px] border bg-white text-sm text-gray-900 outline-none transition-colors focus:ring-2 focus:ring-[#0673FF] ${
                 error ? "border-red-500" : "border-gray-300"
               }`)
         }
       >
-        <span className="flex items-center gap-2 truncate">
+        <span className="flex items-center gap-2 min-w-0">
           {selected ? (
             <>
-              {selected.flag}
-              <span className="font-medium">{selected.option}</span>
+              <span className="shrink-0">{selected.flag}</span>
+              <span className="font-medium truncate">{selected.option}</span>
             </>
           ) : (
             <span className="text-gray-400">+234</span>
