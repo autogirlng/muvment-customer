@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BiChevronRight, BiHeart } from "react-icons/bi";
@@ -25,6 +25,69 @@ import parse, {
 // Strip a leading heading from the CMS body when it merely repeats the post
 // title, so the title does not render twice (once in the header, once at the
 // very top of the article body just under the cover image).
+function ScrollableTable({
+  attribs,
+  nodes,
+  options,
+}: {
+  attribs: Record<string, string>;
+  nodes: DOMNode[];
+  options: HTMLReactParserOptions;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => {
+      setCanLeft(el.scrollLeft > 1);
+      setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  const props = attributesToProps(attribs);
+  const existingClass =
+    typeof props.className === "string" ? props.className : "";
+  const existingStyle =
+    props.style && typeof props.style === "object"
+      ? (props.style as React.CSSProperties)
+      : {};
+
+  return (
+    <div className="relative my-6 -mx-4 sm:mx-0">
+      <div ref={scrollRef} className="overflow-x-auto">
+        <table
+          {...props}
+          className={`min-w-full text-sm ${existingClass}`.trim()}
+          style={{ ...existingStyle, width: "auto", minWidth: "100%" }}
+        >
+          {domToReact(nodes, options)}
+        </table>
+      </div>
+      {canLeft && (
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white to-transparent" />
+      )}
+      {canRight && (
+        <>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent" />
+          <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-gray-900/70 px-2 py-0.5 text-[11px] font-medium text-white sm:hidden">
+            Swipe →
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
 function renderBody(html: string, title: string) {
   const norm = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
   const target = norm(title || "");
@@ -57,18 +120,15 @@ function renderBody(html: string, title: string) {
         );
       }
 
-      // Wrap tables so they scroll horizontally on small screens instead of
-      // overflowing the layout.
+      // Wrap tables so they scroll horizontally on small screens, with an edge
+      // fade and a swipe hint so the scroll is discoverable.
       if (node.name === "table") {
         return (
-          <div className="overflow-x-auto my-6 -mx-4 sm:mx-0">
-            <table
-              {...attributesToProps(node.attribs)}
-              className="min-w-full text-sm"
-            >
-              {domToReact(node.children as DOMNode[], options)}
-            </table>
-          </div>
+          <ScrollableTable
+            attribs={node.attribs}
+            nodes={node.children as DOMNode[]}
+            options={options}
+          />
         );
       }
 

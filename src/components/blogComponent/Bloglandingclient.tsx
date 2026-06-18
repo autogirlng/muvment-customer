@@ -183,6 +183,8 @@ export default function BlogLandingClient({
   const [loadingMore, setLoadingMore] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
+  const loaderRef = useRef<HTMLDivElement>(null);
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -218,45 +220,68 @@ export default function BlogLandingClient({
   );
 
   const fetchPosts = useCallback(
-    async (opts: {
-      page: number;
-      search: string;
-      categoryId: string;
-      append?: boolean;
-    }) => {
-      if (opts.append) setLoadingMore(true);
-      else setLoading(true);
+    async (opts: { search: string; categoryId: string }) => {
+      setLoading(true);
       try {
         const result = await BlogService.getPosts({
-          page: opts.page,
+          page: 0,
           size: 9,
           search: opts.search || undefined,
           category: opts.categoryId || undefined,
         });
-        if (opts.append) {
-          setPosts((prev) => [...prev, ...result.data]);
-        } else {
-          setPosts(result.data);
-        }
+        setPosts(result.data);
         setTotalPages(result.totalPages);
         setTotalElements(result.totalElements);
-        setCurrentPage(opts.page);
+        setCurrentPage(0);
       } catch {
         // silent
       } finally {
         setLoading(false);
-        setLoadingMore(false);
       }
     },
     []
   );
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || loading || currentPage + 1 >= totalPages) return;
+    setLoadingMore(true);
+    try {
+      const next = currentPage + 1;
+      const result = await BlogService.getPosts({
+        page: next,
+        size: 9,
+        search: search || undefined,
+        category: categoryId || undefined,
+      });
+      setPosts((prev) => [...prev, ...result.data]);
+      setTotalPages(result.totalPages);
+      setCurrentPage(next);
+    } catch {
+      // silent
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, loading, currentPage, totalPages, search, categoryId]);
+
+  useEffect(() => {
+    const el = loaderRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadMore();
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   const handleSearch = (val: string) => {
     setSearch(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       updateUrl(val, categoryId);
-      fetchPosts({ page: 0, search: val, categoryId });
+      fetchPosts({ search: val, categoryId });
     }, 400);
   };
 
@@ -265,16 +290,10 @@ export default function BlogLandingClient({
     setCategoryId(id);
     setShowCategoryModal(false);
     updateUrl(search, id);
-    fetchPosts({ page: 0, search, categoryId: id });
+    fetchPosts({ search, categoryId: id });
   };
 
-  const handleLoadMore = () => {
-    if (currentPage + 1 < totalPages) {
-      fetchPosts({ page: currentPage + 1, search, categoryId, append: true });
-    }
-  };
-
-  const isFeaturedLayout = !search && !categoryId && currentPage === 0;
+  const isFeaturedLayout = !search && !categoryId;
   const featuredPost = isFeaturedLayout ? posts[0] : null;
   const gridPosts =
     isFeaturedLayout && posts.length > 1 ? posts.slice(1) : posts;
@@ -410,41 +429,30 @@ export default function BlogLandingClient({
               ))}
             </div>
 
-            {/* Load more */}
             {currentPage + 1 < totalPages && (
-              <div className="flex justify-center mt-12">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="flex items-center gap-2 px-8 py-3 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-all duration-200"
+              <div ref={loaderRef} className="h-10" />
+            )}
+            {loadingMore && (
+              <div className="flex justify-center mt-8">
+                <svg
+                  className="w-6 h-6 animate-spin text-blue-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
                 >
-                  {loadingMore ? (
-                    <>
-                      <svg
-                        className="w-4 h-4 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8H4z"
-                        />
-                      </svg>
-                      Loading…
-                    </>
-                  ) : (
-                    "Load more"
-                  )}
-                </button>
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  />
+                </svg>
               </div>
             )}
           </>

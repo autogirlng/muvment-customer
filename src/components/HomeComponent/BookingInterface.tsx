@@ -30,6 +30,7 @@ import {
 } from "react-icons/fa";
 import { DropdownOption } from "@/types/HeroSectionTypes";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
+import { BookingService } from "@/controllers/booking/bookingService";
 import { getBookingOption } from "@/context/Constarain";
 import { trackVehicleSearch } from "@/services/analytics";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
@@ -879,6 +880,9 @@ function BookingSearchInner({
   const rehydratedFromSearch = useRef(false);
 
   const [bookingType, setBookingType] = useState<BookingType>("within-state");
+  // The bar shows an empty booking-type label until a type is actively chosen
+  // (or a real search is restored from the URL). Where and When still default.
+  const [typeChosen, setTypeChosen] = useState(false);
 
   // Compact bar: trip-type menu open state
   const [barTypeOpen, setBarTypeOpen] = useState(false);
@@ -927,6 +931,10 @@ function BookingSearchInner({
   const [boatDestinations, setBoatDestinations] = useState<
     { id: string; name: string }[]
   >([]);
+  // Boat spots are priced as their own booking types, so the dropdown carries
+  // each spot's booking type id and the search runs on that id.
+  const [boatSpotIds, setBoatSpotIds] = useState<string[]>([]);
+  const [boatReady, setBoatReady] = useState(false);
   const [interstateDestinations, setInterstateDestinations] = useState<
     { id: string; name: string }[]
   >([]);
@@ -965,18 +973,42 @@ function BookingSearchInner({
         };
         if (alive) setTypeIds(ids);
 
-        // Boat destinations are a fixed admin list. Interstate destinations are
-        // derived from the chosen origin, so they are fetched separately below.
-        const boat = ids.boat
+        // Each boat spot is priced as its own booking type. The Boat Trip type
+        // carries the curated spot names; we match those names to the booking
+        // type of the same name and use that booking type id for the search.
+        const curated = ids.boat
           ? await VehicleSearchService.getDestinations(ids.boat)
           : [];
+        let spots: { id: string; name: string }[] = [];
+        try {
+          const allTypes = await BookingService.getAllBookingTypes();
+          const norm = (s: string) => String(s || "").trim().toLowerCase();
+          const aliases: Record<string, string> = { ilashe: "illashe" };
+          const typeByName = new Map<string, string>();
+          (allTypes || []).forEach((t: any) => {
+            if (t?.id) typeByName.set(norm(t.name), t.id);
+          });
+          spots = (curated || [])
+            .map((d: any) => {
+              const key = norm(d?.name);
+              const id = typeByName.get(key) || typeByName.get(aliases[key]) || "";
+              return id ? { id, name: d?.name } : null;
+            })
+            .filter((s): s is { id: string; name: string } => !!s);
+        } catch {
+          spots = [];
+        }
         if (alive) {
-          setBoatDestinations(boat || []);
+          setBoatDestinations(spots);
+          setBoatSpotIds(spots.map((s) => s.id));
         }
       } catch {
         // Leave destinations empty; the fields show an empty state.
       } finally {
-        if (alive) setDestLoading(false);
+        if (alive) {
+          setDestLoading(false);
+          setBoatReady(true);
+        }
       }
 
       try {
@@ -1056,6 +1088,7 @@ function BookingSearchInner({
   const changeBookingType = (t: BookingType) => {
     whereTouched.current = false;
     setBookingType(t);
+    setTypeChosen(true);
     setError("");
   };
 
@@ -1069,7 +1102,7 @@ function BookingSearchInner({
     if (!hasSearch) return;
     const btId = sp.get("bookingType") || "";
     const typeIdsReady = Object.values(typeIds).some(Boolean);
-    if (btId && !typeIdsReady) return;
+    if (btId && (!typeIdsReady || !boatReady)) return;
 
     let snap: any = null;
     try {
@@ -1083,12 +1116,13 @@ function BookingSearchInner({
     let dur = "12h";
     if (btId === typeIds.airport) bt = "airport";
     else if (btId === typeIds.interstate) bt = "interstate";
-    else if (btId === typeIds.boat) bt = "boat";
+    else if (btId === typeIds.boat || boatSpotIds.includes(btId)) bt = "boat";
     else if (btId === typeIds.twentyFourH) dur = "24h";
     else if (btId === typeIds.twelveH) dur = "12h";
     else if (btId === typeIds.monthly) dur = "monthly";
     setBookingType(bt);
     setDurationId(dur);
+    if (btId) setTypeChosen(true);
     if (snap?.airportDirection) setAirportDirection(snap.airportDirection);
 
     const name = sp.get("location") || "";
@@ -1108,7 +1142,7 @@ function BookingSearchInner({
       const d = urlDestState || snap?.destId;
       if (d) setDestId(d);
     } else if (bt === "boat") {
-      const d = urlDest || snap?.boatDestId;
+      const d = boatSpotIds.includes(btId) ? btId : snap?.boatDestId;
       if (d) setBoatDestId(d);
     } else {
       setSelectedAirport(loc ?? snap?.selectedAirport ?? null);
@@ -1141,7 +1175,7 @@ function BookingSearchInner({
 
     rehydratedFromSearch.current = true;
     whereTouched.current = true;
-  }, [typeIds, userLoc.name]);
+  }, [typeIds, userLoc.name, boatReady, boatSpotIds]);
 
   // Default every "where" field to the detected location until the person
   // edits it (or a search was restored from the URL).
@@ -1239,7 +1273,9 @@ function BookingSearchInner({
           }
         }
       } else if (bookingType === "boat") {
-        bookingValue = typeIds.boat;
+        // boatDestId holds the chosen spot's booking type id; the boat is priced
+        // under that type, so the search runs on it directly.
+        bookingValue = boatDestId;
         fromDate = singleDate ?? undefined;
       } else if (bookingType === "within-state") {
         bookingValue =
@@ -1280,8 +1316,8 @@ function BookingSearchInner({
       const selectedCategory = categoryOptions.find(
         (o) => o.value === category,
       );
-      // Boat uses a curated destination id; interstate uses a destination state.
-      const destinationId = bookingType === "boat" ? boatDestId : undefined;
+      // Boat searches on the spot's booking type id; interstate uses a state.
+      const destinationId = undefined;
       const destinationStateId =
         bookingType === "interstate" ? destId : undefined;
       const url = await VehicleSearchService.buildSearchUrl(
@@ -1558,6 +1594,7 @@ function BookingSearchInner({
   ];
 
   const barTypeLabel = (() => {
+    if (variant === "bar" && !typeChosen) return "Booking type";
     if (bookingType === "within-state")
       return durationId === "12h"
         ? "Within state · 12h"
@@ -1807,7 +1844,13 @@ function BookingSearchInner({
               onClick={() => setBarTypeOpen((o) => !o)}
               className="flex h-full items-center gap-2 px-3 py-2 text-sm font-medium text-gray-800"
             >
-              <span className="truncate max-w-[150px]">{barTypeLabel}</span>
+              <span
+                className={`truncate max-w-[150px] ${
+                  variant === "bar" && !typeChosen ? "text-gray-400" : ""
+                }`}
+              >
+                {barTypeLabel}
+              </span>
               <FaChevronDown className="flex-shrink-0 text-gray-400" />
             </button>
             <Popover

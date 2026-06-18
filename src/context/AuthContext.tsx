@@ -22,7 +22,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: (
     userData: User,
-    tokens: { accessToken: string; refreshToken: string }
+    tokens: { accessToken: string; refreshToken: string },
+    rememberMe?: boolean
   ) => void;
   logout: () => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
@@ -74,32 +75,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (
     userData: User,
-    tokens: { accessToken: string; refreshToken: string }
+    tokens: { accessToken: string; refreshToken: string },
+    rememberMe: boolean = true
   ) => {
     setAccessToken(tokens.accessToken);
     setRefreshToken(tokens.refreshToken);
 
-    // Store in cookies (expires in 7 days)
-
-    Cookies.set("muvment_access_token", tokens.accessToken, {
-      expires: 7,
+    // Remembered sessions persist for the refresh-token lifetime (7 days);
+    // otherwise tokens are session cookies that clear when the browser closes.
+    const base = {
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+      sameSite: "strict" as const,
+    };
+    const opts = rememberMe ? { ...base, expires: 7 } : base;
 
-    Cookies.set("muvment_refresh_token", tokens.refreshToken, {
-      expires: 7,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    Cookies.set("muvment_remember", rememberMe ? "1" : "0", opts);
+    Cookies.set("muvment_access_token", tokens.accessToken, opts);
+    Cookies.set("muvment_refresh_token", tokens.refreshToken, opts);
 
     setUser(userData);
 
-    Cookies.set("muvment_user", JSON.stringify(userData), {
-      expires: 7,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    Cookies.set("muvment_user", JSON.stringify(userData), opts);
   };
 
   const logout = () => {
@@ -112,6 +108,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.remove("muvment_user");
     Cookies.remove("muvment_access_token");
     Cookies.remove("muvment_refresh_token");
+    Cookies.remove("muvment_remember");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
 
     // Redirect to login
     window.location.href = "/auth/login";
@@ -121,20 +120,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAccessToken(newAccessToken);
     setRefreshToken(newRefreshToken);
 
-    Cookies.set("muvment_access_token", newAccessToken, {
-      expires: 7,
+    const base = {
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+      sameSite: "strict" as const,
+    };
+    const remembered = Cookies.get("muvment_remember") !== "0";
+    const opts = remembered ? { ...base, expires: 7 } : base;
 
-    Cookies.set("muvment_refresh_token", newRefreshToken, {
-      expires: 7,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    Cookies.set("muvment_access_token", newAccessToken, opts);
+    Cookies.set("muvment_refresh_token", newRefreshToken, opts);
 
-    localStorage.setItem("accessToken", newAccessToken);
-    localStorage.setItem("refreshToken", newRefreshToken);
+    if (remembered) {
+      localStorage.setItem("accessToken", newAccessToken);
+      localStorage.setItem("refreshToken", newRefreshToken);
+    } else {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+    }
   };
 
   const value: AuthContextType = {

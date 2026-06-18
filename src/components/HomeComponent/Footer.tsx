@@ -7,8 +7,9 @@ import Input from "../utils/InputComponent";
 import Button from "../utils/Button";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { FaTiktok } from "react-icons/fa6";
-import { getBookingOption } from "@/context/Constarain";
+import { getDefaultBookingTypeId } from "@/context/Constarain";
 import { BookingOption } from "@/types/booking";
+import { buildCitySearchHref } from "@/utils/cityLocations";
 
 type FooterNavProps = {
   title: string;
@@ -18,6 +19,7 @@ type FooterNavProps = {
     badgeTitle?: string;
     scrollTo?: string;
     type?: string;
+    city?: string;
   }[];
 };
 
@@ -36,16 +38,22 @@ const footerNav: FooterNavProps[] = [
   {
     title: "Locations",
     links: [
-      { name: "Lagos", link: "/booking/search?city=lagos", type: "link" },
-      { name: "Abuja", link: "/booking/search?city=abuja", type: "link" },
-      { name: "Benin City", link: "/booking/search?city=benin", type: "link" },
-      { name: "Enugu", link: "/booking/search?city=enugu", type: "link" },
+      { name: "Lagos", link: "/booking/search", city: "Lagos", type: "link" },
+      { name: "Abuja", link: "/booking/search", city: "Abuja", type: "link" },
       {
-        name: "Port Harcourt",
-        link: "/booking/search?city=port-harcourt",
+        name: "Benin City",
+        link: "/booking/search",
+        city: "Benin City",
         type: "link",
       },
-      { name: "Accra", link: "/booking/search?city=accra", type: "link" },
+      { name: "Enugu", link: "/booking/search", city: "Enugu", type: "link" },
+      {
+        name: "Port Harcourt",
+        link: "/booking/search",
+        city: "Port Harcourt",
+        type: "link",
+      },
+      { name: "Accra", link: "/booking/search", city: "Accra", type: "link" },
     ],
   },
 
@@ -117,12 +125,9 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
   useEffect(() => {
     const getBookingOptions = async () => {
       if (!bookingTypeID) {
-        const data = await getBookingOption();
-        if (data.dropdownOptions?.length > 0) {
-          const value = data.dropdownOptions[0].value;
-          if (value && value !== "undefined") {
-            setBookingType(value);
-          }
+        const value = await getDefaultBookingTypeId();
+        if (value && value !== "undefined") {
+          setBookingType(value);
         }
       }
     };
@@ -235,11 +240,15 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
                         </button>
                       ) : navLink.type === "link" ? (
                         <Link
-                          href={`${navLink.link}${
-                            bookingType && bookingType !== "undefined"
-                              ? `&bookingType=${bookingType}`
-                              : ""
-                          }`}
+                          href={
+                            navLink.city
+                              ? buildCitySearchHref(navLink.city)
+                              : `${navLink.link}${
+                                  bookingType && bookingType !== "undefined"
+                                    ? `&bookingType=${bookingType}`
+                                    : ""
+                                }`
+                          }
                           className="hover:text-primary-500 transition-colors"
                         >
                           {navLink.name}

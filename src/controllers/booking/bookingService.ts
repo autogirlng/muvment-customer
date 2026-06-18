@@ -64,6 +64,7 @@ export class BookingService {
   private static readonly TRIPS_URL = "/api/v1/trips";
   private static readonly BOOKING_TYPE =
     "/api/v1/booking-types?isDefaultActive=true";
+  private static readonly BOOKING_TYPE_ALL = "/api/v1/booking-types";
   private static readonly INITIATE_PAYMENT = "/api/v1/payments/initiate";
   private static readonly INITIATE_PAYMENT_PAYSTACK =
     "/api/v1/payments/initialize";
@@ -165,6 +166,16 @@ export class BookingService {
     } catch (error) {
       console.error("Error fetching booking type:", error);
       throw error;
+    }
+  }
+
+  static async getAllBookingTypes(): Promise<any[]> {
+    try {
+      const response = await getTableData(`${this.BOOKING_TYPE_ALL}`);
+      return response?.data || [];
+    } catch (error) {
+      console.error("Error fetching all booking types:", error);
+      return [];
     }
   }
 
