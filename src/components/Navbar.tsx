@@ -151,7 +151,14 @@ export const Navbar = ({
             onClick={() => router.push("/")}
             className="flex items-center gap-2 flex-shrink-0"
           >
-            <Image src="/images/image.png" alt="Muvment" width={180} height={180} />
+            <Image
+              src="/images/image.png"
+              alt="Muvment"
+              width={1451}
+              height={165}
+              priority
+              className="h-auto w-[150px] sm:w-[170px]"
+            />
           </button>
 
           {/* Center search - on every page except the home hero (reveals on scroll) */}
