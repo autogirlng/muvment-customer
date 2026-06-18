@@ -12,6 +12,7 @@ import {
 } from "react-icons/fa";
 import { MdLocationOn } from "react-icons/md";
 import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
+import TopRatedBadge from "@/components/Booking/TopRatedBadge";
 
 export interface TopVehicle {
   photos: Array<{
@@ -120,14 +121,14 @@ const TopRating: React.FC<TopRatingProps> = ({
             <button
               onClick={prevImage}
               aria-label="Previous image"
-              className="absolute left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 opacity-0 transition-opacity hover:bg-white group-hover:opacity-100"
+              className="absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-colors hover:bg-white"
             >
               <FaChevronLeft className="h-3 w-3 text-gray-700" />
             </button>
             <button
               onClick={nextImage}
               aria-label="Next image"
-              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 opacity-0 transition-opacity hover:bg-white group-hover:opacity-100"
+              className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-colors hover:bg-white"
             >
               <FaChevronRight className="h-3 w-3 text-gray-700" />
             </button>
@@ -150,6 +151,7 @@ const TopRating: React.FC<TopRatingProps> = ({
         <h3 className="truncate text-sm font-semibold text-[#0d1320]">
           {vehicle.name}
         </h3>
+        <TopRatedBadge className="mt-1" />
         <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
           <span className="flex items-center gap-1 font-medium text-gray-700">
             <FaStar className="h-3 w-3 text-[#FBB034]" />

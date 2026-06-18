@@ -14,6 +14,7 @@ import { SimplifiedFilterBar } from "@/components/Booking/SimplifiedFilterBarPro
 import { HiViewList } from "react-icons/hi";
 import { BsFillGridFill } from "react-icons/bs";
 import { CiLocationOn } from "react-icons/ci";
+import { FaStar } from "react-icons/fa6";
 import { clarityEvent } from "@/services/clarity";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 import LocationPrompt from "../Booking/LocationPrompt";
@@ -119,6 +120,7 @@ function ExploreVehiclesClientContent({
   const endTime = searchParams.get("endTime");
   const city = searchParams.get("city");
   const destinationStateId = searchParams.get("destinationStateId");
+  const featuredOnly = searchParams.get("featured") === "true";
 
   const {
     status: locationStatus,
@@ -249,6 +251,7 @@ function ExploreVehiclesClientContent({
   ]);
 
   useEffect(() => {
+    if (featuredOnly) return;
     if (isFirstMount.current) {
       isFirstMount.current = false;
       return;
@@ -270,6 +273,43 @@ function ExploreVehiclesClientContent({
     bookingType,
     destinationStateId,
   ]);
+
+  useEffect(() => {
+    if (!featuredOnly) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res: any = await VehicleSearchService.fetchFeaturedVehicles(
+          0,
+          100,
+        );
+        const content =
+          res?.[0]?.data?.content ??
+          res?.data?.content ??
+          res?.content ??
+          [];
+        if (!cancelled) {
+          setVehicles(content);
+          setTotalCount(content.length);
+          setHasMore(false);
+          setRecommendedVehicles([]);
+        }
+      } catch {
+        if (!cancelled) {
+          setVehicles([]);
+          setTotalCount(0);
+          setHasMore(false);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [featuredOnly]);
 
   const performSearch = async (
     page: number = 0,
@@ -483,16 +523,25 @@ function ExploreVehiclesClientContent({
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-                <CiLocationOn
-                  color="#0673FF"
-                  size={24}
-                  className="hidden lg:block"
-                />
-                {city
-                  ? `Vehicles in ${city.charAt(0).toUpperCase() + city.slice(1)}`
-                  : location
-                    ? `Vehicles in ${location}`
-                    : "Vehicles in Lagos"}
+                {featuredOnly ? (
+                  <>
+                    <FaStar color="#F5A623" size={22} className="shrink-0" />
+                    Top rated vehicles
+                  </>
+                ) : (
+                  <>
+                    <CiLocationOn
+                      color="#0673FF"
+                      size={24}
+                      className="hidden lg:block"
+                    />
+                    {city
+                      ? `Vehicles in ${city.charAt(0).toUpperCase() + city.slice(1)}`
+                      : location
+                        ? `Vehicles in ${location}`
+                        : "Vehicles in Lagos"}
+                  </>
+                )}
               </h1>
               <p
                 aria-live="polite"
@@ -534,20 +583,22 @@ function ExploreVehiclesClientContent({
             </div>
           </div>
 
-          <div className="sticky top-0 z-10 bg-white pb-1 mb-2">
-            <SimplifiedFilterBar
-              filterState={filterState}
-              onFilterChange={handleFilterChange}
-              onClearAll={handleClearAll}
-              vehicleTypes={vehicleTypes}
-              makes={makes}
-              models={models}
-              features={features}
-              totalCount={childCount as number}
-              maxPrice={500000}
-              minPrice={25000}
-            />
-          </div>
+          {!featuredOnly && (
+            <div className="sticky top-0 z-10 bg-white pb-1 mb-2">
+              <SimplifiedFilterBar
+                filterState={filterState}
+                onFilterChange={handleFilterChange}
+                onClearAll={handleClearAll}
+                vehicleTypes={vehicleTypes}
+                makes={makes}
+                models={models}
+                features={features}
+                totalCount={childCount as number}
+                maxPrice={500000}
+                minPrice={25000}
+              />
+            </div>
+          )}
 
           {interstateStates.length > 0 && (
             <div className="mb-4">

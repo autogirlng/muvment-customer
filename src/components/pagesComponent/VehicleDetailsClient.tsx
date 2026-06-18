@@ -55,6 +55,12 @@ import { trackPaymentClick } from "@/services/analytics";
 import Footer from "../HomeComponent/Footer";
 import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicleservice";
 import LoginPromptModal from "../Booking/Loginpromptmodal";
+import TopRatedBadge from "@/components/Booking/TopRatedBadge";
+import { useFeaturedVehicleIds } from "@/hooks/useFeaturedVehicleIds";
+import {
+  setPendingFavourite,
+  FAVOURITES_CHANGED_EVENT,
+} from "@/utils/pendingFavourite";
 
 interface VehicleDetailsClientProps {
   initialVehicleData: any;
@@ -67,6 +73,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const { isAuthenticated } = useAuth();
 
   const [vehicle, setVehicle] = useState<any>(initialVehicleData);
+  const featuredIds = useFeaturedVehicleIds();
+  const isFeatured = vehicle?.id ? featuredIds.has(vehicle.id) : false;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -311,8 +319,19 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     check();
   }, [vehicle, isAuthenticated]);
 
+  useEffect(() => {
+    const onChanged = (e: Event) => {
+      const id = (e as CustomEvent).detail?.id as string | undefined;
+      if (id && vehicle?.id && id === vehicle.id) setIsFavorited(true);
+    };
+    window.addEventListener(FAVOURITES_CHANGED_EVENT, onChanged);
+    return () =>
+      window.removeEventListener(FAVOURITES_CHANGED_EVENT, onChanged);
+  }, [vehicle?.id]);
+
   const handleToggleFavourite = async () => {
     if (!isAuthenticated) {
+      if (vehicle?.id) setPendingFavourite(vehicle.id);
       setShowLoginModal(true);
       return;
     }
@@ -1017,9 +1036,12 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                 <span>Back</span>
               </button>
               <header className="flex flex-row items-start justify-between gap-3 w-full">
-                <h1 className="min-w-0 flex-1 text-2xl sm:text-4xl font-bold text-gray-800 leading-tight break-words">
-                  {vehicle.name || ""}
-                </h1>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 leading-tight break-words">
+                    {vehicle.name || ""}
+                  </h1>
+                  {isFeatured && <TopRatedBadge className="mt-2" />}
+                </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <SocialShareButton triggerClassName="w-10 h-10 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 flex items-center justify-center transition cursor-pointer" />

@@ -5,6 +5,7 @@ import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "@/context/AuthContext";
 import RouteTracker from "../general/RouteTracker";
 import TopProgressBar from "@/components/utils/TopProgressBar";
+import PendingFavouriteHandler from "@/components/Booking/PendingFavouriteHandler";
 
 export default function ClientRoot({
   children,
@@ -29,6 +30,7 @@ export default function ClientRoot({
         <Suspense fallback={null}>
           <RouteTracker />
         </Suspense>
+        <PendingFavouriteHandler />
         {children}
       </AuthProvider>
     </>

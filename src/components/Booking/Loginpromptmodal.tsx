@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiX, FiHeart, FiCheck } from "react-icons/fi";
 
 interface LoginPromptModalProps {
@@ -48,7 +49,7 @@ const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
     "Get alerts on price drops and availability",
   ];
 
-  return (
+  const content = (
     <div
       className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={(e) => {
@@ -139,6 +140,9 @@ const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(content, document.body);
 };
 
 export default LoginPromptModal;
