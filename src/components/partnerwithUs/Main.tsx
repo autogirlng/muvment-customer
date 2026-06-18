@@ -10,7 +10,6 @@ import {
   MdKey,
   MdBarChart,
   MdSecurity,
-  MdArrowForward,
   MdHandshake,
   MdAccountBalanceWallet,
   MdEventAvailable,
@@ -145,16 +144,6 @@ export const PartnerWithUs = () => {
   const { user } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const goToOnboarding = () => {
-    if (user) {
-      router.push("/dashboard/integrations/create-organization");
-    } else {
-      router.push(
-        "/auth/login?redirect=/dashboard/integrations/create-organization",
-      );
-    }
-  };
-
   return (
     <>
       <Navbar />
@@ -193,13 +182,6 @@ export const PartnerWithUs = () => {
 
           <Reveal delay={240}>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button
-                onClick={goToOnboarding}
-                className="group bg-[#0673FF] text-white px-7 py-3.5 rounded-full text-[15px] font-semibold hover:bg-[#0560d6] transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
-              >
-                Create corporate account
-                <MdArrowForward className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-              </button>
               <button
                 onClick={() => router.push("/contact-us")}
                 className="border border-white/30 text-white px-7 py-3.5 rounded-full text-[15px] font-semibold hover:bg-white/10 transition-colors w-full sm:w-auto justify-center"
@@ -486,17 +468,10 @@ export const PartnerWithUs = () => {
               Ready to power your business?
             </h2>
             <p className="text-white/70 text-[15px] md:text-[17px] font-light leading-[1.75] mb-10 max-w-xl mx-auto">
-              Create your corporate account today and start integrating our
-              platform into your workflow.
+              Talk to our team to start integrating our platform into your
+              workflow.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button
-                onClick={goToOnboarding}
-                className="group bg-[#0673FF] text-white px-7 py-3.5 rounded-full text-[15px] font-semibold hover:bg-[#0560d6] transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
-              >
-                Create corporate account
-                <MdArrowForward className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-              </button>
               <button
                 onClick={() => router.push("/contact-us")}
                 className="border border-white/30 text-white px-7 py-3.5 rounded-full text-[15px] font-semibold hover:bg-white/10 transition-colors w-full sm:w-auto justify-center"

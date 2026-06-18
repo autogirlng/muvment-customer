@@ -230,6 +230,9 @@ function ExploreVehiclesClientContent({
     if (
       locationStatus === "granted" &&
       !hasLocationParams &&
+      !city &&
+      !location &&
+      !featuredOnly &&
       detectedLocation
     ) {
       const params = new URLSearchParams(searchParams.toString());
@@ -238,7 +241,14 @@ function ExploreVehiclesClientContent({
       params.set("location", detectedLocation.name);
       router.replace(`${pathname}?${params.toString()}`);
     }
-  }, [locationStatus, hasLocationParams, detectedLocation]);
+  }, [
+    locationStatus,
+    hasLocationParams,
+    detectedLocation,
+    city,
+    location,
+    featuredOnly,
+  ]);
 
   useEffect(() => {
     if (featuredOnly) return;

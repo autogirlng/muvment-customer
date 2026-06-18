@@ -8,7 +8,7 @@ import OurStory from "../AboutUsComponent/OurStory";
 import OurValues from "../AboutUsComponent/OurValues";
 import LeadershipTeam from "../AboutUsComponent/LeadershipTeam";
 import PartnersNetwork from "../AboutUsComponent/PartnersNetwork";
-import Testimonials from "../AboutUsComponent/Testimonials";
+import Testimonials from "../HomeComponent/Testimonials";
 import Recognition from "../AboutUsComponent/Recognition";
 import ImpactAndCTA from "../AboutUsComponent/ImpactAndCTA";
 import Footer from "../HomeComponent/Footer";
