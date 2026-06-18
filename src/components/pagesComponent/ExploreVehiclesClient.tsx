@@ -598,29 +598,6 @@ function ExploreVehiclesClientContent({
 
           {!featuredOnly && (
             <div className="sticky top-0 z-10 bg-white pb-1 mb-2">
-              {bookingTypeOptions.length > 0 && (
-                <div className="mb-2 flex items-center gap-2">
-                  <label
-                    htmlFor="bookingTypeFilter"
-                    className="text-xs font-medium text-gray-500"
-                  >
-                    Booking type
-                  </label>
-                  <select
-                    id="bookingTypeFilter"
-                    value={bookingType || ""}
-                    onChange={(e) => onBookingTypeChange(e.target.value)}
-                    className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-[#0673ff] focus:outline-none focus:ring-1 focus:ring-[#0673ff]"
-                  >
-                    <option value="">All booking types</option>
-                    {bookingTypeOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
               <SimplifiedFilterBar
                 filterState={filterState}
                 onFilterChange={handleFilterChange}
@@ -632,6 +609,9 @@ function ExploreVehiclesClientContent({
                 totalCount={childCount as number}
                 maxPrice={500000}
                 minPrice={25000}
+                bookingTypeOptions={bookingTypeOptions}
+                bookingTypeValue={bookingType || ""}
+                onBookingTypeChange={onBookingTypeChange}
               />
             </div>
           )}

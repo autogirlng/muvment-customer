@@ -1196,29 +1196,16 @@ function BookingSearchInner({
         missing.push(
           airportDirection === "pickup" ? "Pickup location" : "Drop-off location",
         );
-      if (!singleDate) missing.push("Date");
       if (!time) missing.push("Time");
     } else if (bookingType === "boat") {
       if (!boatDestId) missing.push("Destination");
-      if (!singleDate) missing.push("Date");
       if (!time) missing.push("Time");
     } else if (bookingType === "within-state") {
       if (!(pickup && pickup.lat)) missing.push("Location");
-      if (durationId === "monthly") {
-        if (!singleDate) missing.push("Start date");
-      } else {
-        const from = Array.isArray(rangeValue)
-          ? rangeValue[0]
-          : rangeValue instanceof Date
-            ? rangeValue
-            : null;
-        if (!from) missing.push("From date");
-      }
     } else {
       if (!(selectedLocation && selectedLocation.lat))
         missing.push("Starting location");
       if (!destId) missing.push("Destination");
-      if (!singleDate) missing.push("Date");
       if (!time) missing.push("Time");
     }
     return missing;
@@ -1311,6 +1298,14 @@ function BookingSearchInner({
             lng: selectedLocation.lng,
           };
         }
+      }
+
+      // If no start date was chosen, default it to the next day.
+      if (!fromDate) {
+        const next = new Date();
+        next.setHours(0, 0, 0, 0);
+        next.setDate(next.getDate() + 1);
+        fromDate = next;
       }
 
       const selectedCategory = categoryOptions.find(
