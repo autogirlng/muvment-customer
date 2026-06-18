@@ -107,7 +107,7 @@ export default function CreateBookingPageClient() {
           <Link
             href="/"
             aria-label="Muvment home"
-            className="justify-self-start"
+            className="col-start-1 justify-self-start"
           >
             <Image
               src="/images/image.png"
@@ -118,14 +118,14 @@ export default function CreateBookingPageClient() {
               priority
             />
           </Link>
-          <div className="hidden sm:flex items-center gap-1.5 justify-self-center text-sm font-medium text-grey-600">
+          <div className="col-start-2 hidden sm:flex items-center gap-1.5 justify-self-center text-sm font-medium text-grey-600">
             <FiLock className="w-4 h-4 text-grey-400" />
             <span>Secure checkout</span>
           </div>
           <button
             type="button"
             onClick={() => setShowCancel(true)}
-            className="justify-self-end inline-flex items-center rounded-full border border-grey-200 px-4 py-1.5 text-sm font-medium text-grey-600 hover:bg-grey-50 hover:text-grey-800 cursor-pointer"
+            className="col-start-3 justify-self-end inline-flex items-center rounded-full border border-grey-200 px-4 py-1.5 text-sm font-medium text-grey-600 hover:bg-grey-50 hover:text-grey-800 cursor-pointer"
           >
             Cancel
           </button>

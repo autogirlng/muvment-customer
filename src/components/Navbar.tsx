@@ -14,8 +14,6 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { NavbarSearchBar } from "./HomeComponent/NavbarSearchBar";
 import SlidingBanner from "./Dashboard/SlidingBanner";
-import { getBookingOption } from "@/context/Constarain";
-import { BookingOption } from "@/types/booking";
 import { getSingleData } from "@/controllers/connnector/app.callers";
 import { NavbarProps, BannerContent } from "@/types/navbar";
 
@@ -37,21 +35,6 @@ export const Navbar = ({
   const desktopMenuRef = useRef<HTMLDivElement>(null);
   const mobileButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-
-  const [bookingTypeID, setBookingTypeID] = useState<string>();
-  const [bookingOptions, setBookingOptions] = useState<BookingOption[]>([]);
-
-  const getBookingOptions = async () => {
-    const data = await getBookingOption();
-    setBookingOptions(data.dropdownOptions);
-    if (data.dropdownOptions?.length > 0) {
-      setBookingTypeID(data.dropdownOptions[0].value);
-    }
-  };
-
-  useEffect(() => {
-    getBookingOptions();
-  }, []);
 
   useEffect(() => setMounted(true), []);
 
@@ -102,9 +85,7 @@ export const Navbar = ({
     }
   };
 
-  const exploreLink = `/booking/search${
-    bookingTypeID ? `?bookingType=${bookingTypeID}` : ""
-  }`;
+  const exploreLink = "/booking/search";
 
   const getBannerMessage = async () => {
     const banner = await getSingleData('/api/v1/banner')

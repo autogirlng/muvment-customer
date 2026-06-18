@@ -42,6 +42,20 @@ export const getBookingOption = async (): Promise<{
   return cachedBookingOptions;
 };
 
+export const getDefaultBookingTypeId = async (): Promise<
+  string | undefined
+> => {
+  const { rawBookingOptions, dropdownOptions } = await getBookingOption();
+  const byName = (m: (n: string) => boolean) =>
+    rawBookingOptions.find((t: any) => m(String(t?.name || "").toLowerCase()))
+      ?.id;
+  return (
+    byName((n) => n.includes("12")) ||
+    byName((n) => n.includes("day") || n.includes("daily")) ||
+    dropdownOptions[0]?.value
+  );
+};
+
 export const DEFAULT_LOCATION_SUGGESTIONS: PlacePrediction[] = [
   {
     id: "anywhere",

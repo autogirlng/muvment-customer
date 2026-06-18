@@ -101,10 +101,14 @@ export default function LoginComponent() {
         const accessToken = response.data.data.accessToken;
         const refreshToken = response.data.data.refreshToken;
 
-        login(user, {
-          accessToken,
-          refreshToken,
-        });
+        login(
+          user,
+          {
+            accessToken,
+            refreshToken,
+          },
+          formValues.rememberMe
+        );
         router.push("/dashboard");
       }
     } catch (error) {

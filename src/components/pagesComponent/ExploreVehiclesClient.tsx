@@ -108,6 +108,9 @@ function ExploreVehiclesClientContent({
   const [makes] = useState(initialMakes);
   const [features] = useState(initialFeatures);
   const [models] = useState(initialModels);
+  const [bookingTypeOptions, setBookingTypeOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
 
   const lat = searchParams.get("lat");
   const lng = searchParams.get("lng");
@@ -138,7 +141,7 @@ function ExploreVehiclesClientContent({
     let alive = true;
     (async () => {
       try {
-        const { rawBookingOptions } = await getBookingOption();
+        const { rawBookingOptions, dropdownOptions } = await getBookingOption();
         const opts: any[] = rawBookingOptions || [];
         const id =
           opts.find((t) =>
@@ -146,7 +149,10 @@ function ExploreVehiclesClientContent({
               .toLowerCase()
               .includes("interstate"),
           )?.id || "";
-        if (alive) setInterstateTypeId(id);
+        if (alive) {
+          setInterstateTypeId(id);
+          setBookingTypeOptions(dropdownOptions || []);
+        }
       } catch {
         // leave empty; the interstate prompt simply will not show
       }
@@ -195,6 +201,13 @@ function ExploreVehiclesClientContent({
     p.set("destinationStateId", stateId);
     p.set("radiusInKm", "100");
     router.push(`/booking/search?${p.toString()}`);
+  };
+
+  const onBookingTypeChange = (value: string) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (value) p.set("bookingType", value);
+    else p.delete("bookingType");
+    router.replace(`${pathname}?${p.toString()}`, { scroll: false });
   };
 
   const initializeFiltersFromUrl = useCallback((): FilterState => {
@@ -585,6 +598,29 @@ function ExploreVehiclesClientContent({
 
           {!featuredOnly && (
             <div className="sticky top-0 z-10 bg-white pb-1 mb-2">
+              {bookingTypeOptions.length > 0 && (
+                <div className="mb-2 flex items-center gap-2">
+                  <label
+                    htmlFor="bookingTypeFilter"
+                    className="text-xs font-medium text-gray-500"
+                  >
+                    Booking type
+                  </label>
+                  <select
+                    id="bookingTypeFilter"
+                    value={bookingType || ""}
+                    onChange={(e) => onBookingTypeChange(e.target.value)}
+                    className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-[#0673ff] focus:outline-none focus:ring-1 focus:ring-[#0673ff]"
+                  >
+                    <option value="">All booking types</option>
+                    {bookingTypeOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <SimplifiedFilterBar
                 filterState={filterState}
                 onFilterChange={handleFilterChange}
