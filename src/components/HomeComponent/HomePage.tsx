@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import BookingInterface from "@/components/HomeComponent/BookingInterface";
 import { Navbar } from "@/components/Navbar";
 import React, { useEffect } from "react";
-import { getBookingOption } from "@/context/Constarain";
+import { getBookingOption, getDefaultBookingTypeId } from "@/context/Constarain";
 import { useState } from "react";
 import { BookingOption } from "@/types/booking";
 import { ServicePricingShowcaseList } from "@/components/HomeComponent/Servicepricingshowcaselist";
@@ -44,8 +44,9 @@ export default function HomePage() {
   const getBookingOptions = async () => {
     const data = await getBookingOption();
     setBookingOptions(data.dropdownOptions);
-    if (data.dropdownOptions?.length > 0) {
-      setBookingTypeID(data.dropdownOptions[0].value);
+    const defaultId = await getDefaultBookingTypeId();
+    if (defaultId) {
+      setBookingTypeID(defaultId);
     }
   };
 

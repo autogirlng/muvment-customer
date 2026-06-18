@@ -4,6 +4,7 @@ import React from "react";
 import { BsBuildings } from "react-icons/bs";
 import { FiArrowRight } from "react-icons/fi";
 import Link from "next/link";
+import { buildCitySearchHref } from "@/utils/cityLocations";
 
 interface City {
   name: string;
@@ -23,10 +24,7 @@ const cities: City[] = [
 const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({
   bookingTypeId,
 }) => {
-  const cityHref = (name: string) => {
-    const c = name.toLowerCase().replace(/\s+/g, "-");
-    return `/booking/search?city=${c}${bookingTypeId ? `&bookingType=${bookingTypeId}` : ""}`;
-  };
+  const cityHref = (name: string) => buildCitySearchHref(name);
 
   return (
     <section className="bg-white px-4 py-16 lg:px-8 lg:py-20">

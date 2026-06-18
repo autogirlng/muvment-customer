@@ -749,7 +749,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                           applyToAllTrips(trips[0]?.id || "");
                           setSameForAllDays(true);
                         }}
-                        className="mt-2 w-full text-gray-600 text-xs cursor-pointer"
+                        className="mt-2 w-full text-center text-[#0673ff] text-xs font-medium underline underline-offset-2 hover:text-[#0560d6] cursor-pointer"
                       >
                         Use one plan for all days
                       </button>

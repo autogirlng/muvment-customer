@@ -439,7 +439,7 @@ const ItineraryFormContent = ({
                         applyToAllTrips(trips[0]?.id || "");
                         setSameForAllDays(true);
                       }}
-                      className="text-gray-600 text-sm cursor-pointer border-0"
+                      className="text-[#0673ff] text-sm font-medium underline underline-offset-2 hover:text-[#0560d6] cursor-pointer border-0"
                     >
                       Use one plan for all days
                     </button>

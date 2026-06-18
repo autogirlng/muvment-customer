@@ -260,28 +260,72 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     </div>
   );
 
-  const PriceBlock = () => (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-xs text-gray-500">
-          {getDisplayLabel(bookingType, bookingOptions)}
-        </p>
-        <p className="text-lg font-bold text-gray-900">
-          {formatCurrency(
-            getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
+  const PriceBlock = () => {
+    if (bookingType) {
+      return (
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs text-gray-500">
+              {getDisplayLabel(bookingType, bookingOptions)}
+            </p>
+            <p className="text-lg font-bold text-gray-900">
+              {formatCurrency(
+                getDisplayPrice(bookingType, allPricingOptions, bookingOptions),
+              )}
+            </p>
+          </div>
+          {extraHourlyRate > 0 && (
+            <div className="text-right">
+              <p className="text-xs text-gray-500">Extra hours</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {formatCurrency(extraHourlyRate)}
+              </p>
+            </div>
           )}
-        </p>
-      </div>
-      {extraHourlyRate > 0 && (
-        <div className="text-right">
-          <p className="text-xs text-gray-500">Extra hours</p>
-          <p className="text-sm font-semibold text-gray-900">
-            {formatCurrency(extraHourlyRate)}
+        </div>
+      );
+    }
+
+    const opts = allPricingOptions || [];
+    if (!opts.length) {
+      return <p className="text-sm text-gray-500">Price on request</p>;
+    }
+    const primary =
+      opts.find((o) => o.bookingTypeName?.toLowerCase().includes("12")) ||
+      opts[0];
+    const secondary = opts.filter(
+      (o) => o.bookingTypeId !== primary.bookingTypeId,
+    );
+
+    return (
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <p className="text-xs text-gray-500">{primary.bookingTypeName}</p>
+          <p className="text-lg font-bold text-gray-900">
+            {formatCurrency(primary.price)}
           </p>
         </div>
-      )}
-    </div>
-  );
+        <div className="flex flex-wrap items-end gap-x-4 gap-y-1">
+          {secondary.map((o) => (
+            <div key={o.bookingTypeId}>
+              <p className="text-[11px] text-gray-400">{o.bookingTypeName}</p>
+              <p className="text-sm font-semibold text-gray-700">
+                {formatCurrency(o.price)}
+              </p>
+            </div>
+          ))}
+          {extraHourlyRate > 0 && (
+            <div>
+              <p className="text-[11px] text-gray-400">Extra hours</p>
+              <p className="text-sm font-semibold text-gray-700">
+                {formatCurrency(extraHourlyRate)}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   // Grid View
   if (viewMode === "grid") {
