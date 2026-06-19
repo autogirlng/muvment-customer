@@ -161,7 +161,7 @@ export default function InterstateTravel() {
         isOpen={pickerOpen}
         onClose={() => setPickerOpen(false)}
         title="Where are you traveling?"
-        subtitle="Pick a destination to see available private cars and SUVs"
+        subtitle="We find rides from where you are to your destination"
       />
     </section>
   );

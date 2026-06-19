@@ -16,30 +16,49 @@ let cachedBookingOptions: {
   dropdownOptions: DropdownOption[];
 } | null = null;
 
+let bookingOptionsPromise: Promise<{
+  rawBookingOptions: any[];
+  dropdownOptions: DropdownOption[];
+}> | null = null;
+
 export const getBookingOption = async (): Promise<{
   rawBookingOptions: any[];
   dropdownOptions: DropdownOption[];
 }> => {
   if (cachedBookingOptions) {
-    return cachedBookingOptions; // ✅ Prevents multiple API calls
+    return cachedBookingOptions;
+  }
+  // Share one in-flight request across concurrent callers (many cards mount at
+  // once), so the value cache above is not bypassed by a request stampede.
+  if (bookingOptionsPromise) {
+    return bookingOptionsPromise;
   }
 
-  const response = await BookingService.getBookingType();
-  const rawBookingOptions = response?.data || [];
+  bookingOptionsPromise = (async () => {
+    try {
+      const response = await BookingService.getBookingType();
+      const rawBookingOptions = response?.data || [];
 
-  const dropdownOptions: DropdownOption[] = rawBookingOptions.map(
-    (item: { id: string; name: string }) => ({
-      value: item.id,
-      label: item.name,
-    })
-  );
+      const dropdownOptions: DropdownOption[] = rawBookingOptions.map(
+        (item: { id: string; name: string }) => ({
+          value: item.id,
+          label: item.name,
+        })
+      );
 
-  cachedBookingOptions = {
-    rawBookingOptions,
-    dropdownOptions,
-  };
+      cachedBookingOptions = {
+        rawBookingOptions,
+        dropdownOptions,
+      };
 
-  return cachedBookingOptions;
+      return cachedBookingOptions;
+    } catch (error) {
+      bookingOptionsPromise = null;
+      throw error;
+    }
+  })();
+
+  return bookingOptionsPromise;
 };
 
 export const getDefaultBookingTypeId = async (): Promise<

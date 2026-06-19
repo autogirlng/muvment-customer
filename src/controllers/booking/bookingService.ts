@@ -12,6 +12,11 @@ import {
 } from "../connnector/app.callers";
 import { PaymentService } from "./paymentService";
 
+// Cache the full booking-types list so concurrent callers (navbar bar, filter
+// bar) share one request instead of each hitting the endpoint.
+let allBookingTypesCache: any[] | null = null;
+let allBookingTypesPromise: Promise<any[]> | null = null;
+
 export interface Booking {
   id?: string;
   segmentId: string;
@@ -170,13 +175,22 @@ export class BookingService {
   }
 
   static async getAllBookingTypes(): Promise<any[]> {
-    try {
-      const response = await getTableData(`${this.BOOKING_TYPE_ALL}`);
-      return response?.data?.data || [];
-    } catch (error) {
-      console.error("Error fetching all booking types:", error);
-      return [];
-    }
+    if (allBookingTypesCache) return allBookingTypesCache;
+    if (allBookingTypesPromise) return allBookingTypesPromise;
+    const url = this.BOOKING_TYPE_ALL;
+    allBookingTypesPromise = (async () => {
+      try {
+        const response = await getTableData(`${url}`);
+        const data = response?.data?.data || [];
+        allBookingTypesCache = data;
+        return data;
+      } catch (error) {
+        allBookingTypesPromise = null;
+        console.error("Error fetching all booking types:", error);
+        return [];
+      }
+    })();
+    return allBookingTypesPromise;
   }
 
   static async calculateBooking(request: BookingCalculationRequest) {

@@ -61,6 +61,36 @@ const VehicleCardSkeleton: React.FC<{ viewMode: "list" | "grid" }> = ({
   );
 };
 
+type SearchParamsLike = {
+  get(name: string): string | null;
+  getAll(name: string): string[];
+};
+
+function filtersFromParams(searchParams: SearchParamsLike): FilterState {
+  const minPriceParam = searchParams.get("minPrice");
+  const maxPriceParam = searchParams.get("maxPrice");
+  const type = searchParams.getAll("vehicleTypeId");
+  const make = searchParams.getAll("make");
+  const model = searchParams.getAll("model");
+  const yearOfRelease = searchParams.getAll("yearOfRelease");
+  const numberOfSeats = searchParams.getAll("numberOfSeats");
+  const featuresList = searchParams.getAll("features");
+
+  return {
+    orderBy: parseVehicleOrderBy(searchParams.get("orderBy")),
+    priceRange:
+      minPriceParam && maxPriceParam
+        ? [parseInt(minPriceParam), parseInt(maxPriceParam)]
+        : undefined,
+    selectedVehicleTypes: type.length > 0 ? type : undefined,
+    selectedMakes: make.length > 0 ? make : undefined,
+    selectedModels: model.length > 0 ? model : undefined,
+    selectedYears: yearOfRelease.length > 0 ? yearOfRelease : undefined,
+    selectedSeats: numberOfSeats.length > 0 ? numberOfSeats : undefined,
+    selectedFeatures: featuresList.length > 0 ? featuresList : undefined,
+  };
+}
+
 function ExploreVehiclesClientContent({
   initialVehicles,
   initialTotalCount,
@@ -80,16 +110,10 @@ function ExploreVehiclesClientContent({
 
   const isFirstMount = useRef(true);
 
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [filterState, setFilterState] = useState<FilterState>({
-    orderBy: DEFAULT_VEHICLE_ORDER_BY,
-    priceRange: undefined,
-    selectedVehicleTypes: undefined,
-    selectedMakes: undefined,
-    selectedYears: undefined,
-    selectedSeats: undefined,
-    selectedFeatures: undefined,
-  });
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
+  const [filterState, setFilterState] = useState<FilterState>(() =>
+    filtersFromParams(searchParams),
+  );
 
   const [vehicles, setVehicles] = useState<any[]>(initialVehicles);
   const [recommendedVehicles, setRecommendedVehicles] =
@@ -209,35 +233,6 @@ function ExploreVehiclesClientContent({
     else p.delete("bookingType");
     router.replace(`${pathname}?${p.toString()}`, { scroll: false });
   };
-
-  const initializeFiltersFromUrl = useCallback((): FilterState => {
-    const minPriceParam = searchParams.get("minPrice");
-    const maxPriceParam = searchParams.get("maxPrice");
-    const type = searchParams.getAll("vehicleTypeId");
-    const make = searchParams.getAll("make");
-    const model = searchParams.getAll("model");
-    const yearOfRelease = searchParams.getAll("yearOfRelease");
-    const numberOfSeats = searchParams.getAll("numberOfSeats");
-    const featuresList = searchParams.getAll("features");
-
-    return {
-      orderBy: parseVehicleOrderBy(searchParams.get("orderBy")),
-      priceRange:
-        minPriceParam && maxPriceParam
-          ? [parseInt(minPriceParam), parseInt(maxPriceParam)]
-          : undefined,
-      selectedVehicleTypes: type.length > 0 ? type : undefined,
-      selectedMakes: make.length > 0 ? make : undefined,
-      selectedModels: model.length > 0 ? model : undefined,
-      selectedYears: yearOfRelease.length > 0 ? yearOfRelease : undefined,
-      selectedSeats: numberOfSeats.length > 0 ? numberOfSeats : undefined,
-      selectedFeatures: featuresList.length > 0 ? featuresList : undefined,
-    };
-  }, [searchParams]);
-
-  useEffect(() => {
-    setFilterState(initializeFiltersFromUrl());
-  }, []);
 
   useEffect(() => {
     if (

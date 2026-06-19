@@ -216,6 +216,7 @@ export interface VehicleCardProps {
   photos: { cloudinaryUrl: string; isPrimary: boolean }[];
   bookingType?: string;
   rating?: number;
+  featured?: boolean;
 }
 
 interface Photo {

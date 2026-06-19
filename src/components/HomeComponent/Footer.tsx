@@ -40,20 +40,11 @@ const footerNav: FooterNavProps[] = [
     links: [
       { name: "Lagos", link: "/booking/search", city: "Lagos", type: "link" },
       { name: "Abuja", link: "/booking/search", city: "Abuja", type: "link" },
-      {
-        name: "Benin City",
-        link: "/booking/search",
-        city: "Benin City",
-        type: "link",
-      },
-      { name: "Enugu", link: "/booking/search", city: "Enugu", type: "link" },
-      {
-        name: "Port Harcourt",
-        link: "/booking/search",
-        city: "Port Harcourt",
-        type: "link",
-      },
-      { name: "Accra", link: "/booking/search", city: "Accra", type: "link" },
+      { name: "Abia", link: "/booking/search", city: "Abia", type: "link" },
+      { name: "Delta", link: "/booking/search", city: "Delta", type: "link" },
+      { name: "Imo", link: "/booking/search", city: "Imo", type: "link" },
+      { name: "Oyo", link: "/booking/search", city: "Oyo", type: "link" },
+      { name: "Rivers", link: "/booking/search", city: "Rivers", type: "link" },
     ],
   },
 
@@ -174,18 +165,16 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
 
     setIsSubmitting(true);
     try {
-      await addSubscriber({ email: formData.email });
-      // Reset form after successful submission
-      setFormData({ email: "" });
+      const ok = await addSubscriber({ email: formData.email });
+      if (ok) {
+        setFormData({ email: "" });
+      }
     } catch (error) {
       console.error("Failed to subscribe:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const isFormValid =
-    formData.email.trim() !== "" && Object.keys(errors).length === 0;
 
   return (
     <footer className="bg-[#F8F9FA] text-black">
@@ -204,6 +193,30 @@ function Footer({ bookingTypeID }: { bookingTypeID?: string }) {
               <p className="text-grey-600 text-[15px] leading-relaxed">
                 Premium, reliable vehicle rentals across Nigeria and Ghana.
               </p>
+              <form onSubmit={handleSubmit}>
+                <p className="text-grey-900 text-[13px] font-semibold">
+                  Get our newsletter
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    placeholder="Your email"
+                    className="min-w-0 flex-1 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors focus:border-[#0673FF]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="shrink-0 rounded-full bg-[#0673FF] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0560d6] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSubmitting ? "..." : "Subscribe"}
+                  </button>
+                </div>
+                {errors.email && (
+                  <p className="mt-1.5 text-xs text-[#D42620]">{errors.email}</p>
+                )}
+              </form>
               <div className="flex items-center gap-4 text-grey-600 text-[19px] pt-1">
                 {socials.map(({ Icon, href, label }) => (
                   <Link
