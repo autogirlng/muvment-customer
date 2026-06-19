@@ -116,7 +116,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://www.clarity.ms" />
         <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
         <QueryProvider>
           <ClientRoot>{children}</ClientRoot>
