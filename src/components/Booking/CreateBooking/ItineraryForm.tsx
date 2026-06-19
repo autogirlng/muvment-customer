@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useEffect, useState, Suspense } from "react";
+import { useMemo, useEffect, useState, useRef, Suspense } from "react";
 import { format } from "date-fns";
 import { Formik, Form } from "formik";
 import { StepperNavigation } from "./stepper";
@@ -19,6 +19,10 @@ import { PersonalInformationMyselfValues } from "@/types/booking";
 import SelectInput from "@/components/general/forms/select";
 import { RIDE_PURPOSES } from "@/helpers/metadata";
 import AutocompleteSelect from "@/components/general/forms/AutoCompleteSelect";
+import { kindFromValue } from "@/utils/bookingTypeRules";
+import ItineraryTypeConflictModal, {
+  TypeConflict,
+} from "./ItineraryTypeConflictModal";
 
 const segmentPlanKey = (td: any) =>
   JSON.stringify({
@@ -129,6 +133,140 @@ const ItineraryFormContent = ({
 
   const bookingTypeLabel = (val?: string) =>
     bookingOptions.find((o) => o.value === val)?.option || "Plan not set";
+
+  // Bumped whenever a conflict is resolved or cancelled, to force the trip
+  // accordions to re-read the corrected booking type from state.
+  const [resyncKey, setResyncKey] = useState(0);
+  const lastPerDayType = useRef<string | undefined>(undefined);
+
+  const baseType = trips[0]?.tripDetails?.bookingType as string | undefined;
+  const baseKind = kindFromValue(baseType, bookingOptions);
+  const canAddDays = baseKind === "per_day";
+
+  useEffect(() => {
+    if (sameForAllDays && trips.length >= 1) {
+      const v = trips[0]?.tripDetails?.bookingType as string | undefined;
+      if (v && kindFromValue(v, bookingOptions) === "per_day") {
+        lastPerDayType.current = v;
+      }
+    }
+  }, [trips, sameForAllDays, bookingOptions]);
+
+  // The conflict is derived from the current itinerary shape, recomputed every
+  // render, so it always reflects state and cannot desync.
+  const conflict: TypeConflict | null = useMemo(() => {
+    if (trips.length <= 1) return null;
+    if (sameForAllDays) {
+      const v = trips[0]?.tripDetails?.bookingType as string | undefined;
+      const kind = kindFromValue(v, bookingOptions);
+      if (v && kind !== "per_day") {
+        return {
+          kind: kind as TypeConflict["kind"],
+          value: v,
+          typeName: bookingTypeLabel(v),
+          via: "shared",
+        };
+      }
+      return null;
+    }
+    const monthly = trips.find(
+      (t) =>
+        kindFromValue(
+          t.tripDetails?.bookingType as string | undefined,
+          bookingOptions,
+        ) === "whole_booking",
+    );
+    if (monthly) {
+      const v = monthly.tripDetails?.bookingType as string;
+      return {
+        kind: "whole_booking",
+        value: v,
+        typeName: bookingTypeLabel(v),
+        via: "per_day",
+      };
+    }
+    return null;
+  }, [trips, sameForAllDays, bookingOptions]);
+
+  const fallbackPerDay = () =>
+    bookingOptions.find(
+      (o) => kindFromValue(o.value, bookingOptions) === "per_day",
+    )?.value;
+
+  const closeConflict = () => setResyncKey((k) => k + 1);
+
+  const resolveSingleDay = () => {
+    if (!conflict) return;
+    if (!sameForAllDays) {
+      setSameForAllDays(true);
+      applyToAllTrips(trips[0]?.id || "");
+    }
+    setNumberOfDays(1);
+    applySharedPlanChange({ bookingType: conflict.value } as TripDetails);
+    closeConflict();
+  };
+
+  const resolveOneSpecificDay = (dayIndex: number) => {
+    if (!conflict) return;
+    const restore = lastPerDayType.current || fallbackPerDay();
+    setSameForAllDays(false);
+    trips.forEach((t, i) => {
+      if (i === dayIndex) {
+        onChangeTrip(t.id || "", { bookingType: conflict.value } as TripDetails);
+      } else if (restore) {
+        onChangeTrip(t.id || "", { bookingType: restore } as TripDetails);
+      }
+    });
+    closeConflict();
+  };
+
+  const conflictDays = trips.map((t, i) => {
+    const d = t.tripDetails?.tripStartDate as string | undefined;
+    let dateLabel: string | undefined;
+    if (d) {
+      try {
+        dateLabel = new Date(d).toLocaleDateString("en-GB", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+        });
+      } catch {}
+    }
+    return { label: `Day ${i + 1}`, dateLabel };
+  });
+
+  const resolveMonthly = () => {
+    if (!conflict) return;
+    setSameForAllDays(true);
+    setNumberOfDays(1);
+    applySharedPlanChange({ bookingType: conflict.value } as TripDetails);
+    closeConflict();
+  };
+
+  const cancelConflict = () => {
+    if (!conflict) return;
+    const restore = lastPerDayType.current || fallbackPerDay();
+    if (!restore) {
+      setNumberOfDays(1);
+      closeConflict();
+      return;
+    }
+    if (conflict.via === "shared") {
+      applySharedPlanChange({ bookingType: restore } as TripDetails);
+    } else {
+      trips.forEach((t) => {
+        if (
+          kindFromValue(
+            t.tripDetails?.bookingType as string | undefined,
+            bookingOptions,
+          ) === "whole_booking"
+        ) {
+          onChangeTrip(t.id || "", { bookingType: restore } as TripDetails);
+        }
+      });
+    }
+    closeConflict();
+  };
 
   const generateBookingOptions = () => {
     const types: VehicleBookingOptions[] = vehicle?.allPricingOptions;
@@ -281,16 +419,18 @@ const ItineraryFormContent = ({
                       type="number"
                       min={1}
                       value={trips.length}
+                      disabled={!canAddDays}
                       onChange={(e) =>
                         setNumberOfDays(Math.max(1, parseInt(e.target.value) || 1))
                       }
-                      className="h-8 w-12 rounded-lg border border-[#E4E7EC] text-center text-sm text-gray-800 focus:border-[#0673ff] focus:outline-none"
+                      className="h-8 w-12 rounded-lg border border-[#E4E7EC] text-center text-sm text-gray-800 focus:border-[#0673ff] focus:outline-none disabled:opacity-40"
                     />
                     <button
                       type="button"
                       aria-label="More days"
                       onClick={() => setNumberOfDays(trips.length + 1)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E4E7EC] text-gray-700"
+                      disabled={!canAddDays}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E4E7EC] text-gray-700 disabled:opacity-40"
                     >
                       +
                     </button>
@@ -301,10 +441,18 @@ const ItineraryFormContent = ({
                 </div>
               )}
 
+              {!canAddDays && trips.length > 0 && (
+                <p className="-mt-2 text-xs leading-relaxed text-gray-500">
+                  {baseKind === "whole_booking"
+                    ? `${bookingTypeLabel(baseType)} covers one continuous booking, so days are set for you.`
+                    : `${bookingTypeLabel(baseType)} is a single trip. To book multiple days, switch to an hourly or daily plan.`}
+                </p>
+              )}
+
               {trips.length <= 1 ? (
                 trips.map((trip, index) => (
                   <TripAccordion
-                    key={`${trip.id}-${tripsVersion}`}
+                    key={`${trip.id}-${tripsVersion}-${resyncKey}`}
                     day={`${index + 1}`}
                     id={trip.id || ""}
                     isCollapsed={false}
@@ -331,7 +479,7 @@ const ItineraryFormContent = ({
                   </div>
                   {trips[0] && (
                     <TripAccordion
-                      key={`plan-${tripsVersion}`}
+                      key={`plan-${tripsVersion}-${resyncKey}`}
                       day={`${1}`}
                       dayLabel={formatPlanRange(
                         trips[0]?.tripDetails?.tripStartDate,
@@ -410,7 +558,7 @@ const ItineraryFormContent = ({
 
                   {trips?.map((trip, index) => (
                     <TripAccordion
-                      key={`${trip.id}-${tripsVersion}`}
+                      key={`${trip.id}-${tripsVersion}-${resyncKey}`}
                       day={`${index + 1}`}
                       id={trip.id || ""}
                       isCollapsed={!openTripIds.has(trip.id || "")}
@@ -521,6 +669,15 @@ const ItineraryFormContent = ({
                 isSaveDraftloading={false}
                 nextText="Review itinerary"
                 disableNextButton={!isTripFormsComplete}
+              />
+
+              <ItineraryTypeConflictModal
+                conflict={conflict}
+                days={conflictDays}
+                onSingleDay={resolveSingleDay}
+                onOneSpecificDay={resolveOneSpecificDay}
+                onMonthly={resolveMonthly}
+                onCancel={cancelConflict}
               />
             </Form>
           );

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, ReactNode } from "react";
+import React, { useState, useEffect, useRef, useMemo, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/services/vechilePriceUtiles";
 import { format } from "date-fns";
@@ -45,6 +45,10 @@ import { SocialShareButton } from "@/components/general/share";
 import { Carousel } from "@/components/utils/Carousel";
 import { TripAccordion } from "@/components/Booking/TripAccordion";
 import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
+import { kindFromValue } from "@/utils/bookingTypeRules";
+import ItineraryTypeConflictModal, {
+  TypeConflict,
+} from "@/components/Booking/CreateBooking/ItineraryTypeConflictModal";
 import { Reviews } from "@/components/Reviews";
 import {
   VehicleBookingOptions,
@@ -110,6 +114,13 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     setSameForAllDays,
     applySharedPlanChange,
   } = useItineraryForm();
+
+  // Bumped on every conflict resolution or cancel to force the trip accordions
+  // to re-read the corrected booking type from state.
+  const [resyncKey, setResyncKey] = useState(0);
+  // Remembers the last booking type that was valid as a repeatable daily plan,
+  // so a conflict can be reverted or the other days restored.
+  const lastPerDayType = useRef<string | undefined>(undefined);
 
   // Guards against an older in-flight estimate overwriting a newer one.
   const estimateSeq = useRef(0);
@@ -326,6 +337,56 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     return () =>
       window.removeEventListener(FAVOURITES_CHANGED_EVENT, onChanged);
   }, [vehicle?.id]);
+
+  // Remember the last valid daily type while the plan is in a good shape.
+  useEffect(() => {
+    if (sameForAllDays && trips.length >= 1) {
+      const v = trips[0]?.tripDetails?.bookingType as string | undefined;
+      if (v && kindFromValue(v, bookingOptions) === "per_day") {
+        lastPerDayType.current = v;
+      }
+    }
+  }, [trips, sameForAllDays, bookingOptions]);
+
+  // The conflict is derived from the current itinerary shape, recomputed every
+  // render, so it always reflects state and cannot desync. An impossible plan
+  // (a single-trip or monthly type spread across days) always surfaces the
+  // modal, however it was reached.
+  const conflict: TypeConflict | null = useMemo(() => {
+    const labelOf = (v?: string) =>
+      bookingOptions.find((o) => o.value === v)?.option || "Plan not set";
+    if (trips.length <= 1) return null;
+    if (sameForAllDays) {
+      const v = trips[0]?.tripDetails?.bookingType as string | undefined;
+      const kind = kindFromValue(v, bookingOptions);
+      if (v && kind !== "per_day") {
+        return {
+          kind: kind as TypeConflict["kind"],
+          value: v,
+          typeName: labelOf(v),
+          via: "shared",
+        };
+      }
+      return null;
+    }
+    const monthly = trips.find(
+      (t) =>
+        kindFromValue(
+          t.tripDetails?.bookingType as string | undefined,
+          bookingOptions,
+        ) === "whole_booking",
+    );
+    if (monthly) {
+      const v = monthly.tripDetails?.bookingType as string;
+      return {
+        kind: "whole_booking",
+        value: v,
+        typeName: labelOf(v),
+        via: "per_day",
+      };
+    }
+    return null;
+  }, [trips, sameForAllDays, bookingOptions]);
 
   const handleToggleFavourite = async () => {
     if (!isAuthenticated) {
@@ -571,8 +632,94 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         ? "This is a within-city booking for the period you select, so you can move around central locations freely. Going to an outskirts area can be added and will be reflected in the price."
         : "Prices shown are for trips within the city. Outskirts areas can be added and will be reflected in the price.";
 
-  const bookingMain = (
-    <>
+  const baseType = trips[0]?.tripDetails?.bookingType as string | undefined;
+  const baseKind = kindFromValue(baseType, bookingOptions);
+  const canAddDays = baseKind === "per_day";
+
+  const fallbackPerDay = () =>
+    bookingOptions.find((o) => kindFromValue(o.value, bookingOptions) === "per_day")
+      ?.value;
+
+  const closeConflict = () => setResyncKey((k) => k + 1);
+
+  // Collapse the whole booking to a single day carrying the conflicting type.
+  const resolveSingleDay = () => {
+    if (!conflict) return;
+    if (!sameForAllDays) {
+      setSameForAllDays(true);
+      applyToAllTrips(trips[0]?.id || "");
+    }
+    setNumberOfDays(1);
+    applySharedPlanChange({ bookingType: conflict.value } as any);
+    closeConflict();
+  };
+
+  // Keep the days, switch to per-day mode, and leave only the chosen day as the
+  // type; the remaining days fall back to the last valid daily plan.
+  const resolveOneSpecificDay = (dayIndex: number) => {
+    if (!conflict) return;
+    const restore = lastPerDayType.current || fallbackPerDay();
+    setSameForAllDays(false);
+    trips.forEach((t, i) => {
+      if (i === dayIndex) {
+        onChangeTrip(t.id, { bookingType: conflict.value } as any);
+      } else if (restore) {
+        onChangeTrip(t.id, { bookingType: restore } as any);
+      }
+    });
+    closeConflict();
+  };
+
+  const conflictDays = trips.map((t, i) => {
+    const d = t.tripDetails?.tripStartDate as string | undefined;
+    let dateLabel: string | undefined;
+    if (d) {
+      try {
+        dateLabel = new Date(d).toLocaleDateString("en-GB", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+        });
+      } catch {}
+    }
+    return { label: `Day ${i + 1}`, dateLabel };
+  });
+
+  const resolveMonthly = () => {
+    if (!conflict) return;
+    setSameForAllDays(true);
+    setNumberOfDays(1);
+    applySharedPlanChange({ bookingType: conflict.value } as any);
+    closeConflict();
+  };
+
+  // Cancel: put the plan back into a valid shape so the modal closes.
+  const cancelConflict = () => {
+    if (!conflict) return;
+    const restore = lastPerDayType.current || fallbackPerDay();
+    if (!restore) {
+      setNumberOfDays(1);
+      closeConflict();
+      return;
+    }
+    if (conflict.via === "shared") {
+      applySharedPlanChange({ bookingType: restore } as any);
+    } else {
+      trips.forEach((t) => {
+        if (
+          kindFromValue(
+            t.tripDetails?.bookingType as string | undefined,
+            bookingOptions,
+          ) === "whole_booking"
+        ) {
+          onChangeTrip(t.id, { bookingType: restore } as any);
+        }
+      });
+    }
+    closeConflict();
+  };
+
+  const bookingMain = (    <>
                 <div>
                   <h2 className="font-bold text-[17px]">Add Booking Details</h2>
                   <div className="mt-2 mb-4">
@@ -608,18 +755,20 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                           type="number"
                           min={1}
                           value={trips.length}
+                          disabled={!canAddDays}
                           onChange={(e) =>
                             setNumberOfDays(
                               Math.max(1, parseInt(e.target.value) || 1),
                             )
                           }
-                          className="h-7 w-11 rounded-lg border border-[#E4E7EC] text-center text-sm text-gray-800 focus:border-[#0673ff] focus:outline-none"
+                          className="h-7 w-11 rounded-lg border border-[#E4E7EC] text-center text-sm text-gray-800 focus:border-[#0673ff] focus:outline-none disabled:opacity-40"
                         />
                         <button
                           type="button"
                           aria-label="More days"
                           onClick={() => setNumberOfDays(trips.length + 1)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E4E7EC] text-gray-700"
+                          disabled={!canAddDays}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E4E7EC] text-gray-700 disabled:opacity-40"
                         >
                           +
                         </button>
@@ -645,7 +794,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                   {trips.length <= 1 ? (
                     trips.map((key, index) => (
                       <TripAccordion
-                        key={`${key.id}-${tripsVersion}`}
+                        key={`${key.id}-${tripsVersion}-${resyncKey}`}
                         day={`${index + 1}`}
                         id={key.id}
                         vehicle={vehicle}
@@ -677,7 +826,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                       </div>
                       {trips[0] && (
                         <TripAccordion
-                          key={`plan-${tripsVersion}`}
+                          key={`plan-${tripsVersion}-${resyncKey}`}
                           day={`${1}`}
                           dayLabel={formatPlanRange(
                             trips[0]?.tripDetails?.tripStartDate,
@@ -716,7 +865,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     <>
                       {trips?.map((key, index) => (
                         <TripAccordion
-                          key={`${key.id}-${tripsVersion}`}
+                          key={`${key.id}-${tripsVersion}-${resyncKey}`}
                           day={`${index + 1}`}
                           id={key.id}
                           vehicle={vehicle}
@@ -1034,6 +1183,14 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         vehicleName={vehicle?.name}
+      />
+      <ItineraryTypeConflictModal
+        conflict={conflict}
+        days={conflictDays}
+        onSingleDay={resolveSingleDay}
+        onOneSpecificDay={resolveOneSpecificDay}
+        onMonthly={resolveMonthly}
+        onCancel={cancelConflict}
       />
       <Navbar />
       <div className="min-h-screen w-full bg-gray-50 mt-24">
