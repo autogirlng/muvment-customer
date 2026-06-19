@@ -138,6 +138,8 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
 
 const inputClass =
   "w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none focus:border-[#0673FF]";
+const selectClass =
+  "w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 pr-10 text-sm text-gray-800 outline-none focus:border-[#0673FF] focus:ring-1 focus:ring-[#0673FF] disabled:bg-gray-50 disabled:text-gray-400";
 const barFieldClass =
   "flex w-full items-center justify-between gap-2 bg-transparent px-3 py-2.5 text-left text-sm text-gray-800 outline-none";
 const labelClass = "block text-left text-xs font-medium text-gray-600 mb-1.5";
@@ -916,6 +918,7 @@ function BookingSearchInner({
   const [time, setTime] = useState("");
   const [category, setCategory] = useState("");
   const [error, setError] = useState("");
+  const [triedSubmit, setTriedSubmit] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
   // Live option data resolved from the backend
@@ -1090,6 +1093,7 @@ function BookingSearchInner({
     setBookingType(t);
     setTypeChosen(true);
     setError("");
+    setTriedSubmit(false);
   };
 
   // Restore a search from the results-page URL (and the saved snapshot for the
@@ -1188,35 +1192,65 @@ function BookingSearchInner({
     setSelectedAddress(v);
   }, [userLoc.name, userLoc.lat, userLoc.lng, bookingType]);
 
-  const getMissingFields = (): string[] => {
+  const getMissingKeys = (): string[] => {
     const missing: string[] = [];
     if (bookingType === "airport") {
-      if (!(selectedAirport && selectedAirport.lat)) missing.push("Airport");
+      if (!(selectedAirport && selectedAirport.lat)) missing.push("airport");
       if (!(selectedAddress && selectedAddress.lat))
-        missing.push(
-          airportDirection === "pickup" ? "Pickup location" : "Drop-off location",
-        );
-      if (!time) missing.push("Time");
+        missing.push("airportAddress");
     } else if (bookingType === "boat") {
-      if (!boatDestId) missing.push("Destination");
-      if (!time) missing.push("Time");
+      if (!boatDestId) missing.push("boatDest");
     } else if (bookingType === "within-state") {
-      if (!(pickup && pickup.lat)) missing.push("Location");
+      if (!(pickup && pickup.lat)) missing.push("withinLocation");
     } else {
       if (!(selectedLocation && selectedLocation.lat))
-        missing.push("Starting location");
-      if (!destId) missing.push("Destination");
-      if (!time) missing.push("Time");
+        missing.push("startLocation");
+      if (!destId) missing.push("interstateDest");
     }
     return missing;
   };
 
+  const fieldLabel = (key: string): string => {
+    switch (key) {
+      case "airport":
+        return "an airport";
+      case "airportAddress":
+        return airportDirection === "pickup"
+          ? "a pickup location"
+          : "a drop-off location";
+      case "withinLocation":
+        return "a location";
+      case "startLocation":
+        return "a starting location";
+      case "boatDest":
+      case "interstateDest":
+        return "a destination";
+      default:
+        return "the missing details";
+    }
+  };
+
+  const barMessage = (keys: string[]): string => {
+    const parts = keys.map(fieldLabel);
+    if (parts.length === 1) return `Add ${parts[0]} to search.`;
+    return `Add ${parts.slice(0, -1).join(", ")} and ${
+      parts[parts.length - 1]
+    } to search.`;
+  };
+
+  const missingKeys = triedSubmit ? getMissingKeys() : [];
+  const fieldErr = (key: string, msg: string) =>
+    missingKeys.includes(key) ? (
+      <p className="mt-1 text-left text-xs text-[#D42620]">{msg}</p>
+    ) : null;
+
   const handleSearch = async () => {
-    const missing = getMissingFields();
+    const missing = getMissingKeys();
     if (missing.length) {
-      setError(`Please add: ${missing.join(", ")}.`);
+      setTriedSubmit(true);
       return;
     }
+    setTriedSubmit(false);
     setError("");
     setIsSearching(true);
     try {
@@ -1409,6 +1443,7 @@ function BookingSearchInner({
             onSelect={onPickPickup}
             initial={pickup}
           />
+          {fieldErr("withinLocation", "Add a location to continue")}
           <div>
             <label className={labelClass}>Duration</label>
             <div className="flex gap-2">
@@ -1460,35 +1495,47 @@ function BookingSearchInner({
           </div>
           {airportDirection === "pickup" ? (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <LocationField
-                key="airport-address"
-                label="Pickup location"
-                placeholder="Where should the driver pick you up?"
-                onSelect={onPickAddress}
-                initial={selectedAddress}
-              />
-              <AirportField
-                key="airport-field"
-                direction="pickup"
-                userLoc={userLoc}
-                onSelect={setSelectedAirport}
-              />
+              <div>
+                <LocationField
+                  key="airport-address"
+                  label="Pickup location"
+                  placeholder="Where should the driver pick you up?"
+                  onSelect={onPickAddress}
+                  initial={selectedAddress}
+                />
+                {fieldErr("airportAddress", "Add a pickup location")}
+              </div>
+              <div>
+                <AirportField
+                  key="airport-field"
+                  direction="pickup"
+                  userLoc={userLoc}
+                  onSelect={setSelectedAirport}
+                />
+                {fieldErr("airport", "Select an airport")}
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <AirportField
-                key="airport-field"
-                direction="dropoff"
-                userLoc={userLoc}
-                onSelect={setSelectedAirport}
-              />
-              <LocationField
-                key="airport-address"
-                label="Drop-off location"
-                placeholder="Where should the driver take you?"
-                onSelect={onPickAddress}
-                initial={selectedAddress}
-              />
+              <div>
+                <AirportField
+                  key="airport-field"
+                  direction="dropoff"
+                  userLoc={userLoc}
+                  onSelect={setSelectedAirport}
+                />
+                {fieldErr("airport", "Select an airport")}
+              </div>
+              <div>
+                <LocationField
+                  key="airport-address"
+                  label="Drop-off location"
+                  placeholder="Where should the driver take you?"
+                  onSelect={onPickAddress}
+                  initial={selectedAddress}
+                />
+                {fieldErr("airportAddress", "Add a drop-off location")}
+              </div>
             </div>
           )}
           {categoryField}
@@ -1506,28 +1553,33 @@ function BookingSearchInner({
             onSelect={onPickInterstate}
             initial={selectedLocation}
           />
+          {fieldErr("startLocation", "Add a starting location")}
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <div>
               <label className={labelClass}>Destination</label>
-              <select
-                className={inputClass}
-                value={destId}
-                onChange={(e) => setDestId(e.target.value)}
-                disabled={destLoading || interstateDestinations.length === 0}
-              >
-                <option value="">
-                  {destLoading
-                    ? "Loading destinations..."
-                    : interstateDestinations.length === 0
-                      ? "No destinations available yet"
-                      : "Select destination"}
-                </option>
-                {interstateDestinations.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
+              <div className="relative">
+                <select
+                  className={selectClass}
+                  value={destId}
+                  onChange={(e) => setDestId(e.target.value)}
+                  disabled={destLoading || interstateDestinations.length === 0}
+                >
+                  <option value="">
+                    {destLoading
+                      ? "Loading destinations..."
+                      : interstateDestinations.length === 0
+                        ? "No destinations available yet"
+                        : "Select destination"}
                   </option>
-                ))}
-              </select>
+                  {interstateDestinations.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+                <FaChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+              </div>
+              {fieldErr("interstateDest", "Select a destination")}
             </div>
             {categoryField}
           </div>
@@ -1541,30 +1593,34 @@ function BookingSearchInner({
       <div className="space-y-3">
         <div>
           <label className={labelClass}>Destination</label>
-          <select
-            className={inputClass}
-            value={boatDestId}
-            onChange={(e) => setBoatDestId(e.target.value)}
-            disabled={destLoading || boatDestinations.length === 0}
-          >
-            <option value="">
-              {destLoading
-                ? "Loading destinations..."
-                : boatDestinations.length === 0
-                  ? "No destinations available yet"
-                  : "Select destination"}
-            </option>
-            {boatDestinations.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
+          <div className="relative">
+            <select
+              className={selectClass}
+              value={boatDestId}
+              onChange={(e) => setBoatDestId(e.target.value)}
+              disabled={destLoading || boatDestinations.length === 0}
+            >
+              <option value="">
+                {destLoading
+                  ? "Loading destinations..."
+                  : boatDestinations.length === 0
+                    ? "No destinations available yet"
+                    : "Select destination"}
               </option>
-            ))}
-          </select>
+              {boatDestinations.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+            <FaChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+          </div>
           {boatDest ? (
             <p className="mt-1.5 text-left text-xs text-gray-500">
               Round trip, both ways the same day.
             </p>
           ) : null}
+          {fieldErr("boatDest", "Select a destination")}
         </div>
         {singleDateTime}
       </div>
@@ -1620,25 +1676,28 @@ function BookingSearchInner({
     value: string,
     onChange: (v: string) => void,
   ) => (
-    <select
-      className="w-full truncate bg-transparent px-3 py-2.5 text-sm text-gray-800 outline-none"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={destLoading || list.length === 0}
-    >
-      <option value="">
-        {destLoading
-          ? "Loading..."
-          : list.length === 0
-            ? "No destinations"
-            : "Destination"}
-      </option>
-      {list.map((d) => (
-        <option key={d.id} value={d.id}>
-          {d.name}
+    <div className="relative w-full">
+      <select
+        className="w-full appearance-none truncate bg-transparent pl-3 pr-7 py-2.5 text-sm text-gray-800 outline-none"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={destLoading || list.length === 0}
+      >
+        <option value="">
+          {destLoading
+            ? "Loading..."
+            : list.length === 0
+              ? "No destinations"
+              : "Destination"}
         </option>
-      ))}
-    </select>
+        {list.map((d) => (
+          <option key={d.id} value={d.id}>
+            {d.name}
+          </option>
+        ))}
+      </select>
+      <FaChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+    </div>
   );
 
   const renderBarCells = () => {
@@ -1823,7 +1882,11 @@ function BookingSearchInner({
           disabled={isSearching}
           className="mt-4 w-full rounded-full bg-[#0673FF] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#0560d6] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSearching ? "Searching..." : "Find a Vehicle"}
+          {isSearching
+            ? "Searching..."
+            : bookingType === "boat"
+              ? "Find a Boat"
+              : "Find a Vehicle"}
         </button>
       </div>
     );
@@ -1908,7 +1971,11 @@ function BookingSearchInner({
             </button>
           </div>
         </div>
-        {error ? (
+        {triedSubmit && getMissingKeys().length ? (
+          <p className="mt-1 px-4 text-center text-xs text-[#D42620]">
+            {barMessage(getMissingKeys())}
+          </p>
+        ) : error ? (
           <p className="mt-1 px-4 text-center text-xs text-[#D42620]">{error}</p>
         ) : null}
       </div>
@@ -1996,7 +2063,11 @@ function BookingSearchInner({
             disabled={isSearching}
             className="mt-4 w-full rounded-full bg-[#0673FF] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#0560d6] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSearching ? "Searching..." : "Find a Vehicle"}
+            {isSearching
+              ? "Searching..."
+              : bookingType === "boat"
+                ? "Find a Boat"
+                : "Find a Vehicle"}
           </button>
         </div>
 

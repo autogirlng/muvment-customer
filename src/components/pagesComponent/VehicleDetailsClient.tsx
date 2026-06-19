@@ -56,7 +56,6 @@ import Footer from "../HomeComponent/Footer";
 import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicleservice";
 import LoginPromptModal from "../Booking/Loginpromptmodal";
 import TopRatedBadge from "@/components/Booking/TopRatedBadge";
-import { useFeaturedVehicleIds } from "@/hooks/useFeaturedVehicleIds";
 import {
   setPendingFavourite,
   FAVOURITES_CHANGED_EVENT,
@@ -73,8 +72,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const { isAuthenticated } = useAuth();
 
   const [vehicle, setVehicle] = useState<any>(initialVehicleData);
-  const featuredIds = useFeaturedVehicleIds();
-  const isFeatured = vehicle?.id ? featuredIds.has(vehicle.id) : false;
+  const isFeatured = vehicle?.featured === true;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -849,6 +847,20 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                           label="Duration Discount"
                           value={pricing.data.data.discountAmount}
                           isDiscount
+                          subLabel={
+                            [
+                              pricing.data.data.basePrice > 0
+                                ? `${Math.round(
+                                    (pricing.data.data.discountAmount /
+                                      pricing.data.data.basePrice) *
+                                      100,
+                                  )}% off`
+                                : null,
+                              pricing.data.data.appliedDiscountName || null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ") || null
+                          }
                         />
                       )}
 

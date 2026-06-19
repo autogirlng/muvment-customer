@@ -8,6 +8,15 @@ import { FiCheckCircle, FiCircle, FiAlertCircle } from "react-icons/fi";
 
 const ngn = (n?: number) => `NGN ${Number(n || 0).toLocaleString()}`;
 
+const durationDiscountSubLabel = (d: any): string => {
+  const base = d?.basePrice || 0;
+  const amt = d?.discountAmount || 0;
+  const pct = base > 0 ? Math.round((amt / base) * 100) : 0;
+  return [pct > 0 ? `${pct}% off` : null, d?.appliedDiscountName || null]
+    .filter(Boolean)
+    .join(" · ");
+};
+
 const parseCoordinates = (
   raw: unknown,
 ): { lat: number; lng: number } | null => {
@@ -521,7 +530,14 @@ const CostBreakdown = ({
 
               {(pricing?.data?.data?.discountAmount || 0) > 0 && (
                 <div className="w-full text-sm flex justify-between mt-4 text-green-600">
-                  <span>Duration Discount</span>
+                  <span className="flex flex-col">
+                    <span>Duration Discount</span>
+                    {durationDiscountSubLabel(pricing?.data?.data) && (
+                      <span className="text-xs text-green-700/80">
+                        {durationDiscountSubLabel(pricing?.data?.data)}
+                      </span>
+                    )}
+                  </span>
                   <span>- {ngn(pricing?.data?.data?.discountAmount)}</span>
                 </div>
               )}
