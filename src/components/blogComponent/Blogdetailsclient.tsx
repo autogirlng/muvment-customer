@@ -13,6 +13,7 @@ import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
 import ShareButton from "./blogUI/Sharebutton";
 import CommentsSection from "./blogUI/Commentssection";
 import Footer from "../HomeComponent/Footer";
+import NewsletterSignup from "../general/NewsletterSignup";
 import { Navbar } from "../Navbar";
 import parse, {
   Element,
@@ -437,6 +438,15 @@ export default function BlogDetailsClient({
           onAuthRequired={() => setShowLoginModal(true)}
         />
       </article>
+
+      <section className="bg-white px-4 pb-16">
+        <div className="mx-auto max-w-3xl">
+          <NewsletterSignup
+            heading="Enjoyed this read?"
+            subheading="Subscribe for new cities, offers, and travel tips."
+          />
+        </div>
+      </section>
 
       {/* ── Related posts ─────────────────────────────────────────────── */}
       {relatedPosts.length > 0 && (

@@ -15,10 +15,10 @@ interface City {
 const cities: City[] = [
   { name: "Lagos", country: "Nigeria", image: "/images/landing/1.jpg" },
   { name: "Abuja", country: "Nigeria", image: "/images/landing/4.jpg" },
-  { name: "Port-Harcourt", country: "Nigeria", image: "/images/landing/3.jpg" },
-  { name: "Benin", country: "Nigeria", image: "/images/landing/5.jpg" },
-  { name: "Enugu", country: "Nigeria", image: "/images/landing/6.jpg" },
-  { name: "Accra", country: "Ghana", image: "/images/landing/2.jpg" },
+  { name: "Abia", country: "Nigeria", image: "/images/landing/3.jpg" },
+  { name: "Delta", country: "Nigeria", image: "/images/landing/5.jpg" },
+  { name: "Oyo", country: "Nigeria", image: "/images/landing/6.jpg" },
+  { name: "Rivers", country: "Nigeria", image: "/images/landing/2.jpg" },
 ];
 
 const ExploreCities: React.FC<{ bookingTypeId?: string }> = ({

@@ -19,10 +19,19 @@ const FALLBACK_IMAGE = "/images/vehicles/sedan.webp";
 
 const imageForType = (name = "") => {
   const n = name.toUpperCase();
+  if (n.includes("ELECTRIC") && n.includes("SUV"))
+    return "/images/vehicles/electric-suv.webp";
+  if (n.includes("ELECTRIC") && n.includes("SEDAN"))
+    return "/images/vehicles/electric-sedan.webp";
+  if (n.includes("LUXURY")) return "/images/vehicles/luxury-suv.webp";
+  if (n.includes("MID")) return "/images/vehicles/mid-sized-suv.webp";
+  if (n.includes("MINI") || n.includes("VAN"))
+    return "/images/vehicles/mini-van.webp";
+  if (n.includes("BOAT")) return "/images/vehicles/boat.webp";
+  if (n.includes("BUS")) return "/images/vehicles/bus.webp";
+  if (n.includes("TRUCK")) return "/images/vehicles/truck.webp";
   if (n.includes("SUV")) return "/images/vehicles/suv.webp";
   if (n.includes("SEDAN")) return "/images/vehicles/sedan.webp";
-  if (n.includes("TRUCK")) return "/images/vehicles/truck.webp";
-  if (n.includes("BUS") || n.includes("VAN")) return "/images/vehicles/bus.webp";
   return FALLBACK_IMAGE;
 };
 
@@ -36,7 +45,9 @@ const CategoryCard: React.FC<{
   category: CustomerCategory;
   href: string;
 }> = ({ category, href }) => {
-  const [imgSrc, setImgSrc] = useState(category.image || FALLBACK_IMAGE);
+  const [imgSrc, setImgSrc] = useState(
+    imageForType(category.vehicleType?.name),
+  );
   const label = formatName(category.vehicleType?.name ?? "");
 
   return (

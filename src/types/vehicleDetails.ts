@@ -129,6 +129,7 @@ export interface EstimatedBookingPrice {
       appliedGeofenceNames: string[];
       platformFeeAmount: number;
       discountAmount: number;
+      appliedDiscountName?: string;
       couponDiscountAmount: number;
       vatAmount: number;
       vatPercentage: number;

@@ -18,7 +18,6 @@ import { FavouriteService } from "@/controllers/favourites/favouriteService";
 import { Spinner } from "../general/spinner";
 import LoginPromptModal from "@/components/Booking/Loginpromptmodal";
 import TopRatedBadge from "@/components/Booking/TopRatedBadge";
-import { useFeaturedVehicleIds } from "@/hooks/useFeaturedVehicleIds";
 import {
   setPendingFavourite,
   FAVOURITES_CHANGED_EVENT,
@@ -85,11 +84,11 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   photos,
   bookingType,
   viewMode = "list",
+  featured,
 }) => {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const featuredIds = useFeaturedVehicleIds();
-  const isFeatured = featuredIds.has(id);
+  const isFeatured = featured === true;
 
   const images = useMemo(() => {
     if (!photos || photos.length === 0) return [];
@@ -266,7 +265,10 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs text-gray-500">
-              {getDisplayLabel(bookingType, bookingOptions)}
+              {(
+                allPricingOptions?.find((o) => o.bookingTypeId === bookingType)
+                  ?.bookingTypeName || getDisplayLabel(bookingType, bookingOptions)
+              ).trim()}
             </p>
             <p className="text-lg font-bold text-gray-900">
               {formatCurrency(
@@ -385,7 +387,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   return (
     <div
       onClick={handleCardClick}
-      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:shadow-md sm:h-[180px] sm:flex-row"
+      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:shadow-md sm:min-h-[180px] sm:flex-row"
     >
       <span onClick={(e) => e.stopPropagation()}>
         <LoginPromptModal

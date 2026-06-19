@@ -1,38 +1,20 @@
-import axios from "axios";
 import { toast } from "react-toastify";
-// Token
-const senderAPItoken =
-  "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiZWU4NDhmYjE5MzgzNWVkYjBkMWU1NDUyYWVlNzk5MzRlNWE3Y2EwNzBmNzU5ZGY5MmNhNzNkODljM2E5Mzk2MDMzYjk4MzJlNWNjZDRhNzYiLCJpYXQiOiIxNzM2NTAwMDk4LjM0OTQ4OCIsIm5iZiI6IjE3MzY1MDAwOTguMzQ5NDkwIiwiZXhwIjoiNDg5MDEwMDA5OC4zNDgyMzQiLCJzdWIiOiI4Nzc0MDIiLCJzY29wZXMiOltdfQ.OuONo9ot3oocHcBlpEHIgTquFkwiLrFNiHvnizBIVuJj9CEWZuxiXwI5tRvNyldjucA75tbYhDtSUHFYt0-mlw";
+import { NewsletterService } from "@/controllers/newsletter/newsletterService";
 
 export default function useNewsletter() {
-  const addSubscriber = async ({ email }: { email: string }) => {
-    try {
-      const response = await axios.post(
-        `https://api.sender.net/v2/subscribers`,
-        {
-          email,
-          groups: ["bkBR0K"],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${senderAPItoken}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
-
-      // console.log(response);
-
-      toast.success("Successful!");
-    } catch (err) {
-      // console.log(err);
-    } finally {
+  const addSubscriber = async ({
+    email,
+  }: {
+    email: string;
+  }): Promise<boolean> => {
+    const res = await NewsletterService.subscribe(email);
+    if (res.ok) {
+      toast.success(res.message || "You are subscribed.");
+      return true;
     }
+    toast.error(res.message || "Could not subscribe. Please try again.");
+    return false;
   };
-
-  // ej5R9B - Autogirl Hosts
-  // bkBR0K - Autogirl Customers
 
   return { addSubscriber };
 }

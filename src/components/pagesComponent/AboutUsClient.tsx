@@ -12,6 +12,7 @@ import Testimonials from "../HomeComponent/Testimonials";
 import Recognition from "../AboutUsComponent/Recognition";
 import ImpactAndCTA from "../AboutUsComponent/ImpactAndCTA";
 import Footer from "../HomeComponent/Footer";
+import NewsletterSignup from "../general/NewsletterSignup";
 import { getBookingOption } from "@/context/Constarain";
 import { BookingOption } from "@/types/booking";
 
@@ -42,6 +43,11 @@ function AboutUsClient() {
       <Testimonials />
       <Recognition />
       <ImpactAndCTA bookingTypeID={bookingType} />
+      <section className="bg-white px-4 py-12 lg:px-8 lg:py-16">
+        <div className="mx-auto max-w-7xl">
+          <NewsletterSignup />
+        </div>
+      </section>
       <Footer bookingTypeID={bookingType} />
     </div>
   );

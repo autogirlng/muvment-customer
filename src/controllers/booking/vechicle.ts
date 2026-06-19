@@ -12,6 +12,15 @@ import {
   getTableData,
 } from "../connnector/app.callers";
 
+// In-flight and resolved cache for destination lookups, keyed by their params,
+// so repeated or concurrent calls during a session share one network request.
+const destinationsRequestCache = new Map<string, Promise<any[]>>();
+
+// Vehicle types rarely change within a session; cache the one request so the
+// navbar search bar and the page do not each fetch their own copy.
+let vehicleTypesCache: any[] | null = null;
+let vehicleTypesPromise: Promise<any[]> | null = null;
+
 export class VehicleSearchService {
   private static readonly SEARCH_BASE_URL = "/api/v1/public/vehicles/search";
   private static readonly STATES_URL = "/api/v1/public/states";
@@ -38,27 +47,49 @@ export class VehicleSearchService {
     longitude: number,
     bookingTypeId: string,
   ): Promise<{ stateId: string; name: string; country: string }[]> {
-    try {
-      const response = await getSingleData(this.INTERSTATE_DESTINATIONS, {
-        latitude,
-        longitude,
-        bookingTypeId,
-      });
-      return response?.data?.[0]?.data || [];
-    } catch (error) {
-      console.error("Error fetching interstate destinations:", error);
-      return [];
-    }
+    const key = `interstate:${latitude},${longitude},${bookingTypeId}`;
+    const cached = destinationsRequestCache.get(key);
+    if (cached) return cached;
+
+    const url = this.INTERSTATE_DESTINATIONS;
+    const request = (async () => {
+      try {
+        const response = await getSingleData(url, {
+          latitude,
+          longitude,
+          bookingTypeId,
+        });
+        return response?.data?.[0]?.data || [];
+      } catch (error) {
+        destinationsRequestCache.delete(key);
+        console.error("Error fetching interstate destinations:", error);
+        return [];
+      }
+    })();
+
+    destinationsRequestCache.set(key, request);
+    return request;
   }
 
   static async getDestinations(bookingTypeId: string): Promise<any[]> {
-    try {
-      const response = await getSingleData(this.DESTINATIONS, { bookingTypeId });
-      return response?.data?.[0]?.data || [];
-    } catch (error) {
-      console.error("Error fetching destinations:", error);
-      return [];
-    }
+    const key = `destinations:${bookingTypeId}`;
+    const cached = destinationsRequestCache.get(key);
+    if (cached) return cached;
+
+    const url = this.DESTINATIONS;
+    const request = (async () => {
+      try {
+        const response = await getSingleData(url, { bookingTypeId });
+        return response?.data?.[0]?.data || [];
+      } catch (error) {
+        destinationsRequestCache.delete(key);
+        console.error("Error fetching destinations:", error);
+        return [];
+      }
+    })();
+
+    destinationsRequestCache.set(key, request);
+    return request;
   }
 
   static async getServiceAreas(
@@ -300,15 +331,24 @@ export class VehicleSearchService {
   }
 
   static async getVehicleTypes(): Promise<any[]> {
-    try {
-      const response = await getSingleData(this.VEHICLES_TYPE);
-      // handleApiResponse wraps the body in an array: [{status, data:[...]}]
-      // so the actual items live at response.data[0].data
-      return response?.data?.[0]?.data || [];
-    } catch (error) {
-      console.error("Error fetching vehicle types:", error);
-      return [];
-    }
+    if (vehicleTypesCache) return vehicleTypesCache;
+    if (vehicleTypesPromise) return vehicleTypesPromise;
+    const url = this.VEHICLES_TYPE;
+    vehicleTypesPromise = (async () => {
+      try {
+        const response = await getSingleData(url);
+        // handleApiResponse wraps the body in an array: [{status, data:[...]}]
+        // so the actual items live at response.data[0].data
+        const data = response?.data?.[0]?.data || [];
+        vehicleTypesCache = data;
+        return data;
+      } catch (error) {
+        vehicleTypesPromise = null;
+        console.error("Error fetching vehicle types:", error);
+        return [];
+      }
+    })();
+    return vehicleTypesPromise;
   }
 
   static async getcalculatingBookingByid(id: string): Promise<any> {
