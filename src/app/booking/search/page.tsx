@@ -64,7 +64,10 @@ export default async function Page({ searchParams }: PageProps) {
     page: 0,
     size: 20,
     orderBy: parseVehicleOrderBy(orderByParam),
-    city: params.city || params.location,
+    // Only filter by city when an explicit city was provided. The location
+    // string is a full place name and is not a city, so it must not be used
+    // here; the search is already scoped by latitude, longitude and radius.
+    city: params.city,
     vehicleTypeId: params.category,
     latitude: params.lat ? parseFloat(params.lat) : undefined,
     longitude: params.lng ? parseFloat(params.lng) : undefined,
