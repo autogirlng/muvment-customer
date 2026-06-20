@@ -43,10 +43,11 @@ const todayStr = () => {
   return fmt(t.getFullYear(), t.getMonth(), t.getDate());
 };
 
-// For a from/to date range the whole day must be free, so only fully
-// available days can be selected. PARTIALLY_BOOKED can mean zero free hours
-// (for example a full day maintenance block), so it is shown but not selectable.
-const isSelectableStatus = (s?: DayStatus) => s === "AVAILABLE";
+// Booked and unavailable days cannot be selected. A partially booked day is
+// selectable because the booking flow lets the customer pick from the free
+// hours on that day via the per-day time slots.
+const isSelectableStatus = (s?: DayStatus) =>
+  s === "AVAILABLE" || s === "PARTIALLY_BOOKED";
 
 const VehicleAvailabilityModal: React.FC<Props> = ({
   isOpen,
@@ -166,7 +167,7 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
       return;
     }
     if (rangeHasBlockedDay(rangeStart, dateStr)) {
-      setNote("That range includes a day that is not fully available. Pick dates that are free.");
+      setNote("That range includes a booked or unavailable day. Pick dates that are free.");
       setRangeStart(dateStr);
       setRangeEnd(null);
       return;
@@ -385,8 +386,9 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
             </span>
           </div>
           <p className="mt-2 text-[11px] text-gray-400">
-            Only fully available days can be selected. Hover a day to see its
-            status.
+            Booked and unavailable days cannot be selected. On a partly booked
+            day you choose from the free hours at the next step. Hover a day to
+            see its status.
           </p>
         </div>
 
