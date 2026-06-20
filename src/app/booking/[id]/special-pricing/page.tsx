@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ServicePricingDetailsClient from "@/components/Booking/Servicepricingdetailsclient";
 import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
 import { generatePageMetadata } from "@/helpers/metadata";
@@ -11,16 +12,16 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { yearRangeId, id } = await params;
-  const servicePricingId = id
+  const slug = id;
   try {
     const pricingData =
-      await ServicePricingService.getServicePricingById(servicePricingId);
+      await ServicePricingService.getServicePricingBySlug(slug);
     if (!pricingData) {
       return generatePageMetadata({
         title: "Service Pricing Not Found",
         description:
           "This service pricing is no longer available. Explore Muvment's verified rental cars with professional chauffeurs and current rates for hourly, daily, and monthly hire.",
-        url: `/booking/special-pricing/${servicePricingId}`,
+        url: `/booking/${slug}/special-pricing`,
       });
     }
     const prices = Array.isArray(pricingData.prices) ? pricingData.prices : [];
@@ -52,7 +53,7 @@ export async function generateMetadata({ params }: PageProps) {
         "vehicle rental",
         "booking options",
       ],
-      url: `/service-pricing/details/${yearRangeId}/${servicePricingId}`,
+      url: `/booking/${slug}/special-pricing`,
       image: images[0] || "/images/image1.png",
       type: "website",
     });
@@ -63,11 +64,15 @@ export async function generateMetadata({ params }: PageProps) {
       title: "Service Pricing Details",
       description:
         "We couldn't load this service pricing right now. Explore Muvment's verified rental cars with professional chauffeurs and rates for hourly, daily, and monthly hire.",
-      url: `/service-pricing/details/${yearRangeId}/${servicePricingId}`,
+      url: `/booking/${slug}/special-pricing`,
     });
   }
 }
 
 export default function ServicePricingDetailsPage() {
-  return <ServicePricingDetailsClient />;
+  return (
+    <Suspense fallback={null}>
+      <ServicePricingDetailsClient />
+    </Suspense>
+  );
 }
