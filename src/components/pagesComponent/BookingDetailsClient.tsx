@@ -20,6 +20,7 @@ import {
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { BookingService } from "@/controllers/booking/bookingService";
+import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { getSingleData } from "@/controllers/connnector/app.callers";
@@ -59,6 +60,9 @@ interface BookingDetails {
   };
   primaryPhoneNumber?: string;
   segments?: BookingSegment[];
+  bookingCategory?: string;
+  servicePricingName?: string;
+  rideType?: string;
 }
 
 interface VehiclePhoto {
@@ -80,6 +84,14 @@ interface VehicleDetails {
 }
 
 const BRAND = "#0673ff";
+
+const prettyName = (s?: string) =>
+  (s || "")
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => (w === "suv" ? "SUV" : w[0].toUpperCase() + w.slice(1)))
+    .join(" ");
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-NG", {
@@ -165,6 +177,12 @@ const BookingDetailsClient = () => {
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [vehicle, setVehicle] = useState<VehicleDetails | null>(null);
+  const [servicePricingInfo, setServicePricingInfo] = useState<{
+    imageUrl?: string;
+    minYear?: number;
+    maxYear?: number;
+    name?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pollCount, setPollCount] = useState(0);
@@ -205,6 +223,82 @@ const BookingDetailsClient = () => {
             {},
           );
           setVehicle(vehicleRes?.data?.[0]?.data || null);
+        } else {
+          // No specific vehicle assigned yet: show the booked vehicle class
+          // image, name and year range from the service pricing catalogue.
+          const spName: string | undefined = bookingData.servicePricingName;
+          const rideTypeRaw: string | undefined = bookingData.rideType;
+          console.log("[booking class fields]", {
+            servicePricingName: spName,
+            rideType: rideTypeRaw,
+          });
+          const fallbackName =
+            spName || prettyName((rideTypeRaw || "").replace(/_/g, " ")) || "";
+          if (spName || rideTypeRaw) {
+            let info: {
+              imageUrl?: string;
+              minYear?: number;
+              maxYear?: number;
+              name?: string;
+            } = { name: fallbackName };
+            try {
+              const showcase =
+                await ServicePricingService.getServicePricingShowcase();
+              const norm = (s?: string) => (s || "").trim().toLowerCase();
+              const target = norm(spName);
+              const ride = norm(rideTypeRaw);
+              const list = showcase || [];
+              const pick = (pred: (p: any) => boolean) => {
+                const c = list.filter(pred);
+                return c.find((p: any) => p.imageUrl) || c[0];
+              };
+              const match =
+                pick((p: any) => !!ride && norm(p.rideType) === ride) ||
+                pick(
+                  (p: any) =>
+                    norm(p.servicePricingName) === target ||
+                    norm(p.name) === target,
+                ) ||
+                pick((p: any) => {
+                  const n = norm(p.name);
+                  const spn = norm(p.servicePricingName);
+                  return (
+                    !!target &&
+                    (n.includes(target) ||
+                      target.includes(n) ||
+                      spn.includes(target) ||
+                      target.includes(spn))
+                  );
+                });
+              if (match) {
+                info = {
+                  imageUrl: match.imageUrl,
+                  minYear: match.minYear,
+                  maxYear: match.maxYear,
+                  name: match.servicePricingName || match.name || fallbackName,
+                };
+              } else {
+                console.warn("[booking class] no catalogue match", {
+                  servicePricingName: spName,
+                  rideType: rideTypeRaw,
+                  available: list.map((p: any) => ({
+                    name: p.name,
+                    servicePricingName: p.servicePricingName,
+                    rideType: p.rideType,
+                    hasImage: !!p.imageUrl,
+                  })),
+                });
+              }
+            } catch (e) {
+              console.warn("[booking class] showcase fetch failed", e);
+            }
+            setServicePricingInfo(info);
+          } else {
+            console.warn(
+              "[booking class] booking has no servicePricingName/rideType",
+              Object.keys(bookingData || {}),
+            );
+          }
         }
       } catch (err: any) {
         console.error("Error fetching data:", err);
@@ -247,8 +341,14 @@ const BookingDetailsClient = () => {
       typeof window !== "undefined" ? window.location.origin : "";
     const vehicleTitle = vehicle
       ? `${vehicle.year} ${vehicle.vehicleMakeName} ${vehicle.vehicleModelName}`
-      : booking.vehicle?.vehicleName || "Vehicle";
-    const plate = booking.vehicle?.licensePlate || "";
+      : booking.servicePricingName
+        ? prettyName(booking.servicePricingName)
+        : booking.vehicle?.vehicleName || "Vehicle";
+    const plate =
+      booking.vehicle?.licensePlate &&
+      booking.vehicle.licensePlate !== "N/A"
+        ? booking.vehicle.licensePlate
+        : "";
     const vehicleId = booking.vehicle?.id || vehicle?.id || "";
     const vehicleLink = vehicleId
       ? `${origin}/booking/details/${vehicleId}`
@@ -480,9 +580,12 @@ const BookingDetailsClient = () => {
     booking.recipient.fullName !== booking.booker?.fullName
   );
   const vehiclePageId = booking.vehicle?.id || vehicle?.id || "";
+  const isPendingClass = !vehicle && !!servicePricingInfo;
   const vehicleName = vehicle
     ? `${vehicle.year} ${vehicle.vehicleMakeName} ${vehicle.vehicleModelName}`
-    : booking?.vehicle?.vehicleName || "Vehicle";
+    : isPendingClass
+      ? prettyName(servicePricingInfo?.name)
+      : booking?.vehicle?.vehicleName || "Vehicle";
 
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
@@ -657,6 +760,14 @@ const BookingDetailsClient = () => {
                     {vehicle.photos.length} Photos
                   </div>
                 </div>
+              ) : isPendingClass && servicePricingInfo?.imageUrl ? (
+                <div className="flex h-64 w-full items-center justify-center bg-gradient-to-br from-[#EAF2FF] via-[#F5F9FF] to-white p-6 sm:h-72">
+                  <img
+                    src={servicePricingInfo.imageUrl}
+                    alt={vehicleName}
+                    className="max-h-full w-auto max-w-md object-contain mix-blend-multiply"
+                  />
+                </div>
               ) : (
                 <div className="h-56 bg-gray-100 flex flex-col items-center justify-center text-gray-400">
                   <FiBox size={32} className="mb-2 opacity-50" />
@@ -683,22 +794,34 @@ const BookingDetailsClient = () => {
                     </h2>
 
                     <div className="flex items-center gap-3 mt-3">
-                      {vehicle?.vehicleColorName && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 uppercase tracking-wide">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full border border-gray-200"
-                            style={{
-                              backgroundColor:
-                                vehicle.vehicleColorName.toLowerCase(),
-                            }}
-                          ></span>
-                          {vehicle.vehicleColorName}
-                        </span>
-                      )}
-                      {booking?.vehicle?.licensePlate && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 font-mono">
-                          {booking.vehicle.licensePlate}
-                        </span>
+                      {isPendingClass ? (
+                        (servicePricingInfo?.minYear ||
+                          servicePricingInfo?.maxYear) && (
+                          <p className="text-gray-600">
+                            Vehicle Year: {servicePricingInfo?.minYear} -{" "}
+                            {servicePricingInfo?.maxYear}
+                          </p>
+                        )
+                      ) : (
+                        <>
+                          {vehicle?.vehicleColorName && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-gray-200"
+                                style={{
+                                  backgroundColor:
+                                    vehicle.vehicleColorName.toLowerCase(),
+                                }}
+                              ></span>
+                              {vehicle.vehicleColorName}
+                            </span>
+                          )}
+                          {booking?.vehicle?.licensePlate && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 font-mono">
+                              {booking.vehicle.licensePlate}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -718,6 +841,19 @@ const BookingDetailsClient = () => {
                     </div>
                   )}
                 </div>
+
+                {isPendingClass && (
+                  <div className="flex items-start gap-2.5 rounded-xl border border-[#cfe0fb] bg-[#EAF2FF] p-4">
+                    <FiInfo
+                      className="w-4 h-4 mt-0.5 flex-shrink-0"
+                      style={{ color: BRAND }}
+                    />
+                    <p className="text-sm text-gray-700">
+                      The exact vehicle assigned to your booking will be shared
+                      with you and updated here as soon as it has been assigned.
+                    </p>
+                  </div>
+                )}
 
                 {vehicle?.description && (
                   <div className="pt-6 border-t border-gray-100">

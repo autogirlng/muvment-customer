@@ -31,6 +31,7 @@ import {
 import { DropdownOption } from "@/types/HeroSectionTypes";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { BookingService } from "@/controllers/booking/bookingService";
+import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
 import { getBookingOption } from "@/context/Constarain";
 import { trackVehicleSearch } from "@/services/analytics";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
@@ -59,8 +60,8 @@ type BookingType = "within-state" | "airport" | "interstate" | "boat";
 const TYPES: { id: BookingType; label: string; hint: string; Icon: any }[] = [
   {
     id: "within-state",
-    label: "Within state",
-    hint: "12h, 24h or monthly",
+    label: "Within State",
+    hint: "Hourly and Monthly",
     Icon: FaCar,
   },
   { id: "airport", label: "Airport", hint: "Pickup or drop-off", Icon: FaPlane },
@@ -78,10 +79,17 @@ const TYPES: { id: BookingType; label: string; hint: string; Icon: any }[] = [
   },
 ];
 
-const DURATIONS = [
-  { id: "12h", label: "12h / day" },
-  { id: "24h", label: "24h / day" },
-  { id: "monthly", label: "Monthly" },
+const DURATIONS: {
+  id: string;
+  label: string;
+  perDay?: boolean;
+  shortLabel?: string;
+}[] = [
+  { id: "3h", label: "3 hrs" },
+  { id: "6h", label: "6 hrs" },
+  { id: "12h", label: "12 hrs", perDay: true },
+  { id: "24h", label: "24 hrs", perDay: true },
+  { id: "monthly", label: "Monthly", shortLabel: "Month" },
 ];
 
 function iconForVehicleType(name: string) {
@@ -511,18 +519,24 @@ function CategoryField({
   value,
   onChange,
   compact = false,
+  label = "Vehicle type",
+  placeholder = "Any vehicle type",
+  allowClear = true,
 }: {
   options: DropdownOption[];
   value: string;
   onChange: (v: string) => void;
   compact?: boolean;
+  label?: string;
+  placeholder?: string;
+  allowClear?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value);
   return (
     <div ref={anchorRef} className="relative">
-      {!compact && <label className={labelClass}>Vehicle type</label>}
+      {!compact && <label className={labelClass}>{label}</label>}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -535,23 +549,25 @@ function CategoryField({
             <span className="shrink-0 text-base">{selected.icon}</span>
           ) : null}
           <span className={`truncate ${selected ? "text-gray-800" : "text-gray-400"}`}>
-            {selected?.label || "Any vehicle type"}
+            {selected?.label || placeholder}
           </span>
         </span>
         <FaChevronDown className="ml-2 flex-shrink-0 text-gray-400" />
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchorRef={anchorRef}>
         <div className="max-h-[65vh] overflow-y-auto lg:max-h-72">
-          <button
-            type="button"
-            onClick={() => {
-              onChange("");
-              setOpen(false);
-            }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-gray-800 hover:bg-gray-50"
-          >
-            Any vehicle type
-          </button>
+          {allowClear && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-gray-800 hover:bg-gray-50"
+            >
+              {placeholder}
+            </button>
+          )}
           {options.map((o) => (
             <button
               key={o.value}
@@ -913,6 +929,11 @@ function BookingSearchInner({
   const [durationId, setDurationId] = useState("12h");
   const [rangeValue, setRangeValue] = useState<any>(null);
 
+  // Within-state 3hr and 6hr are fixed-price packages: the vehicle-type field
+  // becomes a car-class picker and the search routes to the service-pricing page.
+  const [pkgClass, setPkgClass] = useState("");
+  const [pkgClasses, setPkgClasses] = useState<DropdownOption[]>([]);
+
   // Shared
   const [singleDate, setSingleDate] = useState<Date | null>(null);
   const [time, setTime] = useState("");
@@ -1192,8 +1213,74 @@ function BookingSearchInner({
     setSelectedAddress(v);
   }, [userLoc.name, userLoc.lat, userLoc.lng, bookingType]);
 
+  // Load the car-class packages that back the fixed hourly flow. The dropdown
+  // carries each class slug, which is what the service-pricing page is keyed on.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const data = await ServicePricingService.getServicePricingShowcase();
+        const list: any[] = data?.[0]?.data ?? [];
+        const seen = new Set<string>();
+        const opts: DropdownOption[] = [];
+        list.forEach((item) => {
+          const slug = item?.slug;
+          if (!slug || seen.has(slug)) return;
+          seen.add(slug);
+          opts.push({
+            label: item?.servicePricingName || item?.name || slug,
+            value: slug,
+          });
+        });
+        if (alive) setPkgClasses(opts);
+      } catch {
+        if (alive) setPkgClasses([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Hand off to the fixed-price service-pricing page for 3hr/6hr, carrying the
+  // typed location through as the pickup.
+  const goToHourlyPackage = () => {
+    if (!pkgClass || !(pickup && pickup.lat)) {
+      setTriedSubmit(true);
+      return;
+    }
+    try {
+      sessionStorage.setItem(
+        "muvment:hourlyPickup",
+        JSON.stringify({
+          name: pickup.name,
+          lat: pickup.lat,
+          lng: pickup.lng,
+        }),
+      );
+    } catch {
+      // sessionStorage may be unavailable; the page still loads, pickup is blank.
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("app:navstart"));
+    }
+    router.push(
+      `/booking/${pkgClass}/special-pricing?duration=${encodeURIComponent(
+        durationId,
+      )}`,
+    );
+  };
+
   const getMissingKeys = (): string[] => {
     const missing: string[] = [];
+    if (
+      bookingType === "within-state" &&
+      (durationId === "3h" || durationId === "6h")
+    ) {
+      if (!(pickup && pickup.lat)) missing.push("withinLocation");
+      if (!pkgClass) missing.push("pkgClass");
+      return missing;
+    }
     if (bookingType === "airport") {
       if (!(selectedAirport && selectedAirport.lat)) missing.push("airport");
       if (!(selectedAddress && selectedAddress.lat))
@@ -1245,6 +1332,13 @@ function BookingSearchInner({
     ) : null;
 
   const handleSearch = async () => {
+    if (
+      bookingType === "within-state" &&
+      (durationId === "3h" || durationId === "6h")
+    ) {
+      goToHourlyPackage();
+      return;
+    }
     const missing = getMissingKeys();
     if (missing.length) {
       setTriedSubmit(true);
@@ -1435,6 +1529,7 @@ function BookingSearchInner({
 
   const renderFields = () => {
     if (bookingType === "within-state") {
+      const isSpecial = durationId === "3h" || durationId === "6h";
       return (
         <div className="space-y-3">
           <LocationField
@@ -1446,20 +1541,47 @@ function BookingSearchInner({
           {fieldErr("withinLocation", "Add a location to continue")}
           <div>
             <label className={labelClass}>Duration</label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {DURATIONS.map((d) => (
                 <button
                   key={d.id}
                   type="button"
                   onClick={() => setDurationId(d.id)}
-                  className={toggleClass(durationId === d.id)}
+                  className={`flex-1 whitespace-nowrap rounded-xl border px-2 py-2.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
+                    durationId === d.id
+                      ? "border-[#0673FF] bg-[#0673FF]/5 text-[#0673FF]"
+                      : "border-gray-200 text-gray-700 hover:border-gray-300"
+                  }`}
                 >
-                  {d.label}
+                  {d.shortLabel ? (
+                    <>
+                      <span className="sm:hidden">{d.shortLabel}</span>
+                      <span className="hidden sm:inline">{d.label}</span>
+                    </>
+                  ) : (
+                    <>
+                      {d.label}
+                      {d.perDay && (
+                        <span className="hidden sm:inline">/day</span>
+                      )}
+                    </>
+                  )}
                 </button>
               ))}
             </div>
           </div>
-          {durationId === "monthly" ? (
+          {isSpecial ? (
+            <>
+              <CategoryField
+                options={pkgClasses}
+                value={pkgClass}
+                onChange={setPkgClass}
+                placeholder="Select a vehicle category"
+                allowClear={false}
+              />
+              {fieldErr("pkgClass", "Choose a vehicle category to continue")}
+            </>
+          ) : durationId === "monthly" ? (
             <>
               <DateField
                 label="Start date"
@@ -1635,6 +1757,8 @@ function BookingSearchInner({
     duration?: string;
     airportDirection?: "pickup" | "dropoff";
   }[] = [
+    { label: "Within state · 3 hours", type: "within-state", duration: "3h" },
+    { label: "Within state · 6 hours", type: "within-state", duration: "6h" },
     { label: "Within state · 12 hours", type: "within-state", duration: "12h" },
     { label: "Within state · 24 hours", type: "within-state", duration: "24h" },
     { label: "Monthly", type: "within-state", duration: "monthly" },
@@ -1647,11 +1771,15 @@ function BookingSearchInner({
   const barTypeLabel = (() => {
     if (variant === "bar" && !typeChosen) return "Booking type";
     if (bookingType === "within-state")
-      return durationId === "12h"
-        ? "Within state · 12h"
-        : durationId === "monthly"
-          ? "Monthly"
-          : "Within state · 24h";
+      return durationId === "3h"
+        ? "Within state · 3h"
+        : durationId === "6h"
+          ? "Within state · 6h"
+          : durationId === "12h"
+            ? "Within state · 12h"
+            : durationId === "monthly"
+              ? "Monthly"
+              : "Within state · 24h";
     if (bookingType === "airport")
       return airportDirection === "pickup" ? "Airport pickup" : "Airport drop-off";
     if (bookingType === "interstate") return "Interstate";
@@ -1702,6 +1830,7 @@ function BookingSearchInner({
 
   const renderBarCells = () => {
     if (bookingType === "within-state") {
+      const isSpecial = durationId === "3h" || durationId === "6h";
       return (
         <>
           {barCell(
@@ -1713,29 +1842,44 @@ function BookingSearchInner({
               initial={pickup}
             />,
           )}
-          {durationId === "monthly"
-            ? barCellFixed(
-                <DateField
+          {isSpecial ? (
+            barCell(
+              <CategoryField
+                compact
+                options={pkgClasses}
+                value={pkgClass}
+                onChange={setPkgClass}
+                placeholder="Vehicle category"
+                allowClear={false}
+              />,
+            )
+          ) : (
+            <>
+              {durationId === "monthly"
+                ? barCellFixed(
+                    <DateField
+                      compact
+                      label="Start date"
+                      value={singleDate}
+                      onChange={(v) => setSingleDate(v)}
+                    />,
+                  )
+                : barCell(
+                    <FromUntilField
+                      compact
+                      value={rangeValue}
+                      onChange={setRangeValue}
+                    />,
+                  )}
+              {barCellOptional(
+                <CategoryField
                   compact
-                  label="Start date"
-                  value={singleDate}
-                  onChange={(v) => setSingleDate(v)}
-                />,
-              )
-            : barCell(
-                <FromUntilField
-                  compact
-                  value={rangeValue}
-                  onChange={setRangeValue}
+                  options={categoryOptions}
+                  value={category}
+                  onChange={setCategory}
                 />,
               )}
-          {barCellOptional(
-            <CategoryField
-              compact
-              options={categoryOptions}
-              value={category}
-              onChange={setCategory}
-            />,
+            </>
           )}
         </>
       );
@@ -1884,9 +2028,11 @@ function BookingSearchInner({
         >
           {isSearching
             ? "Searching..."
-            : bookingType === "boat"
-              ? "Find a Boat"
-              : "Find a Vehicle"}
+            : bookingType === "within-state" && (durationId === "3h" || durationId === "6h")
+              ? "See fixed price"
+              : bookingType === "boat"
+                ? "Find a Boat"
+                : "Find a Vehicle"}
         </button>
       </div>
     );
@@ -2065,9 +2211,11 @@ function BookingSearchInner({
           >
             {isSearching
               ? "Searching..."
-              : bookingType === "boat"
-                ? "Find a Boat"
-                : "Find a Vehicle"}
+              : bookingType === "within-state" && (durationId === "3h" || durationId === "6h")
+                ? "See fixed price"
+                : bookingType === "boat"
+                  ? "Find a Boat"
+                  : "Find a Vehicle"}
           </button>
         </div>
 
