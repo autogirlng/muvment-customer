@@ -23,10 +23,22 @@ import Footer from "@/components/HomeComponent/Footer";
 import cn from "classnames";
 import { createData } from "@/controllers/connnector/app.callers";
 import { BookingService } from "@/controllers/booking/bookingService";
+import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
 import Cookies from "js-cookie";
 import { useAuth } from "@/context/AuthContext";
 
 type PaymentGateway = "MONNIFY" | "PAYSTACK";
+
+const BRAND = "#0673FF";
+
+// Render catalogue names in a readable case ("EXECUTIVE SUV" -> "Executive SUV").
+const prettyName = (s?: string) =>
+  (s || "")
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => (w === "suv" ? "SUV" : w[0].toUpperCase() + w.slice(1)))
+    .join(" ");
 
 interface BookingResponse {
   bookingId: string;
@@ -83,6 +95,8 @@ interface BookingResponse {
     };
   }>;
   bookingCategory: string;
+  servicePricingName?: string;
+  rideType?: string;
   discounted: boolean;
 }
 
@@ -95,6 +109,12 @@ const BookingSuccessContent = () => {
   const bookingId = searchParams.get("bookingId");
 
   const [bookingDetails, setBookingDetails] = useState<BookingResponse | null>(null);
+  const [servicePricingInfo, setServicePricingInfo] = useState<{
+    imageUrl?: string;
+    minYear?: number;
+    maxYear?: number;
+    name?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paymentGateway, setPaymentGateway] = useState<PaymentGateway>("PAYSTACK");
@@ -116,8 +136,47 @@ const BookingSuccessContent = () => {
       setLoading(true);
       const response = await BookingService.getBookingById(bookingId!);
       const bookingData = response;
-      setBookingDetails(bookingData[0].data);
-      
+      const details = bookingData[0].data;
+      setBookingDetails(details);
+
+      const hasVehicle =
+        details?.vehicle?.vehicleName &&
+        details.vehicle.vehicleName !== "Vehicle Assignment Pending" &&
+        details.vehicle?.licensePlate &&
+        details.vehicle.licensePlate !== "N/A";
+      if (!hasVehicle && (details?.servicePricingName || details?.rideType)) {
+        try {
+          const showcase =
+            await ServicePricingService.getServicePricingShowcase();
+          const norm = (s?: string) => (s || "").trim().toLowerCase();
+          const target = norm(details.servicePricingName);
+          const ride = norm(details.rideType);
+          const list = showcase || [];
+          const pick = (pred: (p: any) => boolean) => {
+            const c = list.filter(pred);
+            return c.find((p: any) => p.imageUrl) || c[0];
+          };
+          const match =
+            pick((p: any) => !!ride && norm(p.rideType) === ride) ||
+            pick(
+              (p: any) =>
+                norm(p.servicePricingName) === target ||
+                norm(p.name) === target,
+            );
+          if (match) {
+            setServicePricingInfo({
+              imageUrl: match.imageUrl,
+              minYear: match.minYear,
+              maxYear: match.maxYear,
+              name: match.servicePricingName || match.name,
+            });
+          } else {
+            setServicePricingInfo({ name: details.servicePricingName });
+          }
+        } catch {
+          setServicePricingInfo({ name: details.servicePricingName });
+        }
+      }
     } catch (err: any) {
       console.error("Error loading booking details:", err);
       setError(err.response?.data?.message || err.message || "Failed to load booking details");
@@ -247,10 +306,10 @@ const BookingSuccessContent = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#F7F9FC]">
         <Navbar />
         <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-[#0673FF]" />
         </div>
       </div>
     );
@@ -258,24 +317,23 @@ const BookingSuccessContent = () => {
 
   if (error || !bookingDetails) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#F7F9FC]">
         <Navbar />
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center max-w-md mx-auto px-4">
+        <div className="flex items-center justify-center h-screen px-4">
+          <div className="text-center max-w-md mx-auto">
             <div className="bg-red-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
               <FiAlertCircle className="w-10 h-10 text-red-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              Booking Not Found
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Booking not found</h2>
             <p className="text-gray-600 mb-6">
-              {error || "Unable to load booking details. The booking may have expired or been cancelled."}
+              {error ||
+                "Unable to load booking details. The booking may have expired or been cancelled."}
             </p>
             <button
               onClick={() => router.push(homeOrDashboard)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              className="px-6 py-3 bg-[#0673FF] hover:bg-[#0560d6] text-white rounded-xl transition font-semibold"
             >
-              {user ? "Go to dashboard" : "Return to Home"}
+              {user ? "Go to dashboard" : "Return home"}
             </button>
           </div>
         </div>
@@ -283,398 +341,435 @@ const BookingSuccessContent = () => {
     );
   }
 
-  const isBookingForOthers = bookingDetails.booker.fullName !== bookingDetails.recipient.fullName;
+  const isBookingForOthers =
+    !!bookingDetails.recipient &&
+    bookingDetails.booker?.fullName !== bookingDetails.recipient?.fullName;
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+  const isPending = bookingDetails.bookingStatus === "PENDING_PAYMENT";
+  const total = bookingDetails.totalPrice || 0;
+  const statusLabel = (bookingDetails.bookingStatus || "").replace(/_/g, " ");
 
-      <div className="max-w-7xl mx-auto px-4 py-8 mt-16">
-        {/* Success Header */}
-        <div className="text-center mb-8">
-          <div className="bg-green-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-            <FiCheckCircle className="w-10 h-10 text-green-600" />
+  const hasVehicle =
+    !!bookingDetails.vehicle?.vehicleName &&
+    bookingDetails.vehicle.vehicleName !== "Vehicle Assignment Pending" &&
+    !!bookingDetails.vehicle?.licensePlate &&
+    bookingDetails.vehicle.licensePlate !== "N/A";
+  const vehicleTitle = hasVehicle
+    ? bookingDetails.vehicle.vehicleName
+    : prettyName(servicePricingInfo?.name || bookingDetails.servicePricingName) ||
+      "Vehicle";
+
+  const paymentCard = (
+    <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <div className="text-center pb-4 border-b border-gray-100">
+        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          {isPending ? "Amount due" : "Total amount"}
+        </p>
+        <p className="mt-1 text-3xl font-bold" style={{ color: BRAND }}>
+          {formatCurrency(total)}
+        </p>
+      </div>
+
+      {isPending ? (
+        <div className="pt-4">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Pay with</h3>
+          <div className="space-y-2.5 mb-4">
+            {(["PAYSTACK", "MONNIFY"] as PaymentGateway[]).map((gw) => (
+              <div
+                key={gw}
+                onClick={() => setPaymentGateway(gw)}
+                className={cn(
+                  "flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all",
+                  paymentGateway === gw
+                    ? "border-[#0673FF] bg-[#0673FF]/5"
+                    : "border-gray-200 bg-white hover:border-[#cfe0fb]",
+                )}
+              >
+                <img
+                  src={
+                    gw === "PAYSTACK"
+                      ? "/images/paymentgateway/paystack1.svg"
+                      : "/images/paymentgateway/monnify.svg"
+                  }
+                  alt={gw}
+                  className="h-7 w-auto object-contain"
+                />
+                {paymentGateway === gw ? (
+                  <FiCheckCircle className="text-[#0673FF] min-w-[22px]" size={22} />
+                ) : (
+                  <FiCircle className="text-gray-300 min-w-[22px]" size={22} />
+                )}
+              </div>
+            ))}
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-            Booking Successful!
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Your booking has been created successfully. You can now complete your payment below.
+          <button
+            onClick={handlePayment}
+            disabled={isProcessingPayment}
+            className="hidden w-full bg-[#0673FF] hover:bg-[#0560d6] text-white font-semibold py-3.5 px-4 rounded-xl transition disabled:bg-gray-300 disabled:cursor-not-allowed lg:flex items-center justify-center gap-2 text-sm"
+          >
+            {isProcessingPayment ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <FiCreditCard className="w-4 h-4" />
+                Pay with {paymentGateway === "MONNIFY" ? "Monnify" : "Paystack"}
+              </>
+            )}
+          </button>
+          {error && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600 text-center">{error}</p>
+            </div>
+          )}
+          <p className="mt-3 text-center text-xs text-gray-500">
+            Or pay later with invoice {bookingDetails.invoiceNumber}
           </p>
         </div>
-
-        {/* Invoice number and Status Banner */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 max-w-3xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <FiCheckCircle className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-blue-800">
-                Invoice number: <span className="font-mono font-bold">{bookingDetails.invoiceNumber}</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getBookingStatusColor(bookingDetails.bookingStatus)}`}>
-                {bookingDetails.bookingStatus.replace("_", " ")}
-              </span>
-              <button
-                onClick={copyBookingId}
-                className="flex items-center gap-2 text-sm bg-white px-4 py-2 rounded-lg border border-blue-200 hover:bg-blue-100 transition"
-              >
-                <FiCopy className="w-4 h-4" />
-                {copied ? "Copied!" : "Copy invoice"}
-              </button>
-            </div>
-          </div>
-          <div className="mt-2 text-center sm:text-left">
-            <p className="text-xs text-blue-600">
-              Booked: {formatDate(bookingDetails.bookedAt)}
+      ) : (
+        <div className="pt-4">
+          <div className="flex items-start gap-2.5 rounded-xl bg-[#EAF2FF] border border-[#cfe0fb] p-4">
+            <FiCheckCircle
+              className="w-5 h-5 mt-0.5 flex-shrink-0"
+              style={{ color: BRAND }}
+            />
+            <p className="text-sm text-gray-700">
+              This booking is {statusLabel.toLowerCase()}. Keep invoice{" "}
+              <span className="font-semibold">{bookingDetails.invoiceNumber}</span>{" "}
+              for your records.
             </p>
           </div>
         </div>
+      )}
+    </div>
+  );
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Booking Details */}
+  return (
+    <div className="min-h-screen bg-[#F7F9FC] pb-28 lg:pb-0">
+      <Navbar />
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
+        {/* Status header */}
+        <div className="mb-6">
+          <div className="flex items-start gap-4">
+            <div
+              className={cn(
+                "flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full",
+                isPending ? "bg-[#EAF2FF]" : "bg-green-100",
+              )}
+            >
+              {isPending ? (
+                <FiCreditCard className="h-6 w-6" style={{ color: BRAND }} />
+              ) : (
+                <FiCheckCircle className="h-6 w-6 text-green-600" />
+              )}
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                {isPending ? "Complete your payment" : "Booking confirmed"}
+              </h1>
+              <p className="mt-1 text-gray-600">
+                {isPending
+                  ? "Your booking is reserved. Pay below to confirm it."
+                  : "Your booking is confirmed. The details are below."}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700">
+              Invoice
+              <span className="font-semibold text-gray-900">
+                {bookingDetails.invoiceNumber}
+              </span>
+              <button
+                onClick={copyBookingId}
+                className="ml-1 text-[#0673FF] hover:text-[#0560d6]"
+                aria-label="Copy invoice"
+              >
+                <FiCopy className="h-3.5 w-3.5" />
+              </button>
+            </span>
+            <span
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-medium",
+                getBookingStatusColor(bookingDetails.bookingStatus),
+              )}
+            >
+              {statusLabel}
+            </span>
+            {bookingDetails.bookedAt && (
+              <span className="text-xs text-gray-500">
+                Booked {formatDate(bookingDetails.bookedAt)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start">
+          {/* Left: what was booked */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Personal Information Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gray-100">
-                <div className="flex items-center gap-2 text-gray-900">
-                  <FiUser className="w-5 h-5" />
-                  <h2 className="text-lg font-semibold">Booking Information</h2>
-                </div>
+            {/* Trip details */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <FiMapPin className="h-5 w-5" style={{ color: BRAND }} />
+                <h2 className="text-base font-semibold text-gray-900">
+                  Trip details
+                </h2>
               </div>
 
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Booker Name</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {bookingDetails.booker.fullName || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Booker Email</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {bookingDetails.booker.email || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Booker Phone</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {bookingDetails.booker.customerPhone || bookingDetails.primaryPhoneNumber || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Payment Method</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {bookingDetails.paymentMethod}
-                    </p>
-                  </div>
-                  
-                  {/* Recipient Information - Only show if different from booker */}
-                  {isBookingForOthers && (
-                    <>
-                      <div className="col-span-2 border-t border-gray-200 my-2"></div>
-                      <div className="col-span-2">
-                        <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                          Recipient Information
-                        </h3>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Recipient Name</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {bookingDetails.recipient.fullName || "N/A"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Recipient Email</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {bookingDetails.recipient.email || "N/A"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Recipient Phone</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {bookingDetails.recipient.phoneNumber || "N/A"}
-                        </p>
-                      </div>
-                    </>
-                  )}
-
-                  {(bookingDetails.purposeOfRide && bookingDetails.purposeOfRide !== "N/A") && (
-                    <div className="col-span-2">
-                      <p className="text-xs text-gray-500 mb-1">Purpose of Ride</p>
-                      <p className="text-sm text-gray-700">
-                        {bookingDetails.purposeOfRide}
-                      </p>
-                    </div>
-                  )}
-
-                  {(bookingDetails.extraDetails && bookingDetails.extraDetails !== "N/A") && (
-                    <div className="col-span-2">
-                      <p className="text-xs text-gray-500 mb-1">Extra Details</p>
-                      <p className="text-sm text-gray-700">
-                        {bookingDetails.extraDetails}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Vehicle Details Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gray-100">
-                <div className="flex items-center gap-2 text-gray-900">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+              <div className="space-y-4">
+                {(bookingDetails.segments || []).map((segment, index) => (
+                  <div
+                    key={segment.segmentId || index}
+                    className="rounded-xl border border-gray-200 p-4"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                    />
-                  </svg>
-                  <h2 className="text-lg font-semibold">Vehicle Details</h2>
-                </div>
-              </div>
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      {(bookingDetails.segments || []).length > 1 ? (
+                        <span className="text-sm font-semibold text-gray-900">
+                          Trip {index + 1}
+                        </span>
+                      ) : (
+                        <span className="text-sm font-semibold text-gray-900">
+                          Itinerary
+                        </span>
+                      )}
+                      {segment.bookingTypeName && (
+                        <span className="inline-flex items-center rounded-full bg-[#EAF2FF] px-2.5 py-1 text-xs font-semibold text-[#0673FF]">
+                          {segment.bookingTypeName}
+                        </span>
+                      )}
+                    </div>
 
-              <div className="p-6">
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {bookingDetails.vehicle.vehicleName}
-                    </h3>
-                    {bookingDetails.vehicle.licensePlate !== "N/A" && (
-                      <p className="text-sm text-gray-600 mb-2">
-                        License Plate: {bookingDetails.vehicle.licensePlate}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Trip Details Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gray-100">
-                <div className="flex items-center gap-2 text-gray-900">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                    />
-                  </svg>
-                  <h2 className="text-lg font-semibold">Trip Details</h2>
-                </div>
-              </div>
-
-              <div className="p-6">
-                {bookingDetails.segments.map((segment, index) => (
-                  <div key={segment.segmentId} className={index > 0 ? "mt-6 pt-6 border-t border-gray-200" : ""}>
-                    {bookingDetails.segments.length > 1 && (
-                      <p className="text-sm font-semibold text-gray-900 mb-4">
-                        Trip {index + 1}
-                      </p>
-                    )}
-
-                    <div className="mb-4">
-                      <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                        {segment.bookingTypeName}
+                    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                      <span className="inline-flex items-center gap-1.5">
+                        <FiCalendar className="h-3.5 w-3.5" />
+                        {formatDate(segment.startDateTime)}
                       </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <FiCalendar className="w-4 h-4 text-blue-500" />
-                        <span>
-                          <span className="font-medium">Date:</span>{" "}
-                          {formatDate(segment.startDateTime)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <FiClock className="w-4 h-4 text-blue-500" />
-                        <span>
-                          <span className="font-medium">Time:</span>{" "}
-                          {formatTime(segment.startDateTime)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <FiClock className="w-4 h-4 text-orange-500" />
-                        <span>
-                          <span className="font-medium">Duration:</span>{" "}
+                      <span className="inline-flex items-center gap-1.5">
+                        <FiClock className="h-3.5 w-3.5" />
+                        {formatTime(segment.startDateTime)}
+                        {segment.endDateTime
+                          ? ` - ${formatTime(segment.endDateTime)}`
+                          : ""}
+                      </span>
+                      {segment.duration && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <FiClock className="h-3.5 w-3.5" />
                           {segment.duration}
                         </span>
-                      </div>
+                      )}
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-2 text-sm text-gray-700">
-                        <FiMapPin className="w-4 h-4 mt-0.5 text-green-500" />
-                        <span>
-                          <span className="font-medium">Pickup:</span>{" "}
-                          {segment.pickupLocation}
-                        </span>
+                    <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                      <div>
+                        <p className="mb-0.5 text-xs text-gray-400">Pickup</p>
+                        <p className="flex items-start gap-1.5 text-gray-800">
+                          <FiMapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+                          <span className="break-words">
+                            {segment.pickupLocation}
+                          </span>
+                        </p>
                       </div>
-
-                      <div className="flex items-start gap-2 text-sm text-gray-700">
-                        <FiMapPin className="w-4 h-4 mt-0.5 text-red-500" />
-                        <span>
-                          <span className="font-medium">Drop-off:</span>{" "}
-                          {segment.dropoffLocation}
-                        </span>
+                      <div>
+                        <p className="mb-0.5 text-xs text-gray-400">Drop-off</p>
+                        <p className="flex items-start gap-1.5 text-gray-800">
+                          <FiMapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+                          <span className="break-words">
+                            {segment.dropoffLocation}
+                          </span>
+                        </p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
 
-          {/* Right Column - Payment */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6 text-center border-b border-gray-200">
-                <div className="text-3xl font-bold text-blue-600 mb-1">
-                  {formatCurrency(bookingDetails.totalPrice || 0)}
+            {/* Vehicle */}
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+              {servicePricingInfo?.imageUrl && (
+                <div className="flex h-52 w-full items-center justify-center bg-gradient-to-br from-[#EAF2FF] via-[#F5F9FF] to-white p-6">
+                  <img
+                    src={servicePricingInfo.imageUrl}
+                    alt={vehicleTitle}
+                    className="max-h-full w-auto max-w-sm object-contain mix-blend-multiply"
+                  />
                 </div>
-                <p className="text-sm text-gray-600">TOTAL AMOUNT</p>
+              )}
+              <div className="p-5 sm:p-6">
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Vehicle
+                </p>
+                <h3 className="text-xl font-bold text-gray-900">{vehicleTitle}</h3>
+                {hasVehicle ? (
+                  bookingDetails.vehicle?.licensePlate &&
+                  bookingDetails.vehicle.licensePlate !== "N/A" && (
+                    <p className="mt-1 text-sm text-gray-600">
+                      License plate: {bookingDetails.vehicle.licensePlate}
+                    </p>
+                  )
+                ) : (
+                  <>
+                    {(servicePricingInfo?.minYear ||
+                      servicePricingInfo?.maxYear) && (
+                      <p className="mt-1 text-sm text-gray-600">
+                        Vehicle Year: {servicePricingInfo?.minYear} -{" "}
+                        {servicePricingInfo?.maxYear}
+                      </p>
+                    )}
+                    <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-[#cfe0fb] bg-[#EAF2FF] p-4">
+                      <FiAlertCircle
+                        className="mt-0.5 h-4 w-4 flex-shrink-0"
+                        style={{ color: BRAND }}
+                      />
+                      <p className="text-sm text-gray-700">
+                        The exact vehicle assigned to your booking will be shared
+                        with you and updated here as soon as it has been assigned.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Booking details */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <FiUser className="h-5 w-5" style={{ color: BRAND }} />
+                <h2 className="text-base font-semibold text-gray-900">
+                  Booking details
+                </h2>
               </div>
 
-              <div className="p-6">
-                <h3 className="text-sm font-semibold mb-4 text-gray-700">
-                  Complete Your Payment
-                </h3>
-
-                <div className="mb-6">
-                  <div className="flex flex-col gap-3">
-                    <div
-                      onClick={() => setPaymentGateway("PAYSTACK")}
-                      className={cn(
-                        "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
-                        paymentGateway === "PAYSTACK"
-                          ? "border-blue-500 bg-blue-50/50"
-                          : "border-gray-100 bg-white hover:border-blue-200",
-                      )}
-                    >
-                      <img
-                        src="/images/paymentgateway/paystack1.svg"
-                        alt="Paystack"
-                        className="h-8 w-auto object-contain"
-                      />
-
-                      {paymentGateway === "PAYSTACK" ? (
-                        <FiCheckCircle
-                          className="text-blue-600 min-w-[24px]"
-                          size={24}
-                        />
-                      ) : (
-                        <FiCircle
-                          className="text-gray-300 min-w-[24px]"
-                          size={24}
-                        />
-                      )}
-                    </div>
-                    <div
-                      onClick={() => setPaymentGateway("MONNIFY")}
-                      className={cn(
-                        "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
-                        paymentGateway === "MONNIFY"
-                          ? "border-blue-500 bg-blue-50/50"
-                          : "border-gray-100 bg-white hover:border-blue-200",
-                      )}
-                    >
-                      <img
-                        src="/images/paymentgateway/monnify.svg"
-                        alt="Monnify"
-                        className="h-8 w-auto object-contain"
-                      />
-
-                      {paymentGateway === "MONNIFY" ? (
-                        <FiCheckCircle
-                          className="text-blue-600 min-w-[24px]"
-                          size={24}
-                        />
-                      ) : (
-                        <FiCircle
-                          className="text-gray-300 min-w-[24px]"
-                          size={24}
-                        />
-                      )}
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div>
+                  <p className="mb-0.5 text-xs text-gray-400">Booked by</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {bookingDetails.booker?.fullName || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="mb-0.5 text-xs text-gray-400">Email</p>
+                  <p className="text-sm font-medium text-gray-900 break-words">
+                    {bookingDetails.booker?.email || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="mb-0.5 text-xs text-gray-400">Phone</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {bookingDetails.booker?.customerPhone ||
+                      bookingDetails.primaryPhoneNumber ||
+                      "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="mb-0.5 text-xs text-gray-400">Payment method</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {bookingDetails.paymentMethod || "N/A"}
+                  </p>
                 </div>
 
-                <button
-                  onClick={handlePayment}
-                  disabled={isProcessingPayment || bookingDetails.bookingStatus !== "PENDING_PAYMENT"}
-                  className={cn(
-                    "w-full font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm",
-                    bookingDetails.bookingStatus === "PENDING_PAYMENT"
-                      ? "bg-green-600 hover:bg-green-700 text-white"
-                      : "bg-gray-300 cursor-not-allowed text-gray-500"
-                  )}
-                >
-                  {isProcessingPayment ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Processing Payment...
-                    </>
-                  ) : bookingDetails.bookingStatus === "PENDING_PAYMENT" ? (
-                    <>
-                      <FiCreditCard className="w-4 h-4" />
-                      Pay Now with {paymentGateway === "MONNIFY" ? "Monnify" : "Paystack"}
-                    </>
-                  ) : (
-                    `Booking ${bookingDetails.bookingStatus.replace("_", " ")}`
-                  )}
-                </button>
-
-                {error && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-600 text-center">{error}</p>
-                  </div>
+                {isBookingForOthers && (
+                  <>
+                    <div className="border-t border-gray-100 sm:col-span-2" />
+                    <div className="sm:col-span-2">
+                      <p className="text-sm font-semibold text-gray-900">
+                        Recipient
+                      </p>
+                    </div>
+                    <div>
+                      <p className="mb-0.5 text-xs text-gray-400">Name</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {bookingDetails.recipient?.fullName || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="mb-0.5 text-xs text-gray-400">Email</p>
+                      <p className="text-sm font-medium text-gray-900 break-words">
+                        {bookingDetails.recipient?.email || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="mb-0.5 text-xs text-gray-400">Phone</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {bookingDetails.recipient?.phoneNumber || "N/A"}
+                      </p>
+                    </div>
+                  </>
                 )}
 
-                {bookingDetails.bookingStatus !== "PENDING_PAYMENT" && (
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-xs text-yellow-700 text-center">
-                      This booking is no longer pending payment. Current status: {bookingDetails.bookingStatus.replace("_", " ")}
-                    </p>
-                  </div>
-                )}
+                {bookingDetails.purposeOfRide &&
+                  bookingDetails.purposeOfRide !== "N/A" && (
+                    <div className="sm:col-span-2">
+                      <p className="mb-0.5 text-xs text-gray-400">
+                        Purpose of ride
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        {bookingDetails.purposeOfRide}
+                      </p>
+                    </div>
+                  )}
 
-                <p className="text-xs text-gray-500 text-center mt-4">
-                  You can also pay later using your invoice number: {bookingDetails.invoiceNumber}
-                </p>
-
+                {bookingDetails.extraDetails &&
+                  bookingDetails.extraDetails !== "N/A" && (
+                    <div className="sm:col-span-2">
+                      <p className="mb-0.5 text-xs text-gray-400">Extra details</p>
+                      <p className="text-sm text-gray-700">
+                        {bookingDetails.extraDetails}
+                      </p>
+                    </div>
+                  )}
               </div>
             </div>
           </div>
+
+          {/* Right: payment */}
+          <div className="lg:col-span-1 lg:sticky lg:top-24 lg:self-start">
+            <div className="hidden lg:block">{paymentCard}</div>
+            <div className="lg:hidden">{paymentCard}</div>
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+        <div className="mt-8 flex justify-center">
           <button
             onClick={() => router.push(doneHref)}
-            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
+            className="rounded-xl bg-gray-100 px-6 py-3 font-medium text-gray-700 transition hover:bg-gray-200"
           >
-            {user ? "Go to my bookings" : "Return to Home"}
+            {user ? "Go to my bookings" : "Return home"}
           </button>
-
         </div>
       </div>
+
+      {isPending && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center gap-3 border-t border-gray-200 bg-white px-4 py-3">
+          <div>
+            <p className="text-xs text-gray-500">Amount due</p>
+            <p className="text-lg font-bold text-gray-900">
+              {formatCurrency(total)}
+            </p>
+          </div>
+          <button
+            onClick={handlePayment}
+            disabled={isProcessingPayment}
+            className="ml-auto flex max-w-[60%] flex-1 items-center justify-center gap-2 rounded-xl bg-[#0673FF] py-3 text-sm font-semibold text-white transition hover:bg-[#0560d6] disabled:bg-gray-300"
+          >
+            {isProcessingPayment ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <FiCreditCard className="h-4 w-4" />
+                Pay now
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       <Footer />
     </div>
