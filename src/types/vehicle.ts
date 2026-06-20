@@ -200,6 +200,7 @@ export interface PaymentInitiationResponse {
 export interface VehicleCardProps {
   id: string;
   slug?: string;
+  vehicleIdentifier?: string;
   name: string;
   city: string;
   vehicleTypeName: string;

@@ -23,6 +23,7 @@ let vehicleTypesPromise: Promise<any[]> | null = null;
 
 export class VehicleSearchService {
   private static readonly SEARCH_BASE_URL = "/api/v1/public/vehicles/search";
+  private static readonly AVAILABILITY_BASE_URL = "/api/v1/availability";
   private static readonly STATES_URL = "/api/v1/public/states";
   private static readonly VEHICLES_TYPE = "/api/v1/public/vehicle-types";
   private static readonly VEHICLES_MAKE = "/api/v1/public/vehicle-makes";
@@ -203,6 +204,26 @@ export class VehicleSearchService {
       return response;
     } catch (error) {
       console.error("Vehicle search error:", error);
+      throw error;
+    }
+  }
+
+  static async getVehicleAvailability(params: {
+    searchTerm?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    size?: number;
+  }): Promise<any> {
+    try {
+      const filtered = Object.fromEntries(
+        Object.entries(params || {}).filter(
+          ([_, v]) => v !== null && v !== undefined && v !== "",
+        ),
+      );
+      return await getTableData(this.AVAILABILITY_BASE_URL, filtered);
+    } catch (error) {
+      console.error("Vehicle availability error:", error);
       throw error;
     }
   }

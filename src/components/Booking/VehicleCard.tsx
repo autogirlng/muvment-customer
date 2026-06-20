@@ -7,7 +7,7 @@ import {
 import { VehicleCardProps } from "@/types/vehicle";
 import { useRouter } from "next/navigation";
 import React, { useState, useMemo, useEffect } from "react";
-import { FiMapPin, FiUser, FiDroplet, FiHeart, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiMapPin, FiUser, FiDroplet, FiHeart, FiChevronLeft, FiChevronRight, FiCalendar } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa6";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
 import { getBookingOption } from "@/context/Constarain";
@@ -18,6 +18,7 @@ import { FavouriteService } from "@/controllers/favourites/favouriteService";
 import { Spinner } from "../general/spinner";
 import LoginPromptModal from "@/components/Booking/Loginpromptmodal";
 import TopRatedBadge from "@/components/Booking/TopRatedBadge";
+import VehicleAvailabilityModal from "@/components/Booking/VehicleAvailabilityModal";
 import {
   setPendingFavourite,
   FAVOURITES_CHANGED_EVENT,
@@ -73,6 +74,7 @@ const SpecChips = ({
 const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   id,
   slug,
+  vehicleIdentifier,
   name,
   city,
   vehicleTypeName,
@@ -107,6 +109,12 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   const [loadingFavouriteStatus, setLoadingFavouriteStatus] =
     useState<boolean>(false);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [showAvailability, setShowAvailability] = useState<boolean>(false);
+
+  const openAvailability = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowAvailability(true);
+  };
 
   const getBookingOptions = async () => {
     const data = await getBookingOption();
@@ -329,6 +337,31 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     );
   };
 
+  const availabilityLink = (
+    <button
+      onClick={openAvailability}
+      className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0673FF] transition hover:text-[#0560d6] hover:underline"
+    >
+      <FiCalendar className="h-4 w-4" />
+      View availability
+    </button>
+  );
+
+  const availabilityModalEl = (
+    <span onClick={(e) => e.stopPropagation()}>
+      <VehicleAvailabilityModal
+        isOpen={showAvailability}
+        onClose={() => setShowAvailability(false)}
+        vehicleId={id}
+        vehicleIdentifier={vehicleIdentifier}
+        vehicleName={name}
+        slug={slug}
+        bookingType={bookingType}
+        vehicleTypeName={vehicleTypeName}
+      />
+    </span>
+  );
+
   // Grid View
   if (viewMode === "grid") {
     return (
@@ -343,6 +376,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             vehicleName={name}
           />
         </span>
+        {availabilityModalEl}
         <div className="relative h-[180px] w-full bg-gray-100">
           {currentImage ? (
             <img
@@ -375,8 +409,11 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             willProvideFuel={willProvideFuel}
             numberOfSeats={numberOfSeats}
           />
-          <div className="mt-auto">
+          <div className="mt-auto space-y-2.5">
             <PriceBlock />
+            <div className="border-t border-gray-100 pt-2.5">
+              {availabilityLink}
+            </div>
           </div>
         </div>
       </div>
@@ -396,6 +433,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
           vehicleName={name}
         />
       </span>
+      {availabilityModalEl}
       <div className="relative h-[180px] w-full flex-shrink-0 bg-gray-100 sm:h-auto sm:w-[200px] md:w-[240px]">
         {currentImage ? (
           <img
@@ -432,8 +470,9 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
           numberOfSeats={numberOfSeats}
         />
 
-        <div className="mt-auto">
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-3">
           <PriceBlock />
+          {availabilityLink}
         </div>
       </div>
     </div>
