@@ -17,6 +17,9 @@ import {
   FiX,
   FiCopy,
   FiCheck,
+  FiCheckCircle,
+  FiCircle,
+  FiLink,
   FiChevronRight,
   FiPhone,
   FiMail,
@@ -26,7 +29,7 @@ import { Navbar } from "@/components/Navbar";
 import Footer from "@/components/HomeComponent/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { BookingService } from "@/controllers/booking/bookingService";
-import { getSingleData } from "@/controllers/connnector/app.callers";
+import { getSingleData, createData } from "@/controllers/connnector/app.callers";
 import { customerBookingStatus } from "@/utils/bookingStatus";
 import { SUPPORT_CONTACT } from "@/constants/support";
 import {
@@ -51,6 +54,22 @@ const unwrap = (data: any) => {
 
 const segId = (s: any) => s?.segmentId || s?.id || "";
 
+type Gateway = "PAYSTACK" | "MONNIFY";
+
+// A value counts as present when it is not null, empty or a literal "N/A".
+const hasVal = (v: any) =>
+  !(
+    v === null ||
+    v === undefined ||
+    v === "" ||
+    (typeof v === "string" && v.trim().toUpperCase() === "N/A")
+  );
+
+// Track page rows hide themselves when the value is missing or "N/A".
+const TRow: React.FC<React.ComponentProps<typeof Row>> = (props) => (
+  <Row {...props} hideIfEmpty />
+);
+
 const TrackBookingClient = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -66,6 +85,11 @@ const TrackBookingClient = () => {
   const [error, setError] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
   const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
+  const [paymentGateway, setPaymentGateway] = useState<Gateway>("PAYSTACK");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [linkVisible, setLinkVisible] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const load = useCallback(async (ref: string) => {
     if (!ref) return;
@@ -159,10 +183,10 @@ const TrackBookingClient = () => {
     router.replace("/track-booking");
   };
 
-  const copyId = async () => {
-    if (!booking?.bookingId) return;
+  const copyInvoice = async () => {
+    if (!booking?.invoiceNumber) return;
     try {
-      await navigator.clipboard.writeText(booking.bookingId);
+      await navigator.clipboard.writeText(booking.invoiceNumber);
       setIdCopied(true);
       setTimeout(() => setIdCopied(false), 1500);
     } catch {
@@ -170,7 +194,71 @@ const TrackBookingClient = () => {
     }
   };
 
+  const handlePay = async () => {
+    const bid = booking?.bookingId;
+    if (!bid) return;
+    setIsProcessingPayment(true);
+    setPayError(null);
+    try {
+      if (paymentGateway === "MONNIFY") {
+        const res = await createData("/api/v1/payments/initiate", {
+          bookingId: bid,
+        });
+        const authUrl =
+          res.data?.data?.authorizationUrl ||
+          res.data?.authorizationUrl ||
+          res.data?.data?.data?.authorizationUrl;
+        if (authUrl) {
+          window.location.href = authUrl;
+          return;
+        }
+        throw new Error("Payment authorization URL missing");
+      }
+      const res = await createData(`/api/v1/payments/initialize/${bid}`, {});
+      const url =
+        res.data?.data ||
+        res.data?.data?.authorization_url ||
+        res.data?.authorization_url;
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+      throw new Error("Paystack payment initialization failed");
+    } catch (e: any) {
+      setPayError(
+        e?.response?.data?.message ||
+          e?.message ||
+          "Payment initialization failed",
+      );
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const copyLink = async (link: string) => {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 1500);
+    } catch {
+      // clipboard unavailable; no action needed
+    }
+  };
+
   const segments = (booking?.segments || []) as any[];
+  const isPending = booking?.bookingStatus === "PENDING_PAYMENT";
+  const durationNames = Array.from(
+    new Set(segments.map((s: any) => s?.bookingTypeName).filter(Boolean)),
+  ) as string[];
+  const durationLabel =
+    durationNames.length > 1
+      ? durationNames.join(", ")
+      : durationNames[0] || booking?.servicePricingName || "Booking";
+  const paymentLink =
+    booking?.bookingId && typeof window !== "undefined"
+      ? `${window.location.origin}/booking/success?bookingId=${booking.bookingId}`
+      : "";
   const photo =
     vehicle?.photos?.find((p: any) => p.isPrimary)?.cloudinaryUrl ||
     vehicle?.photos?.[0]?.cloudinaryUrl ||
@@ -280,23 +368,15 @@ const TrackBookingClient = () => {
                       <h2 className="truncate text-xl font-bold text-gray-900">
                         {vehicleName || "Vehicle"}
                       </h2>
-                      <p className="text-sm text-gray-500">
-                        {segments[0]?.bookingTypeName ||
-                          booking.servicePricingName ||
-                          "Booking"}
-                        {booking.invoiceNumber
-                          ? ` · Invoice ${booking.invoiceNumber}`
-                          : ""}
-                      </p>
-                      {booking.bookingId && (
+                      <p className="text-sm text-gray-500">{durationLabel}</p>
+                      {booking.invoiceNumber && (
                         <button
-                          onClick={copyId}
-                          title="Copy booking ID"
+                          onClick={copyInvoice}
+                          title="Copy invoice number"
                           className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-gray-50 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
                         >
                           <span className="font-mono">
-                            ID: {String(booking.bookingId).slice(0, 8)}…
-                            {String(booking.bookingId).slice(-4)}
+                            Invoice: {booking.invoiceNumber}
                           </span>
                           {idCopied ? (
                             <FiCheck className="h-3.5 w-3.5 text-green-600" />
@@ -353,6 +433,11 @@ const TrackBookingClient = () => {
                                   >
                                     {st.label}
                                   </span>
+                                  {seg.bookingTypeName && (
+                                    <span className="rounded-full bg-[#EAF2FF] px-2.5 py-0.5 text-[11px] font-semibold text-[#0673FF]">
+                                      {seg.bookingTypeName}
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-900">
                                   <FiCalendar className="h-4 w-4 shrink-0 text-gray-400" />
@@ -397,14 +482,14 @@ const TrackBookingClient = () => {
                     }
                   >
                     <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-                      <Row
+                      <TRow
                         icon={<FiTruck className="h-4 w-4" />}
                         label="Name"
                         value={vehicleName}
                       />
                       {vehicle && (
                         <>
-                          <Row
+                          <TRow
                             icon={<FiTruck className="h-4 w-4" />}
                             label="Make & model"
                             value={[
@@ -414,17 +499,17 @@ const TrackBookingClient = () => {
                               .filter(Boolean)
                               .join(" ")}
                           />
-                          <Row
+                          <TRow
                             icon={<FiTruck className="h-4 w-4" />}
                             label="Colour"
                             value={vehicle.vehicleColorName}
                           />
-                          <Row
+                          <TRow
                             icon={<FiTruck className="h-4 w-4" />}
                             label="Year"
                             value={vehicle.year}
                           />
-                          <Row
+                          <TRow
                             icon={<FiUser className="h-4 w-4" />}
                             label="Seats"
                             value={vehicle.numberOfSeats}
@@ -433,7 +518,7 @@ const TrackBookingClient = () => {
                       )}
                       {(booking.vehicle?.licensePlateNumber ||
                         booking.vehicle?.vehicleIdentifier) && (
-                        <Row
+                        <TRow
                           icon={<FiTruck className="h-4 w-4" />}
                           label="Identifier"
                           value={
@@ -462,7 +547,7 @@ const TrackBookingClient = () => {
                   {/* Payment */}
                   <Card title="Payment">
                     <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-                      <Row
+                      <TRow
                         icon={<FiCreditCard className="h-4 w-4" />}
                         label="Total"
                         value={
@@ -473,18 +558,18 @@ const TrackBookingClient = () => {
                       />
                       {booking.discounted && (
                         <>
-                          <Row
+                          <TRow
                             icon={<FiCreditCard className="h-4 w-4" />}
                             label="Original price"
                             value={ngn(booking.originalPrice)}
                           />
-                          <Row
+                          <TRow
                             icon={<FiCreditCard className="h-4 w-4" />}
                             label="Discount"
                             value={ngn(booking.discountAmount)}
                           />
                           {booking.couponCode && (
-                            <Row
+                            <TRow
                               icon={<FiCreditCard className="h-4 w-4" />}
                               label="Coupon"
                               value={booking.couponCode}
@@ -492,25 +577,25 @@ const TrackBookingClient = () => {
                           )}
                         </>
                       )}
-                      <Row
+                      <TRow
                         icon={<FiCreditCard className="h-4 w-4" />}
                         label="Method"
                         value={booking.paymentMethod}
                       />
-                      <Row
+                      <TRow
                         icon={<FiCalendar className="h-4 w-4" />}
                         label="Booked on"
                         value={fmt(booking.bookedAt)}
                       />
                       {booking.paidAt && (
-                        <Row
+                        <TRow
                           icon={<FiCalendar className="h-4 w-4" />}
                           label="Paid on"
                           value={fmt(booking.paidAt)}
                         />
                       )}
                       {booking.rideType && (
-                        <Row
+                        <TRow
                           icon={<FiTruck className="h-4 w-4" />}
                           label="Ride type"
                           value={prettyStatus(booking.rideType)}
@@ -520,18 +605,19 @@ const TrackBookingClient = () => {
                   </Card>
 
                   {/* Extra details */}
-                  {(booking.purposeOfRide || booking.extraDetails) && (
+                  {(hasVal(booking.purposeOfRide) ||
+                    hasVal(booking.extraDetails)) && (
                     <Card title="Trip notes">
                       <div className="grid grid-cols-1 gap-x-6">
-                        {booking.purposeOfRide && (
-                          <Row
+                        {hasVal(booking.purposeOfRide) && (
+                          <TRow
                             icon={<FiNavigation className="h-4 w-4" />}
                             label="Purpose of ride"
                             value={booking.purposeOfRide}
                           />
                         )}
-                        {booking.extraDetails && (
-                          <Row
+                        {hasVal(booking.extraDetails) && (
+                          <TRow
                             icon={<FiNavigation className="h-4 w-4" />}
                             label="Extra details"
                             value={booking.extraDetails}
@@ -544,6 +630,138 @@ const TrackBookingClient = () => {
 
                 {/* Sidebar */}
                 <div className="space-y-6 lg:col-span-1 lg:sticky lg:top-24">
+                  {isPending && (
+                    <Card title="Complete payment">
+                      <p className="mb-3 text-sm text-gray-600">
+                        This booking is awaiting payment. Pay now, or share a
+                        payment link with whoever is settling it.
+                      </p>
+
+                      <h3 className="mb-2 text-xs font-semibold text-gray-900">
+                        Pay with
+                      </h3>
+                      <div className="mb-3 space-y-2.5">
+                        {(["PAYSTACK", "MONNIFY"] as Gateway[]).map((gw) => (
+                          <div
+                            key={gw}
+                            onClick={() => setPaymentGateway(gw)}
+                            className={`flex cursor-pointer items-center justify-between rounded-xl border p-3.5 transition-all ${
+                              paymentGateway === gw
+                                ? "border-[#0673FF] bg-[#0673FF]/5"
+                                : "border-gray-200 bg-white hover:border-[#cfe0fb]"
+                            }`}
+                          >
+                            <img
+                              src={
+                                gw === "PAYSTACK"
+                                  ? "/images/paymentgateway/paystack1.svg"
+                                  : "/images/paymentgateway/monnify.svg"
+                              }
+                              alt={gw}
+                              className="h-7 w-auto object-contain"
+                            />
+                            {paymentGateway === gw ? (
+                              <FiCheckCircle
+                                className="min-w-[22px] text-[#0673FF]"
+                                size={22}
+                              />
+                            ) : (
+                              <FiCircle
+                                className="min-w-[22px] text-gray-300"
+                                size={22}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={handlePay}
+                        disabled={isProcessingPayment}
+                        className="flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                        style={{ backgroundColor: BRAND }}
+                      >
+                        {isProcessingPayment ? (
+                          <>
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <FiCreditCard className="h-4 w-4" />
+                            Pay with{" "}
+                            {paymentGateway === "MONNIFY"
+                              ? "Monnify"
+                              : "Paystack"}
+                          </>
+                        )}
+                      </button>
+
+                      {payError && (
+                        <div className="mt-2.5 rounded-lg border border-red-200 bg-red-50 p-2.5">
+                          <p className="text-center text-sm text-red-600">
+                            {payError}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="mt-3 border-t border-gray-100 pt-3">
+                        <button
+                          onClick={() => setLinkVisible((v) => !v)}
+                          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                        >
+                          <FiLink className="h-4 w-4" />
+                          Generate payment link
+                        </button>
+
+                        {linkVisible && paymentLink && (
+                          <div className="mt-2.5">
+                            <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                              <span className="truncate font-mono text-xs text-gray-600">
+                                {paymentLink}
+                              </span>
+                              <button
+                                onClick={() => copyLink(paymentLink)}
+                                title="Copy payment link"
+                                className="shrink-0 text-gray-500 transition-colors hover:text-gray-700"
+                              >
+                                {linkCopied ? (
+                                  <FiCheck className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <FiCopy className="h-4 w-4" />
+                                )}
+                              </button>
+                            </div>
+                            <div className="mt-2 flex gap-2">
+                              <a
+                                href={`https://wa.me/?text=${encodeURIComponent(
+                                  `Complete your Muvment booking payment here: ${paymentLink}`,
+                                )}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+                              >
+                                <FaWhatsapp className="h-4 w-4 text-[#25D366]" />
+                                WhatsApp
+                              </a>
+                              <a
+                                href={`mailto:?subject=${encodeURIComponent(
+                                  "Complete your Muvment booking payment",
+                                )}&body=${encodeURIComponent(
+                                  `You can complete the payment for this booking here: ${paymentLink}`,
+                                )}`}
+                                className="flex flex-1 items-center justify-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+                              >
+                                <FiMail className="h-4 w-4" />
+                                Email
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  )}
+
                   <Card title="Actions">
                     <div className="space-y-2.5">
                       {user ? (

@@ -1039,11 +1039,21 @@ function BookingSearchInner({
         const types = await VehicleSearchService.getVehicleTypes();
         if (alive) {
           setCategoryOptions(
-            (types || []).map((t: any) => ({
-              value: t.id,
-              label: formatTypeName(t.name),
-              icon: iconForVehicleType(t.name),
-            })),
+            (types || [])
+              // Boat is its own booking type with a dedicated flow, so it is
+              // not offered as a vehicle category for within state, interstate
+              // or airport.
+              .filter(
+                (t: any) =>
+                  String(t?.name || "")
+                    .trim()
+                    .toUpperCase() !== "BOAT",
+              )
+              .map((t: any) => ({
+                value: t.id,
+                label: formatTypeName(t.name),
+                icon: iconForVehicleType(t.name),
+              })),
           );
         }
       } catch {

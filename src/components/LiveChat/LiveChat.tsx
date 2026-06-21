@@ -62,8 +62,20 @@ export default function WhatsAppChat() {
   if (pathname?.startsWith("/dashboard")) return null;
   if (!showWidget) return null;
 
+  // The special-pricing booking flow has a fixed pay bar at the bottom on
+  // mobile, so the floating chat would sit on top of it. Hide it on mobile
+  // across those steps.
+  const isSpecialFlow =
+    !!pathname &&
+    (pathname.includes("/special-pricing") ||
+      pathname.includes("/special-checkout"));
+
   return (
-    <div className="fixed bottom-5 right-4 lg:bottom-6 lg:right-6 z-50 flex flex-col items-end gap-3">
+    <div
+      className={`fixed bottom-5 right-4 lg:bottom-6 lg:right-6 z-50 flex-col items-end gap-3 ${
+        isSpecialFlow ? "hidden lg:flex" : "flex"
+      }`}
+    >
       {/* Greeting Message Bubble with Chat Options */}
       {isOpen && (
         <div className="animate-slideIn w-[min(22rem,calc(100vw-3rem))] rounded-2xl bg-white p-5 shadow-2xl border border-gray-100">
