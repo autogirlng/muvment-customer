@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { clarityIdentify } from "@/services/clarity";
 import Cookies from "js-cookie";
 import { AuthService } from "@/controllers/auth/auth";
 
@@ -63,6 +64,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userCookie && accessTokenCookie) {
         const userData = JSON.parse(userCookie);
         setUser(userData);
+        clarityIdentify(
+          userData.id,
+          `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim() ||
+            userData.email,
+        );
         setAccessToken(accessTokenCookie);
         setRefreshToken(refreshTokenCookie || null);
       }
@@ -94,6 +100,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.set("muvment_refresh_token", tokens.refreshToken, opts);
 
     setUser(userData);
+    clarityIdentify(
+      userData.id,
+      `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim() ||
+        userData.email,
+    );
 
     Cookies.set("muvment_user", JSON.stringify(userData), opts);
   };

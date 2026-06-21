@@ -23,6 +23,7 @@ import Footer from "@/components/HomeComponent/Footer";
 import cn from "classnames";
 import { createData } from "@/controllers/connnector/app.callers";
 import { BookingService } from "@/controllers/booking/bookingService";
+import { clarityEvent } from "@/services/clarity";
 import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
 import Cookies from "js-cookie";
 import { useAuth } from "@/context/AuthContext";
@@ -138,6 +139,19 @@ const BookingSuccessContent = () => {
       const bookingData = response;
       const details = bookingData[0].data;
       setBookingDetails(details);
+
+      if (details?.bookingStatus === "CONFIRMED") {
+        clarityEvent("payment_succeeded", {
+          booking_id: details?.bookingId ?? bookingId,
+          invoice_number: details?.invoiceNumber,
+          amount: details?.totalPrice,
+        });
+      } else {
+        clarityEvent("booking_success_viewed", {
+          booking_id: details?.bookingId ?? bookingId,
+          status: details?.bookingStatus,
+        });
+      }
 
       const hasVehicle =
         details?.vehicle?.vehicleName &&
