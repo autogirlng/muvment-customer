@@ -64,17 +64,26 @@ export const Row: React.FC<{
   icon: React.ReactNode;
   label: string;
   value?: React.ReactNode;
-}> = ({ icon, label, value }) => (
-  <div className="flex items-start gap-3 py-2">
-    <span className="mt-0.5 text-gray-400">{icon}</span>
-    <div className="min-w-0">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-sm font-medium text-gray-900 break-words">
-        {value ?? "N/A"}
-      </p>
+  hideIfEmpty?: boolean;
+}> = ({ icon, label, value, hideIfEmpty }) => {
+  const isEmpty =
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    (typeof value === "string" && value.trim().toUpperCase() === "N/A");
+  if (hideIfEmpty && isEmpty) return null;
+  return (
+    <div className="flex items-start gap-3 py-2">
+      <span className="mt-0.5 text-gray-400">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-sm font-medium text-gray-900 break-words">
+          {value ?? "N/A"}
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const driverValue = (trip: any): React.ReactNode => (
   <span>

@@ -20,6 +20,7 @@ import {
   FiLink,
   FiCreditCard,
   FiPlus,
+  FiChevronDown,
   FiX,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
@@ -126,6 +127,10 @@ const ServicePricingCheckoutPage = () => {
     null,
   );
   const [showSecondary, setShowSecondary] = useState(false);
+  const [showExtra, setShowExtra] = useState(false);
+  const [collapsedTrips, setCollapsedTrips] = useState<Record<number, boolean>>(
+    {},
+  );
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [profilePhone, setProfilePhone] = useState<string>("");
 
@@ -302,7 +307,16 @@ const ServicePricingCheckoutPage = () => {
   };
 
   const handleRideForChange = (value: "myself" | "others") => {
-    setPersonalInfo((prev) => ({ ...prev, rideFor: value }));
+    setPersonalInfo((prev) => ({
+      ...prev,
+      rideFor: value,
+      // When booking for someone else the recipient details must be entered by
+      // the user, so never carry over the booker's own name and email.
+      recipientFullName: value === "myself" ? prev.fullName : "",
+      recipientEmail: value === "myself" ? prev.email : "",
+      recipientPhoneNumber:
+        value === "myself" ? prev.recipientPhoneNumber : "",
+    }));
   };
 
   // ─── Formatting ───────────────────────────────────────────────────────────
@@ -524,13 +538,11 @@ const ServicePricingCheckoutPage = () => {
     setIsCreatingBooking(true);
     try {
       const bookingId = existingBookingId || (await createNewBooking());
+      // Keep the created booking and the trip data so the user can close the
+      // link modal and still pay directly or generate the link again. The trip
+      // data and cookie are only cleared once payment actually proceeds.
+      setExistingBookingId(bookingId);
       setGeneratedBookingId(bookingId);
-
-      sessionStorage.removeItem("servicePricingTrips");
-      sessionStorage.removeItem("servicePricingEstimate");
-      sessionStorage.removeItem("servicePricingId");
-      sessionStorage.removeItem("yearRangeId");
-      Cookies.remove("servicePricingBookingId");
 
       setShowPaymentLinkModal(true);
     } catch (error: any) {
@@ -774,56 +786,90 @@ const ServicePricingCheckoutPage = () => {
                     start && hrs
                       ? new Date(start.getTime() + hrs * 3600000)
                       : null;
+                  const tripsCollapsible = trips.length > 2;
+                  const isCollapsed = tripsCollapsible
+                    ? (collapsedTrips[index] ?? true)
+                    : false;
                   return (
                     <div
                       key={index}
                       className="rounded-xl border border-gray-200 p-4"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                        <span className="text-sm font-semibold text-gray-900">
-                          Trip {index + 1}
-                        </span>
-                        {trip.bookingTypeName && (
-                          <span className="inline-flex items-center rounded-full bg-[#EAF2FF] px-2.5 py-1 text-xs font-semibold text-[#0673FF]">
-                            {trip.bookingTypeName}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mb-3">
-                        <span className="inline-flex items-center gap-1.5">
-                          <FiCalendar className="w-3.5 h-3.5" />
-                          {formatDate(trip.tripStartDate)}
-                        </span>
-                        {start && (
-                          <span className="inline-flex items-center gap-1.5">
-                            <FiClock className="w-3.5 h-3.5" />
-                            {format(start, "hh:mm a")}
-                            {end ? ` - ${format(end, "hh:mm a")}` : ""}
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-                        <div>
-                          <p className="text-gray-400 text-xs mb-0.5">Pickup</p>
-                          <p className="flex items-start gap-1.5 text-gray-800">
-                            <FiMapPin className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
-                            <span className="break-words">
-                              {trip.pickupLocation}
+                      <button
+                        type="button"
+                        onClick={
+                          tripsCollapsible
+                            ? () =>
+                                setCollapsedTrips((p) => ({
+                                  ...p,
+                                  [index]: !(p[index] ?? true),
+                                }))
+                            : undefined
+                        }
+                        className={`flex w-full items-start justify-between gap-2 text-left ${
+                          tripsCollapsible ? "cursor-pointer" : "cursor-default"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-900">
+                              Trip {index + 1}
                             </span>
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-gray-400 text-xs mb-0.5">
-                            Drop-off
-                          </p>
-                          <p className="flex items-start gap-1.5 text-gray-800">
-                            <FiMapPin className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
-                            <span className="break-words">
-                              {trip.dropoffLocation}
+                            {trip.bookingTypeName && (
+                              <span className="inline-flex items-center rounded-full bg-[#EAF2FF] px-2.5 py-1 text-xs font-semibold text-[#0673FF]">
+                                {trip.bookingTypeName}
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                            <span className="inline-flex items-center gap-1.5">
+                              <FiCalendar className="w-3.5 h-3.5" />
+                              {formatDate(trip.tripStartDate)}
                             </span>
-                          </p>
+                            {start && (
+                              <span className="inline-flex items-center gap-1.5">
+                                <FiClock className="w-3.5 h-3.5" />
+                                {format(start, "hh:mm a")}
+                                {end ? ` - ${format(end, "hh:mm a")}` : ""}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                        {tripsCollapsible && (
+                          <FiChevronDown
+                            className={`w-5 h-5 flex-shrink-0 text-gray-400 transition-transform ${
+                              isCollapsed ? "" : "rotate-180"
+                            }`}
+                          />
+                        )}
+                      </button>
+
+                      {!isCollapsed && (
+                        <div className="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                          <div>
+                            <p className="text-gray-400 text-xs mb-0.5">
+                              Pickup
+                            </p>
+                            <p className="flex items-start gap-1.5 text-gray-800">
+                              <FiMapPin className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
+                              <span className="break-words">
+                                {trip.pickupLocation}
+                              </span>
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400 text-xs mb-0.5">
+                              Drop-off
+                            </p>
+                            <p className="flex items-start gap-1.5 text-gray-800">
+                              <FiMapPin className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
+                              <span className="break-words">
+                                {trip.dropoffLocation}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1085,20 +1131,41 @@ const ServicePricingCheckoutPage = () => {
                   </>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1.5">
-                    Extra details (optional)
-                  </label>
-                  <textarea
-                    value={personalInfo.extraDetails}
-                    onChange={(e) =>
-                      handleInputChange("extraDetails", e.target.value)
-                    }
-                    className={inputCls()}
-                    placeholder="e.g. this booking is for my boss, reach me for anything payment or time related."
-                    rows={4}
-                  />
-                </div>
+                {!showExtra ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowExtra(true)}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0673FF] hover:text-[#0560d6]"
+                  >
+                    <FiPlus className="w-4 h-4" />
+                    Want to provide extra details?
+                  </button>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-1.5">
+                      Extra details (optional)
+                    </label>
+                    <textarea
+                      value={personalInfo.extraDetails}
+                      onChange={(e) =>
+                        handleInputChange("extraDetails", e.target.value)
+                      }
+                      className={inputCls()}
+                      placeholder="Anything about your ride experience, a special need, or a unique adjustment to your itinerary."
+                      rows={4}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExtra(false);
+                        handleInputChange("extraDetails", "");
+                      }}
+                      className="mt-2 text-xs font-medium text-gray-500 hover:text-gray-700"
+                    >
+                      Remove extra details
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
