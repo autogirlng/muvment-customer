@@ -1,3 +1,4 @@
+import { formatVehicleTypeName } from "@/utils/vehicleType";
 import { FilterOption } from "@/types/filters";
 
 interface ButtonFilterProps {
@@ -31,7 +32,7 @@ const ButtonFilter: React.FC<ButtonFilterProps> = ({
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          {(option.name || "").replace("_", " ")}
+          {formatVehicleTypeName(option.name)}
         </button>
       ))}
     </div>
