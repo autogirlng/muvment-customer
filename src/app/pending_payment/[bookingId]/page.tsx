@@ -59,22 +59,19 @@ const PendingPayment = () => {
 
             setBookingData(bookingInfo);
 
+            if (bookingInfo.calculationId) {
+                const pricing = await getSingleData(`/api/v1/public/bookings/calculate/${bookingInfo.calculationId}`);
+                setPricingData(pricing.data?.[0]?.data ?? null);
+            }
+
             const vehicleId = bookingInfo.vehicle?.id;
-            if (!vehicleId) throw new Error("Vehicle ID missing");
-
-            const [pricing, vehicle] = await Promise.all([
-                getSingleData(`/api/v1/public/bookings/calculate/${bookingInfo.calculationId}`),
-                getSingleData(`/api/v1/public/vehicles/${vehicleId}`),
-            ]);
-
-            const pricingInfo = pricing.data?.[0]?.data ?? null;
-            const vehicleInfo = vehicle.data?.[0]?.data ?? null;
-
-            setPricingData(pricingInfo);
-            setVehicleData(vehicleInfo);
-
-            const photos = vehicleInfo?.photos?.map((photo: any) => photo.cloudinaryUrl) || [];
-            setVehicleImages(photos);
+            if (vehicleId) {
+                const vehicle = await getSingleData(`/api/v1/public/vehicles/${vehicleId}`);
+                const vehicleInfo = vehicle.data?.[0]?.data ?? null;
+                setVehicleData(vehicleInfo);
+                const photos = vehicleInfo?.photos?.map((photo: any) => photo.cloudinaryUrl) || [];
+                setVehicleImages(photos);
+            }
         } catch (error) {
             console.error("Failed to fetch page data:", error);
         } finally {
@@ -108,13 +105,14 @@ const PendingPayment = () => {
             {
                 loading ? <div className="flex items-center justify-center h-screen">
                     <Spinner className="" />
-                </div> : (!bookingData || !pricingData || !vehicleData) ? <div className="flex items-center justify-center h-screen">
+                </div> : (!bookingData || !pricingData) ? <div className="flex items-center justify-center h-screen">
                     <div className="flex flex-col items-center gap-2">
                         <p className="text-lg font-medium text-gray-700">Booking not found</p>
                     </div>
                 </div> : <main className=" mt-10 pb-[188px] pt-[52px] md:pt-16 px-8 lg:px-[52px]">
                     <div className="flex justify-between flex-col-reverse md:flex-row items-start gap-8">
                         <div className="space-y-8 w-full md:max-w-[calc(100%-400px)]">
+                            {vehicleData ? (
                             <Collapse
                                 title={
                                     <p className="text-h6 3xl:text-h5 font-medium text-black">
@@ -194,6 +192,16 @@ const PendingPayment = () => {
                                     </div>
                                 </div>
                             </Collapse>
+                            ) : (
+                                <div className="bg-[#F9FAFB] border border-[#98a2b3] rounded-3xl py-5 px-7">
+                                    <p className="text-h6 3xl:text-h5 font-medium text-black mb-2">
+                                        Vehicle Details
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                        Vehicle assignment pending. A vehicle will be assigned to your booking after payment is confirmed.
+                                    </p>
+                                </div>
+                            )}
 
                             <Collapse
                                 title={

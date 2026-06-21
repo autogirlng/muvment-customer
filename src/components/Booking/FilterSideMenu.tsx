@@ -1,3 +1,4 @@
+import { formatVehicleTypeName } from "@/utils/vehicleType";
 import { seatOptions, years } from "@/types/BookingSearch";
 import React, { useState } from "react";
 import { FiX } from "react-icons/fi";
@@ -220,7 +221,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
-                    {(type?.name || "").replace("_", " ")}
+                    {formatVehicleTypeName(type?.name)}
                   </button>
                 ))}
               </div>

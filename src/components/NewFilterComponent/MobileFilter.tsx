@@ -1,3 +1,4 @@
+import { formatVehicleTypeName } from "@/utils/vehicleType";
 import React, { useState } from "react";
 import { PiX } from "react-icons/pi";
 
@@ -131,7 +132,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                     }
                     className="w-4 h-4"
                   />
-                  <span className="text-sm text-gray-700">{type.name}</span>
+                  <span className="text-sm text-gray-700">{formatVehicleTypeName(type.name)}</span>
                 </label>
               ))}
             </div>

@@ -1,3 +1,4 @@
+import { formatVehicleTypeName } from "@/utils/vehicleType";
 import React from "react";
 
 interface VehicleTypeFilterProps {
@@ -51,7 +52,7 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
                     className="appearance-none w-4 h-4 border-2 border-gray-400 rounded-full cursor-pointer checked:border-[#0673FF] checked:bg-[#0673FF] checked:shadow-[inset_0_0_0_2px_white] focus:outline-none transition-all"
                   />
                   <span className="ml-2 text-sm font-medium text-gray-900 truncate">
-                    {(type.name ?? "").split("_").join(" ")}
+                    {formatVehicleTypeName(type.name)}
                   </span>
                 </div>
               </label>
@@ -104,7 +105,7 @@ const VehicleTypeFilter: React.FC<VehicleTypeFilterProps> = ({
                 />
               </div>
               <span className="ml-2.5 text-sm font-medium text-gray-900">
-                {type.name.split("_").join(" ")}
+                {formatVehicleTypeName(type.name)}
               </span>
             </label>
           ))}

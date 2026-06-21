@@ -7,7 +7,7 @@ type BookingOpt = { value: string; label: string };
 
 const SERVICES = [
   { title: "Airport transfers", match: "airport", description: "Reliable, on-time transfers, both pickup and drop-off.", image: "/images/s4.webp" },
-  { title: "Self-drive rentals", match: "self", description: "Take the wheel yourself, on your own schedule.", image: "/images/s3.webp" },
+  { title: "Hourly rental", match: "hour", description: "Book a car and driver by the hour, on your schedule.", image: "/images/s3.webp" },
   { title: "Monthly rentals", match: "month", description: "Flexible monthly plans at better long-term rates.", image: "/images/s5.webp" },
   { title: "Convoys for occasions", match: "convoy", description: "Coordinated convoys for weddings and VIP events.", image: "/images/s1.webp" },
   { title: "Night life", match: "night", description: "Safe, stylish rides for your nights out.", image: "/images/s6.webp" },
