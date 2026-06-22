@@ -22,6 +22,7 @@ import { toast } from "react-toastify";
 import { BookingService } from "@/controllers/booking/bookingService";
 import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
 import { Navbar } from "@/components/Navbar";
+import Footer from "../HomeComponent/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { getSingleData } from "@/controllers/connnector/app.callers";
 
@@ -518,6 +519,7 @@ const BookingDetailsClient = () => {
             Retrieving booking details...
           </p>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -544,6 +546,7 @@ const BookingDetailsClient = () => {
             Go back home
           </button>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -1100,6 +1103,9 @@ const BookingDetailsClient = () => {
           </div>
         </div>
       </main>
+      <div className="print:hidden">
+        <Footer />
+      </div>
     </div>
   );
 };

@@ -7,10 +7,12 @@ import {
 } from "@/types/vehicle";
 import {
   createData,
+  updateData,
   getSingleData,
   getTableData,
 } from "../connnector/app.callers";
 import { PaymentService } from "./paymentService";
+import { clarityEvent } from "@/services/clarity";
 
 // Cache the full booking-types list so concurrent callers (navbar bar, filter
 // bar) share one request instead of each hitting the endpoint.
@@ -197,7 +199,34 @@ export class BookingService {
     const response = await createData(
       this.BOOKINGS_URL + "/calculate",
       request,
-      { silent: true, requireAuth: false, skipLoader: true },
+      { silent: true, requireAuth: true, skipLoader: true },
+    );
+    if (!response || response.error || !response.data) {
+      const apiMessage =
+        response &&
+        typeof response.message === "string" &&
+        response.message !== "Success"
+          ? response.message
+          : "";
+      throw new Error(
+        apiMessage || "We couldn't calculate the price for this trip.",
+      );
+    }
+    return response;
+  }
+
+  // Updates an existing price calculation (PUT) instead of creating a new one.
+  // The booking calculation endpoint persists a record on every POST, so reusing
+  // the same record for recalculations avoids leaving unused estimates behind.
+  static async updateCalculation(
+    id: string,
+    request: BookingCalculationRequest,
+  ) {
+    const response = await updateData(
+      this.BOOKINGS_URL + "/calculate",
+      id,
+      request,
+      { silent: true, requireAuth: true, skipLoader: true },
     );
     if (!response || response.error || !response.data) {
       const apiMessage =
@@ -220,6 +249,11 @@ export class BookingService {
       if (!response || !response.data)
         throw new Error("Failed to create booking");
 
+      clarityEvent("booking_created", {
+        booking_id:
+          (response as any)?.data?.bookingId ?? (response as any)?.data?.id,
+        invoice_number: (response as any)?.data?.invoiceNumber,
+      });
       return response;
     } catch (error) {
       console.error("Booking creation error:", error);
@@ -237,6 +271,7 @@ export class BookingService {
       if (!response || !response.data)
         throw new Error("Failed to create booking");
 
+      clarityEvent("booking_created", { type: "service_pricing" });
       return response;
     } catch (error) {
       console.error("Booking creation error:", error);
@@ -256,6 +291,10 @@ export class BookingService {
       const response = await createData(paymentURL, paymentData);
       if (!response || !response.data)
         throw new Error("Failed to initiate payment");
+      clarityEvent("payment_initiated", {
+        payment_provider: paymentData.paymentProvider,
+        booking_id: paymentData.bookingId,
+      });
       return response.data;
     } catch (error) {
       console.error("Payment initiation error:", error);

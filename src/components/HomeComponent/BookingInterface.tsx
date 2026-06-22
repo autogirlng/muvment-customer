@@ -144,6 +144,12 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
+// An airport trip is a city pickup or drop-off, so the address and the airport
+// have to be in the same city. Anything beyond this many kilometres apart is a
+// different city (for example Benin City to Lagos), which the route cannot
+// price. Used to catch the mismatch at search instead of failing downstream.
+const AIRPORT_MAX_DISTANCE_KM = 200;
+
 const inputClass =
   "w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none focus:border-[#0673FF]";
 const selectClass =
@@ -1354,6 +1360,35 @@ function BookingSearchInner({
       setTriedSubmit(true);
       return;
     }
+
+    // Airport trips must start and end in the same city. If the chosen address
+    // is far from the selected airport it is almost certainly a different city,
+    // which the route cannot price. Tell the customer here so they can fix it
+    // before leaving the search, instead of hitting an unclear price error later.
+    if (
+      bookingType === "airport" &&
+      selectedAirport?.lat != null &&
+      selectedAirport?.lng != null &&
+      selectedAddress?.lat != null &&
+      selectedAddress?.lng != null
+    ) {
+      const apart = distanceKm(
+        selectedAddress.lat,
+        selectedAddress.lng,
+        selectedAirport.lat,
+        selectedAirport.lng,
+      );
+      if (apart > AIRPORT_MAX_DISTANCE_KM) {
+        setTriedSubmit(false);
+        setError(
+          `Your ${
+            airportDirection === "pickup" ? "pickup" : "drop-off"
+          } location looks too far from ${selectedAirport.name}. Airport trips have to be in the same city. Pick an airport in the same city as your location, or change the location.`,
+        );
+        return;
+      }
+    }
+
     setTriedSubmit(false);
     setError("");
     setIsSearching(true);

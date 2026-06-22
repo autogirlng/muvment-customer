@@ -13,6 +13,13 @@ export const pageview = (url: string) => {
   }
 };
 
+// Tie GA hits to a known user so sessions can be stitched across devices
+export const setGAUser = (userId: string) => {
+  if (typeof window !== "undefined" && window.gtag && GA_MEASUREMENT_ID && userId) {
+    window.gtag("set", { user_id: userId });
+  }
+};
+
 // Generic event tracking
 export const event = ({
   action,
@@ -314,7 +321,7 @@ declare global {
   interface Window {
     gtag: (
       command: string,
-      targetId: string | Date,
+      targetId?: string | Date | Record<string, any>,
       config?: Record<string, any>
     ) => void;
   }

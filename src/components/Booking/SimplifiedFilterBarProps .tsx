@@ -1,3 +1,4 @@
+import { formatVehicleTypeName } from "@/utils/vehicleType";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { FiX } from "react-icons/fi";
@@ -861,7 +862,7 @@ const MobileFilterDrawer: React.FC<
                     )
                   }
                 >
-                  {(t.name ?? "").split("_").join(" ")}
+                  {formatVehicleTypeName(t.name)}
                 </FilterChip>
               ))}
             </div>

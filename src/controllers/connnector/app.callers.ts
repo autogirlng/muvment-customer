@@ -308,8 +308,13 @@ export const patchDataNoBody = async (path: string) => {
   });
 };
 
-export const updateData = async (path: string, id: string, body: any) => {
-  return withLoading(async () => {
+export const updateData = async (
+  path: string,
+  id: string,
+  body: any,
+  options?: { silent?: boolean; requireAuth?: boolean; skipLoader?: boolean },
+) => {
+  const run = async () => {
     if (!NetworkService.checkConnection()) throw new Error("No connection");
     const validation = validateDataInput(body);
     if (validation.error) return validation;
@@ -317,10 +322,12 @@ export const updateData = async (path: string, id: string, body: any) => {
     const [data] = await ApiClient.request(`${path}/${id}`, {
       method: "PUT",
       body,
-      requireAuth: true,
+      requireAuth: options?.requireAuth ?? true,
+      silent: options?.silent,
     });
     return NetworkService.handleApiResponse(data);
-  });
+  };
+  return options?.skipLoader ? run() : withLoading(run);
 };
 
 export const updateDataNotification = async (

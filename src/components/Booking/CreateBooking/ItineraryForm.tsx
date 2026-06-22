@@ -455,7 +455,7 @@ const ItineraryFormContent = ({
                     key={`${trip.id}-${tripsVersion}-${resyncKey}`}
                     day={`${index + 1}`}
                     id={trip.id || ""}
-                    isCollapsed={false}
+                    isCollapsed={!openTripIds.has(trip.id || "")}
                     toggleOpen={() => toggleOpen(trip.id || "")}
                     initialValues={trip.tripDetails}
                     vehicle={vehicle}

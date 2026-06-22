@@ -111,6 +111,7 @@ const CostBreakdown = ({
     useState<PaymentGateway>("PAYSTACK");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [unavailable, setUnavailable] = useState<boolean>(false);
+  const retryCountRef = useRef(0);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const router = useRouter();
 
@@ -202,15 +203,27 @@ const CostBreakdown = ({
 
     if (result?.error || !payload?.calculationId) {
       setPriceReEstimated(false);
+      // Transient failures (slow network, a brief backend hiccup) are common
+      // here. Retry once automatically before surfacing an error, so a single
+      // blip does not read as a dead end.
+      if (retryCountRef.current < 1) {
+        retryCountRef.current += 1;
+        setErrorMessage("");
+        setTimeout(() => {
+          estimateRef.current?.();
+        }, 1200);
+        return;
+      }
       setErrorMessage(
         readApiMessage(
           result,
-          "We could not calculate your price. Please try again.",
+          "We couldn't get your price just now. Please check your trip details and try again.",
         ),
       );
       return;
     }
 
+    retryCountRef.current = 0;
     sessionStorage.setItem("priceEstimateId", payload.calculationId);
     setEstimatedPriceId(payload.calculationId);
     setPricing(result as EstimatedBookingPrice);
@@ -341,6 +354,11 @@ const CostBreakdown = ({
       });
 
       if (booking?.status === 409) {
+        // The calculation behind this attempt is already spent or the slot is
+        // taken. Drop the stored calculation id so the next attempt builds a
+        // fresh one instead of reusing a consumed calculation.
+        sessionStorage.removeItem("priceEstimateId");
+        setEstimatedPriceId("");
         setUnavailable(true);
         setErrorMessage(
           "This vehicle is no longer available for the selected time. Please choose another time.",
@@ -370,6 +388,10 @@ const CostBreakdown = ({
 
       setBookId(bookingId);
       sessionStorage.setItem("bookingId", bookingId);
+      // This calculation has now produced a booking. Clear it so a later
+      // booking starts a new calculation rather than reusing this consumed one.
+      sessionStorage.removeItem("priceEstimateId");
+      setEstimatedPriceId("");
 
       let authUrl = "";
 
@@ -477,7 +499,7 @@ const CostBreakdown = ({
 
   return (
     <>
-      <div className="rounded-2xl w-full lg:w-[420px] lg:flex-shrink-0 lg:sticky lg:top-6 p-5 border border-[#E4E7EC]">
+      <div className="rounded-2xl w-full p-5 border border-[#E4E7EC]">
         {errorMessage && (
           <div className="flex items-start gap-2 rounded-xl border border-[#FDA29B] bg-[#FEF3F2] p-3 mb-4">
             <FiAlertCircle
