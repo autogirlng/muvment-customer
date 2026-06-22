@@ -616,10 +616,36 @@ function ExploreVehiclesClientContent({
                 bookingTypeValue={bookingType || ""}
                 onBookingTypeChange={onBookingTypeChange}
               />
+              {bookingType === interstateTypeId &&
+                interstateStates.length > 0 && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <label
+                      htmlFor="destination-filter"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Destination
+                    </label>
+                    <select
+                      id="destination-filter"
+                      value={destinationStateId || ""}
+                      onChange={(e) => {
+                        if (e.target.value) goInterstate(e.target.value);
+                      }}
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 focus:border-[#0673FF] focus:outline-none"
+                    >
+                      <option value="">Select destination</option>
+                      {interstateStates.map((st) => (
+                        <option key={st.stateId} value={st.stateId}>
+                          {st.stateName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
             </div>
           )}
 
-          {interstateStates.length > 0 && (
+          {!bookingType && interstateStates.length > 0 && (
             <div className="mb-4">
               <button
                 type="button"

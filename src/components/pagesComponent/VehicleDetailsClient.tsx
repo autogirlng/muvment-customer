@@ -837,7 +837,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                         deleteMethod={deleteTrip}
                         disabled={false}
                         onChangeTrip={onChangeTrip}
-                        isCollapsed={false}
+                        isCollapsed={!openTripIds.has(key.id)}
                         toggleOpen={() => toggleOpen(key.id)}
                         bookingOptions={bookingOptions}
                         vehicleId={vehicle.id}
