@@ -124,6 +124,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 
   // Guards against an older in-flight estimate overwriting a newer one.
   const estimateSeq = useRef(0);
+  const priceRetryRef = useRef(0);
 
   useEffect(() => {
     setPriceErrorMessage("");
@@ -434,6 +435,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 
   const estimatePrice = async () => {
     const seq = ++estimateSeq.current;
+    let scheduledRetry = false;
     setIsEstimating(true);
     setPriceErrorMessage("");
     try {
@@ -525,12 +527,29 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         data.couponCode = couponCode;
       }
 
-      const pricing = await BookingService.calculateBooking(data);
+      const existingId = sessionStorage.getItem("priceEstimateId") || "";
+      // Reuse a single calculation record across recalculations. The first
+      // estimate creates one (POST); every later tweak updates that same record
+      // (PUT) instead of creating another, so we don't leave orphan estimates
+      // in the database.
+      let pricing: any;
+      if (existingId) {
+        try {
+          pricing = await BookingService.updateCalculation(existingId, data);
+        } catch {
+          // The saved estimate could not be reused (cleared, expired, or tied
+          // to a different trip). Start a fresh one so a price still shows.
+          sessionStorage.removeItem("priceEstimateId");
+          pricing = await BookingService.calculateBooking(data);
+        }
+      } else {
+        pricing = await BookingService.calculateBooking(data);
+      }
       if (seq !== estimateSeq.current) return;
-      sessionStorage.setItem(
-        "priceEstimateId",
-        pricing.data.data.calculationId,
-      );
+      const calculationId = pricing?.data?.data?.calculationId;
+      if (calculationId) {
+        sessionStorage.setItem("priceEstimateId", calculationId);
+      }
       trackPaymentClick({
         vehicleId: vehicle.id,
         vehicleName: vehicle.name,
@@ -544,17 +563,28 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       }
       setPricing(pricing as unknown as EstimatedBookingPrice);
       setContinueBooking(true);
+      priceRetryRef.current = 0;
     } catch (e: any) {
       if (seq !== estimateSeq.current) return;
       console.warn("Price estimate unavailable:", e?.message || e);
+      // Retry once automatically before showing an error, so a transient blip
+      // does not read as a dead end. Keep the loading state during the gap.
+      if (priceRetryRef.current < 1) {
+        priceRetryRef.current += 1;
+        scheduledRetry = true;
+        setPriceErrorMessage("");
+        window.setTimeout(() => {
+          estimatePrice();
+        }, 1200);
+        return;
+      }
       setPriceErrorMessage(
-        e?.message ||
-          "We couldn't estimate the price. Please check your trip details and try again.",
+        "We couldn't estimate the price. Please check your trip details and try again.",
       );
       setPricing(undefined);
       setContinueBooking(false);
     } finally {
-      if (seq === estimateSeq.current) setIsEstimating(false);
+      if (seq === estimateSeq.current && !scheduledRetry) setIsEstimating(false);
     }
   };
 
@@ -1194,7 +1224,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       />
       <Navbar />
       <div className="min-h-screen w-full bg-gray-50 mt-24">
-        <div className="min-h-screen bg-gray-50 p-0 sm:p-3 flex items-center justify-center flex-col">
+        <div className="min-h-screen bg-gray-50 p-0 sm:p-3 flex items-center flex-col">
           <div className="max-w-4xl flex flex-col w-full">
             <div className=" rounded-xl flex-shrink p-4 sm:p-6 space-y-4">
               <button

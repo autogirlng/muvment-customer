@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { BookingService } from "@/controllers/booking/bookingService";
 import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
+import DashboardFirstBookingOffer from "./DashboardFirstBookingOffer";
 import {
   customerBookingStatus,
   customerTripStatus,
@@ -110,6 +111,7 @@ export default function Dashboard(): React.ReactElement {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [tripInfo, setTripInfo] = useState<any | null>(null);
   const [tripLoading, setTripLoading] = useState(true);
+  const [statsLoaded, setStatsLoaded] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -122,6 +124,8 @@ export default function Dashboard(): React.ReactElement {
         });
       } catch (e) {
         console.error("Error loading counts:", e);
+      } finally {
+        setStatsLoaded(true);
       }
     };
     load();
@@ -197,6 +201,11 @@ export default function Dashboard(): React.ReactElement {
           </button>
         )}
       </div>
+
+      {/* First-booking offer: shows until the user has made a booking */}
+      {statsLoaded && stats.bookings === 0 && (
+        <DashboardFirstBookingOffer onBook={openBook} />
+      )}
 
       {/* Highlight trip / book prompt */}
       {tripLoading ? (

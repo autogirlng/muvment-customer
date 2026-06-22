@@ -7,6 +7,7 @@ import {
 } from "@/types/vehicle";
 import {
   createData,
+  updateData,
   getSingleData,
   getTableData,
 } from "../connnector/app.callers";
@@ -198,7 +199,34 @@ export class BookingService {
     const response = await createData(
       this.BOOKINGS_URL + "/calculate",
       request,
-      { silent: true, requireAuth: false, skipLoader: true },
+      { silent: true, requireAuth: true, skipLoader: true },
+    );
+    if (!response || response.error || !response.data) {
+      const apiMessage =
+        response &&
+        typeof response.message === "string" &&
+        response.message !== "Success"
+          ? response.message
+          : "";
+      throw new Error(
+        apiMessage || "We couldn't calculate the price for this trip.",
+      );
+    }
+    return response;
+  }
+
+  // Updates an existing price calculation (PUT) instead of creating a new one.
+  // The booking calculation endpoint persists a record on every POST, so reusing
+  // the same record for recalculations avoids leaving unused estimates behind.
+  static async updateCalculation(
+    id: string,
+    request: BookingCalculationRequest,
+  ) {
+    const response = await updateData(
+      this.BOOKINGS_URL + "/calculate",
+      id,
+      request,
+      { silent: true, requireAuth: true, skipLoader: true },
     );
     if (!response || response.error || !response.data) {
       const apiMessage =

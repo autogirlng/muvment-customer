@@ -310,6 +310,26 @@ export class VehicleSearchService {
     params.append("location", location.name);
     params.append("radiusInKm", "100");
 
+    // Match the typed location against the cities we operate in and pass a clean
+    // city token. Sending the full place name (e.g. "Lagos, Nigeria") as the city
+    // filter returns nothing, so we only set city on a known match and otherwise
+    // fall back to the lat/lng radius.
+    const KNOWN_CITIES = [
+      { city: "Lagos", match: ["lagos"] },
+      { city: "Abuja", match: ["abuja"] },
+      { city: "Port Harcourt", match: ["port harcourt"] },
+      { city: "Benin City", match: ["benin"] },
+      { city: "Enugu", match: ["enugu"] },
+      { city: "Accra", match: ["accra"] },
+    ];
+    const lowerName = location.name.toLowerCase();
+    const matchedCity = KNOWN_CITIES.find((c) =>
+      c.match.some((m) => lowerName.includes(m)),
+    );
+    if (matchedCity) {
+      params.append("city", matchedCity.city);
+    }
+
     // ✅ Optional params (ONLY added if they exist)
     if (bookingType) {
       params.append("bookingType", bookingType);

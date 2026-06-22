@@ -23,6 +23,11 @@ import Footer from "../HomeComponent/Footer";
 import { TravelState } from "@/types/state";
 import { getBookingOption } from "@/context/Constarain";
 
+// The search endpoint can return the same vehicle across paginated pages, which
+// would render two cards with the same React key. Keep the list unique by id.
+const dedupeById = (arr: any[]) =>
+  Array.from(new Map((arr || []).map((v: any) => [v.id, v])).values());
+
 interface ExploreVehiclesClientProps {
   initialVehicles: any[];
   initialTotalCount: number;
@@ -394,7 +399,10 @@ function ExploreVehiclesClientContent({
         await fetchRecommendedVehicles();
       } else {
         if (append) {
-          setVehicles((prev) => [...prev, ...vehiclesData]);
+          setVehicles((prev) => {
+            const seen = new Set(prev.map((v: any) => v.id));
+            return [...prev, ...vehiclesData.filter((v: any) => !seen.has(v.id))];
+          });
         } else {
           setVehicles(vehiclesData);
         }
@@ -685,7 +693,7 @@ function ExploreVehiclesClientContent({
                   loading ? "pointer-events-none opacity-60" : ""
                 }`}
               >
-                {vehicles.map((v: any) => (
+                {dedupeById(vehicles).map((v: any) => (
                   <VehicleCard
                     key={v.id}
                     {...v}
@@ -712,16 +720,29 @@ function ExploreVehiclesClientContent({
 
             {!loading && vehicles.length === 0 && (
               <>
-                <div className="mb-6 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                  <p className="text-sm text-gray-700">
+                <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-4">
+                  <p className="text-sm font-medium text-gray-800">
                     No vehicles match your search.
                   </p>
-                  <button
-                    onClick={handleClearAll}
-                    className="text-sm font-semibold text-[#0673FF] hover:underline"
-                  >
-                    Clear filters
-                  </button>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Try widening your dates, picking a nearby pickup point, or
+                    clearing your filters. The cars below are available in your
+                    area.
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={handleClearAll}
+                      className="text-sm font-semibold text-[#0673FF] hover:underline"
+                    >
+                      Clear filters
+                    </button>
+                    <button
+                      onClick={() => router.push("/")}
+                      className="text-sm font-semibold text-gray-700 hover:underline"
+                    >
+                      Start a new search
+                    </button>
+                  </div>
                 </div>
 
                 {recommendedVehicles.length > 0 && (
@@ -730,7 +751,7 @@ function ExploreVehiclesClientContent({
                       Recommended cars
                     </h2>
                     <div className={gridClass}>
-                      {recommendedVehicles.map((v: any) => (
+                      {dedupeById(recommendedVehicles).map((v: any) => (
                         <VehicleCard
                           key={v.id}
                           {...v}

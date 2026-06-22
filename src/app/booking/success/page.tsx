@@ -24,6 +24,7 @@ import cn from "classnames";
 import { createData } from "@/controllers/connnector/app.callers";
 import { BookingService } from "@/controllers/booking/bookingService";
 import { clarityEvent } from "@/services/clarity";
+import { trackBooking } from "@/services/analytics";
 import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
 import Cookies from "js-cookie";
 import { useAuth } from "@/context/AuthContext";
@@ -146,6 +147,21 @@ const BookingSuccessContent = () => {
           invoice_number: details?.invoiceNumber,
           amount: details?.totalPrice,
         });
+        const purchaseKey = `ga_purchase_${details?.bookingId ?? bookingId}`;
+        if (
+          typeof window !== "undefined" &&
+          !localStorage.getItem(purchaseKey)
+        ) {
+          trackBooking({
+            vehicleId: details?.vehicle?.vehicleId ?? "N/A",
+            vehicleName: details?.vehicle?.vehicleName ?? "Vehicle",
+            category: details?.bookingCategory ?? "N/A",
+            price: details?.totalPrice ?? 0,
+            duration: details?.segments?.[0]?.bookingTypeName ?? "",
+            bookingId: details?.bookingId ?? (bookingId as string),
+          });
+          localStorage.setItem(purchaseKey, "1");
+        }
       } else {
         clarityEvent("booking_success_viewed", {
           booking_id: details?.bookingId ?? bookingId,

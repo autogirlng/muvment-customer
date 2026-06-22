@@ -16,6 +16,7 @@ import AutocompleteSelect from "@/components/general/forms/AutoCompleteSelect";
 import TextArea from "@/components/general/forms/textarea";
 import { RIDE_PURPOSES } from "@/helpers/metadata";
 import PersonalInformationForm from "./PersonalInformationForm";
+import BookingReassurance from "@/components/Booking/BookingReassurance";
 
 type Props = {
   vehicle: any | null;
@@ -188,6 +189,15 @@ export default function BookingSummary({
       forOthers ? "Recipient's phone number" : "Your phone number",
     );
   const priceReady = !!action?.amount;
+
+  const pricingOptions: { bookingTypeId: string; bookingTypeName: string }[] =
+    (vehicleDetails?.data as any)?.allPricingOptions || [];
+  const typeNameById = new Map(
+    pricingOptions.map((o) => [o.bookingTypeId, o.bookingTypeName]),
+  );
+  const selectedTypeNames = (trips || [])
+    .map((t) => typeNameById.get(t?.tripDetails?.bookingType as string))
+    .filter(Boolean) as string[];
 
   const completionNotice =
     missingInfo.length > 0 ? (
@@ -485,11 +495,15 @@ export default function BookingSummary({
             </div>
         </Collapse>
       </div>
-      <CostBreakdown
-        trips={trips}
-        vehicleId={vehicleDetails?.data.id || ""}
-        onActionChange={setAction}
-      />
+      <div className="w-full lg:w-[420px] lg:flex-shrink-0 lg:sticky lg:top-6 space-y-4">
+        <CostBreakdown
+          trips={trips}
+          vehicleId={vehicleDetails?.data.id || ""}
+          onActionChange={setAction}
+        />
+
+        <BookingReassurance bookingTypeNames={selectedTypeNames} />
+      </div>
 
       <StepperNavigation
         steps={steps}

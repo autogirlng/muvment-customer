@@ -7,6 +7,7 @@ import { getBookingOption, getDefaultBookingTypeId } from "@/context/Constarain"
 import { useState } from "react";
 import { BookingOption } from "@/types/booking";
 import { ServicePricingShowcaseList } from "@/components/HomeComponent/Servicepricingshowcaselist";
+import NewUserBanner from "@/components/HomeComponent/NewUserBanner";
 
 const BeninRepublicTravel = dynamic(
   () => import("@/components/HomeComponent/BeninRepublicTravel"),
@@ -34,6 +35,10 @@ const HourlyPromoBar = dynamic(
   () => import("@/components/HomeComponent/HourlyPromoBar"),
   { ssr: false },
 );
+const SignupPromoModal = dynamic(
+  () => import("@/components/HomeComponent/SignupPromoModal"),
+  { ssr: false },
+);
 
 export default function HomePage() {
   const [bookingTypeID, setBookingTypeID] = useState<string | undefined>(
@@ -58,6 +63,7 @@ export default function HomePage() {
     <div>
       <Navbar showAnnouncementBar={true} homeHero={true} />
       <BookingInterface />
+      <NewUserBanner />
       <div className="ag-reveal">
         <ServicePricingShowcaseList />
       </div>
@@ -90,6 +96,7 @@ export default function HomePage() {
       </div>
       <Footer bookingTypeID={bookingTypeID} />
       <HourlyPromoBar />
+      <SignupPromoModal />
     </div>
   );
 }
