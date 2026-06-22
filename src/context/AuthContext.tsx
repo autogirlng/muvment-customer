@@ -1,5 +1,10 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
+<<<<<<< Updated upstream
+=======
+import { clarityIdentify } from "@/services/clarity";
+import { setGAUser } from "@/services/analytics";
+>>>>>>> Stashed changes
 import Cookies from "js-cookie";
 import { AuthService } from "@/controllers/auth/auth";
 
@@ -63,6 +68,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userCookie && accessTokenCookie) {
         const userData = JSON.parse(userCookie);
         setUser(userData);
+<<<<<<< Updated upstream
+=======
+        clarityIdentify(
+          userData.id,
+          `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim() ||
+            userData.email,
+        );
+        setGAUser(userData.id);
+>>>>>>> Stashed changes
         setAccessToken(accessTokenCookie);
         setRefreshToken(refreshTokenCookie || null);
       }
@@ -94,6 +108,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.set("muvment_refresh_token", tokens.refreshToken, opts);
 
     setUser(userData);
+<<<<<<< Updated upstream
+=======
+    clarityIdentify(
+      userData.id,
+      `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim() ||
+        userData.email,
+    );
+    setGAUser(userData.id);
+
+    // A new sign-in must not inherit the previous user's or a guest's booking
+    // details. Clear the saved booking personal info so the form prefills from
+    // this account instead of the prior session.
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("userBookingInformation");
+    }
+>>>>>>> Stashed changes
 
     Cookies.set("muvment_user", JSON.stringify(userData), opts);
   };
@@ -111,6 +141,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.remove("muvment_remember");
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+
+    // Don't leave this account's booking details behind for the next guest or
+    // account that signs in on this browser.
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("userBookingInformation");
+    }
 
     // Redirect to login
     window.location.href = "/auth/login";

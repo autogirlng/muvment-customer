@@ -24,6 +24,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
+import BookingReassurance from "@/components/Booking/BookingReassurance";
 import { BookingService } from "@/controllers/booking/bookingService";
 import Footer from "@/components/HomeComponent/Footer";
 import cn from "classnames";
@@ -1054,7 +1055,7 @@ const ServicePricingCheckoutPage = () => {
                         setShowSecondary(false);
                         handleInputChange("secondaryPhoneNumber", "");
                       }}
-                      className="mt-2 text-xs font-medium text-gray-500 hover:text-gray-700"
+                      className="mt-2 text-xs font-semibold text-[#0673FF] hover:text-[#0560d6]"
                     >
                       Remove secondary number
                     </button>
@@ -1160,7 +1161,7 @@ const ServicePricingCheckoutPage = () => {
                         setShowExtra(false);
                         handleInputChange("extraDetails", "");
                       }}
-                      className="mt-2 text-xs font-medium text-gray-500 hover:text-gray-700"
+                      className="mt-2 text-xs font-semibold text-[#0673FF] hover:text-[#0560d6]"
                     >
                       Remove extra details
                     </button>
@@ -1228,6 +1229,10 @@ const ServicePricingCheckoutPage = () => {
               </div>
 
               {paymentBlock}
+
+              <BookingReassurance
+                bookingTypeNames={trips.map((t) => (t as any).bookingTypeName)}
+              />
             </div>
           </div>
         </div>
