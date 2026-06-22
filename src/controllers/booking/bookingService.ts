@@ -12,6 +12,7 @@ import {
   getTableData,
 } from "../connnector/app.callers";
 import { PaymentService } from "./paymentService";
+import { clarityEvent } from "@/services/clarity";
 
 // Cache the full booking-types list so concurrent callers (navbar bar, filter
 // bar) share one request instead of each hitting the endpoint.
@@ -248,6 +249,11 @@ export class BookingService {
       if (!response || !response.data)
         throw new Error("Failed to create booking");
 
+      clarityEvent("booking_created", {
+        booking_id:
+          (response as any)?.data?.bookingId ?? (response as any)?.data?.id,
+        invoice_number: (response as any)?.data?.invoiceNumber,
+      });
       return response;
     } catch (error) {
       console.error("Booking creation error:", error);
@@ -265,6 +271,7 @@ export class BookingService {
       if (!response || !response.data)
         throw new Error("Failed to create booking");
 
+      clarityEvent("booking_created", { type: "service_pricing" });
       return response;
     } catch (error) {
       console.error("Booking creation error:", error);
@@ -284,6 +291,10 @@ export class BookingService {
       const response = await createData(paymentURL, paymentData);
       if (!response || !response.data)
         throw new Error("Failed to initiate payment");
+      clarityEvent("payment_initiated", {
+        payment_provider: paymentData.paymentProvider,
+        booking_id: paymentData.bookingId,
+      });
       return response.data;
     } catch (error) {
       console.error("Payment initiation error:", error);
