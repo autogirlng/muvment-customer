@@ -65,10 +65,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userCookie && accessTokenCookie) {
         const userData = JSON.parse(userCookie);
         setUser(userData);
-        clarityIdentify(userData.id, {
-          name: `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim(),
-          email: userData.email,
-        });
+        clarityIdentify(
+          userData.id,
+          `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim() ||
+            userData.email,
+        );
         setGAUser(userData.id);
         setAccessToken(accessTokenCookie);
         setRefreshToken(refreshTokenCookie || null);
@@ -101,10 +102,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.set("muvment_refresh_token", tokens.refreshToken, opts);
 
     setUser(userData);
-    clarityIdentify(userData.id, {
-      name: `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim(),
-      email: userData.email,
-    });
+    clarityIdentify(
+      userData.id,
+      `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim() ||
+        userData.email,
+    );
     setGAUser(userData.id);
 
     // A new sign-in must not inherit the previous user's or a guest's booking
