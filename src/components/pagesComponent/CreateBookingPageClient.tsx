@@ -10,6 +10,7 @@ import ScreenLoader from "@/components/utils/ScreenLoader";
 import { useRouter, useParams } from "next/navigation";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
+import { clarityEvent } from "@/services/clarity";
 
 const steps = ["Confirm and pay"];
 
@@ -57,6 +58,7 @@ export default function CreateBookingPageClient() {
   };
 
   useEffect(() => {
+    clarityEvent("booking_started", { vehicle_id: params?.id as string });
     fetchVehicleDetails();
   }, []);
 
