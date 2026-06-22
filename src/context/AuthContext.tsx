@@ -1,10 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
-<<<<<<< Updated upstream
-=======
 import { clarityIdentify } from "@/services/clarity";
 import { setGAUser } from "@/services/analytics";
->>>>>>> Stashed changes
 import Cookies from "js-cookie";
 import { AuthService } from "@/controllers/auth/auth";
 
@@ -68,15 +65,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userCookie && accessTokenCookie) {
         const userData = JSON.parse(userCookie);
         setUser(userData);
-<<<<<<< Updated upstream
-=======
         clarityIdentify(
           userData.id,
           `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim() ||
             userData.email,
         );
         setGAUser(userData.id);
->>>>>>> Stashed changes
         setAccessToken(accessTokenCookie);
         setRefreshToken(refreshTokenCookie || null);
       }
@@ -108,8 +102,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.set("muvment_refresh_token", tokens.refreshToken, opts);
 
     setUser(userData);
-<<<<<<< Updated upstream
-=======
     clarityIdentify(
       userData.id,
       `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim() ||
@@ -123,7 +115,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("userBookingInformation");
     }
->>>>>>> Stashed changes
 
     Cookies.set("muvment_user", JSON.stringify(userData), opts);
   };

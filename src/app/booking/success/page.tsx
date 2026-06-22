@@ -23,11 +23,8 @@ import Footer from "@/components/HomeComponent/Footer";
 import cn from "classnames";
 import { createData } from "@/controllers/connnector/app.callers";
 import { BookingService } from "@/controllers/booking/bookingService";
-<<<<<<< Updated upstream
-=======
 import { clarityEvent } from "@/services/clarity";
 import { trackBooking } from "@/services/analytics";
->>>>>>> Stashed changes
 import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
 import Cookies from "js-cookie";
 import { useAuth } from "@/context/AuthContext";
@@ -144,8 +141,6 @@ const BookingSuccessContent = () => {
       const details = bookingData[0].data;
       setBookingDetails(details);
 
-<<<<<<< Updated upstream
-=======
       if (details?.bookingStatus === "CONFIRMED") {
         clarityEvent("payment_succeeded", {
           booking_id: details?.bookingId ?? bookingId,
@@ -174,7 +169,6 @@ const BookingSuccessContent = () => {
         });
       }
 
->>>>>>> Stashed changes
       const hasVehicle =
         details?.vehicle?.vehicleName &&
         details.vehicle.vehicleName !== "Vehicle Assignment Pending" &&
