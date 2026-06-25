@@ -645,6 +645,14 @@ function ExploreVehiclesClientContent({
             </div>
           )}
 
+          {!featuredOnly && !startDate && (
+            <div className="mb-4 rounded-xl border border-[#EAF2FF] bg-[#EAF2FF] px-4 py-3 text-sm text-[#101928]">
+              Showing all cars
+              {city ? ` in ${city}` : location ? ` near ${location}` : ""}. Add
+              your travel dates to confirm availability and see pricing.
+            </div>
+          )}
+
           {!bookingType && interstateStates.length > 0 && (
             <div className="mb-4">
               <button
