@@ -273,8 +273,30 @@ const TripAccordion = ({
       return;
     }
 
-    // Other types default to the first available slot once it loads.
+    // Other types wait for the day's slots, then default to 8:00 AM when that
+    // hour is free, otherwise the first available slot.
     if (availableTimes && availableTimes.length > 0) {
+      const parseHour = (label: string): number | null => {
+        try {
+          const [tp, ampm] = label.split(" ");
+          const [hStr] = tp.split(":");
+          let h = parseInt(hStr, 10);
+          if (ampm === "AM" && h === 12) h = 0;
+          if (ampm === "PM" && h !== 12) h = h + 12;
+          return isNaN(h) ? null : h;
+        } catch {
+          return null;
+        }
+      };
+
+      const eight = availableTimes.find(
+        (t) => t.time && parseHour(t.time) === 8,
+      );
+      if (eight?.available) {
+        applyTime(8, 0);
+        return;
+      }
+
       const firstAvail = availableTimes.find((t) => t.available);
       if (firstAvail?.time) {
         try {

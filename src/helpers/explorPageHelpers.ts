@@ -1,9 +1,11 @@
+import { formatVehicleTypeName } from "@/utils/vehicleType";
 export const getSelectedVehicleTypeName = (
   selectedIds: string[] | undefined,
   vehicleTypes: any[]
 ) => {
   if (!selectedIds || selectedIds.length === 0) return undefined;
-  return vehicleTypes.find((v) => v.id === selectedIds[0])?.name;
+  const name = vehicleTypes.find((v) => v.id === selectedIds[0])?.name;
+  return name ? formatVehicleTypeName(name) : undefined;
 };
 
 export const getSelectedMakeName = (

@@ -232,7 +232,7 @@ export const PartnerWithUs = () => {
                   delay={(i % 3) * 80}
                   className="group rounded-2xl border border-gray-200/80 bg-white p-8 transition-all hover:shadow-md hover:-translate-y-0.5"
                 >
-                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-5 text-[#0673FF]">
+                  <div className="w-12 h-12 bg-[#EAF2FF] rounded-xl flex items-center justify-center mb-5 text-[#0673FF]">
                     <Icon className="w-6 h-6" />
                   </div>
                   <h3 className="text-gray-900 text-[18px] font-bold mb-3">
@@ -303,7 +303,7 @@ export const PartnerWithUs = () => {
                   delay={(i % 4) * 70}
                   className="rounded-2xl border border-gray-200/80 bg-white p-7 transition-all hover:shadow-md hover:-translate-y-0.5"
                 >
-                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-5 text-[#0673FF]">
+                  <div className="w-12 h-12 bg-[#EAF2FF] rounded-xl flex items-center justify-center mb-5 text-[#0673FF]">
                     <Icon className="w-6 h-6" />
                   </div>
                   <h3 className="text-gray-900 text-[16px] font-bold mb-2">

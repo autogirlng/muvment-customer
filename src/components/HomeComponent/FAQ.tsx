@@ -34,7 +34,7 @@ export default function FAQ({
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#0673FF]">
             {eyebrow}
           </p>
-          <h2 className="text-3xl font-bold tracking-[-0.01em] text-[#0d1320] sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-[-0.01em] text-[#101928] sm:text-4xl">
             {title}
           </h2>
         </div>
@@ -54,7 +54,7 @@ export default function FAQ({
                   aria-expanded={open}
                   className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50"
                 >
-                  <h3 className="text-[15px] font-semibold text-[#0d1320] sm:text-base">
+                  <h3 className="text-[15px] font-semibold text-[#101928] sm:text-base">
                     {faq.title}
                   </h3>
                   <FiChevronDown
