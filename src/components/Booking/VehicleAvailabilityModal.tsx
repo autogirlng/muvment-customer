@@ -34,6 +34,7 @@ interface Props {
   vehicleTypeName?: string;
   onConfirm?: (ranges: { start: string; end: string }[]) => void;
   initialRanges?: { start: string; end: string }[];
+  requireFullDay?: boolean;
 }
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -62,8 +63,14 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
   vehicleTypeName,
   onConfirm,
   initialRanges,
+  requireFullDay,
 }) => {
   const router = useRouter();
+
+  // Interstate legs occupy whole days, so a partially booked day cannot hold
+  // them. When requireFullDay is set, only fully available days are selectable.
+  const isSelectable = (s?: DayStatus) =>
+    requireFullDay ? s === "AVAILABLE" : isSelectableStatus(s);
 
   const now = new Date();
   const [viewMonth, setViewMonth] = useState(
@@ -94,15 +101,12 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
       const start = fmt(y, m, 1);
       const lastDay = new Date(y, m + 1, 0).getDate();
       const end = fmt(y, m, lastDay);
-      const res = await VehicleSearchService.getVehicleAvailability({
-        searchTerm: vehicleIdentifier || vehicleName,
-        startDate: start,
-        endDate: end,
-        size: 20,
-      });
-      const list: any[] = res?.data?.data?.content || [];
-      const match =
-        list.find((v) => v.vehicleId === vehicleId) || list[0] || null;
+      const res = await VehicleSearchService.getVehicleAvailabilityRange(
+        vehicleId,
+        start,
+        end,
+      );
+      const match = res?.data?.data || null;
       const map: Record<string, DayInfo> = {};
       (match?.availability || []).forEach((d: any) => {
         if (d?.date) map[d.date] = { status: d.status, summary: d.summary };
@@ -134,6 +138,27 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  // Once availability for the visible month loads, drop any pre-filled range that
+  // crosses a day this vehicle cannot take, so a seeded selection never shows a
+  // booked or unavailable day as chosen.
+  useEffect(() => {
+    if (Object.keys(dayMap).length === 0) return;
+    const hasUnavailable = (a: string, b: string) => {
+      const [s, e] = a <= b ? [a, b] : [b, a];
+      const cur = new Date(`${s}T00:00:00`);
+      const stop = new Date(`${e}T00:00:00`);
+      while (cur <= stop) {
+        const key = fmt(cur.getFullYear(), cur.getMonth(), cur.getDate());
+        const info = dayMap[key];
+        if (info && !isSelectable(info.status)) return true;
+        cur.setDate(cur.getDate() + 1);
+      }
+      return false;
+    };
+    setCommitted((prev) => prev.filter((r) => !hasUnavailable(r.start, r.end)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dayMap]);
+
   if (!isOpen) return null;
 
   const today = todayStr();
@@ -156,7 +181,7 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
       const key = fmt(cur.getFullYear(), cur.getMonth(), cur.getDate());
       const info = dayMap[key];
       // Block on days we have data for, and on days already in another range.
-      if (info && !isSelectableStatus(info.status)) return true;
+      if (info && !isSelectable(info.status)) return true;
       if (inCommitted(key)) return true;
       cur.setDate(cur.getDate() + 1);
     }
@@ -166,7 +191,7 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
   const onDayClick = (dateStr: string) => {
     const info = dayMap[dateStr];
     const past = dateStr < today;
-    if (past || inCommitted(dateStr) || (info && !isSelectableStatus(info.status)))
+    if (past || inCommitted(dateStr) || (info && !isSelectable(info.status)))
       return;
 
     setNote(null);
@@ -367,7 +392,7 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
               const dateStr = fmt(y, m, d);
               const info = dayMap[dateStr];
               const past = dateStr < today;
-              const selectable = !past && isSelectableStatus(info?.status);
+              const selectable = !past && isSelectable(info?.status);
               const selected = inRange(dateStr);
               const isEnd =
                 dateStr === rangeStart ||
@@ -453,9 +478,9 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
             </span>
           </div>
           <p className="mt-2 text-[11px] text-gray-400">
-            Booked and unavailable days cannot be selected. On a partly booked
-            day you choose from the free hours at the next step. Hover a day to
-            see its status.
+            {requireFullDay
+              ? "Only fully available days can be selected. Booked, partly booked, and unavailable days are greyed out. Hover a day to see its status."
+              : "Booked and unavailable days cannot be selected. On a partly booked day you choose from the free hours at the next step. Hover a day to see its status."}
           </p>
 
           {(committed.length > 0 || rangeStart) && (
