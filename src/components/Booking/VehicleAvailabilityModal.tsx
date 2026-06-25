@@ -32,6 +32,8 @@ interface Props {
   slug?: string;
   bookingType?: string;
   vehicleTypeName?: string;
+  onConfirm?: (ranges: { start: string; end: string }[]) => void;
+  initialRanges?: { start: string; end: string }[];
 }
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -58,6 +60,8 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
   slug,
   bookingType,
   vehicleTypeName,
+  onConfirm,
+  initialRanges,
 }) => {
   const router = useRouter();
 
@@ -70,6 +74,9 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
   const [error, setError] = useState<string | null>(null);
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [rangeEnd, setRangeEnd] = useState<string | null>(null);
+  const [committed, setCommitted] = useState<{ start: string; end: string }[]>(
+    [],
+  );
   const [note, setNote] = useState<string | null>(null);
 
   const y = viewMonth.getFullYear();
@@ -117,8 +124,12 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
     if (isOpen) {
       setRangeStart(null);
       setRangeEnd(null);
+      const seed = initialRanges || [];
+      setCommitted(seed);
       setNote(null);
-      setViewMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+      const firstStart = seed.length ? seed[0].start : null;
+      const base = firstStart ? new Date(`${firstStart}T00:00:00`) : now;
+      setViewMonth(new Date(base.getFullYear(), base.getMonth(), 1));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -134,6 +145,9 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
   };
   const goNext = () => setViewMonth(new Date(y, m + 1, 1));
 
+  const inCommitted = (dateStr: string) =>
+    committed.some((r) => dateStr >= r.start && dateStr <= r.end);
+
   const rangeHasBlockedDay = (a: string, b: string) => {
     const [start, end] = a <= b ? [a, b] : [b, a];
     const cur = new Date(`${start}T00:00:00`);
@@ -141,8 +155,9 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
     while (cur <= stop) {
       const key = fmt(cur.getFullYear(), cur.getMonth(), cur.getDate());
       const info = dayMap[key];
-      // Only block on days we have data for; unknown days are validated on booking.
+      // Block on days we have data for, and on days already in another range.
       if (info && !isSelectableStatus(info.status)) return true;
+      if (inCommitted(key)) return true;
       cur.setDate(cur.getDate() + 1);
     }
     return false;
@@ -151,7 +166,8 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
   const onDayClick = (dateStr: string) => {
     const info = dayMap[dateStr];
     const past = dateStr < today;
-    if (past || (info && !isSelectableStatus(info.status))) return;
+    if (past || inCommitted(dateStr) || (info && !isSelectableStatus(info.status)))
+      return;
 
     setNote(null);
 
@@ -176,10 +192,44 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
   };
 
   const inRange = (dateStr: string) => {
+    if (inCommitted(dateStr)) return true;
     if (rangeStart && rangeEnd)
       return dateStr >= rangeStart && dateStr <= rangeEnd;
     return dateStr === rangeStart;
   };
+
+  const daysBetween = (a: string, b: string) =>
+    Math.round(
+      (new Date(`${b}T00:00:00`).getTime() -
+        new Date(`${a}T00:00:00`).getTime()) /
+        86400000,
+    ) + 1;
+
+  const allRanges = (): { start: string; end: string }[] => {
+    const r = [...committed];
+    if (rangeStart) r.push({ start: rangeStart, end: rangeEnd || rangeStart });
+    return r.sort((x, y) => x.start.localeCompare(y.start));
+  };
+
+  const totalDays = allRanges().reduce(
+    (sum, r) => sum + daysBetween(r.start, r.end),
+    0,
+  );
+
+  const addAnotherRange = () => {
+    if (!rangeStart) return;
+    setCommitted((prev) =>
+      [...prev, { start: rangeStart, end: rangeEnd || rangeStart }].sort((a, b) =>
+        a.start.localeCompare(b.start),
+      ),
+    );
+    setRangeStart(null);
+    setRangeEnd(null);
+    setNote(null);
+  };
+
+  const removeRange = (i: number) =>
+    setCommitted((prev) => prev.filter((_, idx) => idx !== i));
 
   const dotColor = (s?: DayStatus) => {
     if (s === "AVAILABLE") return "#16a34a";
@@ -189,14 +239,30 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
   };
 
   const handleBook = () => {
-    if (!rangeStart) return;
-    const start = rangeStart;
-    const end = rangeEnd || rangeStart;
+    const ranges = allRanges();
+    if (ranges.length === 0) return;
+
+    if (onConfirm) {
+      onConfirm(ranges);
+      onClose();
+      return;
+    }
+
     const params = new URLSearchParams(
       typeof window !== "undefined" ? window.location.search : "",
     );
-    params.set("startDate", start);
-    params.set("endDate", end);
+    if (ranges.length === 1) {
+      params.set("startDate", ranges[0].start);
+      params.set("endDate", ranges[0].end);
+      params.delete("ranges");
+    } else {
+      params.set(
+        "ranges",
+        ranges.map((r) => `${r.start}:${r.end}`).join(","),
+      );
+      params.set("startDate", ranges[0].start);
+      params.set("endDate", ranges[ranges.length - 1].end);
+    }
     if (vehicleTypeName) params.set("vehicleType", vehicleTypeName);
     if (bookingType) params.set("bookingType", bookingType);
     router.push(`/booking/details/${slug || vehicleId}?${params.toString()}`);
@@ -209,21 +275,22 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   const prettyRange = () => {
-    if (!rangeStart) return "Select your dates";
+    const ranges = allRanges();
+    if (ranges.length === 0) return "Select your dates";
     const fmtNice = (s: string) =>
       new Date(`${s}T00:00:00`).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       });
-    if (!rangeEnd || rangeEnd === rangeStart)
-      return `${fmtNice(rangeStart)} (1 day)`;
-    const days =
-      Math.round(
-        (new Date(`${rangeEnd}T00:00:00`).getTime() -
-          new Date(`${rangeStart}T00:00:00`).getTime()) /
-          86400000,
-      ) + 1;
-    return `${fmtNice(rangeStart)} to ${fmtNice(rangeEnd)} (${days} days)`;
+    if (ranges.length === 1) {
+      const r = ranges[0];
+      if (r.end === r.start) return `${fmtNice(r.start)} (1 day)`;
+      return `${fmtNice(r.start)} to ${fmtNice(r.end)} (${daysBetween(
+        r.start,
+        r.end,
+      )} days)`;
+    }
+    return `${ranges.length} ranges (${totalDays} days)`;
   };
 
   return (
@@ -390,6 +457,44 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
             day you choose from the free hours at the next step. Hover a day to
             see its status.
           </p>
+
+          {(committed.length > 0 || rangeStart) && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {committed.map((r, i) => {
+                const lbl = (s: string) =>
+                  new Date(`${s}T00:00:00`).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  });
+                return (
+                  <span
+                    key={`${r.start}-${i}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-[#EAF2FF] px-2.5 py-1 text-[11px] font-medium text-[#0b3a86]"
+                  >
+                    {lbl(r.start)}
+                    {r.end !== r.start ? ` - ${lbl(r.end)}` : ""}
+                    <button
+                      type="button"
+                      onClick={() => removeRange(i)}
+                      aria-label="Remove range"
+                      className="text-[#0b3a86]/70 hover:text-[#0b3a86]"
+                    >
+                      <FiX className="h-3 w-3" />
+                    </button>
+                  </span>
+                );
+              })}
+              {rangeStart && (
+                <button
+                  type="button"
+                  onClick={addAnotherRange}
+                  className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#0673FF] px-2.5 py-1 text-[11px] font-medium text-[#0673FF] hover:bg-[#EAF2FF]"
+                >
+                  + Add another range
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mt-4 flex items-center gap-3 border-t border-gray-100 px-5 py-4">
@@ -401,11 +506,11 @@ const VehicleAvailabilityModal: React.FC<Props> = ({
           </div>
           <button
             onClick={handleBook}
-            disabled={!rangeStart}
+            disabled={allRanges().length === 0}
             className="flex-shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-gray-300"
-            style={rangeStart ? { backgroundColor: BRAND } : undefined}
+            style={allRanges().length > 0 ? { backgroundColor: BRAND } : undefined}
           >
-            Book these dates
+            {onConfirm ? "Use these dates" : "Book these dates"}
           </button>
         </div>
       </div>

@@ -76,7 +76,7 @@ const pillars = [
     tags: ["SDG 1: No poverty"],
     headerBg: "bg-gray-50",
     iconBg: "bg-[#0673FF]",
-    tagBg: "bg-blue-50 text-[#0560d6]",
+    tagBg: "bg-[#EAF2FF] text-[#0560d6]",
     titleColor: "text-[#101928]",
     numberColor: "text-[#101928]",
     dark: false,
@@ -92,7 +92,7 @@ const pillars = [
     ],
     headerBg: "bg-[#1D2739]",
     iconBg: "bg-white/10",
-    tagBg: "bg-blue-50 text-[#0560d6]",
+    tagBg: "bg-[#EAF2FF] text-[#0560d6]",
     titleColor: "text-white",
     numberColor: "text-white",
     dark: true,
@@ -108,7 +108,7 @@ const pillars = [
     ],
     headerBg: "bg-[#101928]",
     iconBg: "bg-white/10",
-    tagBg: "bg-blue-50 text-[#0560d6]",
+    tagBg: "bg-[#EAF2FF] text-[#0560d6]",
     titleColor: "text-white",
     numberColor: "text-white",
     dark: true,
@@ -118,9 +118,9 @@ const pillars = [
     title: "Female Drivers Outreach",
     body: "A community outreach spotlighting female drivers in one of Nigeria's toughest professions. We shared their stories, amplified their voices, and gave cash gifts and food packages as direct welfare support.",
     tags: ["SDG 5: Gender equality", "SDG 10: Reduced inequalities"],
-    headerBg: "bg-blue-50",
+    headerBg: "bg-[#EAF2FF]",
     iconBg: "bg-[#0673FF]",
-    tagBg: "bg-blue-50 text-[#0560d6]",
+    tagBg: "bg-[#EAF2FF] text-[#0560d6]",
     titleColor: "text-[#101928]",
     numberColor: "text-[#101928]",
     dark: false,
@@ -385,7 +385,7 @@ function PressSection() {
   const [showMore, setShowMore] = useState(false);
 
   const pillClass =
-    "text-[13px] px-5 py-2 rounded-full border border-gray-200/80 text-gray-600 bg-white transition-all duration-200 hover:border-[#0673FF] hover:text-[#0673FF] hover:bg-blue-50 no-underline";
+    "text-[13px] px-5 py-2 rounded-full border border-gray-200/80 text-gray-600 bg-white transition-all duration-200 hover:border-[#0673FF] hover:text-[#0673FF] hover:bg-[#EAF2FF] no-underline";
 
   return (
     <section className="bg-gray-50 px-6 md:px-10 lg:px-16 py-24">

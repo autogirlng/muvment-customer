@@ -130,6 +130,15 @@ const BookingSuccessContent = () => {
       return;
     }
 
+    // The booking is created, so the draft itinerary should not carry into a
+    // new booking or onto another car.
+    try {
+      sessionStorage.removeItem("trips");
+      sessionStorage.removeItem("tripsSeedSig");
+      sessionStorage.removeItem("priceEstimateId");
+      sessionStorage.removeItem("couponCode");
+    } catch {}
+
     loadBookingDetails();
   }, [bookingId, router]);
 

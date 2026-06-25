@@ -342,7 +342,6 @@ function TermsOfServiceClient() {
 
   return (
     <PolicyLayout
-      eyebrow="Legal"
       title="Terms & Conditions"
       intro="The terms that govern your booking and use of Muvment by Autogirl's car rental services."
       lastUpdated="March 31, 2026"
@@ -632,7 +631,7 @@ function TermsOfServiceClient() {
                     contactInformation[0].links[index] ? (
                       <a
                         href={contactInformation[0].links[index].href}
-                        className="text-blue-600 hover:underline"
+                        className="text-[#0673FF] hover:underline"
                       >
                         {item}
                       </a>
