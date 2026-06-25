@@ -187,10 +187,7 @@ const ContactUsClient: React.FC = () => {
               className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl"
             />
             <div className="relative">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-100/90">
-                Contact Us
-              </p>
-              <h1 className="mt-3 max-w-2xl font-serif text-3xl font-semibold leading-[1.1] text-white sm:text-5xl">
+              <h1 className="max-w-2xl font-sans text-3xl font-bold leading-[1.1] text-white sm:text-5xl">
                 We would love to{" "}
                 <span className="text-orange-300">hear</span> from you
               </h1>
@@ -275,7 +272,7 @@ const ContactUsClient: React.FC = () => {
                   <button
                     type="button"
                     onClick={startNewMessage}
-                    className="mt-7 inline-flex items-center justify-center rounded-full bg-[#0673FF] px-7 py-3 text-sm font-medium text-white transition-colors hover:bg-[#0558cc] focus:outline-none focus:ring-4 focus:ring-[#0673FF]/30"
+                    className="mt-7 inline-flex items-center justify-center rounded-full bg-[#0673FF] px-7 py-3 text-sm font-medium text-white transition-colors hover:bg-[#0560d6] focus:outline-none focus:ring-4 focus:ring-[#0673FF]/30"
                   >
                     Send another message
                   </button>
@@ -483,7 +480,7 @@ const ContactUsClient: React.FC = () => {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="w-full rounded-xl bg-[#0673FF] py-4 text-sm font-medium text-white transition-colors hover:bg-[#0558cc] focus:outline-none focus:ring-4 focus:ring-[#0673FF]/30 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+                      className="w-full rounded-xl bg-[#0673FF] py-4 text-sm font-medium text-white transition-colors hover:bg-[#0560d6] focus:outline-none focus:ring-4 focus:ring-[#0673FF]/30 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
                     >
                       {submitting ? "Sending..." : "Submit"}
                     </button>

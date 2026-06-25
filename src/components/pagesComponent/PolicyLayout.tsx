@@ -9,7 +9,6 @@ import Reveal from "../general/Reveal";
 type PolicySection = { id: string; label: string };
 
 type PolicyLayoutProps = {
-  eyebrow?: string;
   title: string;
   intro: string;
   lastUpdated: string;
@@ -18,7 +17,6 @@ type PolicyLayoutProps = {
 };
 
 function PolicyLayout({
-  eyebrow = "Legal",
   title,
   intro,
   lastUpdated,
@@ -85,10 +83,7 @@ function PolicyLayout({
               className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl"
             />
             <div className="relative">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-100/90">
-                {eyebrow}
-              </p>
-              <h1 className="mt-3 font-serif text-3xl font-semibold leading-[1.1] text-white sm:text-5xl">
+              <h1 className="font-sans text-3xl font-bold leading-[1.1] text-white sm:text-5xl">
                 {title}
               </h1>
               <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-blue-50/90 sm:text-lg">
@@ -154,7 +149,7 @@ function PolicyLayout({
                       }}
                       className={`block w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
                         active
-                          ? "bg-blue-50 font-medium text-[#0673FF]"
+                          ? "bg-[#EAF2FF] font-medium text-[#0673FF]"
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
@@ -184,7 +179,7 @@ function PolicyLayout({
                         onClick={() => scrollToSection(section.id)}
                         className={`relative rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                           active
-                            ? "bg-blue-50 font-medium text-[#0673FF]"
+                            ? "bg-[#EAF2FF] font-medium text-[#0673FF]"
                             : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                         }`}
                       >

@@ -59,6 +59,7 @@ import { trackPaymentClick } from "@/services/analytics";
 import Footer from "../HomeComponent/Footer";
 import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicleservice";
 import LoginPromptModal from "../Booking/Loginpromptmodal";
+import VehicleAvailabilityModal from "@/components/Booking/VehicleAvailabilityModal";
 import TopRatedBadge from "@/components/Booking/TopRatedBadge";
 import {
   setPendingFavourite,
@@ -68,6 +69,47 @@ import {
 interface VehicleDetailsClientProps {
   initialVehicleData: any;
 }
+
+// Expand "start:end,start:end" ranges into a sorted list of unique day strings
+// (YYYY-MM-DD). Used to turn one or more selected date ranges into one booking
+// segment per day. Capped so a very wide selection can't create runaway trips.
+const expandRangesToDays = (rangesStr: string): string[] => {
+  const set = new Set<string>();
+  rangesStr.split(",").forEach((seg) => {
+    const [a, b] = seg.split(":");
+    if (!a) return;
+    const start = new Date(`${a}T00:00:00Z`);
+    const end = new Date(`${b || a}T00:00:00Z`);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return;
+    for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+      set.add(d.toISOString().slice(0, 10));
+    }
+  });
+  return Array.from(set).sort().slice(0, 90);
+};
+
+// Collapse a list of day strings (YYYY-MM-DD) into contiguous ranges, so the
+// current itinerary can be shown back in the availability calendar for editing.
+const daysToRanges = (days: string[]): { start: string; end: string }[] => {
+  const sorted = Array.from(new Set(days.filter(Boolean))).sort();
+  if (sorted.length === 0) return [];
+  const ranges: { start: string; end: string }[] = [];
+  let start = sorted[0];
+  let prev = sorted[0];
+  for (let i = 1; i < sorted.length; i++) {
+    const next = new Date(`${prev}T00:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + 1);
+    if (sorted[i] === next.toISOString().slice(0, 10)) {
+      prev = sorted[i];
+    } else {
+      ranges.push({ start, end: prev });
+      start = sorted[i];
+      prev = sorted[i];
+    }
+  }
+  ranges.push({ start, end: prev });
+  return ranges;
+};
 
 const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   initialVehicleData,
@@ -90,6 +132,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const [bookRideModal, setBookRideModal] = useState<boolean>(false);
   const [couponCode, setCouponCode] = useState<string>("");
   const [isFavorited, setIsFavorited] = useState(false);
+  const [showAvailability, setShowAvailability] = useState(false);
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -215,6 +258,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     // drop-off location are kept. A new search has a different signature and
     // falls through to a fresh seed below.
     const seedSig = JSON.stringify({
+      vehicleId: initialVehicleData?.id,
       location,
       lat,
       lng,
@@ -266,6 +310,28 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         lat: Number(dropoffLat),
         lng: Number(dropoffLng),
       });
+    }
+
+    const rangesParam = params.get("ranges");
+    if (rangesParam) {
+      const days = expandRangesToDays(rangesParam);
+      if (days.length > 0) {
+        const flat: Record<string, string>[] = [];
+        const nested: { id: string; tripDetails: Record<string, string> }[] = [];
+        days.forEach((day, i) => {
+          const id = `trip-${i}`;
+          const details: Record<string, string> = {
+            ...base,
+            tripStartDate: `${day}T00:00:00`,
+          };
+          flat.push({ ...details, id });
+          nested.push({ id, tripDetails: details });
+        });
+        sessionStorage.setItem("trips", JSON.stringify(flat));
+        sessionStorage.setItem("tripsSeedSig", seedSig);
+        setTrips(nested);
+        return;
+      }
     }
 
     if (Object.keys(base).length === 0 && !startDate) {
@@ -664,7 +730,6 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 
   const baseType = trips[0]?.tripDetails?.bookingType as string | undefined;
   const baseKind = kindFromValue(baseType, bookingOptions);
-  const canAddDays = baseKind === "per_day";
 
   const fallbackPerDay = () =>
     bookingOptions.find((o) => kindFromValue(o.value, bookingOptions) === "per_day")
@@ -749,6 +814,39 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     closeConflict();
   };
 
+  const applyRanges = (ranges: { start: string; end: string }[]) => {
+    const rangesStr = ranges.map((r) => `${r.start}:${r.end}`).join(",");
+    const days = expandRangesToDays(rangesStr);
+    if (days.length === 0) return;
+    const selectedDays = allowsMultiDay ? days : days.slice(0, 1);
+    const shared = { ...(trips[0]?.tripDetails || {}) } as Record<string, string>;
+    delete shared.tripStartDate;
+    delete shared.tripStartTime;
+    const nested = selectedDays.map((day, i) => ({
+      id: `trip-${i}`,
+      tripDetails: { ...shared, tripStartDate: `${day}T00:00:00` },
+    }));
+    try {
+      sessionStorage.setItem(
+        "trips",
+        JSON.stringify(nested.map((t) => ({ ...t.tripDetails, id: t.id }))),
+      );
+    } catch {}
+    setTrips(nested);
+    setShowAvailability(false);
+  };
+
+  const hasAnyTripDate = trips.some(
+    (t) => !!(t.tripDetails?.tripStartDate as string | undefined),
+  );
+
+  const selectedRanges = daysToRanges(
+    trips
+      .map((t) => (t.tripDetails?.tripStartDate as string | undefined) || "")
+      .filter(Boolean)
+      .map((s) => s.slice(0, 10)),
+  );
+
   const bookingMain = (    <>
                 <div>
                   <h2 className="font-bold text-[17px]">Add Booking Details</h2>
@@ -761,6 +859,26 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     </p>
                   </div>
 
+                  {!hasAnyTripDate && (
+                    <div className="mb-4 rounded-xl border border-[#EAF2FF] bg-[#EAF2FF] px-4 py-3">
+                      <p className="text-sm font-semibold text-[#101928]">
+                        Choose your dates
+                      </p>
+                      <p className="mt-0.5 text-xs text-[#475467]">
+                        See the days this car is free and pick one or more date
+                        ranges. Booked and unavailable days can&apos;t be
+                        selected.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowAvailability(true)}
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#0673FF] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0560d6]"
+                      >
+                        View availability
+                      </button>
+                    </div>
+                  )}
+
                   {allowsMultiDay && trips.length > 0 && (
                     <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#E4E7EC] bg-white px-3 py-2.5">
                       <div className="min-w-0">
@@ -768,44 +886,18 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                           Trip length
                         </p>
                         <p className="text-[11px] leading-snug text-gray-500">
-                          Set days once; fill one plan for all.
+                          {trips.length} {trips.length === 1 ? "day" : "days"}{" "}
+                          selected. Change the dates from the availability
+                          calendar.
                         </p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <button
-                          type="button"
-                          aria-label="Fewer days"
-                          onClick={() => setNumberOfDays(trips.length - 1)}
-                          disabled={trips.length <= 1}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E4E7EC] text-gray-700 disabled:opacity-40"
-                        >
-                          &minus;
-                        </button>
-                        <input
-                          type="number"
-                          min={1}
-                          value={trips.length}
-                          disabled={!canAddDays}
-                          onChange={(e) =>
-                            setNumberOfDays(
-                              Math.max(1, parseInt(e.target.value) || 1),
-                            )
-                          }
-                          className="h-7 w-11 rounded-lg border border-[#E4E7EC] text-center text-sm text-gray-800 focus:border-[#0673ff] focus:outline-none disabled:opacity-40"
-                        />
-                        <button
-                          type="button"
-                          aria-label="More days"
-                          onClick={() => setNumberOfDays(trips.length + 1)}
-                          disabled={!canAddDays}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E4E7EC] text-gray-700 disabled:opacity-40"
-                        >
-                          +
-                        </button>
-                        <span className="ml-0.5 text-xs text-gray-600">
-                          {trips.length === 1 ? "day" : "days"}
-                        </span>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowAvailability(true)}
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#0673FF] px-3 py-1.5 text-xs font-semibold text-[#0673FF] hover:bg-[#EAF2FF]"
+                      >
+                        Change dates
+                      </button>
                     </div>
                   )}
 
@@ -1221,6 +1313,16 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         onOneSpecificDay={resolveOneSpecificDay}
         onMonthly={resolveMonthly}
         onCancel={cancelConflict}
+      />
+      <VehicleAvailabilityModal
+        isOpen={showAvailability}
+        onClose={() => setShowAvailability(false)}
+        vehicleId={vehicle?.id}
+        vehicleName={vehicle?.name}
+        vehicleTypeName={vehicle?.vehicleTypeName}
+        bookingType={trips[0]?.tripDetails?.bookingType as string | undefined}
+        onConfirm={applyRanges}
+        initialRanges={selectedRanges}
       />
       <Navbar />
       <div className="min-h-screen w-full bg-gray-50 mt-24">

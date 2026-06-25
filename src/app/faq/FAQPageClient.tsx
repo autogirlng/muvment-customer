@@ -107,10 +107,7 @@ function FAQPageClient() {
               className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl"
             />
             <div className="relative">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-100/90">
-                Help Center
-              </p>
-              <h1 className="mt-3 font-serif text-3xl font-semibold leading-[1.1] text-white sm:text-5xl">
+              <h1 className="font-sans text-3xl font-bold leading-[1.1] text-white sm:text-5xl">
                 Frequently Asked Questions
               </h1>
               <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-blue-50/90 sm:text-lg">

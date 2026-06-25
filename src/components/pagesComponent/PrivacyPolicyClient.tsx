@@ -157,7 +157,6 @@ function PrivacyPolicyClient() {
 
   return (
     <PolicyLayout
-      eyebrow="Legal"
       title="Privacy Policy"
       intro="How Muvment by Autogirl collects, uses, and protects your personal information."
       lastUpdated="March 31, 2026"
@@ -369,7 +368,7 @@ function PrivacyPolicyClient() {
                             {item.links && item.links[subIndex] ? (
                               <a
                                 href={item.links[subIndex].href}
-                                className="text-blue-600 hover:underline"
+                                className="text-[#0673FF] hover:underline"
                               >
                                 {subItem}
                               </a>
