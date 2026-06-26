@@ -312,7 +312,20 @@ const TripAccordion = ({
     }
   }, [availableTimes, bookingType, tripStartDate, tripStartTime, bookingOptions]);
 
-  const coordinates = (type: string, value: { lat: number; lng: number }) => {
+  const coordinates = (
+    type: string,
+    value: { lat: number; lng: number } | null,
+  ) => {
+    if (!value) {
+      onChange(type, "");
+      if (type === "pickupCoordinates") {
+        setPickupCoords("");
+        if (sameAsPickup) {
+          onChange("dropoffCoordinates", "");
+        }
+      }
+      return;
+    }
     onChange(type, JSON.stringify(value));
     if (type === "pickupCoordinates") {
       setPickupCoords(JSON.stringify(value));
@@ -333,6 +346,7 @@ const TripAccordion = ({
 
   const selectedTypeName =
     bookingOptions?.find((o: any) => o.value === bookingType)?.option || "";
+  const isInterstateType = selectedTypeName.toLowerCase().includes("interstate");
   const durationMatch = selectedTypeName.match(/(\d+)\s*hour/i);
   const durationHours = durationMatch ? parseInt(durationMatch[1], 10) : 0;
   const bookingEndDate =
@@ -507,7 +521,7 @@ const TripAccordion = ({
                     onChange={(e) => handleSameAsPickup(e.target.checked)}
                     className="h-4 w-4 rounded border-gray-300 text-[#0673ff] focus:ring-[#0673ff]"
                   />
-                  Same as pickup location
+                  Return to pickup location
                 </label>
                 {!sameAsPickup && (
                   <GoogleMapsLocationInput
@@ -522,6 +536,7 @@ const TripAccordion = ({
               </div>
             </InputSection>
 
+            {!isInterstateType && (
             <div>
               <div className="flex items-center gap-2 mb-1.5">
                 <p className="text-xs font-semibold text-gray-600">
@@ -564,6 +579,7 @@ const TripAccordion = ({
                 </p>
               )}
             </div>
+            )}
           </div>
         )}
       </div>
