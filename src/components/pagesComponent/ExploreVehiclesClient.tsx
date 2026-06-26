@@ -32,6 +32,7 @@ interface ExploreVehiclesClientProps {
   initialVehicles: any[];
   initialTotalCount: number;
   initialRecommended: any[];
+  initialRecommendedNearby?: boolean;
   initialVehicleTypes: any[];
   initialMakes: any[];
   initialModels: any[];
@@ -100,6 +101,7 @@ function ExploreVehiclesClientContent({
   initialVehicles,
   initialTotalCount,
   initialRecommended,
+  initialRecommendedNearby,
   initialVehicleTypes,
   initialMakes,
   initialModels,
@@ -110,6 +112,7 @@ function ExploreVehiclesClientContent({
   const router = useRouter();
   const [showInterstate, setShowInterstate] = useState(false);
   const [interstateTypeId, setInterstateTypeId] = useState<string>("");
+  const [monthlyTypeId, setMonthlyTypeId] = useState<string>("");
   const [interstateStates, setInterstateStates] = useState<TravelState[]>([]);
   const pathname = usePathname();
 
@@ -123,6 +126,9 @@ function ExploreVehiclesClientContent({
   const [vehicles, setVehicles] = useState<any[]>(initialVehicles);
   const [recommendedVehicles, setRecommendedVehicles] =
     useState<any[]>(initialRecommended);
+  const [recommendedNearby, setRecommendedNearby] = useState<boolean>(
+    initialRecommendedNearby ?? false,
+  );
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
@@ -151,6 +157,9 @@ function ExploreVehiclesClientContent({
   const endDate = searchParams.get("endDate");
   const endTime = searchParams.get("endTime");
   const city = searchParams.get("city");
+  const searchedAreaName = city
+    ? city.charAt(0).toUpperCase() + city.slice(1)
+    : "your area";
   const destinationStateId = searchParams.get("destinationStateId");
   const featuredOnly = searchParams.get("featured") === "true";
 
@@ -178,8 +187,15 @@ function ExploreVehiclesClientContent({
               .toLowerCase()
               .includes("interstate"),
           )?.id || "";
+        const monthId =
+          opts.find((t) =>
+            String(t?.name || "")
+              .toLowerCase()
+              .includes("month"),
+          )?.id || "";
         if (alive) {
           setInterstateTypeId(id);
+          setMonthlyTypeId(monthId);
           setBookingTypeOptions(dropdownOptions || []);
         }
       } catch {
@@ -338,6 +354,7 @@ function ExploreVehiclesClientContent({
       const currentLat = searchParams.get("lat") || lat;
       const currentLng = searchParams.get("lng") || lng;
       const currentCity = searchParams.get("city") || city;
+      const isMonthly = !!monthlyTypeId && bookingType === monthlyTypeId;
 
       if (currentLat && currentLng) {
         params.latitude = parseFloat(currentLat);
@@ -345,10 +362,10 @@ function ExploreVehiclesClientContent({
       }
       if (currentCity) params.city = currentCity;
       if (category) params.vehicleTypeId = category;
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
-      if (startTime) params.startTime = startTime;
-      if (endTime) params.endTime = endTime;
+      if (startDate && !isMonthly) params.startDate = startDate;
+      if (endDate && !isMonthly) params.endDate = endDate;
+      if (startTime && !isMonthly) params.startTime = startTime;
+      if (endTime && !isMonthly) params.endTime = endTime;
       if (bookingType) params.bookingTypeId = bookingType;
       if (destinationStateId) params.destinationStateId = destinationStateId;
 
@@ -423,13 +440,46 @@ function ExploreVehiclesClientContent({
 
   const fetchRecommendedVehicles = async () => {
     try {
-      const response = await VehicleSearchService.searchVehicles({
+      // Keep recommendations in the searched area using the city field, which
+      // is reliable even when a vehicle's coordinates are missing or wrong, so
+      // we never surface cars from another city.
+      const recCity =
+        searchParams.get("city") ||
+        city ||
+        searchParams.get("location") ||
+        undefined;
+      const params: VehicleSearchParams = {
         page: 0,
         size: 6,
         bookingTypeId: bookingType ?? "",
         orderBy: filterState.orderBy ?? DEFAULT_VEHICLE_ORDER_BY,
-      });
-      setRecommendedVehicles(response.data?.data?.content || []);
+      };
+      if (recCity) params.city = recCity;
+      const response = await VehicleSearchService.searchVehicles(params);
+      let recs = response.data?.data?.content || [];
+      let nearby = false;
+
+      // If the searched area has no cars at all, fall back to the nearest cars
+      // by distance so the page is not empty.
+      if (recs.length === 0) {
+        const currentLat = searchParams.get("lat") || lat;
+        const currentLng = searchParams.get("lng") || lng;
+        if (currentLat && currentLng) {
+          const nearbyResponse = await VehicleSearchService.searchVehicles({
+            page: 0,
+            size: 6,
+            latitude: parseFloat(currentLat),
+            longitude: parseFloat(currentLng),
+            radiusInKm: 500,
+            bookingTypeId: bookingType ?? "",
+            orderBy: filterState.orderBy ?? DEFAULT_VEHICLE_ORDER_BY,
+          });
+          recs = nearbyResponse.data?.data?.content || [];
+          nearby = recs.length > 0;
+        }
+      }
+      setRecommendedVehicles(recs);
+      setRecommendedNearby(nearby);
     } catch (err) {
       console.error("Failed to fetch recommended vehicles", err);
     }
@@ -551,11 +601,13 @@ function ExploreVehiclesClientContent({
                       size={24}
                       className="hidden lg:block"
                     />
-                    {city
-                      ? `Vehicles in ${city.charAt(0).toUpperCase() + city.slice(1)}`
-                      : location
-                        ? `Vehicles in ${location}`
-                        : "Vehicles in Lagos"}
+                    {recommendedNearby
+                      ? "Vehicles near you"
+                      : city
+                        ? `Vehicles in and around ${city.charAt(0).toUpperCase() + city.slice(1)}`
+                        : location
+                          ? "Vehicles near your selected location"
+                          : "Available vehicles"}
                   </>
                 )}
               </h1>
@@ -756,12 +808,18 @@ function ExploreVehiclesClientContent({
               <>
                 <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-4">
                   <p className="text-sm font-medium text-gray-800">
-                    No vehicles match your search.
+                    {recommendedVehicles.length === 0
+                      ? `No vehicles available in ${searchedAreaName} yet.`
+                      : recommendedNearby
+                        ? `No vehicles in ${searchedAreaName} yet.`
+                        : `No vehicles in ${searchedAreaName} match your dates or filters.`}
                   </p>
                   <p className="mt-1 text-sm text-gray-600">
-                    Try widening your dates, picking a nearby pickup point, or
-                    clearing your filters. The cars below are available in your
-                    area.
+                    {recommendedVehicles.length === 0
+                      ? "We could not find cars nearby. Try another location, or start a new search."
+                      : recommendedNearby
+                        ? "Here are the nearest available cars."
+                        : `Try widening your dates or clearing your filters. Other cars in ${searchedAreaName} are shown below.`}
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-3">
                     <button
@@ -782,7 +840,9 @@ function ExploreVehiclesClientContent({
                 {recommendedVehicles.length > 0 && (
                   <div>
                     <h2 className="mb-4 text-lg font-semibold text-gray-800">
-                      Recommended cars
+                      {recommendedNearby
+                        ? "Nearest available cars"
+                        : `Other cars in ${searchedAreaName}`}
                     </h2>
                     <div className={gridClass}>
                       {dedupeById(recommendedVehicles).map((v: any) => (
