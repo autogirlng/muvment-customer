@@ -45,7 +45,8 @@ interface GoogleMapsLocationInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   disabled: boolean;
-  coordinates: (type: string, value: { lat: number; lng: number }) => void;
+  coordinates: (type: string, value: { lat: number; lng: number } | null) => void;
+  onRegion?: (type: string, region: { state: string; city: string }) => void;
   type: string;
   className?: string; // Added for extra flexibility
   error?: string; // Added to match your SelectInput pattern
@@ -68,6 +69,7 @@ export const GoogleMapsLocationInput: React.FC<
   placeholder = "Enter location",
   disabled,
   coordinates,
+  onRegion,
   type,
   className,
   error,
@@ -84,6 +86,7 @@ export const GoogleMapsLocationInput: React.FC<
     null
   );
   const debounceRef = useRef<NodeJS.Timeout>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const selectionMadeRef = useRef(false);
   const hasInteractedRef = useRef(false);
   const currentValueRef = useRef(value);
@@ -112,6 +115,10 @@ export const GoogleMapsLocationInput: React.FC<
     hasInteractedRef.current = true;
     selectionMadeRef.current = false;
     setSelectionError("");
+    // Typing invalidates any previously selected place, so drop the stale
+    // coordinates until a new suggestion is chosen.
+    coordinates(type, null);
+    if (onRegion) onRegion(type, { state: "", city: "" });
 
     if (!apiLoaded) {
       console.warn("Google Maps API not loaded");
@@ -173,7 +180,7 @@ export const GoogleMapsLocationInput: React.FC<
 
     const request = {
       placeId: prediction.place_id,
-      fields: ["name", "formatted_address", "geometry"],
+      fields: ["name", "formatted_address", "geometry", "address_components"],
     };
 
     placesServiceRef.current.getDetails(request, (place, status) => {
@@ -185,8 +192,21 @@ export const GoogleMapsLocationInput: React.FC<
         const longitude = place.geometry?.location?.lng() || 0;
         coordinates(type, { lat: latitude, lng: longitude });
 
+        if (onRegion) {
+          const comps = place.address_components || [];
+          const pick = (t: string) =>
+            comps.find((c) => c.types.includes(t))?.long_name || "";
+          const state = pick("administrative_area_level_1");
+          const city =
+            pick("administrative_area_level_2") ||
+            pick("locality") ||
+            pick("sublocality") ||
+            "";
+          onRegion(type, { state, city });
+        }
+
         const selectedAddress =
-          place.formatted_address || place.name || prediction.description;
+          prediction.description || place.formatted_address || place.name || "";
 
         onChange(selectedAddress);
         selectionMadeRef.current = true;
@@ -215,6 +235,19 @@ export const GoogleMapsLocationInput: React.FC<
     }, 400);
   };
 
+  const handleClear = () => {
+    onChange("");
+    coordinates(type, null);
+    if (onRegion) onRegion(type, { state: "", city: "" });
+    selectionMadeRef.current = false;
+    hasInteractedRef.current = false;
+    setSelectionError("");
+    setPredictions([]);
+    setShowDropdown(false);
+    setIsLoading(false);
+    inputRef.current?.focus();
+  };
+
   return (
     <div className={cn("relative w-full flex flex-col gap-1.5", className)}>
       <div className="relative group">
@@ -222,6 +255,7 @@ export const GoogleMapsLocationInput: React.FC<
 
         <input
           type="text"
+          ref={inputRef}
           name="pickupLocation"
           value={value}
           onChange={handleInputChange}
@@ -230,13 +264,35 @@ export const GoogleMapsLocationInput: React.FC<
           disabled={disabled}
           autoComplete="off"
           className={cn(
-            "w-full rounded-[12px] pl-4 pr-4 text-sm h-[45px] outline-none transition-all duration-200 ease-in-out",
+            "w-full rounded-[12px] pl-4 pr-10 text-sm h-[45px] outline-none transition-all duration-200 ease-in-out",
             "disabled:bg-[#e4e7ec] disabled:text-grey-400 disabled:cursor-not-allowed disabled:border-grey-300",
             error || selectionError
               ? "border border-error-500 focus:ring-2 focus:ring-error-500/20"
               : "bg-white text-grey-900 border border-[#e4e7ec] hover:border-primary-500"
           )}
         />
+
+        {/* Clear button */}
+        {!disabled && !isLoading && value && (
+          <button
+            type="button"
+            aria-label="Clear location"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={handleClear}
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full text-grey-400 hover:bg-grey-100 hover:text-grey-600 transition-colors"
+          >
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              className="h-3.5 w-3.5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <path d="M5 5l10 10M15 5L5 15" />
+            </svg>
+          </button>
+        )}
 
         {/* Loading Spinner in Input (optional, shows when typing) */}
         {isLoading && (

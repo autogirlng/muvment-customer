@@ -125,7 +125,11 @@ export default function StatePickerModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const onManualCoords = (_type: string, c: { lat: number; lng: number }) => {
+  const onManualCoords = (
+    _type: string,
+    c: { lat: number; lng: number } | null,
+  ) => {
+    if (!c) return;
     const o: Origin = {
       name: manualTextRef.current || "Selected location",
       lat: c.lat,
