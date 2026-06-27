@@ -204,7 +204,8 @@ export default function DataTable<T extends { id: string | number }>({
   const resolvedFilteredTitle = filteredTitle ?? "No results found";
   const resolvedFilteredMessage =
     filteredMessage ?? "Try adjusting your search or filters.";
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const mobileSentinelRef = useRef<HTMLDivElement>(null);
+  const desktopSentinelRef = useRef<HTMLDivElement>(null);
 
   const uniqueRows = useMemo(() => {
     const seen = new Set<string | number>();
@@ -228,11 +229,13 @@ export default function DataTable<T extends { id: string | number }>({
     if (!onLoadMore) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore) onLoadMore();
+        if (entries.some((e) => e.isIntersecting) && hasMore && !loadingMore)
+          onLoadMore();
       },
-      { threshold: 0.1 },
+      { threshold: 0.1, rootMargin: "200px" },
     );
-    if (sentinelRef.current) observer.observe(sentinelRef.current);
+    if (mobileSentinelRef.current) observer.observe(mobileSentinelRef.current);
+    if (desktopSentinelRef.current) observer.observe(desktopSentinelRef.current);
     return () => observer.disconnect();
   }, [onLoadMore, hasMore, loadingMore]);
 
@@ -320,7 +323,7 @@ export default function DataTable<T extends { id: string | number }>({
           ))
         )}
 
-        <div ref={sentinelRef} className="h-1" />
+        <div ref={mobileSentinelRef} className="h-1" />
         {loadingMore && loadingRow}
       </div>
 
@@ -398,7 +401,7 @@ export default function DataTable<T extends { id: string | number }>({
           </tbody>
         </table>
 
-        <div ref={sentinelRef} className="h-1" />
+        <div ref={desktopSentinelRef} className="h-1" />
         {loadingMore && (
           <div className="flex justify-center items-center py-4 gap-2 text-gray-500 text-sm">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0673ff]" />
