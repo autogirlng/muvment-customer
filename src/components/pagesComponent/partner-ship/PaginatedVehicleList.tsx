@@ -62,11 +62,11 @@ export default function PaginatedVehicleList({
 
       let response: PaginatedVehicleResponse | null;
       if (type === "priority") {
-        response = await PartnerService.getPriorityVehicles(slug, nextPage, 6);
+        response = await PartnerService.getPriorityVehicles(slug, nextPage, 9);
       } else if (searchCity) {
-        response = await PartnerService.getCityVehicles(searchCity, nextPage, 6);
+        response = await PartnerService.getCityVehicles(searchCity, nextPage, 9);
       } else {
-        response = await PartnerService.getOtherVehicles(slug, nextPage, 6);
+        response = await PartnerService.getOtherVehicles(slug, nextPage, 9);
       }
 
       if (response && response.content) {
