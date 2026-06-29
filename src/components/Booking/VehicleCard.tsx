@@ -87,6 +87,7 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
   bookingType,
   viewMode = "list",
   featured,
+  bookingParams,
 }) => {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
@@ -199,6 +200,11 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     const ctx = new URLSearchParams(current.toString());
     ctx.set("vehicleType", vehicleTypeName);
     if (bookingType) ctx.set("bookingType", bookingType);
+    if (bookingParams) {
+      Object.entries(bookingParams).forEach(([k, v]) => {
+        if (v) ctx.set(k, v);
+      });
+    }
     router.push(`/booking/details/${slug || id}?${ctx.toString()}`);
   };
 

@@ -72,7 +72,7 @@ class ApiClient {
             : "Unauthorized: Token expired or invalid";
         }
 
-        return [{ err: message }, message];
+        return [{ err: message, status: error.response?.status }, message];
       }
       return [null, "An unknown error occurred"];
     }
