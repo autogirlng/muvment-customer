@@ -23,6 +23,7 @@ const DateInput = ({
   maxDate,
   blockPastDates = false,
   disabled = false, // Add disabled prop
+  tileDisabled,
 }: {
   name: string;
   onChange: (value: CalendarValue) => void;
@@ -33,6 +34,8 @@ const DateInput = ({
   maxDate?: Date | null;
   blockPastDates?: boolean;
   disabled?: boolean; // Add to interface
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tileDisabled?: any;
 }) => {
   const [pickupDateIsOpen, setPickupDateIsOpen] = useState<boolean>(false);
 
@@ -85,6 +88,7 @@ const DateInput = ({
       minDate={effectiveMinDate}
       maxDate={maxDate}
       disabled={disabled}
+      tileDisabled={tileDisabled}
     >
       {label && (
         <label

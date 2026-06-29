@@ -38,6 +38,7 @@ import {
   FiX,
   FiCheckCircle,
   FiAlertCircle,
+  FiMapPin,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import ScreenLoader from "@/components/utils/ScreenLoader";
@@ -138,6 +139,32 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     {},
   );
   const [availabilityLoaded, setAvailabilityLoaded] = useState(false);
+  const [partnerCtx, setPartnerCtx] = useState<{
+    lock: boolean;
+    name: string;
+    address: string;
+    lat?: number;
+    lng?: number;
+  } | null>(null);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("partnerLock") === "1") {
+      const lat = Number(p.get("partnerLat"));
+      const lng = Number(p.get("partnerLng"));
+      setPartnerCtx({
+        lock: true,
+        name: p.get("partnerName") || "",
+        address: p.get("partnerAddress") || "",
+        lat: isNaN(lat) ? undefined : lat,
+        lng: isNaN(lng) ? undefined : lng,
+      });
+      const pid = p.get("partnerId");
+      if (pid) sessionStorage.setItem("partnerBookingId", pid);
+      else sessionStorage.removeItem("partnerBookingId");
+    } else {
+      sessionStorage.removeItem("partnerBookingId");
+    }
+  }, []);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     setUrlBookingTypeId(p.get("bookingType") || "");
@@ -295,7 +322,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   // For interstate, load the vehicle's day availability once so the flow can
   // default to a free start date and hold the price if any chosen day is taken.
   useEffect(() => {
-    if (!isInterstateFlow || !vehicle) return;
+    if (!vehicle) return;
     let cancelled = false;
     const pad2 = (n: number) => String(n).padStart(2, "0");
     const t = new Date();
@@ -327,7 +354,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInterstateFlow, vehicle?.id]);
+  }, [isInterstateFlow, vehicle?.id, partnerCtx?.lock]);
 
   // Once availability is known, move the default start date to the first fully
   // available day if the seeded one is missing or taken. Runs at most once so a
@@ -433,9 +460,16 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 
   const generateBookingOptions = () => {
     const types: VehicleBookingOptions[] = vehicle?.allPricingOptions;
-    const options = types?.map((type) => {
+    let options = types?.map((type) => {
       return { option: type.bookingTypeName, value: type.bookingTypeId };
     });
+    if (partnerCtx?.lock && options) {
+      const allowed = ["3 hour", "6 hour", "12 hour", "airport"];
+      options = options.filter((o) => {
+        const n = String(o.option || "").toLowerCase();
+        return allowed.some((a) => n.includes(a));
+      });
+    }
     return options;
   };
 
@@ -444,7 +478,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       const options = generateBookingOptions();
       setBookingOptions(options);
     }
-  }, [vehicle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicle, partnerCtx]);
 
   useEffect(() => {
     sessionStorage.removeItem("bookingId");
@@ -1065,6 +1100,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       );
     } catch {}
     setTrips(nested);
+    setResyncKey((k) => k + 1);
     setShowAvailability(false);
   };
 
@@ -1200,6 +1236,19 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     </div>
                   )}
 
+                  {partnerCtx?.lock && partnerCtx.name && (
+                    <div className="mb-3 flex items-start gap-2 rounded-xl border border-[#0673ff]/20 bg-[#EAF2FF] px-3 py-2.5">
+                      <FiMapPin
+                        className="mt-0.5 flex-shrink-0 text-[#0673FF]"
+                        size={16}
+                      />
+                      <p className="text-xs text-[#0560d6]">
+                        Booking through {partnerCtx.name}. Pickup is set to the
+                        hotel; airport transfers are dropped at the hotel.
+                      </p>
+                    </div>
+                  )}
+
                   {isInterstateFlow ? (
                     <>
                       <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5">
@@ -1249,6 +1298,12 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                         toggleOpen={() => toggleOpen(key.id)}
                         bookingOptions={bookingOptions}
                         vehicleId={vehicle.id}
+                        partnerLock={partnerCtx?.lock || false}
+                        partnerName={partnerCtx?.name}
+                        partnerAddress={partnerCtx?.address}
+                        partnerLat={partnerCtx?.lat}
+                        partnerLng={partnerCtx?.lng}
+                        availabilityMap={availabilityMap}
                       />
                     ))
                   ) : sameForAllDays ? (
@@ -1289,6 +1344,12 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                           toggleOpen={() => toggleOpen(trips[0].id || "")}
                           bookingOptions={bookingOptions}
                           vehicleId={vehicle.id}
+                          partnerLock={partnerCtx?.lock || false}
+                          partnerName={partnerCtx?.name}
+                          partnerAddress={partnerCtx?.address}
+                          partnerLat={partnerCtx?.lat}
+                          partnerLng={partnerCtx?.lng}
+                          availabilityMap={availabilityMap}
                         />
                       )}
                       <button
@@ -1320,6 +1381,12 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                           toggleOpen={() => toggleOpen(key.id)}
                           bookingOptions={bookingOptions}
                           vehicleId={vehicle.id}
+                          partnerLock={partnerCtx?.lock || false}
+                          partnerName={partnerCtx?.name}
+                          partnerAddress={partnerCtx?.address}
+                          partnerLat={partnerCtx?.lat}
+                          partnerLng={partnerCtx?.lng}
+                          availabilityMap={availabilityMap}
                         />
                       ))}
                       <button

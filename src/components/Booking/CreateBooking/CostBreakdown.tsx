@@ -344,6 +344,12 @@ const CostBreakdown = ({
       }
     }
 
+    const partnerBookingId =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("partnerBookingId")
+        : null;
+    if (partnerBookingId) data.partnerId = partnerBookingId;
+
     setIsProcessing(true);
     setErrorMessage("");
     setUnavailable(false);
