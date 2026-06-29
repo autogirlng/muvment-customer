@@ -32,3 +32,13 @@ export interface PaginatedVehicleResponse {
   last: boolean;
   first: boolean;
 }
+
+export interface PaginatedPartnerResponse {
+  content: Partner[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+  first: boolean;
+}

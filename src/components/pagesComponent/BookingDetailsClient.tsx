@@ -64,6 +64,7 @@ interface BookingDetails {
   bookingCategory?: string;
   servicePricingName?: string;
   rideType?: string;
+  partnerName?: string;
 }
 
 interface VehiclePhoto {
@@ -429,6 +430,7 @@ const BookingDetailsClient = () => {
       <h2>Booking</h2>
       <div class="row"><span class="k">Invoice</span><span class="v">${escapeHtml(booking.invoiceNumber || "N/A")}</span></div>
       <div class="row"><span class="k">Booked on</span><span class="v">${escapeHtml(safeFormat(booking.bookedAt, "dd MMM yyyy"))}</span></div>
+      ${booking.partnerName ? `<div class="row"><span class="k">Booked through</span><span class="v">${escapeHtml(booking.partnerName)}</span></div>` : ""}
     </div>
     <div>
       <h2>Payment</h2>
@@ -631,6 +633,12 @@ const BookingDetailsClient = () => {
                 {booking.invoiceNumber || "N/A"}
               </span>
             </span>
+            {booking.partnerName && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#0673ff]/20 bg-[#EAF2FF] px-3 py-1 text-xs font-medium text-[#0560d6]">
+                <FiMapPin className="h-3.5 w-3.5" />
+                Booked through {booking.partnerName}
+              </span>
+            )}
           </div>
 
           <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center print:hidden">

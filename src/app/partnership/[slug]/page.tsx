@@ -26,7 +26,12 @@ const emptyPagination: PaginatedVehicleResponse = {
 
 export async function generateMetadata({ params }: PageProps) {
   const resolvedParams = await params;
-  const partner = await PartnerService.getPartnerBySlug(resolvedParams.slug);
+  let partner = null;
+  try {
+    partner = await PartnerService.getPartnerBySlug(resolvedParams.slug);
+  } catch {
+    partner = null;
+  }
 
   if (!partner || !partner.name) {
     return generatePageMetadata({
@@ -46,18 +51,86 @@ export async function generateMetadata({ params }: PageProps) {
   });
 }
 
+function PartnerLoadError() {
+  return (
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <Navbar showSearchBar={true} />
+      <div className="flex flex-1 items-center justify-center px-6 py-24 text-center">
+        <div>
+          <h1 className="text-2xl font-bold text-[#101928]">
+            We couldn&apos;t load this partner
+          </h1>
+          <p className="mt-3 text-gray-500">
+            Something went wrong reaching our servers. Please try again.
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <a
+              href=""
+              className="rounded-xl bg-[#0673ff] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0560d6]"
+            >
+              Try again
+            </a>
+            <a
+              href="/partnership"
+              className="rounded-xl border-2 border-[#0673ff] px-6 py-3 text-sm font-semibold text-[#0673ff] transition hover:bg-[#EAF2FF]"
+            >
+              All partners
+            </a>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+}
+
 export default async function PartnershipPage({ params }: PageProps) {
   const resolvedParams = await params;
 
-  const [partner, priorityResponse, otherResponse] = await Promise.all([
-    PartnerService.getPartnerBySlug(resolvedParams.slug),
-    PartnerService.getPriorityVehicles(resolvedParams.slug, 0, 6),
-    PartnerService.getOtherVehicles(resolvedParams.slug, 0, 6),
-  ]);
+  let partner = null;
+  let priorityResponse: PaginatedVehicleResponse | null = null;
+  let otherResponse: PaginatedVehicleResponse | null = null;
+  let loadFailed = false;
+
+  try {
+    [partner, priorityResponse] = await Promise.all([
+      PartnerService.getPartnerBySlug(resolvedParams.slug),
+      PartnerService.getPriorityVehicles(resolvedParams.slug, 0, 6),
+    ]);
+
+    if (partner) {
+      const states = (partner.operatingStates || [])
+        .map((s) => s.name)
+        .filter(Boolean);
+      const addr = (partner.address || "").toLowerCase();
+      const cityToken =
+        states.find((s) => addr.includes(s.toLowerCase())) || states[0] || "";
+
+      otherResponse = cityToken
+        ? await PartnerService.getCityVehicles(cityToken, 0, 6)
+        : await PartnerService.getOtherVehicles(resolvedParams.slug, 0, 6);
+    }
+  } catch {
+    loadFailed = true;
+  }
+
+  if (loadFailed) {
+    return <PartnerLoadError />;
+  }
 
   if (!partner) {
     notFound();
   }
+
+  const states = (partner.operatingStates || [])
+    .map((s) => s.name)
+    .filter(Boolean);
+  const addr = (partner.address || "").toLowerCase();
+  const cityToken =
+    states.find((s) => addr.includes(s.toLowerCase())) || states[0] || "";
+  const priorityIds = (priorityResponse?.content || []).map(
+    (v: { id: string }) => v.id,
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -76,6 +149,8 @@ export default async function PartnershipPage({ params }: PageProps) {
         partner={partner}
         priorityData={priorityResponse || emptyPagination}
         otherData={otherResponse || emptyPagination}
+        searchCity={cityToken}
+        priorityIds={priorityIds}
       />
 
       <Footer />

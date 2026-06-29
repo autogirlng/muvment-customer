@@ -45,6 +45,7 @@ const prettyName = (s?: string) =>
 interface BookingResponse {
   bookingId: string;
   invoiceNumber: string;
+  partnerName?: string;
   bookingStatus: string;
   paymentMethod: string;
   channel: string;
@@ -542,6 +543,12 @@ const BookingSuccessContent = () => {
             {bookingDetails.bookedAt && (
               <span className="text-xs text-gray-500">
                 Booked {formatDate(bookingDetails.bookedAt)}
+              </span>
+            )}
+            {bookingDetails.partnerName && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#0673ff]/20 bg-[#EAF2FF] px-3 py-1 text-xs font-medium text-[#0560d6]">
+                <FiMapPin className="h-3.5 w-3.5" />
+                Booked through {bookingDetails.partnerName}
               </span>
             )}
           </div>

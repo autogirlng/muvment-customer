@@ -116,6 +116,12 @@ export interface ITripPerDaySelect {
   isCollapsed?: boolean;
   toggleOpen: () => void;
   bookingOptions: { option: string; value: string }[];
+  partnerLock?: boolean;
+  partnerName?: string;
+  partnerAddress?: string;
+  partnerLat?: number;
+  partnerLng?: number;
+  availabilityMap?: Record<string, string>;
 }
 
 export interface EstimatedBookingPrice {

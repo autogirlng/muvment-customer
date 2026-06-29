@@ -120,6 +120,7 @@ export const DatePicker = ({
     minDate,
     maxDate,
     disabled = false,
+    tileDisabled,
 }: {
     buttonClass?: string;
     value: Value;
@@ -131,6 +132,8 @@ export const DatePicker = ({
     minDate?: Date | null;
     maxDate?: Date | null;
     disabled?: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tileDisabled?: any;
 }) => {
     // Close on select
     const handleCalendarChange = (val: Value) => {
@@ -173,6 +176,7 @@ export const DatePicker = ({
                         prevLabel={Icons.ic_chevron_left}
                         minDate={minDate || (showMinDate ? new Date() : undefined)}
                         maxDate={maxDate || undefined}
+                        tileDisabled={tileDisabled}
                     />
                 </Popover.Content>
             </Popover.Portal>
