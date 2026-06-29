@@ -1100,6 +1100,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       );
     } catch {}
     setTrips(nested);
+    setResyncKey((k) => k + 1);
     setShowAvailability(false);
   };
 
