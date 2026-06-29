@@ -95,7 +95,7 @@ export default async function PartnershipPage({ params }: PageProps) {
   try {
     [partner, priorityResponse] = await Promise.all([
       PartnerService.getPartnerBySlug(resolvedParams.slug),
-      PartnerService.getPriorityVehicles(resolvedParams.slug, 0, 6),
+      PartnerService.getPriorityVehicles(resolvedParams.slug, 0, 9),
     ]);
 
     if (partner) {
@@ -107,8 +107,8 @@ export default async function PartnershipPage({ params }: PageProps) {
         states.find((s) => addr.includes(s.toLowerCase())) || states[0] || "";
 
       otherResponse = cityToken
-        ? await PartnerService.getCityVehicles(cityToken, 0, 6)
-        : await PartnerService.getOtherVehicles(resolvedParams.slug, 0, 6);
+        ? await PartnerService.getCityVehicles(cityToken, 0, 9)
+        : await PartnerService.getOtherVehicles(resolvedParams.slug, 0, 9);
     }
   } catch {
     loadFailed = true;
