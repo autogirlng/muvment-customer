@@ -12,6 +12,8 @@ type Props = {
   disabled?: boolean; // Add disabled prop
   availableTimes?: { time: string; available: boolean }[];
   placeholder?: string;
+  selectedDate?: Date | null;
+  minLeadMinutes?: number;
 };
 
 // Generate time options based on type
@@ -164,6 +166,8 @@ function TimePicker({
   disabled = false,
   availableTimes,
   placeholder,
+  selectedDate,
+  minLeadMinutes,
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string>("");
@@ -190,9 +194,26 @@ function TimePicker({
     });
   };
 
-  const timeOptions = availableTimes?.length
+  const baseTimeOptions = availableTimes?.length
     ? convertAvailableTimes(availableTimes)
     : allTimeOptions;
+
+  // When a date is provided, disable slots whose full datetime falls before
+  // now plus the required lead time. Comparing full datetimes (not just the
+  // time of day) keeps this correct for future dates and across midnight.
+  const timeOptions =
+    selectedDate && minLeadMinutes
+      ? baseTimeOptions.map((opt) => {
+          const [h, m] = opt.value.split(":").map(Number);
+          const candidate = new Date(selectedDate);
+          candidate.setHours(h, m, 0, 0);
+          const earliest = Date.now() + minLeadMinutes * 60000;
+          if (candidate.getTime() < earliest) {
+            return { ...opt, available: false };
+          }
+          return opt;
+        })
+      : baseTimeOptions;
 
 
   // Set initial selected time from value prop
