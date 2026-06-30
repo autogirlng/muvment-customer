@@ -861,6 +861,8 @@ const TripCard = ({
                 }
                 timeType="start"
                 disabled={false}
+                selectedDate={tripStartDate}
+                minLeadMinutes={180}
               />
             </div>
           </div>
