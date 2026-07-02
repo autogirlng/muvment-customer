@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
+// @ts-ignore: CSS module declarations are handled by Next.js app router
 import "./globals.css";
 import ClientRoot from "@/components/utils/ClientRoot";
 import { ToastContainer } from "react-toastify";
+// @ts-ignore: allow side-effect CSS import for react-toastify
 import "react-toastify/dist/ReactToastify.css";
 import { Inter } from "next/font/google";
 import { QueryProvider } from "@/controllers/connnector/QueryProvider";
 import Script from "next/script";
 import { GA_MEASUREMENT_ID } from "@/services/analytics";
 import GoogleAnalytics from "@/components/general/GoogleAnalytics";
+import MetaPixel from "@/components/general/MetaPixel";
 import LiveChat from "@/components/LiveChat/LiveChat";
 
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
+const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
 const inter = Inter({
   subsets: ["latin"],
@@ -115,6 +119,8 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <link rel="preconnect" href="https://www.clarity.ms" />
         <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
+        <link rel="preconnect" href="https://connect.facebook.net" />
+        <link rel="dns-prefetch" href="https://connect.facebook.net" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
         {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
@@ -133,6 +139,7 @@ export default function RootLayout({
             `}
           </Script>
         )}
+        {META_PIXEL_ID && <MetaPixel pixelId={META_PIXEL_ID} />}
         <LiveChat />
       </body>
     </html>

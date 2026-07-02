@@ -498,6 +498,8 @@ const TripAccordion = ({
                   }
                   timeType="start"
                   availableTimes={availableTimes}
+                  selectedDate={tripStartDate}
+                  minLeadMinutes={180}
                   placeholder={
                     loadingAvailableTimes
                       ? "Loading..."
