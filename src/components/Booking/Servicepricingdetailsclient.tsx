@@ -106,6 +106,7 @@ const ServicePricingBookingPage: React.FC = () => {
     new Set(["trip-0"]),
   );
   const [priceEstimate, setPriceEstimate] = useState<any>(null);
+  const [estimateError, setEstimateError] = useState<string | null>(null);
   const [isEstimating, setIsEstimating] = useState(false);
   const estimateSeq = useRef(0);
 
@@ -256,6 +257,7 @@ const ServicePricingBookingPage: React.FC = () => {
     if (!pricing || !allComplete) return;
     const seq = ++estimateSeq.current;
     setIsEstimating(true);
+    setEstimateError(null);
     try {
       const requestBody = {
         servicePricingId: pricing.servicePricingId,
@@ -270,10 +272,22 @@ const ServicePricingBookingPage: React.FC = () => {
       const response =
         await ServicePricingService.calulateSpecialBooking(requestBody);
       if (seq !== estimateSeq.current) return;
-      if (response?.data) setPriceEstimate(response.data);
+      if (response?.error) {
+        setPriceEstimate(null);
+        setEstimateError(
+          response.message ||
+            "We couldn't estimate the price. Please check your pickup and drop-off locations and dates, then try again.",
+        );
+        return;
+      }
+      const quote = response?.data?.data;
+      if (quote) setPriceEstimate(quote);
     } catch (err) {
       if (seq !== estimateSeq.current) return;
       console.warn("Estimate unavailable:", err);
+      setEstimateError(
+        "We couldn't estimate the price. Please check your pickup and drop-off locations and dates, then try again.",
+      );
     } finally {
       if (seq === estimateSeq.current) setIsEstimating(false);
     }
@@ -387,6 +401,12 @@ const ServicePricingBookingPage: React.FC = () => {
           <span className="font-semibold text-gray-900">{trips.length}</span>
         </div>
       </div>
+
+      {estimateError && (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+          {estimateError}
+        </div>
+      )}
 
       {priceEstimate ? (
         <div className="mt-5 pt-5 border-t border-gray-200 space-y-3">
@@ -709,7 +729,7 @@ const TripCard = ({
 
   const handleCoordinates = (
     type: string,
-    coordinates: { lat: number; lng: number },
+    coordinates: { lat: number; lng: number } | null,
   ) => {
     onUpdate(trip.id, type, coordinates);
   };
@@ -800,7 +820,7 @@ const TripCard = ({
                 onChange={(e) => setSameAsPickup(e.target.checked)}
                 className="h-4 w-4 rounded border-gray-300 text-[#0673ff] focus:ring-[#0673ff]"
               />
-              Same as pickup location
+              Return to pickup location
             </label>
             {!sameAsPickup && (
               <GoogleMapsLocationInput

@@ -208,6 +208,22 @@ export class VehicleSearchService {
     }
   }
 
+  static async getVehicleAvailabilityRange(
+    vehicleId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<any> {
+    try {
+      return await getTableData(
+        `${this.AVAILABILITY_BASE_URL}/${vehicleId}/range`,
+        { startDate, endDate },
+      );
+    } catch (error) {
+      console.error("Vehicle availability range error:", error);
+      throw error;
+    }
+  }
+
   static async getVehicleAvailability(params: {
     searchTerm?: string;
     startDate?: string;

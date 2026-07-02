@@ -8,6 +8,7 @@ import { useState } from "react";
 import { BookingOption } from "@/types/booking";
 import { ServicePricingShowcaseList } from "@/components/HomeComponent/Servicepricingshowcaselist";
 import NewUserBanner from "@/components/HomeComponent/NewUserBanner";
+import PartnerSpotlight from "@/components/HomeComponent/PartnerSpotlight";
 
 const BeninRepublicTravel = dynamic(
   () => import("@/components/HomeComponent/BeninRepublicTravel"),
@@ -87,6 +88,9 @@ export default function HomePage() {
       </div>
       <div className="ag-reveal">
         <Testimonials />
+      </div>
+      <div className="ag-reveal">
+        <PartnerSpotlight />
       </div>
       <div className="ag-reveal">
         <FAQ />

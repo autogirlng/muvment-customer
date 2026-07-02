@@ -23,6 +23,7 @@ import { getSingleData } from "@/controllers/connnector/app.callers";
 import ScreenLoader from "@/components/utils/ScreenLoader";
 import { BookingService } from "@/controllers/booking/bookingService";
 import { customerTripStatus, customerBookingStatus } from "@/utils/bookingStatus";
+import PaymentOptionsModal from "@/components/Booking/PaymentOptionsModal";
 
 const BRAND = "#0673ff";
 
@@ -108,6 +109,7 @@ export default function BookingDetail(): React.ReactElement {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
   const [focusTripId, setFocusTripId] = useState<string | null>(null);
   const [trips, setTrips] = useState<Record<string, any>>({});
@@ -130,10 +132,17 @@ export default function BookingDetail(): React.ReactElement {
       }
       try {
         setLoading(true);
-        const res = await getSingleData(
+        let res = await getSingleData(
           `/api/v1/public/bookings/${bookingId}`,
         );
-        const data = res?.data?.[0]?.data;
+        let data = res?.data?.[0]?.data;
+        if (!data) {
+          // The route param may be an invoice number rather than a booking id.
+          res = await getSingleData(
+            `/api/v1/public/bookings/invoice/${encodeURIComponent(bookingId)}`,
+          );
+          data = res?.data?.[0]?.data;
+        }
         if (!data) throw new Error("We couldn't find this booking.");
         setBooking(data);
 
@@ -247,7 +256,20 @@ export default function BookingDetail(): React.ReactElement {
     vehicle?.photos?.find((p: any) => p.isPrimary)?.cloudinaryUrl ||
     vehicle?.photos?.[0]?.cloudinaryUrl ||
     "";
-  const vehicleName = vehicle?.name || booking.vehicle?.vehicleName || "Vehicle";
+  const isServicePricing =
+    booking.bookingCategory === "SERVICE_PRICING" ||
+    !!booking.servicePricingName;
+  const vehicleName =
+    vehicle?.name ||
+    booking.vehicle?.vehicleName ||
+    booking.servicePricingName ||
+    "Vehicle";
+  const vehicleAssigned = !!(vehicle || booking.vehicle?.id);
+  const noImageLabel = vehicleAssigned
+    ? "No image"
+    : isServicePricing
+      ? "Vehicle image will be visible once your car is assigned"
+      : "Vehicle image will show once assigned";
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-5">
@@ -268,8 +290,8 @@ export default function BookingDetail(): React.ReactElement {
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-gray-400">
-              No image
+            <div className="flex h-full items-center justify-center px-4 text-center text-sm text-gray-400">
+              {noImageLabel}
             </div>
           )}
         </div>
@@ -311,23 +333,35 @@ export default function BookingDetail(): React.ReactElement {
             </span>
           </div>
 
-          {/* Actions: book this vehicle, review, share */}
+          {/* Actions: complete payment or book this vehicle, review, share */}
           <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              onClick={bookThisVehicle}
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition"
-              style={{ backgroundColor: BRAND }}
-            >
-              <FiArrowRight className="h-4 w-4" /> Book this Vehicle
-            </button>
-            <button
-              onClick={() =>
-                router.push(`/review/${bookingId}?entityType=Booking`)
-              }
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
-            >
-              <FiStar className="h-4 w-4" /> Review
-            </button>
+            {booking.bookingStatus === "PENDING_PAYMENT" ? (
+              <button
+                onClick={() => setPayOpen(true)}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition"
+                style={{ backgroundColor: BRAND }}
+              >
+                <FiCreditCard className="h-4 w-4" /> Complete payment
+              </button>
+            ) : (
+              <button
+                onClick={bookThisVehicle}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition"
+                style={{ backgroundColor: BRAND }}
+              >
+                <FiArrowRight className="h-4 w-4" /> Book this Vehicle
+              </button>
+            )}
+            {booking.bookingStatus !== "PENDING_PAYMENT" && (
+              <button
+                onClick={() =>
+                  router.push(`/review/${bookingId}?entityType=Booking`)
+                }
+                className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+              >
+                <FiStar className="h-4 w-4" /> Review
+              </button>
+            )}
             <button
               onClick={handleShare}
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
@@ -505,8 +539,8 @@ export default function BookingDetail(): React.ReactElement {
                   className="h-full w-full object-cover sm:rounded-t-2xl"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-gray-400">
-                  No image
+                <div className="flex h-full items-center justify-center px-4 text-center text-sm text-gray-400">
+                  {noImageLabel}
                 </div>
               )}
               <button
@@ -569,17 +603,34 @@ export default function BookingDetail(): React.ReactElement {
                 </p>
               )}
 
-              <button
-                onClick={bookThisVehicle}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-white hover:opacity-90 transition"
-                style={{ backgroundColor: BRAND }}
-              >
-                <FiArrowRight className="h-4 w-4" /> Book this Vehicle
-              </button>
+              {booking.bookingStatus === "PENDING_PAYMENT" ? (
+                <button
+                  onClick={() => setPayOpen(true)}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-white hover:opacity-90 transition"
+                  style={{ backgroundColor: BRAND }}
+                >
+                  <FiCreditCard className="h-4 w-4" /> Complete payment
+                </button>
+              ) : (
+                <button
+                  onClick={bookThisVehicle}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-white hover:opacity-90 transition"
+                  style={{ backgroundColor: BRAND }}
+                >
+                  <FiArrowRight className="h-4 w-4" /> Book this Vehicle
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      <PaymentOptionsModal
+        isOpen={payOpen}
+        onClose={() => setPayOpen(false)}
+        bookingId={bookingId}
+        amount={booking.totalPrice}
+      />
     </div>
   );
 }

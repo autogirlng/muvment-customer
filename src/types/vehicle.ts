@@ -218,6 +218,7 @@ export interface VehicleCardProps {
   bookingType?: string;
   rating?: number;
   featured?: boolean;
+  bookingParams?: Record<string, string>;
 }
 
 interface Photo {

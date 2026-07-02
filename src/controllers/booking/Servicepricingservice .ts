@@ -56,9 +56,15 @@ export class ServicePricingService {
         "/api/v1/public/bookings/service-pricing/quote",
         requestBody,
       );
-      return response.data;
+      return response;
     } catch (error: any) {
-      return error.messag;
+      return {
+        data: null,
+        error: true,
+        message:
+          error?.message ||
+          "We couldn't estimate the price. Please try again.",
+      };
     }
   }
 

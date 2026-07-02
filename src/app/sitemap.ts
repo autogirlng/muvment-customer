@@ -7,8 +7,7 @@ const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "https://api-muvment.up.ra
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const env = process.env.NEXT_PUBLIC_VERCEL_URL || "";
   const isProduction =
-    env.includes("muvment.ng") ||
-    process.env.NODE_ENV === "production";
+    env.includes("muvment.ng") || process.env.NODE_ENV === "production";
 
   if (!isProduction) {
     return [];
@@ -90,21 +89,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const [blogsRes, vehiclesRes, showcaseRes] = await Promise.all([
-      fetch(`${API_URL}/blog-posts?page=0&size=2000`, {
-        next: { revalidate: 3600 },
-      }),
-      fetch(`${API_URL}/public/vehicles/search?page=0&size=2000`, {
-        next: { revalidate: 3600 },
-      }),
-      fetch(`${API_URL}/public/service-pricing-showcase`, {
-        next: { revalidate: 3600 },
-      }),
-    ]);
+    const [blogsRes, vehiclesRes, showcaseRes, partnersRes] = await Promise.all(
+      [
+        fetch(`${API_URL}/blog-posts?page=0&size=2000`, {
+          next: { revalidate: 3600 },
+        }),
+        fetch(`${API_URL}/public/vehicles/search?page=0&size=2000`, {
+          next: { revalidate: 3600 },
+        }),
+        fetch(`${API_URL}/public/service-pricing-showcase`, {
+          next: { revalidate: 3600 },
+        }),
+        fetch(`${API_URL}/public/partners?page=0&size=2000`, {
+          next: { revalidate: 3600 },
+        }),
+      ],
+    );
 
-    if (!blogsRes.ok) console.error(`Sitemap: blogs fetch failed ${blogsRes.status}`);
-    if (!vehiclesRes.ok) console.error(`Sitemap: vehicles fetch failed ${vehiclesRes.status}`);
-    if (!showcaseRes.ok) console.error(`Sitemap: showcase fetch failed ${showcaseRes.status}`);
+    if (!blogsRes.ok)
+      console.error(`Sitemap: blogs fetch failed ${blogsRes.status}`);
+    if (!vehiclesRes.ok)
+      console.error(`Sitemap: vehicles fetch failed ${vehiclesRes.status}`);
+    if (!showcaseRes.ok)
+      console.error(`Sitemap: showcase fetch failed ${showcaseRes.status}`);
+    if (!partnersRes.ok)
+      console.error(`Sitemap: partners fetch failed ${partnersRes.status}`);
 
     const blogsJson =
       blogsRes.ok &&
@@ -124,8 +133,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         ? await showcaseRes.json()
         : null;
 
+    const partnersJson =
+      partnersRes.ok &&
+      partnersRes.headers.get("content-type")?.includes("application/json")
+        ? await partnersRes.json()
+        : null;
+
     // Exclude posts whose slug is a UUID (unpublished or legacy posts without a proper slug)
-    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const UUID_PATTERN =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     const blogEntries = (blogsJson?.data?.content || [])
       .filter((post: any) => post.slug && !UUID_PATTERN.test(post.slug))
@@ -152,11 +168,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }));
 
+    const partnerEntries = (partnersJson?.data?.content || [])
+      .filter((p: any) => p.slug && p.active !== false)
+      .map((p: any) => ({
+        url: `${APP_URL}/partnership/${p.slug}`,
+        lastModified: new Date(p.updatedAt || p.createdAt || Date.now()),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }));
+
     return [
       ...staticRoutes,
       ...blogEntries,
       ...vehicleEntries,
       ...showcaseEntries,
+      ...partnerEntries,
     ];
   } catch (error) {
     console.error("[Sitemap] Unexpected error:", error);

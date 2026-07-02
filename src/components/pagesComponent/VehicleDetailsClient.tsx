@@ -38,12 +38,14 @@ import {
   FiX,
   FiCheckCircle,
   FiAlertCircle,
+  FiMapPin,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
 import ScreenLoader from "@/components/utils/ScreenLoader";
 import { SocialShareButton } from "@/components/general/share";
 import { Carousel } from "@/components/utils/Carousel";
 import { TripAccordion } from "@/components/Booking/TripAccordion";
+import InterstateRoundTrip from "@/components/Booking/InterstateRoundTrip";
 import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
 import { kindFromValue } from "@/utils/bookingTypeRules";
 import ItineraryTypeConflictModal, {
@@ -55,6 +57,7 @@ import {
   EstimatedBookingPrice,
 } from "@/types/vehicleDetails";
 import { BookingService } from "@/controllers/booking/bookingService";
+import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { trackPaymentClick } from "@/services/analytics";
 import Footer from "../HomeComponent/Footer";
 import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicleservice";
@@ -91,7 +94,9 @@ const expandRangesToDays = (rangesStr: string): string[] => {
 // Collapse a list of day strings (YYYY-MM-DD) into contiguous ranges, so the
 // current itinerary can be shown back in the availability calendar for editing.
 const daysToRanges = (days: string[]): { start: string; end: string }[] => {
-  const sorted = Array.from(new Set(days.filter(Boolean))).sort();
+  const sorted = Array.from(new Set(days.filter(Boolean)))
+    .filter((d) => !isNaN(new Date(`${d}T00:00:00Z`).getTime()))
+    .sort();
   if (sorted.length === 0) return [];
   const ranges: { start: string; end: string }[] = [];
   let start = sorted[0];
@@ -125,6 +130,79 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const [bookingOptions, setBookingOptions] = useState<
     { option: string; value: string }[]
   >([]);
+  const [urlBookingTypeId, setUrlBookingTypeId] = useState("");
+  const [interstateSeedDate, setInterstateSeedDate] = useState("");
+  const [interstateSeedLocalDays, setInterstateSeedLocalDays] = useState(1);
+  const [interstateSeedVersion, setInterstateSeedVersion] = useState(0);
+  const [interstateRegionValid, setInterstateRegionValid] = useState(true);
+  const [availabilityMap, setAvailabilityMap] = useState<Record<string, string>>(
+    {},
+  );
+  const [availabilityLoaded, setAvailabilityLoaded] = useState(false);
+  const [partnerCtx, setPartnerCtx] = useState<{
+    lock: boolean;
+    name: string;
+    address: string;
+    lat?: number;
+    lng?: number;
+  } | null>(null);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("partnerLock") === "1") {
+      const lat = Number(p.get("partnerLat"));
+      const lng = Number(p.get("partnerLng"));
+      setPartnerCtx({
+        lock: true,
+        name: p.get("partnerName") || "",
+        address: p.get("partnerAddress") || "",
+        lat: isNaN(lat) ? undefined : lat,
+        lng: isNaN(lng) ? undefined : lng,
+      });
+      const pid = p.get("partnerId");
+      if (pid) sessionStorage.setItem("partnerBookingId", pid);
+      else sessionStorage.removeItem("partnerBookingId");
+    } else {
+      sessionStorage.removeItem("partnerBookingId");
+    }
+  }, []);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    setUrlBookingTypeId(p.get("bookingType") || "");
+
+    // Seed the interstate round trip from the searched range: the first day is
+    // the trip out, the last day is the trip back, and the days in between are
+    // local days.
+    let firstDay = "";
+    let totalDays = 0;
+    const rangesStr = p.get("ranges");
+    if (rangesStr) {
+      const days = expandRangesToDays(rangesStr);
+      if (days.length) {
+        firstDay = days[0];
+        const a = new Date(`${days[0]}T00:00:00`).getTime();
+        const b = new Date(`${days[days.length - 1]}T00:00:00`).getTime();
+        totalDays = Math.max(1, Math.round((b - a) / 86400000) + 1);
+      }
+    }
+    if (!firstDay) {
+      const sd = p.get("startDate");
+      const ed = p.get("endDate");
+      if (sd) {
+        firstDay = sd;
+        if (ed) {
+          const a = new Date(`${sd}T00:00:00`).getTime();
+          const b = new Date(`${ed}T00:00:00`).getTime();
+          totalDays = Math.max(1, Math.round((b - a) / 86400000) + 1);
+        } else {
+          totalDays = 1;
+        }
+      }
+    }
+    if (firstDay) {
+      setInterstateSeedDate(firstDay);
+      setInterstateSeedLocalDays(totalDays >= 2 ? totalDays - 2 : 1);
+    }
+  }, []);
   const [pricing, setPricing] = useState<EstimatedBookingPrice | undefined>();
   const [continueBooking, setContinueBooking] = useState<boolean>(false);
   const [isEstimating, setIsEstimating] = useState(false);
@@ -157,6 +235,22 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     setSameForAllDays,
     applySharedPlanChange,
   } = useItineraryForm();
+
+  // The interstate round trip owns the itinerary in memory. Persist it to
+  // sessionStorage in the same flat shape the rest of the flow uses, so the
+  // checkout step (which reloads the itinerary from storage) sees every segment
+  // with its coordinates.
+  const persistInterstateTrips = (
+    newTrips: { id: string; tripDetails: Record<string, string> }[],
+  ) => {
+    setTrips(newTrips);
+    try {
+      sessionStorage.setItem(
+        "trips",
+        JSON.stringify(newTrips.map((t) => ({ ...t.tripDetails, id: t.id }))),
+      );
+    } catch {}
+  };
 
   // Bumped on every conflict resolution or cancel to force the trip accordions
   // to re-read the corrected booking type from state.
@@ -210,21 +304,172 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   // since field edits change trips without bumping tripsVersion; without this a
   // change would clear the price and never recalculate it. The footer button is
   // only used to confirm the booking.
+  const isInterstateFlow = (
+    vehicle?.allPricingOptions?.find(
+      (o: any) => o.bookingTypeId === urlBookingTypeId,
+    )?.bookingTypeName || ""
+  )
+    .toLowerCase()
+    .includes("interstate");
+  const interstateTypeId = urlBookingTypeId;
+  const dayTypeId =
+    vehicle?.allPricingOptions?.find((o: any) =>
+      String(o.bookingTypeName || "")
+        .toLowerCase()
+        .includes("24"),
+    )?.bookingTypeId || "";
+
+  // For interstate, load the vehicle's day availability once so the flow can
+  // default to a free start date and hold the price if any chosen day is taken.
+  useEffect(() => {
+    if (!vehicle) return;
+    let cancelled = false;
+    const pad2 = (n: number) => String(n).padStart(2, "0");
+    const t = new Date();
+    const startStr = `${t.getFullYear()}-${pad2(t.getMonth() + 1)}-${pad2(t.getDate())}`;
+    const e = new Date(t);
+    e.setDate(e.getDate() + 120);
+    const endStr = `${e.getFullYear()}-${pad2(e.getMonth() + 1)}-${pad2(e.getDate())}`;
+    (async () => {
+      try {
+        const res = await VehicleSearchService.getVehicleAvailabilityRange(
+          vehicle.id,
+          startStr,
+          endStr,
+        );
+        const match = res?.data?.data || null;
+        const map: Record<string, string> = {};
+        (match?.availability || []).forEach((d: any) => {
+          if (d?.date) map[d.date] = d.status;
+        });
+        if (!cancelled) {
+          setAvailabilityMap(map);
+          setAvailabilityLoaded(true);
+        }
+      } catch {
+        if (!cancelled) setAvailabilityLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInterstateFlow, vehicle?.id, partnerCtx?.lock]);
+
+  // Once availability is known, move the default start date to the first fully
+  // available day if the seeded one is missing or taken. Runs at most once so a
+  // later manual choice is never overridden.
+  const autoSeededRef = useRef(false);
+  useEffect(() => {
+    if (!availabilityLoaded || !isInterstateFlow || autoSeededRef.current) return;
+    const t = new Date();
+    const pad2 = (n: number) => String(n).padStart(2, "0");
+    const fmtD = (d: Date) =>
+      `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    const todayStr = fmtD(t);
+
+    // The trip is contiguous: out, local days, then back. Every day in that span
+    // has to be fully available, so seed the first window where the whole span is
+    // free rather than just the first free day.
+    const span = (interstateSeedLocalDays || 0) + 2;
+    const spanFree = (startStr: string) => {
+      const d = new Date(`${startStr}T00:00:00`);
+      for (let i = 0; i < span; i++) {
+        const key = fmtD(d);
+        if (availabilityMap[key] && availabilityMap[key] !== "AVAILABLE")
+          return false;
+        d.setDate(d.getDate() + 1);
+      }
+      return true;
+    };
+
+    const seedOk = interstateSeedDate && spanFree(interstateSeedDate);
+    if (!seedOk) {
+      const firstClean = Object.keys(availabilityMap)
+        .filter((d) => availabilityMap[d] === "AVAILABLE" && d >= todayStr)
+        .sort()
+        .find((d) => spanFree(d));
+      if (firstClean) {
+        setInterstateSeedDate(firstClean);
+        setInterstateSeedVersion((v) => v + 1);
+      }
+    }
+    autoSeededRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availabilityLoaded, isInterstateFlow]);
+
+  // Every interstate segment day must be fully available. Days outside the
+  // loaded window are left to the backend check rather than blocked here.
+  const interstateDatesValid = (() => {
+    if (!isInterstateFlow || !availabilityLoaded) return true;
+    const days = (trips || [])
+      .map((t) => String(t.tripDetails?.tripStartDate || "").slice(0, 10))
+      .filter(Boolean);
+    if (days.length === 0) return true;
+    return days.every(
+      (d) =>
+        availabilityMap[d] === "AVAILABLE" || availabilityMap[d] === undefined,
+    );
+  })();
+
   const tripsSignature = JSON.stringify(trips);
   useEffect(() => {
     if (!isTripFormsComplete) return;
+    if (isInterstateFlow && !interstateRegionValid) {
+      setContinueBooking(false);
+      setPricing(undefined);
+      setPriceErrorMessage(
+        "Check the interstate addresses. The trip out has to cross into another state and the return has to come back to where it started.",
+      );
+      return;
+    }
+    if (isInterstateFlow && !interstateDatesValid) {
+      setContinueBooking(false);
+      setPricing(undefined);
+      setPriceErrorMessage(
+        "Some of your selected days are not available for this vehicle. Open Check availability and pick dates that are free.",
+      );
+      return;
+    }
     const timer = setTimeout(() => {
       estimatePrice();
     }, 600);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTripFormsComplete, tripsSignature, couponCode]);
+  }, [
+    isTripFormsComplete,
+    tripsSignature,
+    couponCode,
+    isInterstateFlow,
+    interstateRegionValid,
+    interstateDatesValid,
+  ]);
+
+  // When the form goes incomplete (for example a location is edited and no
+  // longer matches a selected place), drop any earlier estimate so a stale
+  // price cannot be confirmed.
+  useEffect(() => {
+    if (!isTripFormsComplete) {
+      setContinueBooking(false);
+      setPricing(undefined);
+      setPriceErrorMessage("");
+      priceRetryRef.current = 0;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTripFormsComplete]);
 
   const generateBookingOptions = () => {
     const types: VehicleBookingOptions[] = vehicle?.allPricingOptions;
-    const options = types?.map((type) => {
+    let options = types?.map((type) => {
       return { option: type.bookingTypeName, value: type.bookingTypeId };
     });
+    if (partnerCtx?.lock && options) {
+      const allowed = ["3 hour", "6 hour", "12 hour", "airport"];
+      options = options.filter((o) => {
+        const n = String(o.option || "").toLowerCase();
+        return allowed.some((a) => n.includes(a));
+      });
+    }
     return options;
   };
 
@@ -233,7 +478,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       const options = generateBookingOptions();
       setBookingOptions(options);
     }
-  }, [vehicle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicle, partnerCtx]);
 
   useEffect(() => {
     sessionStorage.removeItem("bookingId");
@@ -252,6 +498,18 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     const dropoffLocation = params.get("dropoffLocation");
     const dropoffLat = params.get("dropoffLat");
     const dropoffLng = params.get("dropoffLng");
+
+    // The interstate round trip owns its own itinerary and persists it, so the
+    // generic seeding must not run for it (it would overwrite the round trip
+    // with a single trip, including if auth state settles after mount).
+    const isInterstateSeed = (
+      vehicle?.allPricingOptions?.find(
+        (o: any) => o.bookingTypeId === bookingTypeParam,
+      )?.bookingTypeName || ""
+    )
+      .toLowerCase()
+      .includes("interstate");
+    if (isInterstateSeed) return;
 
     // Restore the saved itinerary when returning to the same search (for example
     // coming back from checkout to change details) so earlier choices like the
@@ -600,9 +858,10 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       // in the database.
       let pricing: any;
       if (existingId) {
-        try {
-          pricing = await BookingService.updateCalculation(existingId, data);
-        } catch {
+        pricing = await BookingService.updateCalculation(existingId, data).catch(
+          () => null,
+        );
+        if (!pricing || pricing.error) {
           // The saved estimate could not be reused (cleared, expired, or tied
           // to a different trip). Start a fresh one so a price still shows.
           sessionStorage.removeItem("priceEstimateId");
@@ -612,6 +871,11 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         pricing = await BookingService.calculateBooking(data);
       }
       if (seq !== estimateSeq.current) return;
+      // Surface the specific reason (for example a location the vehicle does
+      // not serve, or an ineligible coupon) instead of failing silently.
+      if (pricing?.error) {
+        throw new Error(pricing.message || "");
+      }
       const calculationId = pricing?.data?.data?.calculationId;
       if (calculationId) {
         sessionStorage.setItem("priceEstimateId", calculationId);
@@ -632,10 +896,12 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       priceRetryRef.current = 0;
     } catch (e: any) {
       if (seq !== estimateSeq.current) return;
-      console.warn("Price estimate unavailable:", e?.message || e);
-      // Retry once automatically before showing an error, so a transient blip
-      // does not read as a dead end. Keep the loading state during the gap.
-      if (priceRetryRef.current < 1) {
+      const reason = typeof e?.message === "string" ? e.message.trim() : "";
+      console.warn("Price estimate unavailable:", reason || e);
+      // A clear reason from the server (for example a location the vehicle does
+      // not serve, or an ineligible coupon) is shown right away. Only retry
+      // once when there is no message, to ride out a transient blip.
+      if (!reason && priceRetryRef.current < 1) {
         priceRetryRef.current += 1;
         scheduledRetry = true;
         setPriceErrorMessage("");
@@ -645,7 +911,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         return;
       }
       setPriceErrorMessage(
-        "We couldn't estimate the price. Please check your trip details and try again.",
+        reason ||
+          "We couldn't estimate the price. Please check your pickup and drop-off locations and dates, then try again.",
       );
       setPricing(undefined);
       setContinueBooking(false);
@@ -833,6 +1100,23 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       );
     } catch {}
     setTrips(nested);
+    setResyncKey((k) => k + 1);
+    setShowAvailability(false);
+  };
+
+  const applyInterstateRange = (ranges: { start: string; end: string }[]) => {
+    const rangesStr = ranges.map((r) => `${r.start}:${r.end}`).join(",");
+    const days = expandRangesToDays(rangesStr);
+    if (days.length === 0) {
+      setShowAvailability(false);
+      return;
+    }
+    const a = new Date(`${days[0]}T00:00:00`).getTime();
+    const b = new Date(`${days[days.length - 1]}T00:00:00`).getTime();
+    const totalDays = Math.max(1, Math.round((b - a) / 86400000) + 1);
+    setInterstateSeedDate(days[0]);
+    setInterstateSeedLocalDays(totalDays >= 2 ? totalDays - 2 : 1);
+    setInterstateSeedVersion((v) => v + 1);
     setShowAvailability(false);
   };
 
@@ -846,6 +1130,32 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       .filter(Boolean)
       .map((s) => s.slice(0, 10)),
   );
+
+  // A location-type estimate error (the vehicle does not serve the chosen
+  // pickup or drop-off) is actionable: offer a jump to search near that spot.
+  const isLocationError =
+    /region|operating|area|support travel|location|not available in|does not serve/i.test(
+      priceErrorMessage,
+    );
+
+  const buildLocationSearchHref = () => {
+    const first = trips[0]?.tripDetails;
+    const params = new URLSearchParams();
+    try {
+      const c = JSON.parse(`${first?.pickupCoordinates}`);
+      if (c?.lat && c?.lng) {
+        params.set("lat", String(c.lat));
+        params.set("lng", String(c.lng));
+        params.set("radiusInKm", "100");
+      }
+    } catch {}
+    const loc =
+      (first?.pickupLocation as string | undefined) || vehicle?.city || "";
+    if (loc) params.set("location", loc);
+    const bt = first?.bookingType as string | undefined;
+    if (bt) params.set("bookingType", bt);
+    return `/booking/search?${params.toString()}`;
+  };
 
   const bookingMain = (    <>
                 <div>
@@ -907,13 +1217,68 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                         className="mt-0.5 flex-shrink-0 text-[#D42620]"
                         size={16}
                       />
-                      <p className="text-xs text-[#912018]">
-                        {priceErrorMessage}
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-xs text-[#912018]">
+                          {priceErrorMessage}
+                        </p>
+                        {isLocationError && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.push(buildLocationSearchHref())
+                            }
+                            className="self-start text-xs font-semibold text-[#0673FF] underline underline-offset-2 hover:text-[#0560d6]"
+                          >
+                            Find cars available in this area
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {partnerCtx?.lock && partnerCtx.name && (
+                    <div className="mb-3 flex items-start gap-2 rounded-xl border border-[#0673ff]/20 bg-[#EAF2FF] px-3 py-2.5">
+                      <FiMapPin
+                        className="mt-0.5 flex-shrink-0 text-[#0673FF]"
+                        size={16}
+                      />
+                      <p className="text-xs text-[#0560d6]">
+                        Booking through {partnerCtx.name}. Pickup is set to the
+                        hotel; airport transfers are dropped at the hotel.
                       </p>
                     </div>
                   )}
 
-                  {trips.length <= 1 ? (
+                  {isInterstateFlow ? (
+                    <>
+                      <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-700">
+                            Dates
+                          </p>
+                          <p className="text-[11px] leading-snug text-gray-500">
+                            Check the calendar for days this car is available.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAvailability(true)}
+                          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#0673FF] px-3 py-1.5 text-xs font-semibold text-[#0673FF] hover:bg-[#EAF2FF]"
+                        >
+                          Check availability
+                        </button>
+                      </div>
+                      <InterstateRoundTrip
+                        interstateTypeId={interstateTypeId}
+                        dayTypeId={dayTypeId}
+                        onTripsChange={persistInterstateTrips}
+                        onRegionValidChange={setInterstateRegionValid}
+                        initialStartDateStr={interstateSeedDate}
+                        initialLocalDays={interstateSeedLocalDays}
+                        seedVersion={interstateSeedVersion}
+                      />
+                    </>
+                  ) : trips.length <= 1 ? (
                     trips.map((key, index) => (
                       <TripAccordion
                         key={`${key.id}-${tripsVersion}-${resyncKey}`}
@@ -933,6 +1298,12 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                         toggleOpen={() => toggleOpen(key.id)}
                         bookingOptions={bookingOptions}
                         vehicleId={vehicle.id}
+                        partnerLock={partnerCtx?.lock || false}
+                        partnerName={partnerCtx?.name}
+                        partnerAddress={partnerCtx?.address}
+                        partnerLat={partnerCtx?.lat}
+                        partnerLng={partnerCtx?.lng}
+                        availabilityMap={availabilityMap}
                       />
                     ))
                   ) : sameForAllDays ? (
@@ -973,6 +1344,12 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                           toggleOpen={() => toggleOpen(trips[0].id || "")}
                           bookingOptions={bookingOptions}
                           vehicleId={vehicle.id}
+                          partnerLock={partnerCtx?.lock || false}
+                          partnerName={partnerCtx?.name}
+                          partnerAddress={partnerCtx?.address}
+                          partnerLat={partnerCtx?.lat}
+                          partnerLng={partnerCtx?.lng}
+                          availabilityMap={availabilityMap}
                         />
                       )}
                       <button
@@ -1004,6 +1381,12 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                           toggleOpen={() => toggleOpen(key.id)}
                           bookingOptions={bookingOptions}
                           vehicleId={vehicle.id}
+                          partnerLock={partnerCtx?.lock || false}
+                          partnerName={partnerCtx?.name}
+                          partnerAddress={partnerCtx?.address}
+                          partnerLat={partnerCtx?.lat}
+                          partnerLng={partnerCtx?.lng}
+                          availabilityMap={availabilityMap}
                         />
                       ))}
                       <button
@@ -1109,7 +1492,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                         <PriceRow
                           label="VAT Amount"
                           value={pricing.data.data.vatAmount}
-                          subLabel={`${pricing.data.data.vatPercentage}%`}
+                          subLabel={`${pricing.data.data.vatPercentage}% of platform fee`}
                         />
                       )}
 
@@ -1199,8 +1582,46 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       (d) => d.labels.join("|") === pendingByDay[0].labels.join("|"),
     );
 
-  const pendingChecklist =
-    !isTripFormsComplete && pendingByDay.length > 0 ? (
+  const interstatePending: string[] = (() => {
+    if (!isInterstateFlow) return [];
+    const out = (trips[0]?.tripDetails || {}) as Record<string, string>;
+    const back = (trips[trips.length - 1]?.tripDetails || {}) as Record<
+      string,
+      string
+    >;
+    const items: string[] = [];
+    if (!out.tripStartDate) items.push("Start date");
+    if (!out.pickupLocation || !out.pickupCoordinates)
+      items.push("Trip out pickup address");
+    if (!out.dropoffLocation || !out.dropoffCoordinates)
+      items.push("Destination address");
+    if (!back.pickupLocation || !back.pickupCoordinates)
+      items.push("Return pickup address");
+    if (!back.dropoffLocation || !back.dropoffCoordinates)
+      items.push("Return drop-off address");
+    return items;
+  })();
+
+  const pendingChecklist = isTripFormsComplete ? null : isInterstateFlow ? (
+    interstatePending.length > 0 ? (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <p className="text-sm font-semibold text-amber-900">
+          Add these to see your price
+        </p>
+        <ul className="mt-2 space-y-1.5">
+          {interstatePending.map((l) => (
+            <li
+              key={l}
+              className="flex items-center gap-2 text-sm text-amber-800"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              {l}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null
+  ) : pendingByDay.length > 0 ? (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
         <p className="text-sm font-semibold text-amber-900">
           Add these to see your price
@@ -1245,7 +1666,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const isPricePending =
     isTripFormsComplete && !continueBooking && !priceErrorMessage;
   const isPriceLoading = isEstimating || isPricePending;
-  const canConfirmBooking = continueBooking && !isEstimating;
+  const canConfirmBooking =
+    continueBooking && !isEstimating && isTripFormsComplete;
   const canRetryEstimate =
     isTripFormsComplete &&
     !continueBooking &&
@@ -1306,14 +1728,16 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         onClose={() => setShowLoginModal(false)}
         vehicleName={vehicle?.name}
       />
-      <ItineraryTypeConflictModal
-        conflict={conflict}
-        days={conflictDays}
-        onSingleDay={resolveSingleDay}
-        onOneSpecificDay={resolveOneSpecificDay}
-        onMonthly={resolveMonthly}
-        onCancel={cancelConflict}
-      />
+      {!isInterstateFlow && (
+        <ItineraryTypeConflictModal
+          conflict={conflict}
+          days={conflictDays}
+          onSingleDay={resolveSingleDay}
+          onOneSpecificDay={resolveOneSpecificDay}
+          onMonthly={resolveMonthly}
+          onCancel={cancelConflict}
+        />
+      )}
       <VehicleAvailabilityModal
         isOpen={showAvailability}
         onClose={() => setShowAvailability(false)}
@@ -1321,8 +1745,9 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         vehicleName={vehicle?.name}
         vehicleTypeName={vehicle?.vehicleTypeName}
         bookingType={trips[0]?.tripDetails?.bookingType as string | undefined}
-        onConfirm={applyRanges}
+        onConfirm={isInterstateFlow ? applyInterstateRange : applyRanges}
         initialRanges={selectedRanges}
+        requireFullDay={isInterstateFlow}
       />
       <Navbar />
       <div className="min-h-screen w-full bg-gray-50 mt-24">

@@ -68,6 +68,12 @@ const TripAccordion = ({
   bookingOptions,
   vehicleId,
   vehicle,
+  partnerLock,
+  partnerName,
+  partnerAddress,
+  partnerLat,
+  partnerLng,
+  availabilityMap,
 }: ITripPerDaySelect) => {
   const [date, setDate] = useState(`Day ${day}: Choose Date`);
   const [bookingType, setBookingType] = useState(
@@ -312,7 +318,20 @@ const TripAccordion = ({
     }
   }, [availableTimes, bookingType, tripStartDate, tripStartTime, bookingOptions]);
 
-  const coordinates = (type: string, value: { lat: number; lng: number }) => {
+  const coordinates = (
+    type: string,
+    value: { lat: number; lng: number } | null,
+  ) => {
+    if (!value) {
+      onChange(type, "");
+      if (type === "pickupCoordinates") {
+        setPickupCoords("");
+        if (sameAsPickup) {
+          onChange("dropoffCoordinates", "");
+        }
+      }
+      return;
+    }
     onChange(type, JSON.stringify(value));
     if (type === "pickupCoordinates") {
       setPickupCoords(JSON.stringify(value));
@@ -333,7 +352,37 @@ const TripAccordion = ({
 
   const selectedTypeName =
     bookingOptions?.find((o: any) => o.value === bookingType)?.option || "";
+  const isInterstateType = selectedTypeName.toLowerCase().includes("interstate");
   const durationMatch = selectedTypeName.match(/(\d+)\s*hour/i);
+  const isAirportType = selectedTypeName.toLowerCase().includes("airport");
+
+  const tileDisabled = availabilityMap
+    ? ({ date, view }: { date: Date; view: string }) => {
+        if (view !== "month") return false;
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        const status = availabilityMap[key];
+        return !!status && status !== "AVAILABLE";
+      }
+    : undefined;
+
+  useEffect(() => {
+    if (!partnerLock || !partnerAddress) return;
+    const coords =
+      partnerLat != null && partnerLng != null
+        ? { lat: partnerLat, lng: partnerLng }
+        : null;
+    if (isAirportType) {
+      setSameAsPickup(false);
+      setDropoffLocation(partnerAddress);
+      onChange("dropoffLocation", partnerAddress);
+      if (coords) coordinates("dropoffCoordinates", coords);
+    } else {
+      setPickupLocation(partnerAddress);
+      onChange("pickupLocation", partnerAddress);
+      if (coords) coordinates("pickupCoordinates", coords);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partnerLock, isAirportType, partnerAddress]);
   const durationHours = durationMatch ? parseInt(durationMatch[1], 10) : 0;
   const bookingEndDate =
     durationHours && tripStartDate && tripStartTime
@@ -436,6 +485,7 @@ const TripAccordion = ({
                     onChange("tripStartDate", value?.toString() || "");
                   }}
                   minDate={new Date()}
+                  tileDisabled={tileDisabled}
                 />
               </div>
               <div className="flex-1 min-w-0">
@@ -488,30 +538,37 @@ const TripAccordion = ({
 
             <InputSection title="Pickup Location">
               <GoogleMapsLocationInput
-                disabled={disabled}
+                disabled={disabled || (!!partnerLock && !isAirportType)}
                 value={pickupLocation}
                 onChange={(value) => onChange("pickupLocation", value)}
                 placeholder="Enter location"
                 coordinates={coordinates}
                 type="pickupCoordinates"
               />
+              {partnerLock && !isAirportType && partnerName && (
+                <p className="mt-1 text-[11px] text-gray-500">
+                  Pickup is fixed to {partnerName}.
+                </p>
+              )}
             </InputSection>
 
             <InputSection title="Drop-off Location">
               <div className="w-full space-y-2">
-                <label className="flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={sameAsPickup}
-                    disabled={disabled}
-                    onChange={(e) => handleSameAsPickup(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-[#0673ff] focus:ring-[#0673ff]"
-                  />
-                  Same as pickup location
-                </label>
+                {!(partnerLock && isAirportType) && (
+                  <label className="flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={sameAsPickup}
+                      disabled={disabled}
+                      onChange={(e) => handleSameAsPickup(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-[#0673ff] focus:ring-[#0673ff]"
+                    />
+                    Return to pickup location
+                  </label>
+                )}
                 {!sameAsPickup && (
                   <GoogleMapsLocationInput
-                    disabled={disabled}
+                    disabled={disabled || (!!partnerLock && isAirportType)}
                     value={dropoffLocation}
                     onChange={(value) => onChange("dropoffLocation", value)}
                     placeholder="Enter location"
@@ -519,9 +576,16 @@ const TripAccordion = ({
                     type="dropoffCoordinates"
                   />
                 )}
+                {partnerLock && isAirportType && partnerName && (
+                  <p className="mt-1 text-[11px] text-gray-500">
+                    Drop-off is fixed to {partnerName}. Choose your airport as the
+                    pickup.
+                  </p>
+                )}
               </div>
             </InputSection>
 
+            {!isInterstateType && (
             <div>
               <div className="flex items-center gap-2 mb-1.5">
                 <p className="text-xs font-semibold text-gray-600">
@@ -564,6 +628,7 @@ const TripAccordion = ({
                 </p>
               )}
             </div>
+            )}
           </div>
         )}
       </div>
