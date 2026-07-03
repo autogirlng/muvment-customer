@@ -135,9 +135,9 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const [interstateSeedLocalDays, setInterstateSeedLocalDays] = useState(1);
   const [interstateSeedVersion, setInterstateSeedVersion] = useState(0);
   const [interstateRegionValid, setInterstateRegionValid] = useState(true);
-  const [availabilityMap, setAvailabilityMap] = useState<Record<string, string>>(
-    {},
-  );
+  const [availabilityMap, setAvailabilityMap] = useState<
+    Record<string, string>
+  >({});
   const [availabilityLoaded, setAvailabilityLoaded] = useState(false);
   const [partnerCtx, setPartnerCtx] = useState<{
     lock: boolean;
@@ -361,7 +361,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   // later manual choice is never overridden.
   const autoSeededRef = useRef(false);
   useEffect(() => {
-    if (!availabilityLoaded || !isInterstateFlow || autoSeededRef.current) return;
+    if (!availabilityLoaded || !isInterstateFlow || autoSeededRef.current)
+      return;
     const t = new Date();
     const pad2 = (n: number) => String(n).padStart(2, "0");
     const fmtD = (d: Date) =>
@@ -575,7 +576,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       const days = expandRangesToDays(rangesParam);
       if (days.length > 0) {
         const flat: Record<string, string>[] = [];
-        const nested: { id: string; tripDetails: Record<string, string> }[] = [];
+        const nested: { id: string; tripDetails: Record<string, string> }[] =
+          [];
         days.forEach((day, i) => {
           const id = `trip-${i}`;
           const details: Record<string, string> = {
@@ -829,10 +831,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
             new Date(details?.tripStartDate || ""),
             "yyyy-MM-dd",
           ),
-          startTime: format(
-            new Date(details?.tripStartTime || ""),
-            "HH:mm:ss",
-          ),
+          startTime: format(new Date(details?.tripStartTime || ""), "HH:mm:ss"),
           pickupLatitude: pickupCoordinates.lat,
           pickupLongitude: pickupCoordinates.lng,
           dropoffLatitude: dropoffCoordinates.lat,
@@ -858,9 +857,10 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       // in the database.
       let pricing: any;
       if (existingId) {
-        pricing = await BookingService.updateCalculation(existingId, data).catch(
-          () => null,
-        );
+        pricing = await BookingService.updateCalculation(
+          existingId,
+          data,
+        ).catch(() => null);
         if (!pricing || pricing.error) {
           // The saved estimate could not be reused (cleared, expired, or tied
           // to a different trip). Start a fresh one so a price still shows.
@@ -917,7 +917,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       setPricing(undefined);
       setContinueBooking(false);
     } finally {
-      if (seq === estimateSeq.current && !scheduledRetry) setIsEstimating(false);
+      if (seq === estimateSeq.current && !scheduledRetry)
+        setIsEstimating(false);
     }
   };
 
@@ -999,8 +1000,9 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const baseKind = kindFromValue(baseType, bookingOptions);
 
   const fallbackPerDay = () =>
-    bookingOptions.find((o) => kindFromValue(o.value, bookingOptions) === "per_day")
-      ?.value;
+    bookingOptions.find(
+      (o) => kindFromValue(o.value, bookingOptions) === "per_day",
+    )?.value;
 
   const closeConflict = () => setResyncKey((k) => k + 1);
 
@@ -1086,7 +1088,10 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     const days = expandRangesToDays(rangesStr);
     if (days.length === 0) return;
     const selectedDays = allowsMultiDay ? days : days.slice(0, 1);
-    const shared = { ...(trips[0]?.tripDetails || {}) } as Record<string, string>;
+    const shared = { ...(trips[0]?.tripDetails || {}) } as Record<
+      string,
+      string
+    >;
     delete shared.tripStartDate;
     delete shared.tripStartTime;
     const nested = selectedDays.map((day, i) => ({
@@ -1157,400 +1162,389 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     return `/booking/search?${params.toString()}`;
   };
 
-  const bookingMain = (    <>
-                <div>
-                  <h2 className="font-bold text-[17px]">Add Booking Details</h2>
-                  <div className="mt-2 mb-4">
-                    <p className="text-sm font-semibold text-gray-900">
-                      Daily Itinerary
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Add a stop for each day you need the car.
-                    </p>
-                  </div>
+  const bookingMain = (
+    <>
+      <div>
+        <h2 className="font-bold text-[17px]">Add Booking Details</h2>
+        <div className="mt-2 mb-4">
+          <p className="text-sm font-semibold text-gray-900">Daily Itinerary</p>
+          <p className="text-xs text-gray-500">
+            Add a stop for each day you need the car.
+          </p>
+        </div>
 
-                  {!hasAnyTripDate && (
-                    <div className="mb-4 rounded-xl border border-[#EAF2FF] bg-[#EAF2FF] px-4 py-3">
-                      <p className="text-sm font-semibold text-[#101928]">
-                        Choose your dates
-                      </p>
-                      <p className="mt-0.5 text-xs text-[#475467]">
-                        See the days this car is free and pick one or more date
-                        ranges. Booked and unavailable days can&apos;t be
-                        selected.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setShowAvailability(true)}
-                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#0673FF] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0560d6]"
-                      >
-                        View availability
-                      </button>
-                    </div>
-                  )}
+        {!hasAnyTripDate && (
+          <div className="mb-4 rounded-xl border border-[#EAF2FF] bg-[#EAF2FF] px-4 py-3">
+            <p className="text-sm font-semibold text-[#101928]">
+              Choose your dates
+            </p>
+            <p className="mt-0.5 text-xs text-[#475467]">
+              See the days this car is free and pick one or more date ranges.
+              Booked and unavailable days can&apos;t be selected.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowAvailability(true)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#0673FF] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0560d6]"
+            >
+              View availability
+            </button>
+          </div>
+        )}
 
-                  {allowsMultiDay && trips.length > 0 && (
-                    <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#E4E7EC] bg-white px-3 py-2.5">
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-gray-800">
-                          Trip length
-                        </p>
-                        <p className="text-[11px] leading-snug text-gray-500">
-                          {trips.length} {trips.length === 1 ? "day" : "days"}{" "}
-                          selected. Change the dates from the availability
-                          calendar.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowAvailability(true)}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#0673FF] px-3 py-1.5 text-xs font-semibold text-[#0673FF] hover:bg-[#EAF2FF]"
-                      >
-                        Change dates
-                      </button>
-                    </div>
-                  )}
+        {allowsMultiDay && trips.length > 0 && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#E4E7EC] bg-white px-3 py-2.5">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-gray-800">Trip length</p>
+              <p className="text-[11px] leading-snug text-gray-500">
+                {trips.length} {trips.length === 1 ? "day" : "days"} selected.
+                Change the dates from the availability calendar.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAvailability(true)}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#0673FF] px-3 py-1.5 text-xs font-semibold text-[#0673FF] hover:bg-[#EAF2FF]"
+            >
+              Change dates
+            </button>
+          </div>
+        )}
 
-                  {priceErrorMessage && (
-                    <div className="mb-3 flex items-start gap-2 rounded-xl border border-[#FDA29B] bg-[#FEF3F2] px-3 py-2.5">
-                      <FiAlertCircle
-                        className="mt-0.5 flex-shrink-0 text-[#D42620]"
-                        size={16}
-                      />
-                      <div className="flex flex-col gap-1.5">
-                        <p className="text-xs text-[#912018]">
-                          {priceErrorMessage}
-                        </p>
-                        {isLocationError && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              router.push(buildLocationSearchHref())
-                            }
-                            className="self-start text-xs font-semibold text-[#0673FF] underline underline-offset-2 hover:text-[#0560d6]"
-                          >
-                            Find cars available in this area
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
+        {priceErrorMessage && (
+          <div className="mb-3 flex items-start gap-2 rounded-xl border border-[#FDA29B] bg-[#FEF3F2] px-3 py-2.5">
+            <FiAlertCircle
+              className="mt-0.5 flex-shrink-0 text-[#D42620]"
+              size={16}
+            />
+            <div className="flex flex-col gap-1.5">
+              <p className="text-xs text-[#912018]">{priceErrorMessage}</p>
+              {isLocationError && (
+                <button
+                  type="button"
+                  onClick={() => router.push(buildLocationSearchHref())}
+                  className="self-start text-xs font-semibold text-[#0673FF] underline underline-offset-2 hover:text-[#0560d6]"
+                >
+                  Find cars available in this area
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
-                  {partnerCtx?.lock && partnerCtx.name && (
-                    <div className="mb-3 flex items-start gap-2 rounded-xl border border-[#0673ff]/20 bg-[#EAF2FF] px-3 py-2.5">
-                      <FiMapPin
-                        className="mt-0.5 flex-shrink-0 text-[#0673FF]"
-                        size={16}
-                      />
-                      <p className="text-xs text-[#0560d6]">
-                        Booking through {partnerCtx.name}. Pickup is set to the
-                        hotel; airport transfers are dropped at the hotel.
-                      </p>
-                    </div>
-                  )}
+        {partnerCtx?.lock && partnerCtx.name && (
+          <div className="mb-3 flex items-start gap-2 rounded-xl border border-[#0673ff]/20 bg-[#EAF2FF] px-3 py-2.5">
+            <FiMapPin
+              className="mt-0.5 flex-shrink-0 text-[#0673FF]"
+              size={16}
+            />
+            <p className="text-xs text-[#0560d6]">
+              Booking through {partnerCtx.name}. Pickup is set to the hotel;
+              airport transfers are dropped at the hotel.
+            </p>
+          </div>
+        )}
 
-                  {isInterstateFlow ? (
-                    <>
-                      <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5">
-                        <div>
-                          <p className="text-xs font-semibold text-gray-700">
-                            Dates
-                          </p>
-                          <p className="text-[11px] leading-snug text-gray-500">
-                            Check the calendar for days this car is available.
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowAvailability(true)}
-                          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#0673FF] px-3 py-1.5 text-xs font-semibold text-[#0673FF] hover:bg-[#EAF2FF]"
-                        >
-                          Check availability
-                        </button>
-                      </div>
-                      <InterstateRoundTrip
-                        interstateTypeId={interstateTypeId}
-                        dayTypeId={dayTypeId}
-                        onTripsChange={persistInterstateTrips}
-                        onRegionValidChange={setInterstateRegionValid}
-                        initialStartDateStr={interstateSeedDate}
-                        initialLocalDays={interstateSeedLocalDays}
-                        seedVersion={interstateSeedVersion}
-                      />
-                    </>
-                  ) : trips.length <= 1 ? (
-                    trips.map((key, index) => (
-                      <TripAccordion
-                        key={`${key.id}-${tripsVersion}-${resyncKey}`}
-                        day={`${index + 1}`}
-                        id={key.id}
-                        vehicle={vehicle}
-                        initialValues={
-                          key.tripDetails &&
-                          Object.keys(key.tripDetails).length > 0
-                            ? key.tripDetails
-                            : tripInitialValues
-                        }
-                        deleteMethod={deleteTrip}
-                        disabled={false}
-                        onChangeTrip={onChangeTrip}
-                        isCollapsed={!openTripIds.has(key.id)}
-                        toggleOpen={() => toggleOpen(key.id)}
-                        bookingOptions={bookingOptions}
-                        vehicleId={vehicle.id}
-                        partnerLock={partnerCtx?.lock || false}
-                        partnerName={partnerCtx?.name}
-                        partnerAddress={partnerCtx?.address}
-                        partnerLat={partnerCtx?.lat}
-                        partnerLng={partnerCtx?.lng}
-                        availabilityMap={availabilityMap}
-                      />
-                    ))
-                  ) : sameForAllDays ? (
-                    <>
-                      <div className="mb-3 flex items-center gap-2 rounded-xl border border-[#0673ff]/20 bg-[#EAF2FF] px-3 py-2 text-xs text-[#0560d6]">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                        <span>
-                          One plan for all {trips.length} days. Fill it once; every
-                          day is set.
-                        </span>
-                      </div>
-                      {trips[0] && (
-                        <TripAccordion
-                          key={`plan-${tripsVersion}-${resyncKey}`}
-                          day={`${1}`}
-                          dayLabel={formatPlanRange(
-                            trips[0]?.tripDetails?.tripStartDate,
-                            trips[trips.length - 1]?.tripDetails?.tripStartDate,
-                            trips.length,
-                          )}
-                          daySubLabel={`${trips.length} days`}
-                          id={trips[0].id || ""}
-                          vehicle={vehicle}
-                          initialValues={
-                            trips[0].tripDetails &&
-                            Object.keys(trips[0].tripDetails).length > 0
-                              ? trips[0].tripDetails
-                              : tripInitialValues
-                          }
-                          deleteMethod={() => {}}
-                          disabled={false}
-                          onChangeTrip={(_id, details) =>
-                            applySharedPlanChange(details)
-                          }
-                          isCollapsed={!openTripIds.has(trips[0].id || "")}
-                          toggleOpen={() => toggleOpen(trips[0].id || "")}
-                          bookingOptions={bookingOptions}
-                          vehicleId={vehicle.id}
-                          partnerLock={partnerCtx?.lock || false}
-                          partnerName={partnerCtx?.name}
-                          partnerAddress={partnerCtx?.address}
-                          partnerLat={partnerCtx?.lat}
-                          partnerLng={partnerCtx?.lng}
-                          availabilityMap={availabilityMap}
-                        />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setSameForAllDays(false)}
-                        className="mt-2 text-[#0673ff] text-xs font-medium cursor-pointer"
-                      >
-                        Need a day to be different?
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {trips?.map((key, index) => (
-                        <TripAccordion
-                          key={`${key.id}-${tripsVersion}-${resyncKey}`}
-                          day={`${index + 1}`}
-                          id={key.id}
-                          vehicle={vehicle}
-                          initialValues={
-                            key.tripDetails &&
-                            Object.keys(key.tripDetails).length > 0
-                              ? key.tripDetails
-                              : tripInitialValues
-                          }
-                          deleteMethod={deleteTrip}
-                          disabled={false}
-                          onChangeTrip={onChangeTrip}
-                          isCollapsed={!openTripIds.has(key.id)}
-                          toggleOpen={() => toggleOpen(key.id)}
-                          bookingOptions={bookingOptions}
-                          vehicleId={vehicle.id}
-                          partnerLock={partnerCtx?.lock || false}
-                          partnerName={partnerCtx?.name}
-                          partnerAddress={partnerCtx?.address}
-                          partnerLat={partnerCtx?.lat}
-                          partnerLng={partnerCtx?.lng}
-                          availabilityMap={availabilityMap}
-                        />
-                      ))}
-                      <button
-                        onClick={() => addTrip(generateNextTripId())}
-                        className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#0673ff]/40 text-[#0673ff] text-sm font-medium py-2.5 hover:bg-[#0673ff]/5 transition cursor-pointer"
-                      >
-                        + Add a different day
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          applyToAllTrips(trips[0]?.id || "");
-                          setSameForAllDays(true);
-                        }}
-                        className="mt-2 w-full text-center text-[#0673ff] text-xs font-medium underline underline-offset-2 hover:text-[#0560d6] cursor-pointer"
-                      >
-                        Use one plan for all days
-                      </button>
-                    </>
-                  )}
+        {isInterstateFlow ? (
+          <>
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5">
+              <div>
+                <p className="text-xs font-semibold text-gray-700">Dates</p>
+                <p className="text-[11px] leading-snug text-gray-500">
+                  Check the calendar for days this car is available.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAvailability(true)}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#0673FF] px-3 py-1.5 text-xs font-semibold text-[#0673FF] hover:bg-[#EAF2FF]"
+              >
+                Check availability
+              </button>
+            </div>
+            <InterstateRoundTrip
+              interstateTypeId={interstateTypeId}
+              dayTypeId={dayTypeId}
+              onTripsChange={persistInterstateTrips}
+              onRegionValidChange={setInterstateRegionValid}
+              initialStartDateStr={interstateSeedDate}
+              initialLocalDays={interstateSeedLocalDays}
+              seedVersion={interstateSeedVersion}
+            />
+          </>
+        ) : trips.length <= 1 ? (
+          trips.map((key, index) => (
+            <TripAccordion
+              key={`${key.id}-${tripsVersion}-${resyncKey}`}
+              day={`${index + 1}`}
+              id={key.id}
+              vehicle={vehicle}
+              initialValues={
+                key.tripDetails && Object.keys(key.tripDetails).length > 0
+                  ? key.tripDetails
+                  : tripInitialValues
+              }
+              deleteMethod={deleteTrip}
+              disabled={false}
+              onChangeTrip={onChangeTrip}
+              isCollapsed={!openTripIds.has(key.id)}
+              toggleOpen={() => toggleOpen(key.id)}
+              bookingOptions={bookingOptions}
+              vehicleId={vehicle.id}
+              partnerLock={partnerCtx?.lock || false}
+              partnerName={partnerCtx?.name}
+              partnerAddress={partnerCtx?.address}
+              partnerLat={partnerCtx?.lat}
+              partnerLng={partnerCtx?.lng}
+              availabilityMap={availabilityMap}
+            />
+          ))
+        ) : sameForAllDays ? (
+          <>
+            <div className="mb-3 flex items-center gap-2 rounded-xl border border-[#0673ff]/20 bg-[#EAF2FF] px-3 py-2 text-xs text-[#0560d6]">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+              <span>
+                One plan for all {trips.length} days. Fill it once; every day is
+                set.
+              </span>
+            </div>
+            {trips[0] && (
+              <TripAccordion
+                key={`plan-${tripsVersion}-${resyncKey}`}
+                day={`${1}`}
+                dayLabel={formatPlanRange(
+                  trips[0]?.tripDetails?.tripStartDate,
+                  trips[trips.length - 1]?.tripDetails?.tripStartDate,
+                  trips.length,
+                )}
+                daySubLabel={`${trips.length} days`}
+                id={trips[0].id || ""}
+                vehicle={vehicle}
+                initialValues={
+                  trips[0].tripDetails &&
+                  Object.keys(trips[0].tripDetails).length > 0
+                    ? trips[0].tripDetails
+                    : tripInitialValues
+                }
+                deleteMethod={() => {}}
+                disabled={false}
+                onChangeTrip={(_id, details) => applySharedPlanChange(details)}
+                isCollapsed={!openTripIds.has(trips[0].id || "")}
+                toggleOpen={() => toggleOpen(trips[0].id || "")}
+                bookingOptions={bookingOptions}
+                vehicleId={vehicle.id}
+                partnerLock={partnerCtx?.lock || false}
+                partnerName={partnerCtx?.name}
+                partnerAddress={partnerCtx?.address}
+                partnerLat={partnerCtx?.lat}
+                partnerLng={partnerCtx?.lng}
+                availabilityMap={availabilityMap}
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => setSameForAllDays(false)}
+              className="mt-2 text-[#0673ff] text-xs font-medium cursor-pointer"
+            >
+              Need a day to be different?
+            </button>
+          </>
+        ) : (
+          <>
+            {trips?.map((key, index) => (
+              <TripAccordion
+                key={`${key.id}-${tripsVersion}-${resyncKey}`}
+                day={`${index + 1}`}
+                id={key.id}
+                vehicle={vehicle}
+                initialValues={
+                  key.tripDetails && Object.keys(key.tripDetails).length > 0
+                    ? key.tripDetails
+                    : tripInitialValues
+                }
+                deleteMethod={deleteTrip}
+                disabled={false}
+                onChangeTrip={onChangeTrip}
+                isCollapsed={!openTripIds.has(key.id)}
+                toggleOpen={() => toggleOpen(key.id)}
+                bookingOptions={bookingOptions}
+                vehicleId={vehicle.id}
+                partnerLock={partnerCtx?.lock || false}
+                partnerName={partnerCtx?.name}
+                partnerAddress={partnerCtx?.address}
+                partnerLat={partnerCtx?.lat}
+                partnerLng={partnerCtx?.lng}
+                availabilityMap={availabilityMap}
+              />
+            ))}
+            <button
+              onClick={() => addTrip(generateNextTripId())}
+              className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#0673ff]/40 text-[#0673ff] text-sm font-medium py-2.5 hover:bg-[#0673ff]/5 transition cursor-pointer"
+            >
+              + Add a different day
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                applyToAllTrips(trips[0]?.id || "");
+                setSameForAllDays(true);
+              }}
+              className="mt-2 w-full text-center text-[#0673ff] text-xs font-medium underline underline-offset-2 hover:text-[#0560d6] cursor-pointer"
+            >
+              Use one plan for all days
+            </button>
+          </>
+        )}
 
-                  <div className="mt-6 mb-2">
-                    <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                      Have a coupon? (Optional)
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiTag
-                          className={
-                            couponState === "applied"
-                              ? "text-green-500"
-                              : couponState === "invalid"
-                                ? "text-red-400"
-                                : "text-gray-400"
-                          }
-                        />
-                      </div>
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        placeholder="Enter coupon code"
-                        className={`block w-full pl-10 pr-10 py-2 border rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 sm:text-sm transition duration-150 ease-in-out ${
-                          couponState === "applied"
-                            ? "border-green-400 focus:ring-green-500 focus:border-green-500"
-                            : couponState === "invalid"
-                              ? "border-red-300 focus:ring-red-400 focus:border-red-400"
-                              : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                        }`}
-                      />
-                      {couponState === "applied" && (
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                          <FiCheckCircle className="text-green-500" />
-                        </div>
-                      )}
-                    </div>
-                    {couponState === "applied" && (
-                      <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-green-600">
-                        Coupon applied, you save{" "}
-                        {formatCurrency(appliedCouponDiscount)}
-                      </p>
-                    )}
-                    {couponState === "invalid" && (
-                      <p className="mt-1.5 text-xs font-medium text-red-500">
-                        We couldn&apos;t apply this code. Check it and estimate
-                        again.
-                      </p>
-                    )}
-                    {couponState === "pending" && (
-                      <p className="mt-1.5 text-xs text-gray-400">
-                        Tap Estimate Price to apply your coupon.
-                      </p>
-                    )}
-                  </div>
+        <div className="mt-6 mb-2">
+          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+            Have a coupon? (Optional)
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiTag
+                className={
+                  couponState === "applied"
+                    ? "text-green-500"
+                    : couponState === "invalid"
+                      ? "text-red-400"
+                      : "text-gray-400"
+                }
+              />
+            </div>
+            <input
+              type="text"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              placeholder="Enter coupon code"
+              className={`block w-full pl-10 pr-10 py-2 border rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 sm:text-sm transition duration-150 ease-in-out ${
+                couponState === "applied"
+                  ? "border-green-400 focus:ring-green-500 focus:border-green-500"
+                  : couponState === "invalid"
+                    ? "border-red-300 focus:ring-red-400 focus:border-red-400"
+                    : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+              }`}
+            />
+            {couponState === "applied" && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <FiCheckCircle className="text-green-500" />
+              </div>
+            )}
+          </div>
+          {couponState === "applied" && (
+            <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-green-600">
+              Coupon applied, you save {formatCurrency(appliedCouponDiscount)}
+            </p>
+          )}
+          {couponState === "invalid" && (
+            <p className="mt-1.5 text-xs font-medium text-red-500">
+              We couldn&apos;t apply this code. Check it and estimate again.
+            </p>
+          )}
+          {couponState === "pending" && (
+            <p className="mt-1.5 text-xs text-gray-400">
+              Tap Estimate Price to apply your coupon.
+            </p>
+          )}
+        </div>
 
-                  {pricing?.data && (
-                    <div className="p-4 rounded-xl border border-gray-200">
-                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                        Payment Summary
-                      </h3>
+        {pricing?.data && (
+          <div className="p-4 rounded-xl border border-gray-200">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+              Payment Summary
+            </h3>
 
-                      <PriceRow
-                        label="Base Price"
-                        value={
-                          pricing.data.data.basePrice +
-                          pricing.data.data.platformFeeAmount
-                        }
-                      />
+            <PriceRow
+              label="Base Price"
+              value={
+                pricing.data.data.basePrice +
+                pricing.data.data.platformFeeAmount
+              }
+            />
 
-                      <PriceRow
-                        label="Outskirts Surcharge"
-                        value={pricing.data.data.geofenceSurcharge}
-                        subLabel={
-                          pricing.data.data.appliedGeofenceNames?.length > 0
-                            ? `Applied to: ${pricing.data.data.appliedGeofenceNames.join(
-                                ", ",
-                              )}`
-                            : null
-                        }
-                      />
+            <PriceRow
+              label="Outskirts Surcharge"
+              value={pricing.data.data.geofenceSurcharge}
+              subLabel={
+                pricing.data.data.appliedGeofenceNames?.length > 0
+                  ? `Applied to: ${pricing.data.data.appliedGeofenceNames.join(
+                      ", ",
+                    )}`
+                  : null
+              }
+            />
 
-                      {pricing.data.data.vatPercentage && (
-                        <PriceRow
-                          label="VAT Amount"
-                          value={pricing.data.data.vatAmount}
-                          subLabel={`${pricing.data.data.vatPercentage}% of platform fee`}
-                        />
-                      )}
+            {pricing.data.data.vatPercentage && (
+              <PriceRow
+                label="VAT Amount"
+                value={pricing.data.data.vatAmount}
+                subLabel={`${pricing.data.data.vatPercentage}% of platform fee`}
+              />
+            )}
 
-                      {pricing.data.data.discountAmount > 0 && (
-                        <PriceRow
-                          label="Duration Discount"
-                          value={pricing.data.data.discountAmount}
-                          isDiscount
-                          subLabel={
-                            [
-                              pricing.data.data.basePrice > 0
-                                ? `${Math.round(
-                                    (pricing.data.data.discountAmount /
-                                      pricing.data.data.basePrice) *
-                                      100,
-                                  )}% off`
-                                : null,
-                              pricing.data.data.appliedDiscountName || null,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ") || null
-                          }
-                        />
-                      )}
+            {pricing.data.data.discountAmount > 0 && (
+              <PriceRow
+                label="Duration Discount"
+                value={pricing.data.data.discountAmount}
+                isDiscount
+                subLabel={
+                  [
+                    pricing.data.data.basePrice > 0
+                      ? `${Math.round(
+                          (pricing.data.data.discountAmount /
+                            pricing.data.data.basePrice) *
+                            100,
+                        )}% off`
+                      : null,
+                    pricing.data.data.appliedDiscountName || null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || null
+                }
+              />
+            )}
 
-                      {pricing.data.data.couponDiscountAmount > 0 && (
-                        <PriceRow
-                          label={`Coupon (${
-                            pricing.data.data.appliedCouponCode || couponCode
-                          })`}
-                          value={pricing.data.data.couponDiscountAmount}
-                          isDiscount
-                        />
-                      )}
+            {pricing.data.data.couponDiscountAmount > 0 && (
+              <PriceRow
+                label={`Coupon (${
+                  pricing.data.data.appliedCouponCode || couponCode
+                })`}
+                value={pricing.data.data.couponDiscountAmount}
+                isDiscount
+              />
+            )}
 
-                      <PriceRow
-                        label="TOTAL"
-                        value={Number(pricing.data.data.finalPrice)}
-                        isTotal
-                      />
-                    </div>
-                  )}
-                </div>
+            <PriceRow
+              label="TOTAL"
+              value={Number(pricing.data.data.finalPrice)}
+              isTotal
+            />
+          </div>
+        )}
+      </div>
 
-                <div className="mt-6 mb-4 rounded-xl bg-orange-50 border border-orange-100 p-4 flex items-start gap-3 transition-all hover:bg-orange-100/50">
-                  <FiInfo
-                    className="text-orange-500 shrink-0 mt-0.5"
-                    size={20}
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-bold text-orange-700 uppercase tracking-wider mb-1">
-                      {bookingNoteTitle}
-                    </span>
-                    <p className="text-sm text-orange-900 leading-snug font-medium">
-                      {bookingNote}
-                    </p>
-                  </div>
-                </div>
+      <div className="mt-6 mb-4 rounded-xl bg-orange-50 border border-orange-100 p-4 flex items-start gap-3 transition-all hover:bg-orange-100/50">
+        <FiInfo className="text-orange-500 shrink-0 mt-0.5" size={20} />
+        <div className="flex flex-col">
+          <span className="text-[11px] font-bold text-orange-700 uppercase tracking-wider mb-1">
+            {bookingNoteTitle}
+          </span>
+          <p className="text-sm text-orange-900 leading-snug font-medium">
+            {bookingNote}
+          </p>
+        </div>
+      </div>
     </>
   );
 
@@ -1622,46 +1616,46 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       </div>
     ) : null
   ) : pendingByDay.length > 0 ? (
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-        <p className="text-sm font-semibold text-amber-900">
-          Add these to see your price
-        </p>
-        {pendingAllSame || pendingByDay.length === 1 ? (
-          <ul className="mt-2 space-y-1.5">
-            {pendingByDay[0].labels.map((l) => (
-              <li
-                key={l}
-                className="flex items-center gap-2 text-sm text-amber-800"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                {l}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="mt-2 space-y-2">
-            {pendingByDay.map((d) => (
-              <div key={d.day}>
-                <p className="text-xs font-semibold text-amber-900">
-                  Day {d.day}
-                </p>
-                <ul className="mt-1 space-y-1">
-                  {d.labels.map((l) => (
-                    <li
-                      key={l}
-                      className="flex items-center gap-2 text-sm text-amber-800"
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                      {l}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    ) : null;
+    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+      <p className="text-sm font-semibold text-amber-900">
+        Add these to see your price
+      </p>
+      {pendingAllSame || pendingByDay.length === 1 ? (
+        <ul className="mt-2 space-y-1.5">
+          {pendingByDay[0].labels.map((l) => (
+            <li
+              key={l}
+              className="flex items-center gap-2 text-sm text-amber-800"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              {l}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="mt-2 space-y-2">
+          {pendingByDay.map((d) => (
+            <div key={d.day}>
+              <p className="text-xs font-semibold text-amber-900">
+                Day {d.day}
+              </p>
+              <ul className="mt-1 space-y-1">
+                {d.labels.map((l) => (
+                  <li
+                    key={l}
+                    className="flex items-center gap-2 text-sm text-amber-800"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    {l}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  ) : null;
 
   const isPricePending =
     isTripFormsComplete && !continueBooking && !priceErrorMessage;
@@ -1677,49 +1671,47 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   const bookingCTA = (
     <>
       {pendingChecklist && <div className="mb-3">{pendingChecklist}</div>}
-                <button
-                  type="button"
-                  onClick={handlePrimaryAction}
-                  disabled={!canConfirmBooking && !canRetryEstimate}
-                  className={`w-full py-4 mt-2 text-sm font-medium text-white rounded-full shadow-md transition duration-150 flex items-center justify-center gap-2 ${
-                    isPriceLoading
-                      ? "bg-blue-600 opacity-80 cursor-wait"
-                      : canConfirmBooking || canRetryEstimate
-                        ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-                        : "bg-blue-600/60 cursor-not-allowed"
-                  }`}
-                >
-                  {isPriceLoading ? (
-                    <>
-                      <span className="block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Calculating price...
-                    </>
-                  ) : canRetryEstimate ? (
-                    "Retry"
-                  ) : canConfirmBooking ? (
-                    "Confirm booking"
-                  ) : (
-                    "Complete your trip details"
-                  )}
-                </button>
+      <button
+        type="button"
+        onClick={handlePrimaryAction}
+        disabled={!canConfirmBooking && !canRetryEstimate}
+        className={`w-full py-4 mt-2 text-sm font-medium text-white rounded-full shadow-md transition duration-150 flex items-center justify-center gap-2 ${
+          isPriceLoading
+            ? "bg-blue-600 opacity-80 cursor-wait"
+            : canConfirmBooking || canRetryEstimate
+              ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+              : "bg-blue-600/60 cursor-not-allowed"
+        }`}
+      >
+        {isPriceLoading ? (
+          <>
+            <span className="block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Calculating price...
+          </>
+        ) : canRetryEstimate ? (
+          "Retry"
+        ) : canConfirmBooking ? (
+          "Confirm booking"
+        ) : (
+          "Complete your trip details"
+        )}
+      </button>
     </>
   );
 
   const bookingDiscounts = vehicle?.discounts?.length > 0 && (
-                  <div className="space-y-3 pt-4">
-                    <h3 className="text-lg font-bold text-gray-800">
-                      Discounts
-                    </h3>
-                    {vehicle.discounts.map((discount: any, index: number) => (
-                      <DiscountRow
-                        key={index}
-                        days={discount.durationName + " trips"}
-                        discount={discount.percentage + "% off"}
-                        color={"text-[#0aaf24]"}
-                      />
-                    ))}
-                  </div>
-                );
+    <div className="space-y-3 pt-4">
+      <h3 className="text-lg font-bold text-gray-800">Discounts</h3>
+      {vehicle.discounts.map((discount: any, index: number) => (
+        <DiscountRow
+          key={index}
+          days={discount.durationName + " trips"}
+          discount={discount.percentage + "% off"}
+          color={"text-[#0aaf24]"}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -1776,7 +1768,9 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     onClick={handleToggleFavourite}
                     disabled={isFavoriteLoading}
                     aria-label={
-                      isFavorited ? "Remove from favourites" : "Add to favourites"
+                      isFavorited
+                        ? "Remove from favourites"
+                        : "Add to favourites"
                     }
                     className={`w-10 h-10 rounded-full border flex items-center justify-center transition cursor-pointer shrink-0 ${
                       isFavorited
@@ -1893,7 +1887,11 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                       const standalone = opts.filter(
                         (o: any) => !isWithinState(o.bookingTypeName),
                       );
-                      const row = (label: string, value: string, key: string) => (
+                      const row = (
+                        label: string,
+                        value: string,
+                        key: string,
+                      ) => (
                         <div
                           key={key}
                           className="flex justify-between items-center p-3 bg-[#F0F2F5] rounded-lg"
