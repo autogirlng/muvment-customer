@@ -1521,8 +1521,6 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                 label={`Coupon (${
                   pricing.data.data.appliedCouponCode || couponCode
                 })`}
-<<<<<<< Updated upstream
-=======
                 subLabel={
                   String(
                     pricing.data.data.appliedCouponCode || couponCode || "",
@@ -1530,7 +1528,6 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                     ? "10% of your booking, capped at ₦10,000"
                     : null
                 }
->>>>>>> Stashed changes
                 value={pricing.data.data.couponDiscountAmount}
                 isDiscount
               />
