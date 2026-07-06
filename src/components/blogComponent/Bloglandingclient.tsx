@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { BiSearch, BiX, BiCategory } from "react-icons/bi";
@@ -293,6 +293,16 @@ export default function BlogLandingClient({
     fetchPosts({ search, categoryId: id });
   };
 
+  // Real anchors so crawlers can reach each category page; plain clicks still
+  // filter in place without a full reload.
+  const categoryHref = (cat: BlogCategory) =>
+    `/blog?category=${encodeURIComponent(cat.name)}`;
+  const onCategoryLinkClick = (cat: BlogCategory, e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    handleCategory(cat);
+  };
+
   const isFeaturedLayout = !search && !categoryId;
   const featuredPost = isFeaturedLayout ? posts[0] : null;
   const gridPosts =
@@ -352,9 +362,10 @@ export default function BlogLandingClient({
             {visibleCategories.map((cat) => {
               const isActive = String(cat.name) === String(categoryId);
               return (
-                <button
+                <Link
                   key={cat.id}
-                  onClick={() => handleCategory(cat)}
+                  href={categoryHref(cat)}
+                  onClick={(e) => onCategoryLinkClick(cat, e)}
                   className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 ${
                     isActive
                       ? "bg-blue-600 text-white"
@@ -362,7 +373,7 @@ export default function BlogLandingClient({
                   }`}
                 >
                   {cat.name}
-                </button>
+                </Link>
               );
             })}
             {hasMore && (
@@ -503,9 +514,10 @@ export default function BlogLandingClient({
                 {categories.map((cat) => {
                   const isActive = String(cat.name) === String(categoryId);
                   return (
-                    <button
+                    <Link
                       key={cat.id}
-                      onClick={() => handleCategory(cat)}
+                      href={categoryHref(cat)}
+                      onClick={(e) => onCategoryLinkClick(cat, e)}
                       className={`text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
                         isActive
                           ? "bg-blue-600 text-white"
@@ -513,7 +525,7 @@ export default function BlogLandingClient({
                       }`}
                     >
                       {cat.name}
-                    </button>
+                    </Link>
                   );
                 })}
               </div>

@@ -1,5 +1,6 @@
 import ExploreVehiclesClient from "@/components/pagesComponent/ExploreVehiclesClient";
 import { generatePageMetadata } from "@/helpers/metadata";
+import { buildCitySearchHref, formatCity } from "@/utils/cityLocations";
 import { JsonLd, SchemaBuilder } from "@/helpers/schema";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { getBookingOption } from "@/context/Constarain";
@@ -26,23 +27,28 @@ interface PageProps {
 export async function generateMetadata({ searchParams }: PageProps) {
   const params = await searchParams;
   const city = params.city || params.location || "Lagos";
+  const displayCity = formatCity(city) || "Lagos";
   const categoryName = params.categoryName;
 
-  let title = `Rent Cars in ${city}`;
+  let title = `Rent Cars in ${displayCity}`;
   if (categoryName) {
-    title = `${categoryName} for Rent in ${city}`;
+    title = `${categoryName} for Rent in ${displayCity}`;
   }
 
-  let description = `Browse verified rental cars in ${city} with Muvment. Compare sedans, SUVs, and luxury vehicles with professional chauffeurs. Hourly, daily, and monthly hire.`;
+  let description = `Browse verified rental cars in ${displayCity} with Muvment. Compare sedans, SUVs, and luxury vehicles with professional chauffeurs. Hourly, daily, and monthly hire.`;
 
   if (params.fromDate && params.untilDate) {
-    description = `Rent cars in ${city} from ${params.fromDate} to ${params.untilDate}. ${description}`;
+    description = `Rent cars in ${displayCity} from ${params.fromDate} to ${params.untilDate}. ${description}`;
   }
 
   return generatePageMetadata({
     title,
     description,
+<<<<<<< HEAD
+    url: buildCitySearchHref(displayCity),
+=======
     url: `/booking/search?city=${encodeURIComponent(city)}`,
+>>>>>>> origin/staging
   });
 }
 

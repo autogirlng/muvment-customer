@@ -10,6 +10,7 @@ export const metadata = generatePageMetadata({
     "Sign in Autogirl",
     "Car rental account Nigeria",
   ],
+  noIndex: true,
 });
 
 export default function LoginLayout({ children }: { children: React.ReactNode }) {
