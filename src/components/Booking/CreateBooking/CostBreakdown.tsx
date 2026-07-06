@@ -571,11 +571,21 @@ const CostBreakdown = ({
               )}
 
               {(pricing?.data?.data?.couponDiscountAmount || 0) > 0 && (
-                <div className="w-full text-sm flex justify-between mt-4 text-green-600">
-                  <span>
-                    Coupon Discount ({pricing?.data?.data?.appliedCouponCode})
-                  </span>
-                  <span>- {ngn(pricing?.data?.data?.couponDiscountAmount)}</span>
+                <div className="w-full mt-4">
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>
+                      Coupon Discount ({pricing?.data?.data?.appliedCouponCode})
+                    </span>
+                    <span>
+                      - {ngn(pricing?.data?.data?.couponDiscountAmount)}
+                    </span>
+                  </div>
+                  {String(pricing?.data?.data?.appliedCouponCode || "")
+                    .toUpperCase() === "WELCOME" && (
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      10% of your booking, capped at ₦10,000
+                    </p>
+                  )}
                 </div>
               )}
             </div>

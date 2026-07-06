@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import VehicleCard from "@/components/Booking/VehicleCard";
+import WelcomeOfferNote from "@/components/general/WelcomeOfferNote";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { HiViewList } from "react-icons/hi";
 import { BsFillGridFill } from "react-icons/bs";
@@ -110,6 +111,8 @@ export default function StateExploreVehiclesClient({
       <div className="min-h-screen">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="lg:h-[1rem]" />
+
+          <WelcomeOfferNote />
 
           <button
             type="button"

@@ -19,7 +19,8 @@ const DashboardFirstBookingOffer: React.FC<DashboardFirstBookingOfferProps> = ({
         <div>
           <p className="text-base font-bold">Your first booking is 10% off</p>
           <p className="text-sm text-white/85">
-            The discount applies on your first ride. Book now to use it.
+            10% off your first ride, up to ₦10,000, applied automatically at
+            checkout.
           </p>
         </div>
       </div>

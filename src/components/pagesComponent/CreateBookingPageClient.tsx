@@ -11,6 +11,7 @@ import { useRouter, useParams } from "next/navigation";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { clarityEvent } from "@/services/clarity";
+import WelcomeOfferNote from "@/components/general/WelcomeOfferNote";
 
 const steps = ["Confirm and pay"];
 
@@ -144,6 +145,8 @@ export default function CreateBookingPageClient() {
           <h2 className="mt-2 font-bold text-black text-2xl">
             Confirm your booking
           </h2>
+
+          <WelcomeOfferNote />
 
           <BookingSummary
             vehicle={vehicle ?? null}
