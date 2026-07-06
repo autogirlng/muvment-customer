@@ -147,10 +147,10 @@ function PrivacyPolicyClient() {
       title: "",
       content:
         "Should you have any questions or need further clarification on any aspect of these terms, please do not hesitate to contact our customer support team at the following:",
-      subItems: ["Email: info@muvment.ng", "Website: https://muvment.ng"],
+      subItems: ["Email: info@muvment.ng", "Website: https://www.muvment.ng"],
       links: [
         { type: "email", href: "mailto:info@muvment.ng" },
-        { type: "website", href: "https://muvment.ng" },
+        { type: "website", href: "https://www.muvment.ng" },
       ],
     },
   ];

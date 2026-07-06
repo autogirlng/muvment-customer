@@ -6,6 +6,7 @@ import {
 } from "@/services/vechilePriceUtiles";
 import { VehicleCardProps } from "@/types/vehicle";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import React, { useState, useMemo, useEffect } from "react";
 import { FiMapPin, FiUser, FiDroplet, FiHeart, FiChevronLeft, FiChevronRight, FiCalendar } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa6";
@@ -208,6 +209,21 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
     router.push(`/booking/details/${slug || id}?${ctx.toString()}`);
   };
 
+  const detailHref = `/booking/details/${slug || id}`;
+  // Real anchor for crawlers and open-in-new-tab. Plain left clicks still run the
+  // enriched in-app navigation so booking context (type, partner, search) is kept.
+  const handleTitleClick = (e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+      // Let the browser open the clean href in a new tab; don't also fire the
+      // card's own click handler on the current tab.
+      e.stopPropagation();
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    handleCardClick();
+  };
+
   const currentImage = images[currentImageIndex];
 
   const prevImage = (e: React.MouseEvent) => {
@@ -401,7 +417,13 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
         <div className="flex flex-1 flex-col gap-3 p-4">
           <div className="min-w-0">
             <h3 className="truncate text-base font-semibold text-gray-900">
-              {name}
+              <Link
+                href={detailHref}
+                onClick={handleTitleClick}
+                className="hover:underline"
+              >
+                {name}
+              </Link>
             </h3>
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
               <p className="text-sm text-gray-500">
@@ -458,7 +480,13 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="truncate text-base font-semibold text-gray-900 sm:text-lg">
-              {name}
+              <Link
+                href={detailHref}
+                onClick={handleTitleClick}
+                className="hover:underline"
+              >
+                {name}
+              </Link>
             </h3>
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
               <p className="text-sm text-gray-500">
