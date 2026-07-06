@@ -41,6 +41,7 @@ import {
   FiMapPin,
 } from "react-icons/fi";
 import { Navbar } from "@/components/Navbar";
+import WelcomeOfferNote from "@/components/general/WelcomeOfferNote";
 import ScreenLoader from "@/components/utils/ScreenLoader";
 import { SocialShareButton } from "@/components/general/share";
 import { Carousel } from "@/components/utils/Carousel";
@@ -1520,6 +1521,16 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                 label={`Coupon (${
                   pricing.data.data.appliedCouponCode || couponCode
                 })`}
+<<<<<<< Updated upstream
+=======
+                subLabel={
+                  String(
+                    pricing.data.data.appliedCouponCode || couponCode || "",
+                  ).toUpperCase() === "WELCOME"
+                    ? "10% of your booking, capped at ₦10,000"
+                    : null
+                }
+>>>>>>> Stashed changes
                 value={pricing.data.data.couponDiscountAmount}
                 isDiscount
               />
@@ -2111,6 +2122,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
             Confirm your trip in the next step. Book as a guest in seconds, or
             sign in to save it to your account.
           </p>
+
+          <WelcomeOfferNote />
 
           <button
             onClick={() =>

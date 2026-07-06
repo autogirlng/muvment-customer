@@ -39,7 +39,7 @@ const NewUserBanner: React.FC = () => {
           </span>
           <p className="text-sm sm:text-[15px] font-medium leading-snug">
             New to Muvment? <span className="font-bold">Get 10% off</span> your
-            first booking when you create an account.
+            first booking, up to ₦10,000, when you create an account.
           </p>
           <Link
             href="/auth/register"

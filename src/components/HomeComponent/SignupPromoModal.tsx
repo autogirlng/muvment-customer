@@ -95,7 +95,7 @@ const SignupPromoModal: React.FC = () => {
             10% OFF
           </div>
           <div className="mt-1 text-sm font-medium text-white/85">
-            your first booking
+            your first booking, up to ₦10,000
           </div>
         </div>
 
@@ -104,7 +104,8 @@ const SignupPromoModal: React.FC = () => {
             Sign up and save on your first ride
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-gray-600">
-            Create a free Muvment account and your first booking is 10% off.
+            Create a free Muvment account and your first booking is 10% off,
+            capped at ₦10,000. It applies automatically at checkout.
           </p>
 
           <Link
