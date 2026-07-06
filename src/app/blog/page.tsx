@@ -32,7 +32,9 @@ export async function generateMetadata({
   return generatePageMetadata({
     title,
     description,
-    url: `/blog${params.category ? `?category=${params.category}` : ""}`,
+    url: `/blog${
+      params.category ? `?category=${encodeURIComponent(params.category)}` : ""
+    }`,
     keywords: [
       "Muvment blog",
       "Car rental tips Nigeria",

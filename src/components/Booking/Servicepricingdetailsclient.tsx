@@ -25,6 +25,7 @@ import TimeInput from "@/components/general/forms/TimeInput";
 import SelectInput from "@/components/general/forms/select";
 import { GoogleMapsLocationInput } from "@/components/general/forms/GoogleMapsLocationInput";
 import Cookies from "js-cookie";
+import WelcomeOfferNote from "@/components/general/WelcomeOfferNote";
 
 interface TripDetails {
   id: string;
@@ -506,6 +507,10 @@ const ServicePricingBookingPage: React.FC = () => {
 
       <div className="min-h-screen bg-white pb-28 lg:pb-0">
         <div className="h-[9vh]" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+          <WelcomeOfferNote />
+        </div>
 
         {/* Hero band: vehicle and its prices */}
         <div
