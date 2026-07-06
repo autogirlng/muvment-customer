@@ -44,11 +44,7 @@ export async function generateMetadata({ searchParams }: PageProps) {
   return generatePageMetadata({
     title,
     description,
-<<<<<<< Updated upstream
-    url: `/booking/search?city=${city}`,
-=======
     url: buildCitySearchHref(displayCity),
->>>>>>> Stashed changes
   });
 }
 
