@@ -9,6 +9,7 @@ import {
 } from "@/constants/vehicleSearchOrder";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import VehicleCard from "@/components/Booking/VehicleCard";
+import WelcomeOfferNote from "@/components/general/WelcomeOfferNote";
 import { VehicleSearchParams } from "@/types/vehicle";
 import { SimplifiedFilterBar } from "@/components/Booking/SimplifiedFilterBarProps ";
 import { HiViewList } from "react-icons/hi";
@@ -586,6 +587,7 @@ function ExploreVehiclesClientContent({
       <div className="min-h-screen">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="lg:h-[1rem]"></div>
+          <WelcomeOfferNote />
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 flex items-center gap-2">
