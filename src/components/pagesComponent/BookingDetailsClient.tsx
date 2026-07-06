@@ -478,7 +478,7 @@ const BookingDetailsClient = () => {
     <div class="line">Autogirl Limited (AG Muvment)</div>
     <div class="line">Email: <a href="mailto:info@muvment.ng">info@muvment.ng</a></div>
     <div class="line">Call or SMS: <a href="tel:+2348167474165">+234 816 747 4165</a></div>
-    <div class="line">Web: <a href="https://muvment.ng">muvment.ng</a></div>
+    <div class="line">Web: <a href="https://www.muvment.ng">muvment.ng</a></div>
     <div class="line">Terms you agreed to: <a href="${origin}/policy/terms-conditions">${origin}/policy/terms-conditions</a></div>
   </div>
 

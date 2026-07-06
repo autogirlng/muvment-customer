@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: PageProps) {
             return generatePageMetadata({
                 title: "Vehicle Not Found",
                 description: "The requested vehicle could not be found.",
-                url: `/Booking/details/${id}`,
+                url: `/booking/details/${id}`,
             });
         }
 
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: PageProps) {
                 vehicle.city,
                 "car rental Nigeria",
             ],
-            url: `/Booking/details/${id}`,
+            url: `/booking/details/${id}`,
             image: vehicle.photos?.[0]?.cloudinaryUrl || "/images/image1.png",
             type: "website",
         });
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: PageProps) {
         return generatePageMetadata({
             title: "Vehicle Reviews",
             description: "View past reviews about this rental vehicle.",
-            url: `/Booking/details/${id}/reviews`,
+            url: `/booking/details/${id}/reviews`,
         });
     }
 }

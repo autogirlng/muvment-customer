@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import ServicePricingDetailsClient from "@/components/Booking/Servicepricingdetailsclient";
 import { ServicePricingService } from "@/controllers/booking/Servicepricingservice ";
 import { generatePageMetadata } from "@/helpers/metadata";
@@ -69,7 +70,25 @@ export async function generateMetadata({ params }: PageProps) {
   }
 }
 
-export default function ServicePricingDetailsPage() {
+export default async function ServicePricingDetailsPage({ params }: PageProps) {
+  const { id } = await params;
+
+  let pricingData: Awaited<
+    ReturnType<typeof ServicePricingService.getServicePricingBySlug>
+  > | null = null;
+  let fetchFailed = false;
+  try {
+    pricingData = await ServicePricingService.getServicePricingBySlug(id);
+  } catch {
+    // Transient error (API unreachable): do not 404. Let the client render and
+    // handle its own retry so a genuine outage is not treated as not-found.
+    fetchFailed = true;
+  }
+
+  if (!fetchFailed && !pricingData) {
+    notFound();
+  }
+
   return (
     <Suspense fallback={null}>
       <ServicePricingDetailsClient />

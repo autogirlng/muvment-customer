@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import TrackBookingClient from "@/components/pagesComponent/TrackBookingClient";
+import Footer from "@/components/HomeComponent/Footer";
 import { generatePageMetadata } from "@/helpers/metadata";
 
 export const metadata = generatePageMetadata({
@@ -17,7 +18,7 @@ export const metadata = generatePageMetadata({
 
 export default function TrackBookingPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<Footer />}>
       <TrackBookingClient />
     </Suspense>
   );
