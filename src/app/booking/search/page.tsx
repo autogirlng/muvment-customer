@@ -44,11 +44,7 @@ export async function generateMetadata({ searchParams }: PageProps) {
   return generatePageMetadata({
     title,
     description,
-<<<<<<< HEAD
     url: buildCitySearchHref(displayCity),
-=======
-    url: `/booking/search?city=${encodeURIComponent(city)}`,
->>>>>>> origin/staging
   });
 }
 
