@@ -12,13 +12,64 @@ export interface Organization {
   name: string;
   rcNumber: string;
   industry: string;
+  registrationType?: string;
+  businessEmail?: string;
+  businessPhone?: string;
+  companySize?: string;
+  website?: string;
+  address?: string;
   createdAt?: string;
+}
+
+export interface OrganizationMember {
+  memberId: string;
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  role: "ORG_ADMIN" | "ORG_STAFF";
+  spendingLimit?: number | null;
+  amountSpent?: number | null;
+  isActive: boolean;
+  joinedAt?: string;
+}
+
+export interface OrganizationInvite {
+  inviteId: string;
+  email: string;
+  spendingLimit?: number | null;
+  invitedAt?: string;
 }
 
 export interface CreateOrganizationBody {
   name: string;
   rcNumber: string;
   industry: string;
+  registrationType?: string;
+  businessEmail?: string;
+  businessPhone?: string;
+  companySize?: string;
+  website?: string;
+  address?: string;
+}
+
+export interface OrganizationWalletInfo {
+  balance: number;
+  virtualAccountNumber?: string;
+  bankName?: string;
+  accountName?: string;
+}
+
+export interface WalletTransaction {
+  transactionId: string;
+  amount: number;
+  balanceBefore?: number;
+  balanceAfter?: number;
+  transactionType: "CREDIT" | "DEBIT";
+  reference?: string;
+  description?: string;
+  staffName?: string;
+  createdAt: string;
 }
 
 export interface ApiKey {

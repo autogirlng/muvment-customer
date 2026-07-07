@@ -14,6 +14,8 @@ import {
   FiMapPin,
   FiHeart,
   FiCreditCard,
+  FiDollarSign,
+  FiUsers,
   FiGift,
   FiBell,
   FiLink,
@@ -37,6 +39,8 @@ const NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: FiGrid, exact: true },
   { label: "My bookings", href: "/dashboard/my-booking", icon: FiCalendar },
   { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
+  { label: "Wallet", href: "/dashboard/business/wallet", icon: FiDollarSign },
+  { label: "Team", href: "/dashboard/business/team", icon: FiUsers },
   { label: "Favourites", href: "/dashboard/favourites", icon: FiHeart },
   { label: "Payment", href: "/dashboard/payment", icon: FiCreditCard },
   { label: "Refer a friend", href: "/dashboard/refer-a-friend", icon: FiGift },
@@ -48,6 +52,8 @@ const NAV: NavItem[] = [
 // Secondary destinations shown in the mobile "More" sheet.
 const MORE_ITEMS: NavItem[] = [
   { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
+  { label: "Wallet", href: "/dashboard/business/wallet", icon: FiDollarSign },
+  { label: "Team", href: "/dashboard/business/team", icon: FiUsers },
   { label: "Favourites", href: "/dashboard/favourites", icon: FiHeart },
   { label: "Refer a friend", href: "/dashboard/refer-a-friend", icon: FiGift },
   { label: "Integrations", href: "/dashboard/integrations", icon: FiLink },
@@ -60,6 +66,8 @@ const TITLES: Record<string, string> = {
   "/dashboard/booking": "Booking details",
   "/dashboard/favourites": "Favourites",
   "/dashboard/payment": "Payment",
+  "/dashboard/business/wallet": "Wallet",
+  "/dashboard/business/team": "Team",
   "/dashboard/refer-a-friend": "Refer a friend",
   "/dashboard/notification": "Notifications",
   "/dashboard/settings": "Settings",
@@ -163,6 +171,7 @@ const DashboardLayoutClient = ({
     "U";
   const moreActive = MORE_ITEMS.some((m) => pathActive(pathname, m.href));
   const canIntegrate = hasIntegrationAccess(user);
+  const isBusiness = user?.userType === "ORGANIZATION_ADMIN";
 
   const logoutNow = () => {
     logout();
@@ -179,7 +188,11 @@ const DashboardLayoutClient = ({
       </Link>
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {NAV.filter(
-          (item) => canIntegrate || item.href !== "/dashboard/integrations",
+          (item) =>
+            (canIntegrate || item.href !== "/dashboard/integrations") &&
+            (isBusiness || item.href !== "/dashboard/business/wallet") &&
+            (isBusiness || item.href !== "/dashboard/business/team") &&
+            (!isBusiness || item.href !== "/dashboard/refer-a-friend"),
         ).map((item) => {
           const active = pathActive(pathname, item.href, item.exact);
           const Icon = item.icon;
@@ -316,7 +329,11 @@ const DashboardLayoutClient = ({
             </div>
             <div className="divide-y divide-gray-50">
               {MORE_ITEMS.filter(
-                (m) => canIntegrate || m.href !== "/dashboard/integrations",
+                (m) =>
+                  (canIntegrate || m.href !== "/dashboard/integrations") &&
+                  (isBusiness || m.href !== "/dashboard/business/wallet") &&
+                  (isBusiness || m.href !== "/dashboard/business/team") &&
+                  (!isBusiness || m.href !== "/dashboard/refer-a-friend"),
               ).map((m) => {
                 const Icon = m.icon;
                 const active = pathActive(pathname, m.href);

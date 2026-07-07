@@ -8,7 +8,7 @@ export interface SignupRequest {
   email: string;
   password: string;
   phoneNumber: string;
-  userType: "CUSTOMER" | "HOST" | "DRIVER" | "ADMIN";
+  userType: "CUSTOMER" | "HOST" | "DRIVER" | "ADMIN" | "ORGANIZATION_ADMIN";
   referralCode?: string;
 }
 

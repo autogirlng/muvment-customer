@@ -87,10 +87,27 @@ export const INDUSTRIES = [
   "Other",
 ];
 
-export const CreateOrganizationPage = () => {
+export const CreateOrganizationPage = ({
+  redirectTo = "/dashboard/integrations",
+}: {
+  redirectTo?: string;
+} = {}) => {
   const router = useRouter();
+
+  const getStashedName = (): string => {
+    if (typeof window === "undefined") return "";
+    try {
+      const raw = localStorage.getItem("muvment_pending_org");
+      if (!raw) return "";
+      const parsed = JSON.parse(raw);
+      return typeof parsed?.name === "string" ? parsed.name : "";
+    } catch {
+      return "";
+    }
+  };
+
   const [form, setForm] = useState({
-    name: "",
+    name: getStashedName(),
     rcNumber: "",
     industry: "",
   });
@@ -114,8 +131,13 @@ export const CreateOrganizationPage = () => {
       setLoading(true);
       await createData("/api/v1/organizations", form);
       setSuccess(true);
+      try {
+        localStorage.removeItem("muvment_pending_org");
+      } catch {
+        // ignore
+      }
       setTimeout(() => {
-        router.push("/dashboard/integrations");
+        router.push(redirectTo);
       }, 2000);
     } catch (err: any) {
       setError(
