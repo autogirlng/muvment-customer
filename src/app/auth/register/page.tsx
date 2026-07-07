@@ -4,12 +4,30 @@ import { AuthService } from "@/controllers/auth/auth";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { toast } from "react-toastify";
 import CountryCodeSelect from "@/components/general/forms/countryCodeSelect";
 import { getCountryCallingCode } from "react-phone-number-input";
 import { validatePhoneNumber } from "@/utils/validationSchema";
 import { CountryCode } from "libphonenumber-js";
+import { useAuth } from "@/context/AuthContext";
+
+const MAX_NAME_LENGTH = 60;
+const MAX_COMPANY_LENGTH = 100;
+const MAX_PASSWORD_LENGTH = 64;
+const PENDING_ORG_KEY = "muvment_pending_org";
+
+// Normalise the entered phone into national digits, stripping a pasted country
+// code or a leading trunk zero so it is never double-prefixed on submit.
+const normalizePhoneDigits = (raw: string, callingCode: string): string => {
+  let digits = (raw || "").replace(/\D/g, "");
+  const cc = (callingCode || "").replace(/\D/g, "");
+  if (cc && digits.startsWith(cc) && digits.length > cc.length) {
+    digits = digits.slice(cc.length);
+  }
+  digits = digits.replace(/^0+/, "");
+  return digits;
+};
 
 interface SignupFormValues {
   firstName: string;
@@ -18,92 +36,90 @@ interface SignupFormValues {
   countryCode: string;
   phoneNumber: string;
   email: string;
-  password: string;
   referralCode: string;
-  passwordChecks: {
-    digit: boolean;
-    length: boolean;
-    lowercase_letters: boolean;
-    no_space: boolean;
-    special_character: boolean;
-    uppercase_letters: boolean;
-  };
+  companyName: string;
+  password: string;
 }
 
 
-const INITIAL_VALUES: SignupFormValues = {
+const makeInitialValues = (): SignupFormValues => ({
   firstName: "",
   lastName: "",
   country: "NG",
   countryCode: "+234",
   phoneNumber: "",
   email: "",
-  password: "",
   referralCode: "",
-  passwordChecks: {
-    digit: false,
-    length: false,
-    lowercase_letters: false,
-    no_space: false,
-    special_character: false,
-    uppercase_letters: false,
-  },
-};
+  companyName: "",
+  password: "",
+});
 
 function SignupContent() {
-  const [formValues, setFormValues] =
-    useState<SignupFormValues>(INITIAL_VALUES);
+  const [formValues, setFormValues] = useState<SignupFormValues>(() =>
+    makeInitialValues(),
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
+  const [accountType, setAccountType] = useState<"individual" | "business">(
+    "individual",
+  );
   const searchParams = useSearchParams();
-  const ReferalCode = searchParams.get("code");
-  const route = useRouter();
-  const validatePassword = (password: string) => {
-    return {
-      digit: /\d/.test(password),
-      length: password.length >= 8,
-      lowercase_letters: /[a-z]/.test(password),
-      no_space: !/\s/.test(password),
-      special_character: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
-      uppercase_letters: /[A-Z]/.test(password),
-    };
-  };
-
+  const ReferalCode = searchParams.get("code") || "";
   const router = useRouter();
-  INITIAL_VALUES.referralCode = ReferalCode as string;
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Keep an already-signed-in user off the signup form.
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.replace("/dashboard");
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   const handleChange = (name: string, value: string) => {
-    if (name === "password") {
-      const checks = validatePassword(value);
-      setFormValues({ ...formValues, password: value, passwordChecks: checks });
-    } else {
-      setFormValues({ ...formValues, [name]: value });
+    if (name === "accountType") {
+      // handled by setAccountType; kept for safety
+      return;
     }
+    setFormValues((prev) => ({ ...prev, [name]: value }));
+    // Clear this field's error as soon as the user starts correcting it, so it
+    // does not stay red until the next submit.
+    setErrors((prev) => (prev[name] ? { ...prev, [name]: "" } : prev));
   };
 
   const handleBlur = (name: string) => {
-    setTouched({ ...touched, [name]: true });
+    setTouched((prev) => ({ ...prev, [name]: true }));
   };
 
   const getPhoneError = (number: string, country: string, code: string) =>
     number.trim() &&
-    !validatePhoneNumber(`${code}${number}`, country as CountryCode)
+    !validatePhoneNumber(
+      `${code}${normalizePhoneDigits(number, code)}`,
+      country as CountryCode,
+    )
       ? "Please enter a valid phone number"
       : "";
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formValues.firstName.trim())
+    if (!formValues.firstName.trim()) {
       newErrors.firstName = "First name is required";
-    if (!formValues.lastName.trim())
+    } else if (formValues.firstName.trim().length > MAX_NAME_LENGTH) {
+      newErrors.firstName = "First name is too long";
+    }
+
+    if (!formValues.lastName.trim()) {
       newErrors.lastName = "Last name is required";
-    if (!formValues.email.trim()) {
+    } else if (formValues.lastName.trim().length > MAX_NAME_LENGTH) {
+      newErrors.lastName = "Last name is too long";
+    }
+
+    const email = formValues.email.trim();
+    if (!email) {
       newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValues.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = "Please enter a valid email";
     }
 
@@ -111,34 +127,46 @@ function SignupContent() {
       newErrors.phoneNumber = "Phone number is required";
     } else if (
       !validatePhoneNumber(
-        `${formValues.countryCode}${formValues.phoneNumber}`,
+        `${formValues.countryCode}${normalizePhoneDigits(
+          formValues.phoneNumber,
+          formValues.countryCode,
+        )}`,
         formValues.country as CountryCode,
       )
     ) {
       newErrors.phoneNumber = "Please enter a valid phone number";
     }
 
-    if (!formValues.password) newErrors.password = "Password is required";
-
-    const checks = formValues.passwordChecks;
-    if (
-      !checks.digit ||
-      !checks.length ||
-      !checks.lowercase_letters ||
-      !checks.no_space ||
-      !checks.special_character ||
-      !checks.uppercase_letters
-    ) {
-      newErrors.password = "Password does not meet all requirements";
+    if (!formValues.password) {
+      newErrors.password = "Password is required";
+    } else if (formValues.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    } else if (formValues.password.length > MAX_PASSWORD_LENGTH) {
+      newErrors.password = `Password must be at most ${MAX_PASSWORD_LENGTH} characters`;
     }
 
-    // Store field-level errors so inputs can display them
+    if (accountType === "business") {
+      if (!formValues.companyName.trim()) {
+        newErrors.companyName = "Company name is required";
+      } else if (formValues.companyName.trim().length > MAX_COMPANY_LENGTH) {
+        newErrors.companyName = "Company name is too long";
+      }
+    }
+
+    setTouched((prev) => ({
+      ...prev,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phoneNumber: true,
+      password: true,
+      ...(accountType === "business" ? { companyName: true } : {}),
+    }));
+
     setErrors(newErrors);
 
-    // If there are errors, show a combined toast message (string) instead of passing an object
     if (Object.keys(newErrors).length > 0) {
-      const message = Object.values(newErrors).join(". ");
-      toast.error(message);
+      toast.error("Please fix the highlighted fields and try again.");
     }
 
     return Object.keys(newErrors).length === 0;
@@ -146,71 +174,103 @@ function SignupContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSuccessMessage("");
 
     if (!validateForm()) return;
 
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      toast.error("You appear to be offline. Check your connection and retry.");
+      return;
+    }
+
     setIsLoading(true);
-    formValues.referralCode = ReferalCode as string;
+
+    const isBusiness = accountType === "business";
+    const chosenUserType: "CUSTOMER" | "ORGANIZATION_ADMIN" = isBusiness
+      ? "ORGANIZATION_ADMIN"
+      : "CUSTOMER";
+
+    const email = formValues.email.trim().toLowerCase();
+    const nationalPhone = normalizePhoneDigits(
+      formValues.phoneNumber,
+      formValues.countryCode,
+    );
+
     try {
-      const signupData = formValues.referralCode
-        ? {
-            firstName: formValues.firstName,
-            lastName: formValues.lastName,
-            email: formValues.email,
-            password: formValues.password,
-            phoneNumber: `${formValues.countryCode}${formValues.phoneNumber}`,
-            userType: "CUSTOMER" as const,
-            referralCode: formValues.referralCode || undefined,
-          }
-        : {
-            firstName: formValues.firstName,
-            lastName: formValues.lastName,
-            email: formValues.email,
-            password: formValues.password,
-            phoneNumber: `${formValues.countryCode}${formValues.phoneNumber}`,
-            userType: "CUSTOMER" as const,
-          };
+      const signupData = {
+        firstName: formValues.firstName.trim(),
+        lastName: formValues.lastName.trim(),
+        email,
+        password: formValues.password,
+        phoneNumber: `${formValues.countryCode}${nationalPhone}`,
+        userType: chosenUserType,
+        ...(ReferalCode ? { referralCode: ReferalCode } : {}),
+      };
 
       const response = await AuthService.signup(signupData);
       const dupMessage =
-        response.message || (response.data as any)?.message || "";
-      const errorCode = (response.data as any)?.errorCode || "";
+        response?.message || (response?.data as any)?.message || "";
+      const errorCode = (response?.data as any)?.errorCode || "";
       const isDuplicate =
-        /already|in use|duplicate/i.test(dupMessage) ||
+        /already|in use|duplicate|exists/i.test(dupMessage) ||
         errorCode === "DUPLICATE_KEY";
-      if (response.error || isDuplicate) {
+
+      if (response?.error || isDuplicate) {
         const isPhoneDup = /phone/i.test(dupMessage);
         const isEmailDup = /email/i.test(dupMessage);
         if (isPhoneDup) {
           const phoneMsg =
-            dupMessage || "This phone number is already in use by another account.";
+            "This phone number is already in use by another account.";
           toast.error(phoneMsg);
           setErrors((prev) => ({ ...prev, phoneNumber: phoneMsg }));
-        } else if (isEmailDup || (isDuplicate && !isPhoneDup)) {
+        } else if (isEmailDup) {
+          const emailMsg = "This email is already registered.";
+          toast.error(`${emailMsg} Try signing in instead.`);
+          setErrors((prev) => ({ ...prev, email: emailMsg }));
+        } else if (isDuplicate) {
           toast.error(
-            "This email is already registered. Try signing in instead."
+            "An account with these details already exists. Try signing in instead.",
           );
-          setErrors((prev) => ({
-            ...prev,
-            email: "This email is already registered.",
-          }));
         } else {
-          toast.error(response.message || "Signup failed. Please try again.");
+          toast.error(
+            response?.message || "Signup failed. Please try again.",
+          );
+        }
+        return;
+      }
+
+      // Success: only now record the pending company name, keyed to the email
+      // so it cannot bleed into another account on a shared browser.
+      if (isBusiness) {
+        try {
+          localStorage.setItem(
+            PENDING_ORG_KEY,
+            JSON.stringify({ email, name: formValues.companyName.trim() }),
+          );
+        } catch {
+          // non-blocking: setup still works without a pre-filled name
         }
       } else {
-        toast.success(response.data.message || "Account created successfully!");
-        setFormValues(INITIAL_VALUES);
-        setTouched({});
-        route.push(
-          `/auth/account-verification?email=${encodeURIComponent(
-            formValues.email
-          )}`
-        );
+        try {
+          localStorage.removeItem(PENDING_ORG_KEY);
+        } catch {
+          // ignore
+        }
       }
+
+      toast.success(
+        (response?.data as any)?.message || "Account created successfully!",
+      );
+      setFormValues(makeInitialValues());
+      setTouched({});
+      setAccountType("individual");
+      router.push(
+        `/auth/account-verification?email=${encodeURIComponent(email)}`,
+      );
     } catch (error: any) {
       console.error("Signup error:", error);
-      toast.error(error.message);
+      toast.error(
+        error?.message || "Something went wrong. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -296,12 +356,6 @@ function SignupContent() {
               </p>
             </div>
 
-            {successMessage && (
-              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800 text-sm">{successMessage}</p>
-              </div>
-            )}
-
             {errors.submit && (
               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-800 text-sm">{errors.submit}</p>
@@ -309,6 +363,93 @@ function SignupContent() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <span
+                  id="account-type-label"
+                  className="block text-sm font-medium text-gray-900 mb-2"
+                >
+                  I am signing up as
+                </span>
+                <div
+                  role="radiogroup"
+                  aria-labelledby="account-type-label"
+                  className="grid grid-cols-2 gap-2 p-1 rounded-lg bg-gray-100"
+                >
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={accountType === "individual"}
+                    onClick={() => {
+                      setAccountType("individual");
+                      setFormValues((prev) => ({ ...prev, companyName: "" }));
+                      setErrors((prev) => ({ ...prev, companyName: "" }));
+                    }}
+                    className={`py-2.5 rounded-md text-sm font-medium transition-colors ${
+                      accountType === "individual"
+                        ? "bg-white text-[#0673FF] shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    An individual
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={accountType === "business"}
+                    onClick={() => setAccountType("business")}
+                    className={`py-2.5 rounded-md text-sm font-medium transition-colors ${
+                      accountType === "business"
+                        ? "bg-white text-[#0673FF] shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    A business
+                  </button>
+                </div>
+                {accountType === "business" && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    Create a company account to book trips for your staff and
+                    manage them in one place. You will set up your company after
+                    verifying your email.
+                  </p>
+                )}
+              </div>
+
+              {accountType === "business" && (
+                <div>
+                  <label
+                    htmlFor="companyName"
+                    className="block text-sm font-medium text-gray-900 mb-2"
+                  >
+                    Company name
+                  </label>
+                  <input
+                    id="companyName"
+                    name="companyName"
+                    autoComplete="organization"
+                    autoFocus
+                    maxLength={MAX_COMPANY_LENGTH}
+                    type="text"
+                    value={formValues.companyName}
+                    onChange={(e) =>
+                      handleChange("companyName", e.target.value)
+                    }
+                    onBlur={() => handleBlur("companyName")}
+                    placeholder="Enter your company name"
+                    className={`w-full px-4 py-3 rounded-lg border ${
+                      touched.companyName && errors.companyName
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    } focus:outline-none focus:ring-2 focus:ring-[#0673FF]`}
+                  />
+                  {touched.companyName && errors.companyName && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.companyName}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex justify-between gap-4">
                 <div className="flex-1">
                   <label htmlFor="firstName" className="block text-sm font-medium text-gray-900 mb-2">
@@ -318,6 +459,7 @@ function SignupContent() {
                     id="firstName"
                     name="firstName"
                     autoComplete="given-name"
+                    maxLength={MAX_NAME_LENGTH}
                     type="text"
                     value={formValues.firstName}
                     onChange={(e) => handleChange("firstName", e.target.value)}
@@ -344,6 +486,7 @@ function SignupContent() {
                     id="lastName"
                     name="lastName"
                     autoComplete="family-name"
+                    maxLength={MAX_NAME_LENGTH}
                     type="text"
                     value={formValues.lastName}
                     onChange={(e) => handleChange("lastName", e.target.value)}
@@ -471,6 +614,7 @@ function SignupContent() {
                     id="password"
                     name="password"
                     autoComplete="new-password"
+                    maxLength={MAX_PASSWORD_LENGTH}
                     type={showPassword ? "text" : "password"}
                     value={formValues.password}
                     onChange={(e) => handleChange("password", e.target.value)}
@@ -529,47 +673,9 @@ function SignupContent() {
                   <p className="text-red-500 text-sm mt-1">{errors.password}</p>
                 )}
 
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  {Object.entries({
-                    length: "At least 8 characters",
-                    uppercase_letters: "Uppercase letter",
-                    lowercase_letters: "Lowercase letter",
-                    digit: "Number",
-                    special_character: "Special character",
-                    no_space: "No spaces",
-                  }).map(([key, label]) => (
-                    <div key={key} className="flex items-center gap-2">
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          formValues.passwordChecks[
-                            key as keyof typeof formValues.passwordChecks
-                          ]
-                            ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        {formValues.passwordChecks[
-                          key as keyof typeof formValues.passwordChecks
-                        ] && (
-                          <svg
-                            className="w-3 h-3 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="text-xs text-gray-600">{label}</span>
-                    </div>
-                  ))}
-                </div>
+                <p className="mt-1.5 text-xs text-gray-500">
+                  Use at least 8 characters.
+                </p>
               </div>
 
               {ReferalCode && (
@@ -580,8 +686,7 @@ function SignupContent() {
                   <input
                     name="referralCode"
                     type="text"
-                    value={formValues.referralCode}
-                    // onChange={(e) => handleChange("referralCode", e.target.value)}
+                    value={ReferalCode}
                     placeholder="Enter referral code (optional)"
                     readOnly
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0673FF]"
@@ -599,6 +704,26 @@ function SignupContent() {
                 </Link>
               </p>
 
+              <div>
+                <p className="text-sm text-gray-600">
+                  By signing up you agree to Muvment&apos;s{" "}
+                  <Link
+                    href="/policy/privacy-policy"
+                    className="text-[#0673FF] hover:underline font-medium"
+                  >
+                    Privacy Policy
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/policy/terms-conditions"
+                    className="text-[#0673FF] hover:underline font-medium"
+                  >
+                    Terms of Service
+                  </Link>
+                  .
+                </p>
+              </div>
+
               {/* Change button type to "submit" */}
               <Button
                 type="submit"
@@ -612,23 +737,6 @@ function SignupContent() {
                 {isLoading ? "Signing Up..." : "Sign Up"}
               </Button>
             </form>
-
-            <p className="text-sm text-gray-600 mt-8">
-              By signing up you agree to Muvment's{" "}
-              <Link
-                href="/policy/privacy-policy"
-                className="text-black hover:underline font-medium"
-              >
-                Privacy Policy
-              </Link>{" "}
-              and{" "}
-              <Link
-                href="/policy/terms-conditions"
-                className="text-black hover:underline font-medium"
-              >
-                Terms of Service
-              </Link>
-            </p>
           </div>
         </div>
       </div>

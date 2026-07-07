@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { BookingService } from "@/controllers/booking/bookingService";
 import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
 import DashboardFirstBookingOffer from "./DashboardFirstBookingOffer";
+import BusinessOnboardingGuide from "./BusinessOnboardingGuide";
 import {
   customerBookingStatus,
   customerTripStatus,
@@ -112,6 +113,7 @@ export default function Dashboard(): React.ReactElement {
   const [tripInfo, setTripInfo] = useState<any | null>(null);
   const [tripLoading, setTripLoading] = useState(true);
   const [statsLoaded, setStatsLoaded] = useState(false);
+  const [showTripPrompt, setShowTripPrompt] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -202,10 +204,19 @@ export default function Dashboard(): React.ReactElement {
         )}
       </div>
 
+      {/* Business onboarding steps: only renders for a business account */}
+      <BusinessOnboardingGuide
+        bookingsCount={statsLoaded ? stats.bookings : null}
+        onBook={openBook}
+        onStatus={(s) => setShowTripPrompt(!s.isBusiness || s.complete)}
+      />
+
       {/* First-booking offer: shows until the user has made a booking */}
-      {statsLoaded && stats.bookings === 0 && (
-        <DashboardFirstBookingOffer onBook={openBook} />
-      )}
+      {statsLoaded &&
+        stats.bookings === 0 &&
+        user?.userType !== "ORGANIZATION_ADMIN" && (
+          <DashboardFirstBookingOffer onBook={openBook} />
+        )}
 
       {/* Highlight trip / book prompt */}
       {tripLoading ? (
@@ -285,7 +296,7 @@ export default function Dashboard(): React.ReactElement {
             </div>
           </div>
         </div>
-      ) : (
+      ) : showTripPrompt ? (
         <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-6 text-center">
           <p className="text-gray-900 font-semibold">No trips yet</p>
           <p className="text-sm text-gray-500 mt-1">
@@ -299,7 +310,7 @@ export default function Dashboard(): React.ReactElement {
             Book a vehicle <FiArrowRight className="w-4 h-4" />
           </button>
         </div>
-      )}
+      ) : null}
 
       {/* Compact stats strip */}
       <div className="grid grid-cols-3 divide-x divide-gray-100 bg-white rounded-2xl border border-gray-200 shadow-sm">
