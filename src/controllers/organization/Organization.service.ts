@@ -8,6 +8,8 @@ import {
   OrganizationInvite,
   OrganizationWalletInfo,
   WalletTransaction,
+  OrganizationBooking,
+  Paginated,
 } from "@/types/Organization.type";
 import {
   createData,
@@ -59,6 +61,12 @@ export class OrganizationService {
           companySize: o?.companySize ?? "",
           website: o?.website ?? "",
           address: o?.address ?? "",
+          // The caller's own membership on this organization.
+          myRole: o?.myRole ?? null,
+          mySpendingLimit:
+            o?.mySpendingLimit == null ? null : Number(o.mySpendingLimit),
+          myAmountSpent:
+            o?.myAmountSpent == null ? 0 : Number(o.myAmountSpent),
         }));
       }
       return [];
@@ -224,7 +232,7 @@ export class OrganizationService {
     organizationId: string,
     page = 0,
     size = 20,
-  ): Promise<WalletTransaction[]> {
+  ): Promise<Paginated<WalletTransaction>> {
     try {
       const rawData = await getSingleData(
         `${this.ORGANIZATIONS}/${organizationId}/transactions`,
@@ -233,13 +241,65 @@ export class OrganizationService {
       const data = { ...rawData };
       if (data?.data && Array.isArray(data.data)) {
         const body = data.data[0]?.data;
-        const content = body?.content;
-        return Array.isArray(content) ? content : [];
+        return {
+          content: Array.isArray(body?.content) ? body.content : [],
+          currentPage: Number(body?.currentPage ?? page),
+          totalPages: Number(body?.totalPages ?? 0),
+          totalItems: Number(body?.totalItems ?? 0),
+        };
       }
-      return [];
+      return { content: [], currentPage: 0, totalPages: 0, totalItems: 0 };
     } catch (error) {
       console.error("Error fetching wallet transactions:", error);
-      return [];
+      return { content: [], currentPage: 0, totalPages: 0, totalItems: 0 };
+    }
+  }
+
+  /**
+   * Admins get every booking made on the organization; staff get only their own.
+   * The backend decides, based on the caller's membership role.
+   */
+  static async getOrganizationBookings(
+    organizationId: string,
+    page = 0,
+    size = 10,
+  ): Promise<Paginated<OrganizationBooking>> {
+    try {
+      const rawData = await getSingleData(
+        `${this.ORGANIZATIONS}/${organizationId}/bookings`,
+        { page, size },
+      );
+      const data = { ...rawData };
+      if (data?.data && Array.isArray(data.data)) {
+        const body = data.data[0]?.data;
+        return {
+          content: Array.isArray(body?.content) ? body.content : [],
+          currentPage: Number(body?.currentPage ?? page),
+          totalPages: Number(body?.totalPages ?? 0),
+          totalItems: Number(body?.totalItems ?? 0),
+        };
+      }
+      return { content: [], currentPage: 0, totalPages: 0, totalItems: 0 };
+    } catch (error) {
+      console.error("Error fetching organization bookings:", error);
+      return { content: [], currentPage: 0, totalPages: 0, totalItems: 0 };
+    }
+  }
+
+  static async changeMemberRole(
+    orgId: string,
+    userId: string,
+    newRole: "ORG_ADMIN" | "ORG_STAFF",
+  ): Promise<{ error: boolean; message?: string }> {
+    try {
+      const res: any = await patchWithoutParams(
+        `${this.ORGANIZATIONS}/${orgId}/members/${userId}/role`,
+        { newRole },
+      );
+      if (res?.error) return { error: true, message: res?.message };
+      return { error: false };
+    } catch (err: any) {
+      return { error: true, message: err?.message || "Failed to change role" };
     }
   }
 

@@ -4,11 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiCopy, FiCheck, FiRefreshCw, FiArrowUpRight, FiArrowDownLeft } from "react-icons/fi";
 import { useAuth } from "@/context/AuthContext";
+import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 import { OrganizationService } from "@/controllers/organization/Organization.service";
 import {
   OrganizationWalletInfo,
   WalletTransaction,
 } from "@/types/Organization.type";
+
+const PAGE_SIZE = 20;
 
 const naira = (value?: number) =>
   `₦${Number(value ?? 0).toLocaleString("en-NG", {
@@ -32,32 +35,52 @@ const formatDate = (iso: string) => {
 
 export default function BusinessWalletPage() {
   const { user, isLoading } = useAuth();
+  const corp = useCorporateMembership();
   const router = useRouter();
 
   const [orgId, setOrgId] = useState<string | null>(null);
   const [noOrg, setNoOrg] = useState(false);
   const [wallet, setWallet] = useState<OrganizationWalletInfo | null>(null);
   const [txns, setTxns] = useState<WalletTransaction[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async (id: string) => {
     const [info, list] = await Promise.all([
       OrganizationService.getWalletInfo(id),
-      OrganizationService.getWalletTransactions(id, 0, 20),
+      OrganizationService.getWalletTransactions(id, 0, PAGE_SIZE),
     ]);
     setWallet(info);
-    setTxns(list);
+    setTxns(list.content);
+    setPage(list.currentPage);
+    setTotalPages(list.totalPages);
   }, []);
 
+  const loadMore = async () => {
+    if (!orgId || loadingMore) return;
+    setLoadingMore(true);
+    const next = await OrganizationService.getWalletTransactions(
+      orgId,
+      page + 1,
+      PAGE_SIZE,
+    );
+    setTxns((prev) => [...prev, ...next.content]);
+    setPage(next.currentPage);
+    setTotalPages(next.totalPages);
+    setLoadingMore(false);
+  };
+
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || corp.loading) return;
     if (!user) {
       router.replace("/auth/login");
       return;
     }
-    if (user.userType !== "ORGANIZATION_ADMIN") {
+    if (!corp.loading && !corp.isOwnerLike) {
       router.replace("/dashboard");
       return;
     }
@@ -79,7 +102,18 @@ export default function BusinessWalletPage() {
     return () => {
       active = false;
     };
-  }, [isLoading, user, router, load]);
+  }, [isLoading, corp.loading, corp.isOwnerLike, user, router, load]);
+
+  // A bank transfer lands via a Paystack webhook, so the balance changes without
+  // any action here. Poll quietly while the page is open and the tab is visible.
+  useEffect(() => {
+    if (!orgId) return;
+    const id = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      load(orgId);
+    }, 20000);
+    return () => clearInterval(id);
+  }, [orgId, load]);
 
   const handleRefresh = async () => {
     if (!orgId) return;
@@ -264,6 +298,18 @@ export default function BusinessWalletPage() {
               );
             })}
           </ul>
+        )}
+
+        {page + 1 < totalPages && (
+          <div className="border-t border-gray-100 p-4 text-center">
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            >
+              {loadingMore ? "Loading..." : "Load more"}
+            </button>
+          </div>
         )}
       </div>
     </div>

@@ -461,6 +461,11 @@ const BookingHistoryPage = () => {
                           >
                             {s.label}
                           </span>
+                          {row.paymentMethod === "CORPORATE_WALLET" && (
+                            <span className="inline-flex rounded-full bg-[#EAF2FF] px-2 py-0.5 text-xs font-semibold text-[#0673FF]">
+                              Company
+                            </span>
+                          )}
                           <span className="text-xs text-gray-500">
                             {row.segmentCount > 1
                               ? `${formatDate(row.firstStart)} - ${formatDate(row.lastStart)}`

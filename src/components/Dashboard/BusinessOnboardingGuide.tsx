@@ -2,13 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import { OrganizationService } from "@/controllers/organization/Organization.service";
+import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 import { OrganizationWalletInfo } from "@/types/Organization.type";
 
 type Props = {
-  // Number of bookings for the account, or null while still loading.
-  bookingsCount: number | null;
   // Opens the book-a-vehicle popup (stage 3).
   onBook?: () => void;
   // Reports whether this is a business account and whether all steps are done.
@@ -32,17 +30,18 @@ const CheckIcon = () => (
 );
 
 export default function BusinessOnboardingGuide({
-  bookingsCount,
   onBook,
   onStatus,
 }: Props) {
-  const { user } = useAuth();
   const router = useRouter();
-  const isBusiness = user?.userType === "ORGANIZATION_ADMIN";
+  const corp = useCorporateMembership();
+  const isBusiness = corp.isOwnerLike;
 
   const [loading, setLoading] = useState(true);
   const [hasOrg, setHasOrg] = useState(false);
   const [wallet, setWallet] = useState<OrganizationWalletInfo | null>(null);
+  // Bookings made on the organization, not the person's private bookings.
+  const [orgBookings, setOrgBookings] = useState<number | null>(null);
 
   const onStatusRef = useRef(onStatus);
   onStatusRef.current = onStatus;
@@ -52,26 +51,32 @@ export default function BusinessOnboardingGuide({
       setLoading(false);
       return;
     }
+    if (corp.loading) return;
     let active = true;
     (async () => {
-      const orgs = await OrganizationService.getMyOrganizations();
-      if (!active) return;
-      const org = Array.isArray(orgs) && orgs.length > 0 ? orgs[0] : null;
+      const org = corp.org;
       setHasOrg(!!org);
       if (org?.id) {
-        const info = await OrganizationService.getWalletInfo(org.id);
+        const [info, booked] = await Promise.all([
+          OrganizationService.getWalletInfo(org.id),
+          OrganizationService.getOrganizationBookings(org.id, 0, 1),
+        ]);
         if (!active) return;
         setWallet(info);
+        setOrgBookings(booked.totalItems);
+      } else {
+        setOrgBookings(0);
       }
       setLoading(false);
     })();
     return () => {
       active = false;
     };
-  }, [isBusiness]);
+  }, [isBusiness, corp.loading, corp.org?.id]);
 
   const walletFunded = !!wallet && Number(wallet.balance) > 0;
-  const hasBooking = (bookingsCount ?? 0) > 0;
+  // A private card booking must not tick the corporate step.
+  const hasBooking = (orgBookings ?? 0) > 0;
   const allDone = hasOrg && walletFunded && hasBooking;
 
   // Let the dashboard know whether this is a business account and whether the
@@ -84,7 +89,7 @@ export default function BusinessOnboardingGuide({
 
   // Wait for org, wallet, and the booking count so the steps render in their
   // final state at once instead of ticking in one by one as each call resolves.
-  const dataReady = !loading && bookingsCount !== null;
+  const dataReady = !loading && orgBookings !== null;
 
   if (dataReady && allDone) return null;
 
@@ -167,7 +172,7 @@ export default function BusinessOnboardingGuide({
   return (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-100 p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-gray-900">
               Finish setting up your business
@@ -176,7 +181,7 @@ export default function BusinessOnboardingGuide({
               A few steps to start booking trips for your team.
             </p>
           </div>
-          <span className="shrink-0 rounded-full bg-[#EAF2FF] px-3 py-1 text-xs font-medium text-[#0673FF]">
+          <span className="w-fit shrink-0 rounded-full bg-[#EAF2FF] px-3 py-1 text-xs font-medium text-[#0673FF]">
             {completedCount} of 3 done
           </span>
         </div>
@@ -197,32 +202,34 @@ export default function BusinessOnboardingGuide({
               {step.done ? <CheckIcon /> : index + 1}
             </div>
 
-            <div className="min-w-0 flex-1">
-              <p
-                className={`text-sm font-medium ${
-                  step.locked ? "text-gray-400" : "text-gray-900"
-                }`}
-              >
-                {step.title}
-              </p>
-              <p
-                className={`mt-0.5 text-sm ${
-                  step.locked ? "text-gray-300" : "text-gray-500"
-                }`}
-              >
-                {step.body}
-              </p>
-            </div>
+            <div className="min-w-0 flex-1 sm:flex sm:items-start sm:justify-between sm:gap-4">
+              <div className="min-w-0">
+                <p
+                  className={`text-sm font-medium ${
+                    step.locked ? "text-gray-400" : "text-gray-900"
+                  }`}
+                >
+                  {step.title}
+                </p>
+                <p
+                  className={`mt-0.5 text-sm ${
+                    step.locked ? "text-gray-300" : "text-gray-500"
+                  }`}
+                >
+                  {step.body}
+                </p>
+              </div>
 
-            {step.action && (
-              <button
-                type="button"
-                onClick={step.action.onClick}
-                className="shrink-0 rounded-lg bg-[#0673FF] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0560d6]"
-              >
-                {step.action.label}
-              </button>
-            )}
+              {step.action && (
+                <button
+                  type="button"
+                  onClick={step.action.onClick}
+                  className="mt-3 w-full shrink-0 rounded-lg bg-[#0673FF] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0560d6] sm:mt-0 sm:w-auto"
+                >
+                  {step.action.label}
+                </button>
+              )}
+            </div>
           </li>
         ))}
       </ol>

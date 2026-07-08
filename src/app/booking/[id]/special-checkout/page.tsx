@@ -3,6 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { OrganizationService } from "@/controllers/organization/Organization.service";
+import { useCorporateMembership } from "@/hooks/useCorporateMembership";
+import {
+  computeAllowance,
+  spendableAmount,
+  type Allowance,
+} from "@/utils/corporateAllowance";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
@@ -87,6 +94,8 @@ const ServicePricingCheckoutPage = () => {
   const router = useRouter();
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
+  const corpMembership = useCorporateMembership();
+  const corpLoading = corpMembership.loading;
 
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
     fullName: "",
@@ -116,6 +125,18 @@ const ServicePricingCheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [paymentGateway, setPaymentGateway] =
     useState<PaymentGateway>("PAYSTACK");
+  // Corporate wallet payment (business accounts only)
+  const [corpOrg, setCorpOrg] = useState<{ id: string; name: string } | null>(
+    null,
+  );
+  const [corpBalance, setCorpBalance] = useState<number | null>(null);
+  const [corpAllowance, setCorpAllowance] = useState<Allowance | null>(null);
+  const [payWithCorporate, setPayWithCorporate] = useState(false);
+  // Which payment method the already-created booking was made with, so switching
+  // methods never reuses a booking created for the other one.
+  const [existingBookingMethod, setExistingBookingMethod] = useState<
+    string | null
+  >(null);
   const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
   const [generatedBookingId, setGeneratedBookingId] = useState<string | null>(
     null,
@@ -154,6 +175,30 @@ const ServicePricingCheckoutPage = () => {
     phone.startsWith("+") ? phone : `${countryCode}${phone}`;
 
   // ─── Effects ─────────────────────────────────────────────────────────────
+  // Any organization member can pay from the company wallet. Only an ORG_ADMIN can
+  // read the balance (the API restricts it), so staff see their remaining monthly
+  // allowance instead. Membership role is authoritative: an invited user who
+  // already had an account keeps userType CUSTOMER.
+  useEffect(() => {
+    if (!isAuthenticated || corpLoading || !corpMembership.isMember) return;
+    const org = corpMembership.org;
+    if (!org?.id) return;
+
+    setCorpOrg({ id: org.id, name: org.name });
+    setCorpAllowance(computeAllowance(org.mySpendingLimit, org.myAmountSpent));
+
+    if (!corpMembership.isAdmin) return;
+    let active = true;
+    (async () => {
+      const info = await OrganizationService.getWalletInfo(org.id);
+      if (!active) return;
+      if (info) setCorpBalance(Number(info.balance ?? 0));
+    })();
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, corpLoading, corpMembership.isMember, corpMembership.isAdmin, corpMembership.org?.id]);
+
   useEffect(() => {
     if (isAuthenticated && user) {
       const userFullName = `${user.firstName || ""} ${
@@ -458,7 +503,8 @@ const ServicePricingCheckoutPage = () => {
       purposeOfRide: "N/A",
       extraDetails: extraDetails || "N/A",
       channel: "WEBSITE",
-      paymentMethod: "ONLINE",
+      paymentMethod: payWithCorporate ? "CORPORATE_WALLET" : "ONLINE",
+      ...(payWithCorporate && corpOrg ? { organizationId: corpOrg.id } : {}),
     };
 
     const bookingResponse =
@@ -484,12 +530,14 @@ const ServicePricingCheckoutPage = () => {
 
     try {
       let bookingId: string;
+      const method = payWithCorporate ? "CORPORATE_WALLET" : "ONLINE";
 
-      if (existingBookingId) {
+      if (existingBookingId && existingBookingMethod === method) {
         bookingId = existingBookingId;
       } else {
         bookingId = await createNewBooking();
         setExistingBookingId(bookingId);
+        setExistingBookingMethod(method);
       }
 
       if (!isAuthenticated) {
@@ -500,7 +548,9 @@ const ServicePricingCheckoutPage = () => {
         );
       }
 
-      if (personalInfo.rideFor === "others") {
+      if (payWithCorporate || personalInfo.rideFor === "others") {
+        // A corporate-wallet booking is already paid: the backend debits the
+        // wallet when the booking is created, so there is no gateway step.
         sessionStorage.removeItem("servicePricingTrips");
         sessionStorage.removeItem("servicePricingEstimate");
         sessionStorage.removeItem("servicePricingId");
@@ -651,7 +701,85 @@ const ServicePricingCheckoutPage = () => {
       <h3 className="text-sm font-semibold text-gray-900 mb-3">
         Payment method
       </h3>
-      <div className="space-y-2.5 mb-4">
+
+      {corpOrg && (
+        <div className="space-y-2.5 mb-4">
+          <div
+            onClick={() => setPayWithCorporate(true)}
+            className={cn(
+              "flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all",
+              payWithCorporate
+                ? "border-[#0673FF] bg-[#0673FF]/5"
+                : "border-gray-200 bg-white hover:border-[#cfe0fb]",
+            )}
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {corpOrg.name} wallet
+              </p>
+              <p className="text-xs text-gray-500">
+                {corpBalance !== null
+                  ? `Balance ${formatCurrency(corpBalance)}`
+                  : corpAllowance?.hasLimit
+                    ? `${formatCurrency(corpAllowance.remaining ?? 0)} left this month`
+                    : "Paid from your company wallet"}
+              </p>
+            </div>
+            {payWithCorporate ? (
+              <FiCheckCircle className="text-[#0673FF] min-w-[22px]" size={22} />
+            ) : (
+              <FiCircle className="text-gray-300 min-w-[22px]" size={22} />
+            )}
+          </div>
+
+          <div
+            onClick={() => setPayWithCorporate(false)}
+            className={cn(
+              "flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all",
+              !payWithCorporate
+                ? "border-[#0673FF] bg-[#0673FF]/5"
+                : "border-gray-200 bg-white hover:border-[#cfe0fb]",
+            )}
+          >
+            <p className="text-sm font-medium text-gray-900">
+              Pay with card or transfer
+            </p>
+            {!payWithCorporate ? (
+              <FiCheckCircle className="text-[#0673FF] min-w-[22px]" size={22} />
+            ) : (
+              <FiCircle className="text-gray-300 min-w-[22px]" size={22} />
+            )}
+          </div>
+        </div>
+      )}
+
+      {(() => {
+        if (!corpOrg || !payWithCorporate) return null;
+        const total = Number(priceEstimate?.totalPrice || 0);
+        const spendable = spendableAmount(
+          corpAllowance?.remaining ?? null,
+          corpBalance,
+        );
+        if (spendable === null || total <= 0 || spendable >= total) return null;
+
+        // Say which limit is short, so the fix is obvious.
+        const limitedByAllowance =
+          corpAllowance?.hasLimit &&
+          (corpBalance === null ||
+            (corpAllowance.remaining ?? 0) <= corpBalance);
+
+        return (
+          <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-700">
+            {limitedByAllowance
+              ? `This booking is more than the ${formatCurrency(
+                  corpAllowance?.remaining ?? 0,
+                )} left in your monthly allowance. Ask your administrator to raise it, or pay with card or transfer.`
+              : "This booking is more than your company wallet balance. Fund the wallet, or pay with card or transfer."}
+          </p>
+        );
+      })()}
+
+      <div className={cn("space-y-2.5 mb-4", payWithCorporate && "hidden")}>
         {(["PAYSTACK", "MONNIFY"] as PaymentGateway[]).map((gw) => (
           <div
             key={gw}

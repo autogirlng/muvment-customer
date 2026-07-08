@@ -385,6 +385,43 @@ const BookingSuccessContent = () => {
     !!bookingDetails.recipient &&
     bookingDetails.booker?.fullName !== bookingDetails.recipient?.fullName;
 
+  // A guest is not on Muvment and gets no automatic notification, so the booker
+  // sends the trip details and a public tracking link themselves.
+  const firstSegment = bookingDetails.segments?.[0];
+  const trackingLink =
+    typeof window !== "undefined" && firstSegment?.segmentId
+      ? `${window.location.origin}/track-booking/${bookingDetails.bookingId}/trip/${firstSegment.segmentId}`
+      : "";
+
+  const guestMessage = (() => {
+    const name = bookingDetails.recipient?.fullName?.split(" ")[0] || "Hi";
+    const when = firstSegment?.startDateTime
+      ? format(new Date(firstSegment.startDateTime), "EEE d MMM, h:mm a")
+      : "";
+    const lines = [
+      `${name}, a Muvment trip has been booked for you.`,
+      when ? `When: ${when}` : "",
+      firstSegment?.pickupLocation ? `Pickup: ${firstSegment.pickupLocation}` : "",
+      bookingDetails.invoiceNumber ? `Booking ref: ${bookingDetails.invoiceNumber}` : "",
+      trackingLink ? `Track the trip: ${trackingLink}` : "",
+    ];
+    return lines.filter(Boolean).join("\n");
+  })();
+
+  const guestPhoneDigits = (bookingDetails.recipient?.phoneNumber || "").replace(
+    /\D/g,
+    "",
+  );
+
+  const copyGuestMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(guestMessage);
+      toast.success("Trip details copied. Paste them to your guest.");
+    } catch {
+      toast.error("Could not copy. Select the text and copy it manually.");
+    }
+  };
+
   const isPending = bookingDetails.bookingStatus === "PENDING_PAYMENT";
   const total = bookingDetails.totalPrice || 0;
   const statusLabel = (bookingDetails.bookingStatus || "").replace(/_/g, " ");
@@ -517,6 +554,68 @@ const BookingSuccessContent = () => {
               </p>
             </div>
           </div>
+
+          {isBookingForOthers && !isPending && (
+            <div className="mt-5 rounded-2xl border border-[#cfe0fb] bg-[#EAF2FF] p-4 sm:p-5">
+              <p className="text-sm font-semibold text-gray-900">
+                Let {bookingDetails.recipient?.fullName || "your guest"} know
+              </p>
+              <p className="mt-0.5 text-sm text-gray-600">
+                They do not need a Muvment account. Send them the trip details and
+                this link to follow the ride.
+              </p>
+
+              {trackingLink && (
+                <div className="mt-3 flex items-center gap-2 rounded-xl border border-[#cfe0fb] bg-white px-3 py-2">
+                  <p className="min-w-0 flex-1 truncate text-xs text-gray-600">
+                    {trackingLink}
+                  </p>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(trackingLink);
+                        toast.success("Tracking link copied.");
+                      } catch {
+                        toast.error("Could not copy the link.");
+                      }
+                    }}
+                    className="shrink-0 text-xs font-semibold text-[#0673FF] hover:underline"
+                  >
+                    Copy link
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {guestPhoneDigits && (
+                  <a
+                    href={`https://wa.me/${guestPhoneDigits}?text=${encodeURIComponent(guestMessage)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg bg-[#0673FF] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[#0560d6]"
+                  >
+                    Send on WhatsApp
+                  </a>
+                )}
+                {bookingDetails.recipient?.email && (
+                  <a
+                    href={`mailto:${bookingDetails.recipient.email}?subject=${encodeURIComponent(
+                      "Your Muvment trip details",
+                    )}&body=${encodeURIComponent(guestMessage)}`}
+                    className="rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Email details
+                  </a>
+                )}
+                <button
+                  onClick={copyGuestMessage}
+                  className="rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Copy details
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700">

@@ -67,6 +67,8 @@ function SignupContent() {
   );
   const searchParams = useSearchParams();
   const ReferalCode = searchParams.get("code") || "";
+  // A staff member arriving from a corporate invite email.
+  const inviteToken = searchParams.get("inviteToken") || "";
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
@@ -185,9 +187,14 @@ function SignupContent() {
     setIsLoading(true);
 
     const isBusiness = accountType === "business";
-    const chosenUserType: "CUSTOMER" | "ORGANIZATION_ADMIN" = isBusiness
-      ? "ORGANIZATION_ADMIN"
-      : "CUSTOMER";
+    const chosenUserType:
+      | "CUSTOMER"
+      | "ORGANIZATION_ADMIN"
+      | "ORGANIZATION_MEMBER" = inviteToken
+      ? "ORGANIZATION_MEMBER"
+      : isBusiness
+        ? "ORGANIZATION_ADMIN"
+        : "CUSTOMER";
 
     const email = formValues.email.trim().toLowerCase();
     const nationalPhone = normalizePhoneDigits(
@@ -204,6 +211,7 @@ function SignupContent() {
         phoneNumber: `${formValues.countryCode}${nationalPhone}`,
         userType: chosenUserType,
         ...(ReferalCode ? { referralCode: ReferalCode } : {}),
+        ...(inviteToken ? { inviteToken } : {}),
       };
 
       const response = await AuthService.signup(signupData);
@@ -217,7 +225,18 @@ function SignupContent() {
       if (response?.error || isDuplicate) {
         const isPhoneDup = /phone/i.test(dupMessage);
         const isEmailDup = /email/i.test(dupMessage);
-        if (isPhoneDup) {
+        const isInviteIssue = /invit/i.test(dupMessage);
+        if (isInviteIssue) {
+          // e.g. the signup email does not match the invited email, or the token
+          // is expired or already used. Say exactly that.
+          toast.error(dupMessage);
+          if (/does not match/i.test(dupMessage)) {
+            setErrors((prev) => ({
+              ...prev,
+              email: "Use the email address your invitation was sent to.",
+            }));
+          }
+        } else if (isPhoneDup) {
           const phoneMsg =
             "This phone number is already in use by another account.";
           toast.error(phoneMsg);
@@ -363,7 +382,18 @@ function SignupContent() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
+              {inviteToken && (
+                <div className="rounded-lg bg-[#EAF2FF] px-4 py-3">
+                  <p className="text-sm font-medium text-[#0673FF]">
+                    You have been invited to join a company
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-600">
+                    Sign up with the email address the invitation was sent to.
+                  </p>
+                </div>
+              )}
+
+              <div className={inviteToken ? "hidden" : undefined}>
                 <span
                   id="account-type-label"
                   className="block text-sm font-medium text-gray-900 mb-2"

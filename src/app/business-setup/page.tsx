@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MdArrowBack, MdCheckCircle } from "react-icons/md";
 import { useAuth } from "@/context/AuthContext";
 import { OrganizationService } from "@/controllers/organization/Organization.service";
+import { clearCorporateMembershipCache } from "@/hooks/useCorporateMembership";
 import { INDUSTRIES } from "@/components/settingsComponent/CreateOrganization";
 import { createData } from "@/controllers/connnector/app.callers";
 
@@ -61,6 +62,41 @@ export default function BusinessSetupPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
+
+  // 66 industries is far too many for a native select, so this is a searchable
+  // dropdown with a contained, scrollable list.
+  const [industryOpen, setIndustryOpen] = useState(false);
+  const [industryQuery, setIndustryQuery] = useState("");
+  const industryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!industryOpen) return;
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      if (
+        industryRef.current &&
+        !industryRef.current.contains(e.target as Node)
+      ) {
+        setIndustryOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIndustryOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [industryOpen]);
+
+  const filteredIndustries = useMemo(() => {
+    const q = industryQuery.trim().toLowerCase();
+    if (!q) return INDUSTRIES;
+    return INDUSTRIES.filter((i) => i.toLowerCase().includes(q));
+  }, [industryQuery]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -163,6 +199,9 @@ export default function BusinessSetupPage() {
       } catch {
         // ignore
       }
+      // The membership cache predates this organization; drop it so the dashboard
+      // guide and nav see it immediately.
+      clearCorporateMembershipCache();
       setSuccess(true);
       setTimeout(() => router.push("/dashboard"), 1600);
     } catch (err: any) {
@@ -278,18 +317,79 @@ export default function BusinessSetupPage() {
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <Label>Industry</Label>
-                <select
-                  value={form.industry}
-                  onChange={(e) => set("industry", e.target.value)}
-                  className={`${inputClass("industry")} bg-white`}
-                >
-                  <option value="">Select industry</option>
-                  {INDUSTRIES.map((ind) => (
-                    <option key={ind} value={ind}>
-                      {ind}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative" ref={industryRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIndustryOpen((o) => !o);
+                      setIndustryQuery("");
+                    }}
+                    aria-haspopup="listbox"
+                    aria-expanded={industryOpen}
+                    className={`${inputClass("industry")} flex items-center justify-between bg-white text-left`}
+                  >
+                    <span
+                      className={`truncate ${form.industry ? "text-gray-900" : "text-gray-400"}`}
+                    >
+                      {form.industry || "Select industry"}
+                    </span>
+                    <svg
+                      className={`ml-2 h-4 w-4 shrink-0 text-gray-400 transition-transform ${industryOpen ? "rotate-180" : ""}`}
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+
+                  {industryOpen && (
+                    <div className="absolute left-0 right-0 z-30 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                      <div className="border-b border-gray-100 p-2">
+                        <input
+                          autoFocus
+                          type="text"
+                          value={industryQuery}
+                          onChange={(e) => setIndustryQuery(e.target.value)}
+                          placeholder="Search industry"
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0673FF]"
+                        />
+                      </div>
+                      <ul role="listbox" className="max-h-56 overflow-y-auto py-1">
+                        {filteredIndustries.length === 0 ? (
+                          <li className="px-3 py-3 text-sm text-gray-400">
+                            No industry matches that search.
+                          </li>
+                        ) : (
+                          filteredIndustries.map((ind) => (
+                            <li key={ind}>
+                              <button
+                                type="button"
+                                role="option"
+                                aria-selected={form.industry === ind}
+                                onClick={() => {
+                                  set("industry", ind);
+                                  setIndustryOpen(false);
+                                }}
+                                className={`block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
+                                  form.industry === ind
+                                    ? "bg-[#EAF2FF] font-medium text-[#0673FF]"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                {ind}
+                              </button>
+                            </li>
+                          ))
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
                 {errors.industry && (
                   <p className="mt-1 text-sm text-red-500">{errors.industry}</p>
                 )}
