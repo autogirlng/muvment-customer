@@ -262,12 +262,17 @@ export class BookingService {
   }
 
   static async createSpecialBooking(bookingData: any) {
-    // console.log("Creating booking with data:", bookingData);
     try {
-      const response = await createData(
+      const response: any = await createData(
         this.BASE_URL_SPECIAL_BOOKING,
         bookingData,
       );
+      // createData does not throw on a handled error; it returns { error, message }.
+      // Surface that message (e.g. insufficient corporate balance or spending limit)
+      // instead of a generic failure.
+      if (response?.error) {
+        throw new Error(response.message || "Failed to create booking");
+      }
       if (!response || !response.data)
         throw new Error("Failed to create booking");
 

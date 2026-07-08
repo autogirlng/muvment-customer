@@ -19,6 +19,9 @@ export interface Organization {
   website?: string;
   address?: string;
   createdAt?: string;
+  myRole?: "ORG_ADMIN" | "ORG_STAFF" | null;
+  mySpendingLimit?: number | null;
+  myAmountSpent?: number | null;
 }
 
 export interface OrganizationMember {
@@ -97,4 +100,30 @@ export interface OrganizationKYC extends BaseResponse {
     organizationSize?: "string";
     servicesRendered?: "string";
   };
+}
+
+export interface Paginated<T> {
+  content: T[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+}
+
+export interface OrganizationBooking {
+  bookingId: string;
+  invoiceNumber?: string;
+  status?: string;
+  totalPrice?: number | string | null;
+  bookedAt?: string;
+  guestFullName?: string;
+  recipientFullName?: string;
+  /** Jackson serializes isBookingForOthers as bookingForOthers. */
+  isBookingForOthers?: boolean;
+  bookingForOthers?: boolean;
+  user?: {
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  } | null;
 }

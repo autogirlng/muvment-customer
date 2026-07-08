@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { hasIntegrationAccess } from "@/utils/access";
+import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 import { BookingSearchModalForm } from "@/components/HomeComponent/BookingInterface";
 import ScreenLoader from "@/components/utils/ScreenLoader";
 import {
@@ -16,6 +17,7 @@ import {
   FiCreditCard,
   FiDollarSign,
   FiUsers,
+  FiFileText,
   FiGift,
   FiBell,
   FiLink,
@@ -40,6 +42,7 @@ const NAV: NavItem[] = [
   { label: "My bookings", href: "/dashboard/my-booking", icon: FiCalendar },
   { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
   { label: "Wallet", href: "/dashboard/business/wallet", icon: FiDollarSign },
+  { label: "Company bookings", href: "/dashboard/business/bookings", icon: FiFileText },
   { label: "Team", href: "/dashboard/business/team", icon: FiUsers },
   { label: "Favourites", href: "/dashboard/favourites", icon: FiHeart },
   { label: "Payment", href: "/dashboard/payment", icon: FiCreditCard },
@@ -53,6 +56,7 @@ const NAV: NavItem[] = [
 const MORE_ITEMS: NavItem[] = [
   { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
   { label: "Wallet", href: "/dashboard/business/wallet", icon: FiDollarSign },
+  { label: "Company bookings", href: "/dashboard/business/bookings", icon: FiFileText },
   { label: "Team", href: "/dashboard/business/team", icon: FiUsers },
   { label: "Favourites", href: "/dashboard/favourites", icon: FiHeart },
   { label: "Refer a friend", href: "/dashboard/refer-a-friend", icon: FiGift },
@@ -67,6 +71,7 @@ const TITLES: Record<string, string> = {
   "/dashboard/favourites": "Favourites",
   "/dashboard/payment": "Payment",
   "/dashboard/business/wallet": "Wallet",
+  "/dashboard/business/bookings": "Company bookings",
   "/dashboard/business/team": "Team",
   "/dashboard/refer-a-friend": "Refer a friend",
   "/dashboard/notification": "Notifications",
@@ -155,6 +160,12 @@ const DashboardLayoutClient = ({
     }
   }, [isAuthenticated, isLoading, accessToken, user, router, logout]);
 
+  // Must run before the early returns below: hooks cannot be called conditionally.
+  // Membership role is authoritative (userType is stale for invited users who already
+  // had an account). isOwnerLike keeps Wallet and Team visible to a business owner who
+  // has not created the organization yet.
+  const corp = useCorporateMembership();
+
   if (isLoading) {
     return <ScreenLoader />;
   }
@@ -171,7 +182,9 @@ const DashboardLayoutClient = ({
     "U";
   const moreActive = MORE_ITEMS.some((m) => pathActive(pathname, m.href));
   const canIntegrate = hasIntegrationAccess(user);
-  const isBusiness = user?.userType === "ORGANIZATION_ADMIN";
+  const isBusiness = corp.isOwnerLike;
+  // Staff are part of a company too: keep the corporate view free of referrals.
+  const isBusinessUser = isBusiness || corp.isMember;
 
   const logoutNow = () => {
     logout();
@@ -191,8 +204,9 @@ const DashboardLayoutClient = ({
           (item) =>
             (canIntegrate || item.href !== "/dashboard/integrations") &&
             (isBusiness || item.href !== "/dashboard/business/wallet") &&
+            (isBusinessUser || item.href !== "/dashboard/business/bookings") &&
             (isBusiness || item.href !== "/dashboard/business/team") &&
-            (!isBusiness || item.href !== "/dashboard/refer-a-friend"),
+            (!isBusinessUser || item.href !== "/dashboard/refer-a-friend"),
         ).map((item) => {
           const active = pathActive(pathname, item.href, item.exact);
           const Icon = item.icon;
@@ -332,8 +346,9 @@ const DashboardLayoutClient = ({
                 (m) =>
                   (canIntegrate || m.href !== "/dashboard/integrations") &&
                   (isBusiness || m.href !== "/dashboard/business/wallet") &&
+                  (isBusinessUser || m.href !== "/dashboard/business/bookings") &&
                   (isBusiness || m.href !== "/dashboard/business/team") &&
-                  (!isBusiness || m.href !== "/dashboard/refer-a-friend"),
+                  (!isBusinessUser || m.href !== "/dashboard/refer-a-friend"),
               ).map((m) => {
                 const Icon = m.icon;
                 const active = pathActive(pathname, m.href);

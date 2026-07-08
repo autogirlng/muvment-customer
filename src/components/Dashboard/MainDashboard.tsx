@@ -8,6 +8,8 @@ import { BookingService } from "@/controllers/booking/bookingService";
 import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
 import DashboardFirstBookingOffer from "./DashboardFirstBookingOffer";
 import BusinessOnboardingGuide from "./BusinessOnboardingGuide";
+import StaffCompanyCard from "./StaffCompanyCard";
+import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 import {
   customerBookingStatus,
   customerTripStatus,
@@ -100,6 +102,7 @@ const TRIP_LABEL: Record<Trip["kind"], string> = {
 export default function Dashboard(): React.ReactElement {
   const router = useRouter();
   const { user } = useAuth();
+  const corp = useCorporateMembership();
   const [stats, setStats] = useState<{
     bookings: number;
     trips: number;
@@ -204,9 +207,11 @@ export default function Dashboard(): React.ReactElement {
         )}
       </div>
 
+      {/* Company allowance: only renders for corporate staff */}
+      <StaffCompanyCard />
+
       {/* Business onboarding steps: only renders for a business account */}
       <BusinessOnboardingGuide
-        bookingsCount={statsLoaded ? stats.bookings : null}
         onBook={openBook}
         onStatus={(s) => setShowTripPrompt(!s.isBusiness || s.complete)}
       />
@@ -214,7 +219,7 @@ export default function Dashboard(): React.ReactElement {
       {/* First-booking offer: shows until the user has made a booking */}
       {statsLoaded &&
         stats.bookings === 0 &&
-        user?.userType !== "ORGANIZATION_ADMIN" && (
+        !corp.isMember && (
           <DashboardFirstBookingOffer onBook={openBook} />
         )}
 

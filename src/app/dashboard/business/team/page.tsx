@@ -12,16 +12,21 @@ import {
   FiEdit2,
   FiMail,
   FiRefreshCw,
+  FiShield,
+  FiUser,
 } from "react-icons/fi";
 import { useAuth } from "@/context/AuthContext";
+import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 import { OrganizationService } from "@/controllers/organization/Organization.service";
 import {
   OrganizationMember,
   OrganizationInvite,
 } from "@/types/Organization.type";
-
-const naira = (value?: number | null) =>
-  `₦${Number(value ?? 0).toLocaleString("en-NG", { maximumFractionDigits: 0 })}`;
+import {
+  computeAllowance,
+  naira,
+  LIMIT_RESET_NOTE,
+} from "@/utils/corporateAllowance";
 
 const formatDate = (iso?: string) => {
   if (!iso) return "-";
@@ -48,6 +53,7 @@ type StatusFilter = "all" | "active" | "suspended";
 
 export default function BusinessTeamPage() {
   const { user, isLoading } = useAuth();
+  const corp = useCorporateMembership();
   const router = useRouter();
 
   const [orgId, setOrgId] = useState<string | null>(null);
@@ -108,12 +114,12 @@ export default function BusinessTeamPage() {
   }, []);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || corp.loading) return;
     if (!user) {
       router.replace("/auth/login");
       return;
     }
-    if (user.userType !== "ORGANIZATION_ADMIN") {
+    if (!corp.loading && !corp.isOwnerLike) {
       router.replace("/dashboard");
       return;
     }
@@ -135,7 +141,7 @@ export default function BusinessTeamPage() {
     return () => {
       active = false;
     };
-  }, [isLoading, user, router, load]);
+  }, [isLoading, corp.loading, corp.isOwnerLike, user, router, load]);
 
   const counts = useMemo(() => {
     let activeCount = 0;
@@ -236,6 +242,30 @@ export default function BusinessTeamPage() {
       toast.error("Could not remove the member.");
     }
     setBusyId(null);
+  };
+
+  const handleChangeRole = async (m: OrganizationMember) => {
+    if (!orgId || busyId) return;
+    const promote = m.role !== "ORG_ADMIN";
+    const message = promote
+      ? `Make ${m.email} an admin? They will be able to manage the team and the wallet, and their spending limit is removed.`
+      : `Make ${m.email} a staff member? They will lose access to the wallet and team management.`;
+    if (!window.confirm(message)) return;
+
+    setBusyId(m.userId);
+    const res = await OrganizationService.changeMemberRole(
+      orgId,
+      m.userId,
+      promote ? "ORG_ADMIN" : "ORG_STAFF",
+    );
+    setBusyId(null);
+    if (res.error) {
+      toast.error(res.message || "Could not change the role.");
+      return;
+    }
+    toast.success(promote ? "Member promoted to admin." : "Admin moved to staff.");
+    if (editingLimitId === m.userId) setEditingLimitId(null);
+    await load(orgId);
   };
 
   const startEditLimit = (m: OrganizationMember) => {
@@ -381,7 +411,7 @@ export default function BusinessTeamPage() {
                     <tr className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-400">
                       <th className="px-4 py-3 font-medium">Member</th>
                       <th className="px-4 py-3 font-medium">Role</th>
-                      <th className="px-4 py-3 font-medium">Limit</th>
+                      <th className="px-4 py-3 font-medium">Monthly limit</th>
                       <th className="px-4 py-3 font-medium">Spent</th>
                       <th className="px-4 py-3 font-medium">Remaining</th>
                       <th className="px-4 py-3 font-medium">Status</th>
@@ -392,12 +422,19 @@ export default function BusinessTeamPage() {
                   <tbody className="divide-y divide-gray-50">
                     {filteredMembers.map((m) => {
                       const isAdmin = m.role === "ORG_ADMIN";
-                      const isSelf = m.userId === user?.id;
+                      const myId =
+                        (user as any)?.id ?? (user as any)?.userId ?? null;
+                      const isSelf =
+                        (!!myId && m.userId === myId) ||
+                        (!!user?.email &&
+                          m.email?.toLowerCase() === user.email.toLowerCase());
                       const active = isActiveMember(m);
-                      const hasLimit = m.spendingLimit != null;
-                      const remaining = hasLimit
-                        ? Math.max(0, Number(m.spendingLimit) - Number(m.amountSpent ?? 0))
-                        : null;
+                      const allowance = computeAllowance(
+                        m.spendingLimit,
+                        m.amountSpent,
+                      );
+                      const hasLimit = allowance.hasLimit;
+                      const remaining = allowance.remaining;
                       const editing = editingLimitId === m.userId;
                       return (
                         <tr key={m.memberId} className="hover:bg-gray-50/50">
@@ -482,7 +519,15 @@ export default function BusinessTeamPage() {
                             {isAdmin || remaining == null ? (
                               <span className="text-gray-400">—</span>
                             ) : (
-                              naira(remaining)
+                              <span
+                                className={
+                                  allowance.exhausted
+                                    ? "font-medium text-red-500"
+                                    : ""
+                                }
+                              >
+                                {naira(remaining)}
+                              </span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -505,12 +550,31 @@ export default function BusinessTeamPage() {
                             {formatDate(m.joinedAt)}
                           </td>
                           <td className="px-4 py-3">
-                            {isAdmin || isSelf ? (
+                            {isSelf ? (
                               <div className="text-right text-xs text-gray-300">
                                 —
                               </div>
+                            ) : isAdmin ? (
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => handleChangeRole(m)}
+                                  disabled={busyId === m.userId}
+                                  title="Move to staff"
+                                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+                                >
+                                  <FiUser className="h-4 w-4" />
+                                </button>
+                              </div>
                             ) : (
                               <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => handleChangeRole(m)}
+                                  disabled={busyId === m.userId}
+                                  title="Make admin"
+                                  className="rounded-lg p-2 text-gray-500 hover:bg-[#EAF2FF] hover:text-[#0673FF] disabled:opacity-50"
+                                >
+                                  <FiShield className="h-4 w-4" />
+                                </button>
                                 <button
                                   onClick={() => startEditLimit(m)}
                                   disabled={busyId === m.userId}
@@ -550,6 +614,8 @@ export default function BusinessTeamPage() {
               </div>
             )}
           </div>
+
+          <p className="px-1 text-xs text-gray-400">{LIMIT_RESET_NOTE}</p>
         </>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -574,7 +640,7 @@ export default function BusinessTeamPage() {
                     </p>
                     <p className="text-xs text-gray-400">
                       {inv.spendingLimit != null
-                        ? `Limit ${naira(inv.spendingLimit)}`
+                        ? `Monthly limit ${naira(inv.spendingLimit)}`
                         : "No limit"}{" "}
                       · Invited {formatDate(inv.invitedAt)}
                     </p>
@@ -650,7 +716,7 @@ export default function BusinessTeamPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-800">
-                  Spending limit{" "}
+                  Monthly spending limit{" "}
                   <span className="font-normal text-gray-400">(optional)</span>
                 </label>
                 <input
@@ -662,8 +728,8 @@ export default function BusinessTeamPage() {
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0673FF]"
                 />
                 <p className="mt-1 text-xs text-gray-400">
-                  Cap how much this person can spend from the wallet. Leave blank
-                  for no limit.
+                  Cap how much this person can spend each month. Leave blank for no
+                  limit.
                 </p>
               </div>
               {inviteError && (

@@ -20,7 +20,7 @@ import { FaUser } from "react-icons/fa";
 import { FiBriefcase } from "react-icons/fi";
 import SupportTab from "@/components/Dashboard/SupportTab";
 import BusinessProfileTab from "@/components/settingsComponent/BusinessProfileTab";
-import { useAuth } from "@/context/AuthContext";
+import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 
 const BRAND = "#0673ff";
 
@@ -35,8 +35,8 @@ const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user } = useAuth();
-  const isBusiness = user?.userType === "ORGANIZATION_ADMIN";
+  const corp = useCorporateMembership();
+  const isBusiness = corp.isOwnerLike;
   const visibleTabs = TABS.filter(
     (t) => t.key !== "business" || isBusiness,
   );
