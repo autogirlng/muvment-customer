@@ -14,6 +14,7 @@ import {
   FiRefreshCw,
   FiShield,
   FiUser,
+  FiMoreVertical,
 } from "react-icons/fi";
 import { useAuth } from "@/context/AuthContext";
 import { useCorporateMembership } from "@/hooks/useCorporateMembership";
@@ -77,6 +78,7 @@ export default function BusinessTeamPage() {
   const [savingLimit, setSavingLimit] = useState(false);
 
   const [inviteBusyId, setInviteBusyId] = useState<string | null>(null);
+  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
   const handleCancelInvite = async (inv: OrganizationInvite) => {
     if (!orgId || inviteBusyId) return;
@@ -405,60 +407,43 @@ export default function BusinessTeamPage() {
                   : "No members match this filter."}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-400">
-                      <th className="px-4 py-3 font-medium">Member</th>
-                      <th className="px-4 py-3 font-medium">Role</th>
-                      <th className="px-4 py-3 font-medium">Monthly limit</th>
-                      <th className="px-4 py-3 font-medium">Spent</th>
-                      <th className="px-4 py-3 font-medium">Remaining</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Joined</th>
-                      <th className="px-4 py-3 text-right font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {filteredMembers.map((m) => {
-                      const isAdmin = m.role === "ORG_ADMIN";
-                      const myId =
-                        (user as any)?.id ?? (user as any)?.userId ?? null;
-                      const isSelf =
-                        (!!myId && m.userId === myId) ||
-                        (!!user?.email &&
-                          m.email?.toLowerCase() === user.email.toLowerCase());
-                      const active = isActiveMember(m);
-                      const allowance = computeAllowance(
-                        m.spendingLimit,
-                        m.amountSpent,
-                      );
-                      const hasLimit = allowance.hasLimit;
-                      const remaining = allowance.remaining;
-                      const editing = editingLimitId === m.userId;
-                      return (
-                        <tr key={m.memberId} className="hover:bg-gray-50/50">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF2FF] text-sm font-semibold text-[#0673FF]">
-                                {(m.firstName?.[0] || m.email[0] || "?").toUpperCase()}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate font-medium text-gray-900">
-                                  {displayName(m)}
-                                  {isSelf && (
-                                    <span className="ml-1 text-xs text-gray-400">
-                                      (you)
-                                    </span>
-                                  )}
-                                </p>
-                                <p className="truncate text-xs text-gray-400">
-                                  {m.email}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
+              <ul className="divide-y divide-gray-100">
+                {filteredMembers.map((m) => {
+                  const isAdmin = m.role === "ORG_ADMIN";
+                  const myId =
+                    (user as any)?.id ?? (user as any)?.userId ?? null;
+                  const isSelf =
+                    (!!myId && m.userId === myId) ||
+                    (!!user?.email &&
+                      m.email?.toLowerCase() === user.email.toLowerCase());
+                  const active = isActiveMember(m);
+                  const allowance = computeAllowance(
+                    m.spendingLimit,
+                    m.amountSpent,
+                  );
+                  const hasLimit = allowance.hasLimit;
+                  const remaining = allowance.remaining;
+                  const editing = editingLimitId === m.userId;
+                  const menuOpen = actionMenuId === m.userId;
+                  const busy = busyId === m.userId;
+
+                  return (
+                    <li key={m.memberId} className="p-4 sm:px-5">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EAF2FF] text-sm font-semibold text-[#0673FF]">
+                          {(m.firstName?.[0] || m.email[0] || "?").toUpperCase()}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <p className="truncate font-medium text-gray-900">
+                              {displayName(m)}
+                              {isSelf && (
+                                <span className="ml-1 text-xs text-gray-400">
+                                  (you)
+                                </span>
+                              )}
+                            </p>
                             <span
                               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                 isAdmin
@@ -468,69 +453,6 @@ export default function BusinessTeamPage() {
                             >
                               {isAdmin ? "Admin" : "Staff"}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-gray-700">
-                            {isAdmin ? (
-                              <span className="text-gray-400">—</span>
-                            ) : editing ? (
-                              <div className="flex items-center gap-1.5">
-                                <div className="relative">
-                                  <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-                                    ₦
-                                  </span>
-                                  <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    autoFocus
-                                    value={limitInput}
-                                    onChange={(e) => setLimitInput(e.target.value)}
-                                    placeholder="No limit"
-                                    className="w-28 rounded-lg border border-gray-300 py-1.5 pl-5 pr-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#0673FF]"
-                                  />
-                                </div>
-                                <button
-                                  onClick={() => saveLimit(m)}
-                                  disabled={savingLimit}
-                                  className="rounded-lg bg-[#0673FF] px-2 py-1.5 text-xs font-medium text-white hover:bg-[#0560d6] disabled:opacity-60"
-                                >
-                                  {savingLimit ? "…" : "Save"}
-                                </button>
-                                <button
-                                  onClick={() => setEditingLimitId(null)}
-                                  className="rounded-lg px-1.5 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : hasLimit ? (
-                              naira(m.spendingLimit)
-                            ) : (
-                              <span className="text-gray-400">No limit</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-gray-700">
-                            {isAdmin ? (
-                              <span className="text-gray-400">—</span>
-                            ) : (
-                              naira(m.amountSpent)
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-gray-700">
-                            {isAdmin || remaining == null ? (
-                              <span className="text-gray-400">—</span>
-                            ) : (
-                              <span
-                                className={
-                                  allowance.exhausted
-                                    ? "font-medium text-red-500"
-                                    : ""
-                                }
-                              >
-                                {naira(remaining)}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
                             <span
                               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
                                 active
@@ -545,73 +467,171 @@ export default function BusinessTeamPage() {
                               />
                               {active ? "Active" : "Suspended"}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-gray-500">
-                            {formatDate(m.joinedAt)}
-                          </td>
-                          <td className="px-4 py-3">
-                            {isSelf ? (
-                              <div className="text-right text-xs text-gray-300">
-                                —
+                          </div>
+
+                          <p className="mt-0.5 truncate text-xs text-gray-400">
+                            {m.email}
+                          </p>
+
+                          {!isAdmin && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              {hasLimit ? (
+                                <span>
+                                  {naira(m.amountSpent)} spent of{" "}
+                                  {naira(m.spendingLimit)} ·{" "}
+                                  <span
+                                    className={
+                                      allowance.exhausted
+                                        ? "font-medium text-red-500"
+                                        : ""
+                                    }
+                                  >
+                                    {naira(remaining)} left
+                                  </span>
+                                </span>
+                              ) : (
+                                <span>
+                                  {naira(m.amountSpent)} spent · No monthly limit
+                                </span>
+                              )}
+                              <span className="text-gray-300"> · </span>
+                              <span>Joined {formatDate(m.joinedAt)}</span>
+                            </div>
+                          )}
+
+                          {isAdmin && (
+                            <p className="mt-2 text-xs text-gray-400">
+                              Joined {formatDate(m.joinedAt)}
+                            </p>
+                          )}
+
+                          {editing && (
+                            <div className="mt-3 flex items-center gap-2">
+                              <div className="relative">
+                                <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                                  ₦
+                                </span>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  autoFocus
+                                  value={limitInput}
+                                  onChange={(e) => setLimitInput(e.target.value)}
+                                  placeholder="No limit"
+                                  className="w-32 rounded-lg border border-gray-300 py-2 pl-5 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0673FF]"
+                                />
                               </div>
-                            ) : isAdmin ? (
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  onClick={() => handleChangeRole(m)}
-                                  disabled={busyId === m.userId}
-                                  title="Move to staff"
-                                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
-                                >
-                                  <FiUser className="h-4 w-4" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  onClick={() => handleChangeRole(m)}
-                                  disabled={busyId === m.userId}
-                                  title="Make admin"
-                                  className="rounded-lg p-2 text-gray-500 hover:bg-[#EAF2FF] hover:text-[#0673FF] disabled:opacity-50"
-                                >
-                                  <FiShield className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => startEditLimit(m)}
-                                  disabled={busyId === m.userId}
-                                  title="Edit spending limit"
-                                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
-                                >
-                                  <FiEdit2 className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleSuspend(m)}
-                                  disabled={busyId === m.userId}
-                                  title={m.isActive ? "Suspend" : "Reactivate"}
-                                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
-                                >
-                                  {m.isActive ? (
-                                    <FiUserX className="h-4 w-4" />
+                              <button
+                                onClick={() => saveLimit(m)}
+                                disabled={savingLimit}
+                                className="rounded-lg bg-[#0673FF] px-3 py-2 text-sm font-medium text-white hover:bg-[#0560d6] disabled:opacity-60"
+                              >
+                                {savingLimit ? "Saving" : "Save"}
+                              </button>
+                              <button
+                                onClick={() => setEditingLimitId(null)}
+                                className="rounded-lg px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {!isSelf && !editing && (
+                          <div className="relative shrink-0">
+                            <button
+                              onClick={() =>
+                                setActionMenuId(menuOpen ? null : m.userId)
+                              }
+                              disabled={busy}
+                              aria-label="Member actions"
+                              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+                            >
+                              <FiMoreVertical className="h-5 w-5" />
+                            </button>
+
+                            {menuOpen && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-10"
+                                  onClick={() => setActionMenuId(null)}
+                                />
+                                <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                                  {isAdmin ? (
+                                    <button
+                                      onClick={() => {
+                                        setActionMenuId(null);
+                                        handleChangeRole(m);
+                                      }}
+                                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                                    >
+                                      <FiUser className="h-4 w-4 text-gray-400" />
+                                      Change to staff
+                                    </button>
                                   ) : (
-                                    <FiUserCheck className="h-4 w-4 text-green-600" />
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          setActionMenuId(null);
+                                          startEditLimit(m);
+                                        }}
+                                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                                      >
+                                        <FiEdit2 className="h-4 w-4 text-gray-400" />
+                                        Edit spending limit
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setActionMenuId(null);
+                                          handleChangeRole(m);
+                                        }}
+                                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                                      >
+                                        <FiShield className="h-4 w-4 text-gray-400" />
+                                        Make admin
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setActionMenuId(null);
+                                          handleSuspend(m);
+                                        }}
+                                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                                      >
+                                        {m.isActive ? (
+                                          <>
+                                            <FiUserX className="h-4 w-4 text-gray-400" />
+                                            Suspend
+                                          </>
+                                        ) : (
+                                          <>
+                                            <FiUserCheck className="h-4 w-4 text-green-600" />
+                                            Reactivate
+                                          </>
+                                        )}
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setActionMenuId(null);
+                                          handleRemove(m);
+                                        }}
+                                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-50"
+                                      >
+                                        <FiTrash2 className="h-4 w-4" />
+                                        Remove from team
+                                      </button>
+                                    </>
                                   )}
-                                </button>
-                                <button
-                                  onClick={() => handleRemove(m)}
-                                  disabled={busyId === m.userId}
-                                  title="Remove"
-                                  className="rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
-                                >
-                                  <FiTrash2 className="h-4 w-4" />
-                                </button>
-                              </div>
+                                </div>
+                              </>
                             )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
 
