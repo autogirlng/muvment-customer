@@ -22,6 +22,7 @@ export interface Organization {
   myRole?: "ORG_ADMIN" | "ORG_STAFF" | null;
   mySpendingLimit?: number | null;
   myAmountSpent?: number | null;
+  myApprovalThreshold?: number | null;
 }
 
 export interface OrganizationMember {
@@ -33,6 +34,7 @@ export interface OrganizationMember {
   role: "ORG_ADMIN" | "ORG_STAFF";
   spendingLimit?: number | null;
   amountSpent?: number | null;
+  approvalThreshold?: number | null;
   isActive: boolean;
   joinedAt?: string;
 }

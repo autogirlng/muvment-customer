@@ -173,16 +173,76 @@ export class OrganizationService {
     orgId: string,
     userId: string,
     spendingLimit: number | null,
+    approvalThreshold: number | null = null,
   ): Promise<boolean> {
     try {
       await patchWithoutParams(
         `${this.ORGANIZATIONS}/${orgId}/staff/${userId}/limit`,
-        { spendingLimit },
+        { spendingLimit, approvalThreshold },
       );
       return true;
     } catch (error) {
       console.error("Error updating limit:", error);
       return false;
+    }
+  }
+
+  static async getPendingApprovals(
+    orgId: string,
+    page = 0,
+    size = 10,
+  ): Promise<Paginated<OrganizationBooking>> {
+    try {
+      const rawData = await getSingleData(
+        `${this.ORGANIZATIONS}/${orgId}/bookings/pending-approval`,
+        { page, size },
+      );
+      const data = { ...rawData };
+      if (data?.data && Array.isArray(data.data)) {
+        const body = data.data[0]?.data;
+        return {
+          content: Array.isArray(body?.content) ? body.content : [],
+          currentPage: Number(body?.currentPage ?? page),
+          totalPages: Number(body?.totalPages ?? 0),
+          totalItems: Number(body?.totalItems ?? 0),
+        };
+      }
+      return { content: [], currentPage: 0, totalPages: 0, totalItems: 0 };
+    } catch (error) {
+      console.error("Error fetching pending approvals:", error);
+      return { content: [], currentPage: 0, totalPages: 0, totalItems: 0 };
+    }
+  }
+
+  static async approveBooking(
+    orgId: string,
+    bookingId: string,
+  ): Promise<{ error: boolean; message?: string }> {
+    try {
+      const res: any = await createData(
+        `${this.ORGANIZATIONS}/${orgId}/bookings/${bookingId}/approve`,
+        {},
+      );
+      if (res?.error) return { error: true, message: res?.message };
+      return { error: false };
+    } catch (err: any) {
+      return { error: true, message: err?.message || "Failed to approve booking" };
+    }
+  }
+
+  static async declineBooking(
+    orgId: string,
+    bookingId: string,
+  ): Promise<{ error: boolean; message?: string }> {
+    try {
+      const res: any = await createData(
+        `${this.ORGANIZATIONS}/${orgId}/bookings/${bookingId}/decline`,
+        {},
+      );
+      if (res?.error) return { error: true, message: res?.message };
+      return { error: false };
+    } catch (err: any) {
+      return { error: true, message: err?.message || "Failed to decline booking" };
     }
   }
 

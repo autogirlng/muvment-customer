@@ -15,9 +15,9 @@ import {
   FiMapPin,
   FiHeart,
   FiCreditCard,
-  FiDollarSign,
   FiUsers,
   FiFileText,
+  FiClock,
   FiGift,
   FiBell,
   FiLink,
@@ -41,8 +41,8 @@ const NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: FiGrid, exact: true },
   { label: "My bookings", href: "/dashboard/my-booking", icon: FiCalendar },
   { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
-  { label: "Wallet", href: "/dashboard/business/wallet", icon: FiDollarSign },
   { label: "Company bookings", href: "/dashboard/business/bookings", icon: FiFileText },
+  { label: "Approvals", href: "/dashboard/business/approvals", icon: FiClock },
   { label: "Team", href: "/dashboard/business/team", icon: FiUsers },
   { label: "Favourites", href: "/dashboard/favourites", icon: FiHeart },
   { label: "Payment", href: "/dashboard/payment", icon: FiCreditCard },
@@ -55,8 +55,8 @@ const NAV: NavItem[] = [
 // Secondary destinations shown in the mobile "More" sheet.
 const MORE_ITEMS: NavItem[] = [
   { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
-  { label: "Wallet", href: "/dashboard/business/wallet", icon: FiDollarSign },
   { label: "Company bookings", href: "/dashboard/business/bookings", icon: FiFileText },
+  { label: "Approvals", href: "/dashboard/business/approvals", icon: FiClock },
   { label: "Team", href: "/dashboard/business/team", icon: FiUsers },
   { label: "Favourites", href: "/dashboard/favourites", icon: FiHeart },
   { label: "Refer a friend", href: "/dashboard/refer-a-friend", icon: FiGift },
@@ -72,6 +72,7 @@ const TITLES: Record<string, string> = {
   "/dashboard/payment": "Payment",
   "/dashboard/business/wallet": "Wallet",
   "/dashboard/business/bookings": "Company bookings",
+  "/dashboard/business/approvals": "Approvals",
   "/dashboard/business/team": "Team",
   "/dashboard/refer-a-friend": "Refer a friend",
   "/dashboard/notification": "Notifications",
@@ -204,6 +205,7 @@ const DashboardLayoutClient = ({
           (item) =>
             (canIntegrate || item.href !== "/dashboard/integrations") &&
             (isBusiness || item.href !== "/dashboard/business/wallet") &&
+            (isBusiness || item.href !== "/dashboard/business/approvals") &&
             (isBusinessUser || item.href !== "/dashboard/business/bookings") &&
             (isBusiness || item.href !== "/dashboard/business/team") &&
             (!isBusinessUser || item.href !== "/dashboard/refer-a-friend"),
@@ -346,6 +348,7 @@ const DashboardLayoutClient = ({
                 (m) =>
                   (canIntegrate || m.href !== "/dashboard/integrations") &&
                   (isBusiness || m.href !== "/dashboard/business/wallet") &&
+                  (isBusiness || m.href !== "/dashboard/business/approvals") &&
                   (isBusinessUser || m.href !== "/dashboard/business/bookings") &&
                   (isBusiness || m.href !== "/dashboard/business/team") &&
                   (!isBusinessUser || m.href !== "/dashboard/refer-a-friend"),
