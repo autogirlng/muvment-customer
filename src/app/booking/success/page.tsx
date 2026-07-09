@@ -333,6 +333,8 @@ const BookingSuccessContent = () => {
     switch (status) {
       case "PENDING_PAYMENT":
         return "bg-yellow-100 text-yellow-800";
+      case "PENDING_APPROVAL":
+        return "bg-blue-100 text-blue-800";
       case "CONFIRMED":
         return "bg-green-100 text-green-800";
       case "CANCELLED":
@@ -423,6 +425,8 @@ const BookingSuccessContent = () => {
   };
 
   const isPending = bookingDetails.bookingStatus === "PENDING_PAYMENT";
+  const isAwaitingApproval =
+    bookingDetails.bookingStatus === "PENDING_APPROVAL";
   const total = bookingDetails.totalPrice || 0;
   const statusLabel = (bookingDetails.bookingStatus || "").replace(/_/g, " ");
 
@@ -545,17 +549,23 @@ const BookingSuccessContent = () => {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {isPending ? "Complete your payment" : "Booking confirmed"}
+                {isPending
+                  ? "Complete your payment"
+                  : isAwaitingApproval
+                    ? "Sent for approval"
+                    : "Booking confirmed"}
               </h1>
               <p className="mt-1 text-gray-600">
                 {isPending
                   ? "Your booking is reserved. Pay below to confirm it."
-                  : "Your booking is confirmed. The details are below."}
+                  : isAwaitingApproval
+                    ? "This booking needs an admin's approval before it is confirmed. Your company wallet will be charged once it is approved."
+                    : "Your booking is confirmed. The details are below."}
               </p>
             </div>
           </div>
 
-          {isBookingForOthers && !isPending && (
+          {isBookingForOthers && !isPending && !isAwaitingApproval && (
             <div className="mt-5 rounded-2xl border border-[#cfe0fb] bg-[#EAF2FF] p-4 sm:p-5">
               <p className="text-sm font-semibold text-gray-900">
                 Let {bookingDetails.recipient?.fullName || "your guest"} know

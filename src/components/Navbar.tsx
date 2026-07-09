@@ -128,8 +128,9 @@ export const Navbar = ({
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <button
-            onClick={() => router.push("/")}
+          <Link
+            href="/"
+            aria-label="Muvment home"
             className="flex items-center gap-2 flex-shrink-0"
           >
             <Image
@@ -140,7 +141,7 @@ export const Navbar = ({
               priority
               className="h-auto w-[150px] sm:w-[170px]"
             />
-          </button>
+          </Link>
 
           {/* Center search - on every page except the home hero (reveals on scroll) */}
           {showNavSearch && (
