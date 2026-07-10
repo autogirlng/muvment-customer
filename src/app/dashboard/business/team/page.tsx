@@ -63,6 +63,8 @@ export default function BusinessTeamPage() {
   const [invites, setInvites] = useState<OrganizationInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Admins can read the wallet balance; used to flag members whose limit outruns it.
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   const [tab, setTab] = useState<Tab>("members");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -145,6 +147,19 @@ export default function BusinessTeamPage() {
       active = false;
     };
   }, [isLoading, corp.loading, corp.isOwnerLike, user, router, load]);
+
+  // Pull the wallet balance so we can warn about limits that exceed it.
+  useEffect(() => {
+    if (!orgId) return;
+    let active = true;
+    (async () => {
+      const info = await OrganizationService.getWalletInfo(orgId);
+      if (active) setWalletBalance(info ? Number(info.balance ?? 0) : null);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [orgId]);
 
   const counts = useMemo(() => {
     let activeCount = 0;
@@ -515,6 +530,18 @@ export default function BusinessTeamPage() {
                               <span>Joined {formatDate(m.joinedAt)}</span>
                             </div>
                           )}
+
+                          {!isAdmin &&
+                            hasLimit &&
+                            walletBalance != null &&
+                            remaining != null &&
+                            remaining > walletBalance && (
+                              <p className="mt-1 text-xs text-amber-600">
+                                Limit is above the wallet balance (
+                                {naira(walletBalance)}). Top up the wallet so this
+                                allocation is fully usable.
+                              </p>
+                            )}
 
                           {isAdmin && (
                             <p className="mt-2 text-xs text-gray-400">

@@ -233,16 +233,36 @@ export class OrganizationService {
   static async declineBooking(
     orgId: string,
     bookingId: string,
+    reason?: string,
   ): Promise<{ error: boolean; message?: string }> {
     try {
       const res: any = await createData(
         `${this.ORGANIZATIONS}/${orgId}/bookings/${bookingId}/decline`,
-        {},
+        { reason: reason ?? null },
       );
       if (res?.error) return { error: true, message: res?.message };
       return { error: false };
     } catch (err: any) {
       return { error: true, message: err?.message || "Failed to decline booking" };
+    }
+  }
+
+  static async getOrgBookingDetails(
+    orgId: string,
+    bookingId: string,
+  ): Promise<any | null> {
+    try {
+      const rawData = await getSingleData(
+        `${this.ORGANIZATIONS}/${orgId}/bookings/${bookingId}`,
+      );
+      const data = { ...rawData };
+      if (data?.data && Array.isArray(data.data)) {
+        return data.data[0]?.data ?? null;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching booking details:", error);
+      return null;
     }
   }
 

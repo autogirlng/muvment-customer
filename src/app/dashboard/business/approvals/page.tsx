@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FiCheckCircle, FiClock } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { useCorporateMembership } from "@/hooks/useCorporateMembership";
+import BusinessSetupGate from "@/components/Dashboard/BusinessSetupGate";
 import { OrganizationService } from "@/controllers/organization/Organization.service";
 import { OrganizationBooking } from "@/types/Organization.type";
 import { naira } from "@/utils/corporateAllowance";
@@ -67,7 +68,7 @@ export default function ApprovalsPage() {
 
   useEffect(() => {
     if (corp.loading) return;
-    if (!corp.isAdmin) {
+    if (!corp.isOwnerLike) {
       router.replace("/dashboard");
       return;
     }
@@ -83,7 +84,7 @@ export default function ApprovalsPage() {
     return () => {
       active = false;
     };
-  }, [corp.loading, corp.isAdmin, orgId, router, loadPage]);
+  }, [corp.loading, corp.isOwnerLike, orgId, router, loadPage]);
 
   const act = async (b: OrganizationBooking, approve: boolean) => {
     if (!orgId || busyId) return;
@@ -110,6 +111,16 @@ export default function ApprovalsPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#0673ff]" />
         </div>
       </div>
+    );
+  }
+
+  if (!corp.loading && corp.isOwnerLike && !corp.org) {
+    return (
+      <BusinessSetupGate
+        hasOrg={false}
+        title="Approvals is a business feature"
+        message="Finish setting up your business to review and approve team bookings."
+      />
     );
   }
 
@@ -175,11 +186,14 @@ export default function ApprovalsPage() {
                   </div>
                   <div className="flex items-center gap-2.5">
                     <button
-                      onClick={() => act(b, false)}
-                      disabled={busy}
-                      className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/business/approvals/${b.bookingId}`,
+                        )
+                      }
+                      className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                     >
-                      Decline
+                      View details
                     </button>
                     <button
                       onClick={() => act(b, true)}

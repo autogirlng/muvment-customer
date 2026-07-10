@@ -37,20 +37,59 @@ type NavItem = {
   exact?: boolean;
 };
 
-const NAV: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: FiGrid, exact: true },
-  { label: "My bookings", href: "/dashboard/my-booking", icon: FiCalendar },
-  { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
-  { label: "Company bookings", href: "/dashboard/business/bookings", icon: FiFileText },
-  { label: "Approvals", href: "/dashboard/business/approvals", icon: FiClock },
-  { label: "Team", href: "/dashboard/business/team", icon: FiUsers },
-  { label: "Favourites", href: "/dashboard/favourites", icon: FiHeart },
-  { label: "Payment", href: "/dashboard/payment", icon: FiCreditCard },
-  { label: "Refer a friend", href: "/dashboard/refer-a-friend", icon: FiGift },
-  { label: "Notifications", href: "/dashboard/notification", icon: FiBell },
-  { label: "Integrations", href: "/dashboard/integrations", icon: FiLink },
-  { label: "Settings", href: "/dashboard/settings", icon: FiSettings },
-];
+const ITEMS = {
+  dashboard: { label: "Dashboard", href: "/dashboard", icon: FiGrid, exact: true },
+  myBookings: { label: "My bookings", href: "/dashboard/my-booking", icon: FiCalendar },
+  myTrips: { label: "My trips", href: "/dashboard/my-trips", icon: FiNavigation },
+  favourites: { label: "Favourites", href: "/dashboard/favourites", icon: FiHeart },
+  companyBookings: { label: "Company bookings", href: "/dashboard/business/bookings", icon: FiFileText },
+  payment: { label: "Payment", href: "/dashboard/payment", icon: FiCreditCard },
+  approvals: { label: "Approvals", href: "/dashboard/business/approvals", icon: FiClock },
+  team: { label: "Team", href: "/dashboard/business/team", icon: FiUsers },
+  refer: { label: "Refer a friend", href: "/dashboard/refer-a-friend", icon: FiGift },
+  notifications: { label: "Notifications", href: "/dashboard/notification", icon: FiBell },
+  integrations: { label: "Integrations", href: "/dashboard/integrations", icon: FiLink },
+  settings: { label: "Settings", href: "/dashboard/settings", icon: FiSettings },
+} satisfies Record<string, NavItem>;
+
+type NavSection = { heading?: string; items: NavItem[] };
+
+// Groups the nav into what is for the person, what is for the business, and the rest,
+// so the sidebar reads clearly and business entries only appear for business accounts.
+function buildNavSections(flags: {
+  isBusiness: boolean;
+  isBusinessUser: boolean;
+  canIntegrate: boolean;
+}): NavSection[] {
+  const { isBusiness, isBusinessUser, canIntegrate } = flags;
+
+  const personal: NavItem[] = [
+    ITEMS.dashboard,
+    ITEMS.myBookings,
+    ITEMS.myTrips,
+    ITEMS.favourites,
+  ];
+
+  const business: NavItem[] = [];
+  if (isBusiness) {
+    business.push(ITEMS.companyBookings, ITEMS.payment, ITEMS.approvals, ITEMS.team);
+  } else if (isBusinessUser) {
+    // Staff: their bookings show under My bookings, so there is no separate Company
+    // bookings entry. Payment stays with their personal items.
+    personal.push(ITEMS.payment);
+  } else {
+    personal.push(ITEMS.payment, ITEMS.refer);
+  }
+
+  const other: NavItem[] = [ITEMS.notifications];
+  if (canIntegrate) other.push(ITEMS.integrations);
+  other.push(ITEMS.settings);
+
+  const sections: NavSection[] = [{ items: personal }];
+  if (business.length) sections.push({ heading: "Business", items: business });
+  sections.push({ heading: "Account", items: other });
+  return sections;
+}
 
 // Secondary destinations shown in the mobile "More" sheet.
 const MORE_ITEMS: NavItem[] = [
@@ -200,32 +239,35 @@ const DashboardLayoutClient = ({
       >
         <img src="/images/image.png" alt="Muvment" className="h-7 w-auto" />
       </Link>
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {NAV.filter(
-          (item) =>
-            (canIntegrate || item.href !== "/dashboard/integrations") &&
-            (isBusiness || item.href !== "/dashboard/business/wallet") &&
-            (isBusiness || item.href !== "/dashboard/business/approvals") &&
-            (isBusinessUser || item.href !== "/dashboard/business/bookings") &&
-            (isBusiness || item.href !== "/dashboard/business/team") &&
-            (!isBusinessUser || item.href !== "/dashboard/refer-a-friend"),
-        ).map((item) => {
-          const active = pathActive(pathname, item.href, item.exact);
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                active ? "text-white" : "text-gray-600 hover:bg-gray-50"
-              }`}
-              style={active ? { backgroundColor: BRAND } : undefined}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-4">
+        {buildNavSections({ isBusiness, isBusinessUser, canIntegrate }).map(
+          (section, si) => (
+            <div key={section.heading ?? `section-${si}`} className="space-y-1">
+              {section.heading && (
+                <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                  {section.heading}
+                </p>
+              )}
+              {section.items.map((item) => {
+                const active = pathActive(pathname, item.href, item.exact);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      active ? "text-white" : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                    style={active ? { backgroundColor: BRAND } : undefined}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ),
+        )}
       </nav>
       <div className="border-t border-gray-100 p-3">
         <button
@@ -349,7 +391,7 @@ const DashboardLayoutClient = ({
                   (canIntegrate || m.href !== "/dashboard/integrations") &&
                   (isBusiness || m.href !== "/dashboard/business/wallet") &&
                   (isBusiness || m.href !== "/dashboard/business/approvals") &&
-                  (isBusinessUser || m.href !== "/dashboard/business/bookings") &&
+                  (isBusiness || m.href !== "/dashboard/business/bookings") &&
                   (isBusiness || m.href !== "/dashboard/business/team") &&
                   (!isBusinessUser || m.href !== "/dashboard/refer-a-friend"),
               ).map((m) => {
