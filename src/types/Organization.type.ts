@@ -23,6 +23,8 @@ export interface Organization {
   mySpendingLimit?: number | null;
   myAmountSpent?: number | null;
   myApprovalThreshold?: number | null;
+  // Smaller of the member's remaining limit and the wallet balance (server-computed).
+  myEffectiveSpendable?: number | null;
 }
 
 export interface OrganizationMember {

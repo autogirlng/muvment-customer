@@ -8,6 +8,10 @@ import { OrganizationService } from "@/controllers/organization/Organization.ser
 import { clearCorporateMembershipCache } from "@/hooks/useCorporateMembership";
 import { INDUSTRIES } from "@/components/settingsComponent/CreateOrganization";
 import { createData } from "@/controllers/connnector/app.callers";
+import PhoneNumberAndCountryField from "@/components/general/forms/phoneNumberAndCountryField";
+import { getCountryCallingCode } from "react-phone-number-input";
+import { validatePhoneNumber } from "@/utils/validationSchema";
+import { CountryCode } from "libphonenumber-js";
 
 const REGISTRATION_TYPES = [
   { value: "RC", label: "RC", hint: "Limited company" },
@@ -36,6 +40,8 @@ type Form = {
   industry: string;
   businessEmail: string;
   businessPhone: string;
+  country: string;
+  countryCode: string;
   companySize: string;
   website: string;
   address: string;
@@ -53,6 +59,8 @@ export default function BusinessSetupPage() {
     industry: "",
     businessEmail: "",
     businessPhone: "",
+    country: "NG",
+    countryCode: "+234",
     companySize: "",
     website: "",
     address: "",
@@ -128,6 +136,8 @@ export default function BusinessSetupPage() {
     setErrors((prev) => (prev[key] ? { ...prev, [key]: "" } : prev));
   };
 
+  const asCountry = (v: string) => v as CountryCode;
+
   // Bring the name field into view when the server rejects a duplicate name.
   useEffect(() => {
     if (errors.name && /already exists/i.test(errors.name)) {
@@ -151,6 +161,18 @@ export default function BusinessSetupPage() {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail.trim())) {
       e.businessEmail = "Enter a valid email";
     }
+    const phoneDigits = form.businessPhone.replace(/[^\d]/g, "").replace(/^0+/, "");
+    if (phoneDigits) {
+      const valid = validatePhoneNumber(
+        `${form.countryCode}${phoneDigits}`,
+        asCountry(form.country),
+      );
+      if (!valid) e.businessPhone = "Enter a valid phone number";
+    }
+    const site = form.website.trim();
+    if (site && !/^https?:\/\/[^\s.]+\.[^\s]{2,}$/i.test(site)) {
+      e.website = "Enter a valid URL, including https://";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -168,7 +190,11 @@ export default function BusinessSetupPage() {
           rcNumber: form.rcNumber.trim(),
           industry: form.industry,
           businessEmail: form.businessEmail.trim().toLowerCase(),
-          businessPhone: form.businessPhone.trim() || undefined,
+          businessPhone: form.businessPhone.trim()
+            ? `${form.countryCode}${form.businessPhone
+                .replace(/[^\d]/g, "")
+                .replace(/^0+/, "")}`
+            : undefined,
           companySize: form.companySize || undefined,
           website: form.website.trim() || undefined,
           address: form.address.trim() || undefined,
@@ -478,13 +504,24 @@ export default function BusinessSetupPage() {
 
             <div>
               <Label optional>Business phone</Label>
-              <input
-                type="tel"
-                value={form.businessPhone}
-                onChange={(e) => set("businessPhone", e.target.value)}
-                placeholder="+234 800 000 0000"
-                maxLength={30}
-                className={inputClass("businessPhone")}
+              <PhoneNumberAndCountryField
+                inputName="businessPhone"
+                selectName="country"
+                inputId="businessPhone"
+                inputPlaceholder="Enter phone number"
+                inputValue={form.businessPhone}
+                selectValue={form.country}
+                inputOnChange={(event) =>
+                  set(
+                    "businessPhone",
+                    event.target.value.replace(/[^\d]/g, "").replace(/^0+/, ""),
+                  )
+                }
+                selectOnChange={(value: string) => {
+                  set("country", value);
+                  set("countryCode", `+${getCountryCallingCode(asCountry(value))}`);
+                }}
+                inputError={errors.businessPhone}
               />
             </div>
 
@@ -498,6 +535,9 @@ export default function BusinessSetupPage() {
                 maxLength={200}
                 className={inputClass("website")}
               />
+              {errors.website ? (
+                <p className="mt-1 text-sm text-red-500">{errors.website}</p>
+              ) : null}
             </div>
 
             <div>

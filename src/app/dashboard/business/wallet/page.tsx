@@ -18,6 +18,8 @@ import {
 import DataTable, { TableColumn } from "@/components/utils/TableComponent";
 import FundWalletModal from "@/components/Dashboard/FundWalletModal";
 
+type TxnRow = WalletTransaction & { id: string };
+
 const PAGE_SIZE = 20;
 
 const naira = (value?: number) =>
@@ -148,11 +150,11 @@ export default function WalletPage() {
     );
   }
 
-  const columns: TableColumn<WalletTransaction & { id: string }>[] = [
+  const columns: TableColumn<TxnRow>[] = [
     {
       key: "description",
       label: "Description",
-      render: (value, row) => {
+      render: (value: unknown, row: TxnRow) => {
         const credit = row.transactionType === "CREDIT";
         return (
           <div className="flex items-center gap-3">
@@ -168,7 +170,7 @@ export default function WalletPage() {
               )}
             </div>
             <span className="font-medium text-gray-900">
-              {value || (credit ? "Wallet funding" : "Booking")}
+              {(value as string) || (credit ? "Wallet funding" : "Booking")}
             </span>
           </div>
         );
@@ -177,9 +179,9 @@ export default function WalletPage() {
     {
       key: "staffName",
       label: "By",
-      render: (value) =>
+      render: (value: unknown) =>
         value ? (
-          <span className="text-gray-700">{value}</span>
+          <span className="text-gray-700">{value as string}</span>
         ) : (
           <span className="text-gray-400">—</span>
         ),
@@ -187,21 +189,21 @@ export default function WalletPage() {
     {
       key: "createdAt",
       label: "Date",
-      render: (value) => (
-        <span className="text-gray-500">{formatDate(value)}</span>
+      render: (value: unknown) => (
+        <span className="text-gray-500">{formatDate(value as string)}</span>
       ),
     },
     {
       key: "amount",
       label: "Amount",
-      render: (value, row) => {
+      render: (value: unknown, row: TxnRow) => {
         const credit = row.transactionType === "CREDIT";
         return (
           <span
             className={`font-semibold ${credit ? "text-green-600" : "text-gray-900"}`}
           >
             {credit ? "+" : "-"}
-            {naira(value)}
+            {naira(value as number)}
           </span>
         );
       },
@@ -246,7 +248,7 @@ export default function WalletPage() {
         </div>
       </div>
 
-      <DataTable<WalletTransaction & { id: string }>
+      <DataTable<TxnRow>
         columns={columns}
         data={data}
         height="max-h-none"

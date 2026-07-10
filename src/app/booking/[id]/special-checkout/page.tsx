@@ -95,6 +95,7 @@ const ServicePricingCheckoutPage = () => {
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
   const corpMembership = useCorporateMembership();
+  const corpIsStaff = corpMembership.isMember && !corpMembership.isAdmin;
   const corpLoading = corpMembership.loading;
 
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
@@ -130,6 +131,9 @@ const ServicePricingCheckoutPage = () => {
     null,
   );
   const [corpBalance, setCorpBalance] = useState<number | null>(null);
+  // Backend-computed spendable for this member (min of remaining limit and balance),
+  // so staff see a real cap without being shown the raw wallet balance.
+  const [corpSpendable, setCorpSpendable] = useState<number | null>(null);
   const [corpAllowance, setCorpAllowance] = useState<Allowance | null>(null);
   const [payWithCorporate, setPayWithCorporate] = useState(false);
   // Which payment method the already-created booking was made with, so switching
@@ -186,6 +190,9 @@ const ServicePricingCheckoutPage = () => {
 
     setCorpOrg({ id: org.id, name: org.name });
     setCorpAllowance(computeAllowance(org.mySpendingLimit, org.myAmountSpent));
+    setCorpSpendable(org.myEffectiveSpendable ?? null);
+    // Members default to the wallet; staff are locked to it (toggle hidden below).
+    setPayWithCorporate(true);
 
     if (!corpMembership.isAdmin) return;
     let active = true;
@@ -720,9 +727,11 @@ const ServicePricingCheckoutPage = () => {
               <p className="text-xs text-gray-500">
                 {corpBalance !== null
                   ? `Balance ${formatCurrency(corpBalance)}`
-                  : corpAllowance?.hasLimit
-                    ? `${formatCurrency(corpAllowance.remaining ?? 0)} left this month`
-                    : "Paid from your company wallet"}
+                  : corpSpendable !== null
+                    ? `${formatCurrency(corpSpendable)} available to spend`
+                    : corpAllowance?.hasLimit
+                      ? `${formatCurrency(corpAllowance.remaining ?? 0)} left this month`
+                      : "Paid from your company wallet"}
               </p>
             </div>
             {payWithCorporate ? (
@@ -732,34 +741,36 @@ const ServicePricingCheckoutPage = () => {
             )}
           </div>
 
-          <div
-            onClick={() => setPayWithCorporate(false)}
-            className={cn(
-              "flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all",
-              !payWithCorporate
-                ? "border-[#0673FF] bg-[#0673FF]/5"
-                : "border-gray-200 bg-white hover:border-[#cfe0fb]",
-            )}
-          >
-            <p className="text-sm font-medium text-gray-900">
-              Pay with card or transfer
-            </p>
-            {!payWithCorporate ? (
-              <FiCheckCircle className="text-[#0673FF] min-w-[22px]" size={22} />
-            ) : (
-              <FiCircle className="text-gray-300 min-w-[22px]" size={22} />
-            )}
-          </div>
+          {!corpIsStaff && (
+            <div
+              onClick={() => setPayWithCorporate(false)}
+              className={cn(
+                "flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all",
+                !payWithCorporate
+                  ? "border-[#0673FF] bg-[#0673FF]/5"
+                  : "border-gray-200 bg-white hover:border-[#cfe0fb]",
+              )}
+            >
+              <p className="text-sm font-medium text-gray-900">
+                Pay with card or transfer
+              </p>
+              {!payWithCorporate ? (
+                <FiCheckCircle className="text-[#0673FF] min-w-[22px]" size={22} />
+              ) : (
+                <FiCircle className="text-gray-300 min-w-[22px]" size={22} />
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {(() => {
         if (!corpOrg || !payWithCorporate) return null;
         const total = Number(priceEstimate?.totalPrice || 0);
-        const spendable = spendableAmount(
-          corpAllowance?.remaining ?? null,
-          corpBalance,
-        );
+        const spendable =
+          corpBalance !== null
+            ? spendableAmount(corpAllowance?.remaining ?? null, corpBalance)
+            : corpSpendable ?? corpAllowance?.remaining ?? null;
         if (spendable === null || total <= 0 || spendable >= total) return null;
 
         // Say which limit is short, so the fix is obvious.
@@ -770,11 +781,15 @@ const ServicePricingCheckoutPage = () => {
 
         return (
           <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-700">
-            {limitedByAllowance
+            {corpBalance === null
               ? `This booking is more than the ${formatCurrency(
-                  corpAllowance?.remaining ?? 0,
-                )} left in your monthly allowance. Ask your administrator to raise it, or pay with card or transfer.`
-              : "This booking is more than your company wallet balance. Fund the wallet, or pay with card or transfer."}
+                  spendable,
+                )} you can spend right now. Ask your administrator to raise your limit or top up the company wallet.`
+              : limitedByAllowance
+                ? `This booking is more than the ${formatCurrency(
+                    corpAllowance?.remaining ?? 0,
+                  )} left in your monthly allowance. Ask your administrator to raise it, or pay with card or transfer.`
+                : "This booking is more than your company wallet balance. Fund the wallet, or pay with card or transfer."}
           </p>
         );
       })()}

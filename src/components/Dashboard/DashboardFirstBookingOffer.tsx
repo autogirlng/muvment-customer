@@ -5,10 +5,16 @@ import { FiTag } from "react-icons/fi";
 
 interface DashboardFirstBookingOfferProps {
   onBook: () => void;
+  // When a business account has not finished setup, the button guides them to setup
+  // instead of opening the booking flow.
+  needsSetup?: boolean;
+  onSetup?: () => void;
 }
 
 const DashboardFirstBookingOffer: React.FC<DashboardFirstBookingOfferProps> = ({
   onBook,
+  needsSetup = false,
+  onSetup,
 }) => {
   return (
     <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-[#0673ff] to-[#0560d6] p-5 text-white sm:flex-row sm:items-center sm:justify-between">
@@ -25,10 +31,10 @@ const DashboardFirstBookingOffer: React.FC<DashboardFirstBookingOfferProps> = ({
         </div>
       </div>
       <button
-        onClick={onBook}
+        onClick={needsSetup ? onSetup : onBook}
         className="flex-shrink-0 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[#0673ff] transition-colors hover:bg-[#eaf2ff]"
       >
-        Book now
+        {needsSetup ? "Set up business" : "Book now"}
       </button>
     </div>
   );

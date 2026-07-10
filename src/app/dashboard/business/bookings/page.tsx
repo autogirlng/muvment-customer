@@ -94,7 +94,9 @@ export default function CompanyBookingsPage() {
 
   useEffect(() => {
     if (corp.loading) return;
-    if (!corp.isMember && !corp.isOwnerLike) {
+    // Company bookings is an admin view. Staff see their own sponsored bookings under
+    // My bookings, so they are sent there instead.
+    if (!corp.isOwnerLike) {
       router.replace("/dashboard");
       return;
     }
@@ -111,7 +113,7 @@ export default function CompanyBookingsPage() {
     return () => {
       active = false;
     };
-  }, [corp.loading, corp.isMember, corp.isOwnerLike, corp.org?.id, router, loadPage]);
+  }, [corp.loading, corp.isOwnerLike, corp.isMember, corp.org?.id, router, loadPage]);
 
   const handleLoadMore = async () => {
     if (loadingMore) return;

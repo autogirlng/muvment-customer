@@ -109,8 +109,13 @@ export function useCorporateMembership(): CorporateMembership {
     isMember: !!org,
     isAdmin: role === "ORG_ADMIN",
     isStaff: role === "ORG_STAFF",
+    // When the user has a membership, their role in the org decides. userType is only a
+    // fallback for a would-be owner who has not created an org yet, so a staff member
+    // whose account userType happens to be ORGANIZATION_ADMIN is not treated as an owner.
     isOwnerLike:
-      role === "ORG_ADMIN" || user?.userType === "ORGANIZATION_ADMIN",
+      role != null
+        ? role === "ORG_ADMIN"
+        : user?.userType === "ORGANIZATION_ADMIN",
     refresh,
   };
 }

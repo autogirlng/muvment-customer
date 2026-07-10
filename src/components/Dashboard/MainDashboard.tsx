@@ -10,6 +10,7 @@ import DashboardFirstBookingOffer from "./DashboardFirstBookingOffer";
 import BusinessOnboardingGuide from "./BusinessOnboardingGuide";
 import StaffCompanyCard from "./StaffCompanyCard";
 import { useCorporateMembership } from "@/hooks/useCorporateMembership";
+import { useBusinessSetup } from "@/hooks/useBusinessSetup";
 import {
   customerBookingStatus,
   customerTripStatus,
@@ -103,6 +104,7 @@ export default function Dashboard(): React.ReactElement {
   const router = useRouter();
   const { user } = useAuth();
   const corp = useCorporateMembership();
+  const setup = useBusinessSetup();
   const [stats, setStats] = useState<{
     bookings: number;
     trips: number;
@@ -219,8 +221,12 @@ export default function Dashboard(): React.ReactElement {
       {/* First-booking offer: shows until the user has made a booking */}
       {statsLoaded &&
         stats.bookings === 0 &&
-        !corp.isMember && (
-          <DashboardFirstBookingOffer onBook={openBook} />
+        (setup.isBusiness || !corp.isMember) && (
+          <DashboardFirstBookingOffer
+            onBook={openBook}
+            needsSetup={setup.isBusiness && !setup.setupComplete}
+            onSetup={() => router.push("/business-setup")}
+          />
         )}
 
       {/* Highlight trip / book prompt */}
@@ -329,7 +335,7 @@ export default function Dashboard(): React.ReactElement {
           </p>
         </button>
         <button
-          onClick={() => router.push("/dashboard/my-booking")}
+          onClick={() => router.push("/dashboard/my-trips")}
           className="min-w-0 p-3 text-left hover:bg-gray-50 transition sm:p-4"
         >
           <p className="text-[11px] text-gray-500 sm:text-xs">Total trips</p>
