@@ -30,11 +30,77 @@ interface BookingDetails {
   };
 }
 
+// Shown to people who booked as a guest. Reviewing means the trip went well, so this is
+// the moment to invite them onto the platform.
+const SignUpOffer = ({
+  variant,
+  onSignUp,
+}: {
+  variant: "compact" | "full";
+  onSignUp: () => void;
+}) => {
+  if (variant === "compact") {
+    return (
+      <div className="mb-4 rounded-xl border border-[#cfe0fb] bg-[#EAF2FF] px-4 py-3">
+        <p className="text-sm font-bold text-gray-900">
+          Book your next ride in a few taps
+        </p>
+        <p className="mt-0.5 text-xs text-gray-600">
+          With a Muvment account you can book faster, follow your trip as it
+          happens, and manage everything in one place.
+        </p>
+        <button
+          onClick={onSignUp}
+          className="mt-2 text-xs font-semibold text-[#0673ff] hover:text-[#0560d6]"
+        >
+          Create an account
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto mb-8 max-w-md rounded-2xl border border-[#cfe0fb] bg-[#EAF2FF] p-6 text-left">
+      <p className="text-lg font-extrabold text-gray-900">
+        Make your next ride easier
+      </p>
+      <p className="mt-1 text-sm leading-relaxed text-gray-600">
+        Create a Muvment account to book in a few taps, follow your trip as it
+        happens, and manage your bookings in one place.
+      </p>
+
+      <ul className="mt-4 space-y-2">
+        <li className="flex items-start gap-2 text-sm text-gray-700">
+          <FiCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#0673ff]" />
+          Book again without re-entering your details
+        </li>
+        <li className="flex items-start gap-2 text-sm text-gray-700">
+          <FiCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#0673ff]" />
+          See your trips and drivers as they are assigned
+        </li>
+        <li className="flex items-start gap-2 text-sm text-gray-700">
+          <FiCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#0673ff]" />
+          Manage and extend bookings from one place
+        </li>
+      </ul>
+
+      <button
+        onClick={onSignUp}
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+        style={{ backgroundColor: "#0673ff" }}
+      >
+        Create your account
+        <FiArrowRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
+};
+
 const ReviewContent = () => {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, accessToken, isAuthenticated } = useAuth();
   const bookingId = params.id || "";
   const entityType = searchParams.get("entityType") || "Booking"
 
@@ -48,6 +114,10 @@ const ReviewContent = () => {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState("");
+
+  // The link is opened from an email, so there is often no session in that browser.
+  // Guests are the people worth showing the sign-up offer to.
+  const signedIn = Boolean(isAuthenticated && accessToken && user?.firstName);
 
   const fetchBookingAndCheckReview = async () => {
     if (!bookingId) {
@@ -101,6 +171,9 @@ const ReviewContent = () => {
     try {
       setSubmitting(true);
       setError("");
+
+      // Submit as a guest unless we actually hold a token, and carry the booker's details
+      // so a guest review is still attributable.
       const reviewPayload = {
         rating,
         review: comment,
@@ -108,16 +181,25 @@ const ReviewContent = () => {
         entityId: bookingId as string,
         entityType,
         source: "WEB",
+        ...(signedIn
+          ? {}
+          : {
+              anonymousEmail: booking?.booker?.email,
+              anonymousFullName: booking?.booker?.fullName,
+            }),
       };
 
-
-      await BookingService.createReview(
-        reviewPayload,
-        !user?.firstName
-      );
+      await BookingService.createReview(reviewPayload, !signedIn);
       setSubmitted(true);
     } catch (error: any) {
       console.error("Error submitting review:", error);
+      // The server is the authority on duplicates, so treat its answer as the real one
+      // rather than showing a failure the customer cannot act on.
+      const message = String(error?.message || "");
+      if (/already/i.test(message)) {
+        setAlreadyReviewed(true);
+        return;
+      }
       setError("Failed to submit review. Please try again.");
     } finally {
       setSubmitting(false);
@@ -179,6 +261,13 @@ const ReviewContent = () => {
                 riders and improving our fleet.
               </p>
             </div>
+
+            {!signedIn && (
+              <SignUpOffer
+                variant="full"
+                onSignUp={() => router.push("/auth/register")}
+              />
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -280,6 +369,13 @@ const ReviewContent = () => {
                 </div>
               )}
             </div>
+
+            {!signedIn && (
+              <SignUpOffer
+                variant="full"
+                onSignUp={() => router.push("/auth/register")}
+              />
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -415,6 +511,13 @@ const ReviewContent = () => {
                   <p className="text-red-700 text-xs font-medium">{error}</p>
                 </div>
               </div>
+            )}
+
+            {!signedIn && (
+              <SignUpOffer
+                variant="compact"
+                onSignUp={() => router.push("/auth/register")}
+              />
             )}
 
             {/* Submit Button */}
