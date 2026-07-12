@@ -17,20 +17,29 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 import { FaUser } from "react-icons/fa";
+import { FiBriefcase } from "react-icons/fi";
 import SupportTab from "@/components/Dashboard/SupportTab";
+import BusinessProfileTab from "@/components/settingsComponent/BusinessProfileTab";
+import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 
 const BRAND = "#0673ff";
 
-type TabKey = "profile" | "security" | "support";
+type TabKey = "profile" | "security" | "business" | "support";
 
 const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
   { key: "profile", label: "Profile", icon: FiUser },
   { key: "security", label: "Account security", icon: FiLock },
+  { key: "business", label: "Business profile", icon: FiBriefcase },
   { key: "support", label: "Support", icon: FiHelpCircle },
 ];
 
 export default function SettingsPage() {
   const router = useRouter();
+  const corp = useCorporateMembership();
+  const isBusiness = corp.isOwnerLike;
+  const visibleTabs = TABS.filter(
+    (t) => t.key !== "business" || isBusiness,
+  );
   const [active, setActive] = useState<TabKey>("profile");
   const [tabMenuOpen, setTabMenuOpen] = useState(false);
   const tabMenuRef = React.useRef<HTMLDivElement>(null);
@@ -102,7 +111,7 @@ export default function SettingsPage() {
         </button>
         {tabMenuOpen && (
           <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
-            {TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = active === tab.key;
               return (
@@ -129,7 +138,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="hidden gap-1 rounded-xl bg-gray-100 p-1 sm:inline-flex">
-        {TABS.map((tab) => {
+        {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = active === tab.key;
           return (
@@ -161,6 +170,7 @@ export default function SettingsPage() {
       )}
       {active === "security" && <SecurityTab />}
       {active === "support" && <SupportTab />}
+      {active === "business" && <BusinessProfileTab />}
     </div>
   );
 }

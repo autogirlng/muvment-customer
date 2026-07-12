@@ -262,12 +262,17 @@ export class BookingService {
   }
 
   static async createSpecialBooking(bookingData: any) {
-    // console.log("Creating booking with data:", bookingData);
     try {
-      const response = await createData(
+      const response: any = await createData(
         this.BASE_URL_SPECIAL_BOOKING,
         bookingData,
       );
+      // createData does not throw on a handled error; it returns { error, message }.
+      // Surface that message (e.g. insufficient corporate balance or spending limit)
+      // instead of a generic failure.
+      if (response?.error) {
+        throw new Error(response.message || "Failed to create booking");
+      }
       if (!response || !response.data)
         throw new Error("Failed to create booking");
 
@@ -310,24 +315,55 @@ export class BookingService {
       entityId: string;
       entityType: string;
       source: string;
-      // isAnonymous: boolean,
+      anonymousEmail?: string;
+      anonymousFullName?: string;
     },
     isAnonymous: boolean,
   ): Promise<any> {
-    let END_POINT;
-    if (!isAnonymous) {
-      END_POINT = "/api/v1/rating-review";
-    } else {
-      END_POINT = "/api/v1/rating-review/anonymouse-user";
-    }
+    const AUTH_ENDPOINT = "/api/v1/rating-review";
+    const PUBLIC_ENDPOINT = "/api/v1/rating-review/anonymouse-user";
+
+    const post = async (
+      endpoint: string,
+      requireAuth: boolean,
+      payload: Record<string, unknown>,
+    ) => {
+      const response = await createData(endpoint, payload, {
+        requireAuth,
+        silent: true,
+      });
+      if (!response || !response.data) {
+        throw new Error(response?.message || "Failed to create review");
+      }
+      return response.data;
+    };
+
+    const submit = async (payload: Record<string, unknown>) => {
+      if (isAnonymous) {
+        return post(PUBLIC_ENDPOINT, false, payload);
+      }
+      try {
+        return await post(AUTH_ENDPOINT, true, payload);
+      } catch (error) {
+        // Review links are opened from email, often in a browser or in-app webview that
+        // carries no session, while a stale profile still looks signed in. The signed-in
+        // endpoint rejects those, so fall back to the public one rather than lose the
+        // review.
+        console.error("Signed-in review failed, retrying as a guest:", error);
+        return post(PUBLIC_ENDPOINT, false, payload);
+      }
+    };
 
     try {
-      const response = await createData(END_POINT, reviewData);
-      if (!response || !response.data)
-        throw new Error("Failed to create review");
-      return response.data;
+      return await submit(reviewData);
     } catch (error) {
-      console.error("Review creation error:", error);
+      // Review emails sent before the link was corrected label the id as a trip when it
+      // is really a booking, so the server cannot find the entity. Those emails are
+      // already in people's inboxes, so retry against the booking instead of losing the
+      // review.
+      if (reviewData.entityType !== "Booking") {
+        return submit({ ...reviewData, entityType: "Booking" });
+      }
       throw error;
     }
   }
@@ -339,12 +375,14 @@ export class BookingService {
       );
 
       if (!response || !response.data) {
-        return false; // No review exists
+        return false;
       }
 
-      const data = response.data[0].data.content;
-      return data.length > 0;
-    } catch (error) {
+      const content = response.data[0]?.data?.content;
+      return Array.isArray(content) && content.length > 0;
+    } catch {
+      // The check is a convenience. If it cannot run, still show the form: the server
+      // rejects a duplicate on submit, and that is handled there.
       return false;
     }
   }

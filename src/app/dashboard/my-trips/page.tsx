@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useBusinessSetup } from "@/hooks/useBusinessSetup";
 import { FiMapPin, FiArrowRight, FiPlus, FiInbox, FiUser } from "react-icons/fi";
 import { BookingService } from "@/controllers/booking/bookingService";
 import { customerBookingStatus, customerTripStatus } from "@/utils/bookingStatus";
@@ -37,6 +38,8 @@ const timeLabel = (d?: string) =>
 
 const MyTripsPage = () => {
   const router = useRouter();
+  const setup = useBusinessSetup();
+  const needsSetup = setup.isBusiness && !setup.setupComplete;
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [tripInfo, setTripInfo] = useState<Record<string, any>>({});
@@ -49,17 +52,21 @@ const MyTripsPage = () => {
           size: 1000,
         } as any);
         const content: any[] = body?.data?.content ?? [];
-        const mapped: Trip[] = content.map((item) => ({
-          segmentId: item.id,
-          bookingId: item.booking?.bookingId,
-          status: item.booking?.bookingStatus,
-          vehicleName: item.vehicle?.name || "Vehicle",
-          start: item.startDateTime,
-          end: item.endDateTime,
-          pickup: item.pickupLocationString,
-          dropoff: item.dropoffLocationString,
-          bookingType: item.bookingType?.name,
-        }));
+        const mapped: Trip[] = content
+          .map((item) => ({
+            segmentId: item.id,
+            bookingId: item.booking?.bookingId,
+            status: item.booking?.bookingStatus,
+            vehicleName: item.vehicle?.name || "Vehicle",
+            start: item.startDateTime,
+            end: item.endDateTime,
+            pickup: item.pickupLocationString,
+            dropoff: item.dropoffLocationString,
+            bookingType: item.bookingType?.name,
+          }))
+          // A booking waiting on admin approval is not a confirmed trip yet; it shows in
+          // My bookings, not here.
+          .filter((t) => t.status !== "PENDING_APPROVAL");
         setTrips(mapped);
       } catch (e) {
         console.error("Error loading trips:", e);
@@ -202,12 +209,14 @@ const MyTripsPage = () => {
           </p>
         </div>
         <button
-          onClick={() => router.push("/booking/search")}
+          onClick={() =>
+            router.push(needsSetup ? "/business-setup" : "/booking/search")
+          }
           className="hidden shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 sm:inline-flex"
           style={{ backgroundColor: "#0673ff" }}
         >
           <FiPlus className="h-4 w-4" />
-          New booking
+          {needsSetup ? "Set up business" : "New booking"}
         </button>
       </div>
 
@@ -225,11 +234,14 @@ const MyTripsPage = () => {
             When you book a vehicle, each day of the trip will show up here.
           </p>
           <button
-            onClick={() => router.push("/booking/search")}
+            onClick={() =>
+              router.push(needsSetup ? "/business-setup" : "/booking/search")
+            }
             className="mt-5 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
             style={{ backgroundColor: "#0673ff" }}
           >
-            Book a vehicle <FiArrowRight className="h-4 w-4" />
+            {needsSetup ? "Set up business" : "Book a vehicle"}{" "}
+            <FiArrowRight className="h-4 w-4" />
           </button>
         </div>
       ) : (

@@ -5,6 +5,7 @@ type StatusStyle = { label: string; classes: string };
 
 const MAP: Record<string, StatusStyle> = {
   PENDING_PAYMENT: { label: "Pending payment", classes: "bg-amber-100 text-amber-800" },
+  PENDING_APPROVAL: { label: "Pending approval", classes: "bg-purple-100 text-purple-700" },
   CONFIRMED: { label: "Confirmed", classes: "bg-green-100 text-green-800" },
   IN_PROGRESS: { label: "Ongoing", classes: "bg-blue-100 text-blue-800" },
   COMPLETED: { label: "Completed", classes: "bg-indigo-100 text-indigo-800" },
@@ -52,6 +53,7 @@ export const customerTripStatus = (status?: string): StatusStyle => {
 export const CUSTOMER_STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "", label: "All status" },
   { value: "PENDING_PAYMENT", label: "Pending payment" },
+  { value: "PENDING_APPROVAL", label: "Pending approval" },
   { value: "CONFIRMED", label: "Confirmed" },
   { value: "IN_PROGRESS", label: "Ongoing" },
   { value: "COMPLETED", label: "Completed" },
@@ -65,6 +67,7 @@ export const CUSTOMER_STATUS_FILTERS: { value: string; label: string }[] = [
 export const customerStatusKey = (status?: string): string => {
   const v = (status || "").toUpperCase();
   if (v === "PENDING_PAYMENT") return "PENDING_PAYMENT";
+  if (v === "PENDING_APPROVAL") return "PENDING_APPROVAL";
   if (v === "CONFIRMED") return "CONFIRMED";
   if (v === "IN_PROGRESS") return "IN_PROGRESS";
   if (v === "COMPLETED") return "COMPLETED";
@@ -81,6 +84,12 @@ export const CUSTOMER_CALENDAR_STYLES: Record<string, CalendarStyle> = {
     dot: "bg-amber-500",
     cell: "bg-amber-50 border-amber-200 hover:bg-amber-100",
     text: "text-amber-800",
+  },
+  PENDING_APPROVAL: {
+    label: "Pending approval",
+    dot: "bg-purple-500",
+    cell: "bg-purple-50 border-purple-200 hover:bg-purple-100",
+    text: "text-purple-800",
   },
   CONFIRMED: {
     label: "Confirmed",

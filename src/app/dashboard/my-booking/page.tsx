@@ -29,6 +29,7 @@ import DataTable, {
 } from "@/components/utils/TableComponent";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { useBusinessSetup } from "@/hooks/useBusinessSetup";
 import {
   customerBookingStatus,
   CUSTOMER_STATUS_FILTERS,
@@ -54,6 +55,8 @@ const BookingHistoryPage = () => {
   const PAGE_SIZE = 10;
 
   const router = useRouter();
+  const setup = useBusinessSetup();
+  const needsSetup = setup.isBusiness && !setup.setupComplete;
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Transform raw API item to flat booking object
@@ -64,6 +67,7 @@ const BookingHistoryPage = () => {
     invoiceNumber: item.booking.invoiceNumber,
     paymentMethod: item.booking.paymentMethod,
     createdAt: item.booking.createdAt,
+    declineReason: item.booking.declineReason,
     price: item.booking.totalPrice,
     bookingCategory: item.booking.bookingCategory,
     bookingType: item.bookingType.name,
@@ -223,7 +227,7 @@ const BookingHistoryPage = () => {
       day: "numeric",
     });
 
-  const tableColumns: TableColumn<Booking & { id: number }>[] = useMemo(
+  const tableColumns: TableColumn<any>[] = useMemo(
     () => [
       {
         key: "vehicleName",
@@ -239,7 +243,7 @@ const BookingHistoryPage = () => {
       },
       {
         key: "createdAt",
-        label: "Date",
+        label: "Trip date",
         render: (_value: string, row: any) =>
           row.segmentCount > 1 ? (
             <span className="text-sm text-gray-900">
@@ -252,16 +256,32 @@ const BookingHistoryPage = () => {
           ),
       },
       {
+        key: "bookedOn",
+        label: "Booked on",
+        render: (_value: string, row: any) => (
+          <span className="text-sm text-gray-900">
+            {formatDate(row.createdAt)}
+          </span>
+        ),
+      },
+      {
         key: "bookingStatus",
         label: "Status",
-        render: (value: string) => {
+        render: (value: string, row: any) => {
           const s = customerBookingStatus(value);
           return (
-            <span
-              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${s.classes}`}
-            >
-              {s.label}
-            </span>
+            <div>
+              <span
+                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${s.classes}`}
+              >
+                {s.label}
+              </span>
+              {row?.declineReason && (
+                <p className="mt-1 max-w-[220px] text-xs text-gray-500">
+                  Reason: {row.declineReason}
+                </p>
+              )}
+            </div>
           );
         },
       },
@@ -360,19 +380,21 @@ const BookingHistoryPage = () => {
           Track and manage all your trips.
         </p>
         <button
-          onClick={() => router.push("/booking/search")}
+          onClick={() =>
+            router.push(needsSetup ? "/business-setup" : "/booking/search")
+          }
           className="cursor-pointer px-4 py-2 text-white text-sm font-medium rounded-full hover:opacity-90 transition inline-flex items-center gap-1.5 shrink-0"
           style={{ backgroundColor: "#0673ff" }}
         >
           <FiPlus className="w-4 h-4" />
-          <span>New booking</span>
+          <span>{needsSetup ? "Set up business" : "New booking"}</span>
         </button>
       </div>
 
       <div>
 
         {/* Controls */}
-        <div className="sticky top-16 z-10 -mx-4 mb-4 flex flex-col gap-3 bg-gray-50 px-4 py-3 sm:-mx-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="sticky top-16 z-30 -mx-4 mb-4 flex flex-col gap-3 bg-gray-50 px-4 py-3 sm:-mx-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:-mx-8 lg:px-8">
           {/* View Toggle */}
           <div className="flex bg-white rounded-lg border border-gray-200 p-1 w-full sm:w-auto">
             <button
@@ -461,6 +483,11 @@ const BookingHistoryPage = () => {
                           >
                             {s.label}
                           </span>
+                          {row.paymentMethod === "CORPORATE_WALLET" && (
+                            <span className="inline-flex rounded-full bg-[#EAF2FF] px-2 py-0.5 text-xs font-semibold text-[#0673FF]">
+                              Company
+                            </span>
+                          )}
                           <span className="text-xs text-gray-500">
                             {row.segmentCount > 1
                               ? `${formatDate(row.firstStart)} - ${formatDate(row.lastStart)}`
@@ -471,6 +498,14 @@ const BookingHistoryPage = () => {
                           {row.bookingType}
                           {row.segmentCount > 1 ? ` × ${row.segmentCount}` : ""}
                         </p>
+                        <p className="mt-1 text-xs text-gray-400">
+                          Booked {formatDate(row.createdAt)}
+                        </p>
+                        {row.declineReason && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            Reason: {row.declineReason}
+                          </p>
+                        )}
                       </div>
                       <p className="shrink-0 text-base font-bold text-gray-900">
                         {formatCurrency(row.price)}

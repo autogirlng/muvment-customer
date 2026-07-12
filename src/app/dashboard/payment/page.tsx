@@ -13,6 +13,7 @@ import DataTable, {
   TableColumn,
 } from "@/components/utils/TableComponent";
 import StatusFilter from "@/components/utils/StatusFilter";
+import WalletSummaryCard from "@/components/Dashboard/WalletSummaryCard";
 import { toast } from "react-toastify";
 import { FaReceipt } from "react-icons/fa6";
 import { BookingService } from "@/controllers/booking/bookingService";
@@ -326,22 +327,20 @@ const PaymentHistoryPage = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="flex w-full items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-5 shadow-sm sm:px-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
+        <WalletSummaryCard />
+
+        <div className="flex flex-1 min-w-0 items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-5 shadow-sm sm:px-6">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#E7F1FF]">
             <FiCreditCard className="h-6 w-6 text-[#0673ff]" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-sm text-gray-500">Total spent</p>
             <p className="text-2xl font-bold text-gray-900 sm:text-3xl">
               {formatCurrency(totalSpent)}
             </p>
           </div>
         </div>
-        <p className="hidden max-w-xs text-right text-sm text-gray-400 sm:block">
-          Every booking transaction on your account, with receipts and
-          references in one place.
-        </p>
       </div>
 
       <div>

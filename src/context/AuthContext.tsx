@@ -45,6 +45,14 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+// The login response calls it userId, /users/me calls it id. Normalize once so every
+// consumer can rely on user.id.
+const normalizeUser = (raw: any) => {
+  if (!raw) return raw;
+  const id = raw.id ?? raw.userId ?? null;
+  return id && !raw.id ? { ...raw, id } : raw;
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -56,14 +64,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loadUserFromCookies();
   }, []);
 
-  const loadUserFromCookies = () => {
+  const loadUserFromCookies = async () => {
     try {
-      const userCookie = Cookies.get("muvment_user");
       const accessTokenCookie = Cookies.get("muvment_access_token");
       const refreshTokenCookie = Cookies.get("muvment_refresh_token");
 
-      if (userCookie && accessTokenCookie) {
-        const userData = JSON.parse(userCookie);
+      // No token means no session; let the app treat this as logged out.
+      if (!accessTokenCookie) {
+        return;
+      }
+      setAccessToken(accessTokenCookie);
+      setRefreshToken(refreshTokenCookie || null);
+
+      const stored =
+        typeof window !== "undefined"
+          ? localStorage.getItem("muvment_user")
+          : null;
+      const userRaw = stored || Cookies.get("muvment_user") || null;
+
+      let userData = normalizeUser(userRaw ? JSON.parse(userRaw) : null);
+
+      // Token is valid but the stored user is missing (e.g. an old oversized
+      // cookie was dropped): rebuild the session from the API instead of logging
+      // the person out.
+      if (!userData) {
+        userData = normalizeUser(await AuthService.getUserInformation());
+        if (userData && typeof window !== "undefined") {
+          localStorage.setItem("muvment_user", JSON.stringify(userData));
+        }
+      }
+
+      if (userData) {
         setUser(userData);
         clarityIdentify(
           userData.id,
@@ -71,11 +102,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             userData.email,
         );
         setGAUser(userData.id);
-        setAccessToken(accessTokenCookie);
-        setRefreshToken(refreshTokenCookie || null);
       }
     } catch (error) {
-      console.error("Error loading user from cookies:", error);
+      console.error("Error loading user:", error);
     } finally {
       setIsLoading(false);
     }
@@ -101,13 +130,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.set("muvment_access_token", tokens.accessToken, opts);
     Cookies.set("muvment_refresh_token", tokens.refreshToken, opts);
 
-    setUser(userData);
+    const normalized = normalizeUser(userData);
+    setUser(normalized);
     clarityIdentify(
-      userData.id,
-      `${userData.firstName ?? ""} ${userData.lastName ?? ""}`.trim() ||
-        userData.email,
+      normalized.id,
+      `${normalized.firstName ?? ""} ${normalized.lastName ?? ""}`.trim() ||
+        normalized.email,
     );
-    setGAUser(userData.id);
+    setGAUser(normalized.id);
 
     // A new sign-in must not inherit the previous user's or a guest's booking
     // details. Clear the saved booking personal info so the form prefills from
@@ -116,7 +146,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       sessionStorage.removeItem("userBookingInformation");
     }
 
-    Cookies.set("muvment_user", JSON.stringify(userData), opts);
+    // Store the user in localStorage, not a cookie. The login response carries
+    // both JWTs and the organizations list, which pushes a cookie past the 4KB
+    // limit and gets it silently dropped (logging the user out on reload).
+    // localStorage has no such limit. Tokens stay in their own cookies for the
+    // API client.
+    const storedUser = { ...normalized } as Record<string, unknown>;
+    delete storedUser.accessToken;
+    delete storedUser.refreshToken;
+    if (typeof window !== "undefined") {
+      localStorage.setItem("muvment_user", JSON.stringify(storedUser));
+    }
+    Cookies.remove("muvment_user");
   };
 
   const logout = () => {
@@ -130,6 +171,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.remove("muvment_access_token");
     Cookies.remove("muvment_refresh_token");
     Cookies.remove("muvment_remember");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("muvment_user");
+    }
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
 

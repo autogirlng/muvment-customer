@@ -8,8 +8,15 @@ export interface SignupRequest {
   email: string;
   password: string;
   phoneNumber: string;
-  userType: "CUSTOMER" | "HOST" | "DRIVER" | "ADMIN";
+  userType:
+    | "CUSTOMER"
+    | "HOST"
+    | "DRIVER"
+    | "ADMIN"
+    | "ORGANIZATION_ADMIN"
+    | "ORGANIZATION_MEMBER";
   referralCode?: string;
+  inviteToken?: string;
 }
 
 export interface LoginRequest {
@@ -135,7 +142,13 @@ export class AuthService {
       this.setCookie(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
     }
     if (user) {
-      this.setCookie(STORAGE_KEYS.USER, JSON.stringify(user));
+      const storedUser = { ...(user as unknown as Record<string, unknown>) };
+      delete storedUser.accessToken;
+      delete storedUser.refreshToken;
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(storedUser));
+      }
+      this.removeCookie(STORAGE_KEYS.USER);
     }
   }
 
@@ -348,6 +361,9 @@ export class AuthService {
     this.removeCookie(STORAGE_KEYS.ACCESS_TOKEN);
     this.removeCookie(STORAGE_KEYS.REFRESH_TOKEN);
     this.removeCookie(STORAGE_KEYS.USER);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+    }
   }
 
   /**
@@ -355,7 +371,10 @@ export class AuthService {
    */
   static getCurrentUser(): User | null {
     try {
-      const userStr = this.getCookie(STORAGE_KEYS.USER);
+      const userStr =
+        (typeof window !== "undefined"
+          ? localStorage.getItem(STORAGE_KEYS.USER)
+          : null) || this.getCookie(STORAGE_KEYS.USER);
       return userStr ? JSON.parse(userStr) : null;
     } catch (error) {
       console.error("Failed to parse user data:", error);

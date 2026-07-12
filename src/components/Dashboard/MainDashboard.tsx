@@ -7,6 +7,10 @@ import { useAuth } from "@/context/AuthContext";
 import { BookingService } from "@/controllers/booking/bookingService";
 import BookingHistoryComponent from "../Booking/BookingHistoryComponent";
 import DashboardFirstBookingOffer from "./DashboardFirstBookingOffer";
+import BusinessOnboardingGuide from "./BusinessOnboardingGuide";
+import StaffCompanyCard from "./StaffCompanyCard";
+import { useCorporateMembership } from "@/hooks/useCorporateMembership";
+import { useBusinessSetup } from "@/hooks/useBusinessSetup";
 import {
   customerBookingStatus,
   customerTripStatus,
@@ -99,6 +103,8 @@ const TRIP_LABEL: Record<Trip["kind"], string> = {
 export default function Dashboard(): React.ReactElement {
   const router = useRouter();
   const { user } = useAuth();
+  const corp = useCorporateMembership();
+  const setup = useBusinessSetup();
   const [stats, setStats] = useState<{
     bookings: number;
     trips: number;
@@ -112,6 +118,7 @@ export default function Dashboard(): React.ReactElement {
   const [tripInfo, setTripInfo] = useState<any | null>(null);
   const [tripLoading, setTripLoading] = useState(true);
   const [statsLoaded, setStatsLoaded] = useState(false);
+  const [showTripPrompt, setShowTripPrompt] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -202,10 +209,25 @@ export default function Dashboard(): React.ReactElement {
         )}
       </div>
 
+      {/* Company allowance: only renders for corporate staff */}
+      <StaffCompanyCard />
+
+      {/* Business onboarding steps: only renders for a business account */}
+      <BusinessOnboardingGuide
+        onBook={openBook}
+        onStatus={(s) => setShowTripPrompt(!s.isBusiness || s.complete)}
+      />
+
       {/* First-booking offer: shows until the user has made a booking */}
-      {statsLoaded && stats.bookings === 0 && (
-        <DashboardFirstBookingOffer onBook={openBook} />
-      )}
+      {statsLoaded &&
+        stats.bookings === 0 &&
+        (setup.isBusiness || !corp.isMember) && (
+          <DashboardFirstBookingOffer
+            onBook={openBook}
+            needsSetup={setup.isBusiness && !setup.setupComplete}
+            onSetup={() => router.push("/business-setup")}
+          />
+        )}
 
       {/* Highlight trip / book prompt */}
       {tripLoading ? (
@@ -285,7 +307,7 @@ export default function Dashboard(): React.ReactElement {
             </div>
           </div>
         </div>
-      ) : (
+      ) : showTripPrompt ? (
         <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-6 text-center">
           <p className="text-gray-900 font-semibold">No trips yet</p>
           <p className="text-sm text-gray-500 mt-1">
@@ -299,7 +321,7 @@ export default function Dashboard(): React.ReactElement {
             Book a vehicle <FiArrowRight className="w-4 h-4" />
           </button>
         </div>
-      )}
+      ) : null}
 
       {/* Compact stats strip */}
       <div className="grid grid-cols-3 divide-x divide-gray-100 bg-white rounded-2xl border border-gray-200 shadow-sm">
@@ -313,7 +335,7 @@ export default function Dashboard(): React.ReactElement {
           </p>
         </button>
         <button
-          onClick={() => router.push("/dashboard/my-booking")}
+          onClick={() => router.push("/dashboard/my-trips")}
           className="min-w-0 p-3 text-left hover:bg-gray-50 transition sm:p-4"
         >
           <p className="text-[11px] text-gray-500 sm:text-xs">Total trips</p>

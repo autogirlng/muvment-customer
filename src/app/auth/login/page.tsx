@@ -109,6 +109,16 @@ export default function LoginComponent() {
           },
           formValues.rememberMe
         );
+
+        // Everyone lands on the dashboard. A business account sees a step-by-step
+        // onboarding guide there (business setup, wallet, first booking).
+        if (user?.userType !== "ORGANIZATION_ADMIN") {
+          try {
+            localStorage.removeItem("muvment_pending_org");
+          } catch {
+            // ignore
+          }
+        }
         router.push("/dashboard");
       }
     } catch (error) {
@@ -359,22 +369,6 @@ export default function LoginComponent() {
             </form>
 
             {/* Footer */}
-            <p className="text-sm text-gray-600 mt-12">
-              By signing in you agree to Muvment's{" "}
-              <Link
-                href="/policy/privacy-policy"
-                className="text-black hover:underline font-medium"
-              >
-                Privacy Policy
-              </Link>{" "}
-              and{" "}
-              <Link
-                href="/policy/terms-conditions"
-                className="text-black hover:underline font-medium"
-              >
-                Terms of Service
-              </Link>
-            </p>
           </div>
         </div>
       </div>

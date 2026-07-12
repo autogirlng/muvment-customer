@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { createData, updateData } from "@/controllers/connnector/app.callers";
+import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 import { EstimatedBookingPrice, Trips } from "@/types/vehicleDetails";
 import { FiCheckCircle, FiCircle, FiAlertCircle } from "react-icons/fi";
 
@@ -114,6 +115,37 @@ const CostBreakdown = ({
   const retryCountRef = useRef(0);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const router = useRouter();
+
+  // Corporate members can pay from the company wallet. Staff must: they never pay
+  // personally, so the gateway options are hidden for them and every booking they make
+  // is charged to the company wallet against their monthly limit.
+  const corp = useCorporateMembership();
+  const orgId = corp.org?.id ?? null;
+  const orgName = corp.org?.name ?? "";
+  const isStaff = corp.isMember && !corp.isAdmin;
+  const spendingLimit = corp.org?.mySpendingLimit ?? null;
+  const amountSpent = corp.org?.myAmountSpent ?? 0;
+  const remaining =
+    spendingLimit != null ? Math.max(0, spendingLimit - Number(amountSpent)) : null;
+  // The most this member can actually spend now: the smaller of their remaining limit
+  // and the wallet balance, computed by the backend so staff never see the raw balance.
+  const effectiveSpendable = corp.org?.myEffectiveSpendable ?? null;
+  const [payWithCorporate, setPayWithCorporate] = useState(false);
+
+  useEffect(() => {
+    if (corp.loading) return;
+    // Default members to the wallet; staff are locked to it.
+    if (corp.isMember && orgId) setPayWithCorporate(true);
+    else setPayWithCorporate(false);
+  }, [corp.loading, corp.isMember, orgId]);
+
+  // True when paying by wallet but this booking is more than the member can spend now.
+  const bookingTotal = Number(pricing?.data?.data?.finalPrice || 0);
+  const overSpendable =
+    payWithCorporate &&
+    effectiveSpendable != null &&
+    bookingTotal > 0 &&
+    bookingTotal > effectiveSpendable;
 
   const readApiMessage = (result: any, fallback: string) => {
     const msg = result?.message;
@@ -350,6 +382,13 @@ const CostBreakdown = ({
         : null;
     if (partnerBookingId) data.partnerId = partnerBookingId;
 
+    // Pay from the company wallet (charged on the member's monthly limit) instead of a
+    // personal gateway. Staff always land here; admins land here unless they switch.
+    if (payWithCorporate && orgId) {
+      data.paymentMethod = "CORPORATE_WALLET";
+      data.organizationId = orgId;
+    }
+
     setIsProcessing(true);
     setErrorMessage("");
     setUnavailable(false);
@@ -398,6 +437,13 @@ const CostBreakdown = ({
       // booking starts a new calculation rather than reusing this consumed one.
       sessionStorage.removeItem("priceEstimateId");
       setEstimatedPriceId("");
+
+      // A corporate-wallet booking is settled by the backend at creation (or held for
+      // approval when it is over the member's threshold), so there is no gateway step.
+      if (payWithCorporate && orgId) {
+        router.push(`/booking/success?bookingId=${bookingId}`);
+        return;
+      }
 
       let authUrl = "";
 
@@ -483,7 +529,7 @@ const CostBreakdown = ({
       onActionChange({
         label: "Confirm & pay",
         onClick: () => processPaymentRef.current(),
-        disabled: false,
+        disabled: overSpendable,
         amount: pricing?.data?.data?.finalPrice,
       });
     } else {
@@ -500,6 +546,7 @@ const CostBreakdown = ({
     isProcessing,
     errorMessage,
     unavailable,
+    overSpendable,
     pricing?.data?.data?.finalPrice,
   ]);
 
@@ -600,7 +647,76 @@ const CostBreakdown = ({
               <h3 className="text-sm font-semibold mb-3 text-gray-700">
                 Select Payment Method
               </h3>
-              <div className="flex flex-col gap-3">
+
+              {corp.isMember && orgId && (
+                <div className="flex flex-col gap-3 mb-3">
+                  <div
+                    onClick={() => setPayWithCorporate(true)}
+                    className={cn(
+                      "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
+                      payWithCorporate
+                        ? "border-blue-500 bg-blue-50/50"
+                        : "border-gray-100 bg-white hover:border-blue-200",
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {orgName} wallet
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {effectiveSpendable != null
+                          ? `${ngn(effectiveSpendable)} available to spend`
+                          : remaining != null
+                            ? `${ngn(remaining)} left this month`
+                            : "Charged to your company wallet"}
+                      </p>
+                    </div>
+                    {payWithCorporate ? (
+                      <FiCheckCircle className="text-blue-600 min-w-[24px]" size={24} />
+                    ) : (
+                      <FiCircle className="text-gray-300 min-w-[24px]" size={24} />
+                    )}
+                  </div>
+
+                  {!isStaff && (
+                    <div
+                      onClick={() => setPayWithCorporate(false)}
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
+                        !payWithCorporate
+                          ? "border-blue-500 bg-blue-50/50"
+                          : "border-gray-100 bg-white hover:border-blue-200",
+                      )}
+                    >
+                      <p className="text-sm font-medium text-gray-900">
+                        Pay with card or transfer
+                      </p>
+                      {!payWithCorporate ? (
+                        <FiCheckCircle className="text-blue-600 min-w-[24px]" size={24} />
+                      ) : (
+                        <FiCircle className="text-gray-300 min-w-[24px]" size={24} />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {overSpendable && (
+                <p className="mb-3 rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-700">
+                  This booking is more than the {ngn(effectiveSpendable ?? 0)} you can
+                  spend right now.{" "}
+                  {isStaff
+                    ? "Ask your organization administrator to raise your limit or top up the company wallet."
+                    : "Top up the company wallet, or pay with card or transfer."}
+                </p>
+              )}
+
+              <div
+                className={cn(
+                  "flex flex-col gap-3",
+                  corp.isMember && payWithCorporate && "hidden",
+                )}
+              >
                 <div
                   onClick={() => setPaymentGateway("PAYSTACK")}
                   className={cn(

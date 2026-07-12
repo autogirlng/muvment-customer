@@ -12,13 +12,71 @@ export interface Organization {
   name: string;
   rcNumber: string;
   industry: string;
+  registrationType?: string;
+  businessEmail?: string;
+  businessPhone?: string;
+  companySize?: string;
+  website?: string;
+  address?: string;
   createdAt?: string;
+  myRole?: "ORG_ADMIN" | "ORG_STAFF" | null;
+  mySpendingLimit?: number | null;
+  myAmountSpent?: number | null;
+  myApprovalThreshold?: number | null;
+  // Smaller of the member's remaining limit and the wallet balance (server-computed).
+  myEffectiveSpendable?: number | null;
+}
+
+export interface OrganizationMember {
+  memberId: string;
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  role: "ORG_ADMIN" | "ORG_STAFF";
+  spendingLimit?: number | null;
+  amountSpent?: number | null;
+  approvalThreshold?: number | null;
+  isActive: boolean;
+  joinedAt?: string;
+}
+
+export interface OrganizationInvite {
+  inviteId: string;
+  email: string;
+  spendingLimit?: number | null;
+  invitedAt?: string;
 }
 
 export interface CreateOrganizationBody {
   name: string;
   rcNumber: string;
   industry: string;
+  registrationType?: string;
+  businessEmail?: string;
+  businessPhone?: string;
+  companySize?: string;
+  website?: string;
+  address?: string;
+}
+
+export interface OrganizationWalletInfo {
+  balance: number;
+  virtualAccountNumber?: string;
+  bankName?: string;
+  accountName?: string;
+}
+
+export interface WalletTransaction {
+  transactionId: string;
+  amount: number;
+  balanceBefore?: number;
+  balanceAfter?: number;
+  transactionType: "CREDIT" | "DEBIT";
+  reference?: string;
+  description?: string;
+  staffName?: string;
+  createdAt: string;
 }
 
 export interface ApiKey {
@@ -46,4 +104,30 @@ export interface OrganizationKYC extends BaseResponse {
     organizationSize?: "string";
     servicesRendered?: "string";
   };
+}
+
+export interface Paginated<T> {
+  content: T[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+}
+
+export interface OrganizationBooking {
+  bookingId: string;
+  invoiceNumber?: string;
+  status?: string;
+  totalPrice?: number | string | null;
+  bookedAt?: string;
+  guestFullName?: string;
+  recipientFullName?: string;
+  /** Jackson serializes isBookingForOthers as bookingForOthers. */
+  isBookingForOthers?: boolean;
+  bookingForOthers?: boolean;
+  user?: {
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  } | null;
 }
