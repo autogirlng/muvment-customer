@@ -1357,7 +1357,7 @@ const ServicePricingCheckoutPage = () => {
                   )}
                   {priceEstimate.logisticsFee > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Logistics fee</span>
+                      <span className="text-gray-500">Outskirt fee</span>
                       <span className="font-medium text-gray-900">
                         {formatCurrency(priceEstimate.logisticsFee)}
                       </span>

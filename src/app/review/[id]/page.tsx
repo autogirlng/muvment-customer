@@ -124,38 +124,41 @@ const ReviewContent = () => {
       setLoading(false);
       return;
     }
-    try {
-      setLoading(true);
 
-      // Check if user has already reviewed this booking
-      const hasReviewed = await BookingService.checkIfUserHasReviewed(
-        bookingId as string
-      );
+    setLoading(true);
 
-      if (hasReviewed) {
-        setAlreadyReviewed(true);
-        setLoading(false);
-        return;
-      }
-
-
-      // Fetch booking details if no review exists — failure is non-fatal,
-      // the form still works without vehicle info.
-      try {
-        const bookingRes = await getSingleData(
-          `/api/v1/public/bookings/${bookingId}`
-        );
-        const bookingData = bookingRes?.data[0]?.data;
+    // Load the booking details and the "already reviewed" check independently.
+    // The form only needs the booking details, so it must not wait on the review
+    // check: if that check is slow or never returns, the form should still appear.
+    const bookingPromise = getSingleData(
+      `/api/v1/public/bookings/${bookingId}`,
+    )
+      .then((bookingRes) => {
+        const bookingData = bookingRes?.data?.[0]?.data;
         if (bookingData) setBooking(bookingData);
-      } catch (err) {
+      })
+      .catch((err) => {
+        // Booking details are optional; the form works without vehicle info.
         console.error("Could not load booking details:", err);
-      }
-    } catch (err: any) {
-      console.error("Error fetching booking:", err);
-      setError(err.message || "Failed to load booking details.");
-    } finally {
-      setLoading(false);
-    }
+      });
+
+    const reviewedPromise = BookingService.checkIfUserHasReviewed(
+      bookingId as string,
+    )
+      .then((hasReviewed) => {
+        if (hasReviewed) setAlreadyReviewed(true);
+      })
+      .catch((err) => {
+        // The check is a convenience; the server still rejects duplicates on submit.
+        console.error("Could not check existing review:", err);
+      });
+
+    // Release the form as soon as booking details settle. The review check
+    // continues in the background and flips to the "already reviewed" screen if
+    // it comes back positive.
+    await bookingPromise;
+    setLoading(false);
+    void reviewedPromise;
   };
 
   useEffect(() => {

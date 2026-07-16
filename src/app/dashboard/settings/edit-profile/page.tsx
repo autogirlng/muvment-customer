@@ -9,6 +9,8 @@ import {
   ProfileService,
   UserProfile,
 } from "@/controllers/user/profile.service";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "react-toastify";
 import PhoneNumberAndCountryField from "@/components/general/forms/phoneNumberAndCountryField";
 import { allowedCountries } from "@/components/general/forms/icons";
 import { validatePhoneNumber } from "@/utils/validationSchema";
@@ -47,6 +49,9 @@ const fieldClasses =
 
 export default function EditProfilePage() {
   const router = useRouter();
+  const { setTokens } = useAuth();
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -94,6 +99,7 @@ export default function EditProfilePage() {
         lastName: profileData?.lastName || "",
         phoneNumber: phone.local,
       });
+      setEmail(profileData?.email || "");
     } catch (error) {
       console.error("Failed to fetch profile:", error);
     } finally {
@@ -166,20 +172,49 @@ export default function EditProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
+    setEmailError(null);
     if (!validateForm()) return;
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const currentEmail = (profile?.email || "").trim().toLowerCase();
+    const emailChanged = Boolean(trimmedEmail) && trimmedEmail !== currentEmail;
+
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+
     setUpdating(true);
     try {
-      await ProfileService.updateProfile({
+      const result = await ProfileService.updateProfile({
         ...formData,
         phoneNumber: `${countryCode}${formData.phoneNumber}`,
+        countryCode,
+        // Only send email when it actually changed, since this is a PATCH.
+        ...(emailChanged ? { email: trimmedEmail } : {}),
       });
+
+      // Changing the email reissues tokens; persist them so subsequent requests
+      // are authenticated against the updated identity.
+      if (result.accessToken && result.refreshToken) {
+        setTokens(result.accessToken, result.refreshToken);
+      }
+
+      if (emailChanged) {
+        toast.success(
+          "Email updated. Please check your inbox to verify the new address.",
+        );
+      }
+
       router.push("/dashboard/settings");
     } catch (error) {
       const message =
         error instanceof Error && error.message
           ? error.message
           : "Failed to update profile. Please try again.";
-      if (/phone/i.test(message)) {
+      if (/email/i.test(message)) {
+        setEmailError(message);
+      } else if (/phone/i.test(message)) {
         setErrors((prev) => ({ ...prev, phoneNumber: message }));
       } else {
         setSubmitError(message);
@@ -365,16 +400,30 @@ export default function EditProfilePage() {
           <label className="mb-2 block text-sm font-medium text-gray-900">
             Email
           </label>
-          <div className="flex flex-col gap-2 rounded-[12px] bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
-            <p className="flex-1 break-all text-sm text-gray-600">
-              {profile.email}
+          <input
+            type="email"
+            name="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (emailError) setEmailError(null);
+            }}
+            className={`w-full rounded-[12px] border px-4 py-3 text-sm text-gray-900 focus:border-[#0673ff] focus:outline-none ${
+              emailError ? "border-red-500" : "border-gray-300"
+            }`}
+          />
+          {emailError ? (
+            <p className="mt-1 text-sm text-red-600">{emailError}</p>
+          ) : profile.verified ? (
+            <p className="mt-1 text-xs text-green-600">
+              Verified. Changing your email will require verifying the new
+              address.
             </p>
-            {profile.verified && (
-              <span className="rounded-full border border-green-600 bg-white px-3 py-1 text-xs font-medium text-green-600">
-                Verified
-              </span>
-            )}
-          </div>
+          ) : (
+            <p className="mt-1 text-xs text-gray-500">
+              This email is not verified yet.
+            </p>
+          )}
         </div>
       </form>
 
