@@ -20,6 +20,7 @@ import {
   FiClock,
   FiGift,
   FiBell,
+  FiBriefcase,
   FiLink,
   FiSettings,
   FiLogOut,
@@ -290,10 +291,16 @@ const DashboardLayoutClient = ({
       {/* Content column */}
       <div className="lg:pl-64 pb-20 lg:pb-0">
         <header className="sticky top-0 z-20 bg-white border-b border-gray-100 h-16 flex items-center gap-3 px-4 lg:px-8">
-          <h1 className="flex-1 truncate text-lg font-semibold text-gray-900">
+          <h1 className="truncate text-lg font-semibold text-gray-900">
             {titleFor(pathname)}
           </h1>
-          <div className="flex items-center gap-3">
+          {corp.isMember && corp.org?.name && (
+            <span className="hidden sm:inline-flex max-w-[200px] items-center gap-1.5 truncate rounded-full bg-[#EAF2FF] px-3 py-1 text-xs font-medium text-[#0673ff]">
+              <FiBriefcase className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{corp.org.name}</span>
+            </span>
+          )}
+          <div className="flex flex-1 items-center justify-end gap-3">
             {/* Notifications: bell on mobile (sidebar handles it on desktop) */}
             <Link
               href="/dashboard/notification"
