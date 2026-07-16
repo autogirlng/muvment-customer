@@ -121,10 +121,13 @@ export class BookingService {
     try {
       const response = await getSingleData(
         `${this.TRIPS_URL}/by-segment/${segmentId}`,
+        undefined,
+        { silent: true },
       );
       return response?.data?.[0]?.data || null;
     } catch (error) {
-      // Endpoint may not be live yet, or no trip exists for this segment.
+      // No trip exists for this segment yet, which is expected for segments that
+      // have not been turned into a trip. Handled by the callers, nothing to log.
       return null;
     }
   }

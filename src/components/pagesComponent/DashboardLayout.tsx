@@ -291,6 +291,13 @@ const DashboardLayoutClient = ({
       {/* Content column */}
       <div className="lg:pl-64 pb-20 lg:pb-0">
         <header className="sticky top-0 z-20 bg-white border-b border-gray-100 h-16 flex items-center gap-3 px-4 lg:px-8">
+          <Link
+            href="/dashboard"
+            aria-label="Muvment home"
+            className="lg:hidden shrink-0"
+          >
+            <img src="/images/logomark.svg" alt="Muvment" className="h-8 w-8" />
+          </Link>
           <h1 className="truncate text-lg font-semibold text-gray-900">
             {titleFor(pathname)}
           </h1>
