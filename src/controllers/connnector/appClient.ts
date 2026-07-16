@@ -47,6 +47,7 @@ class ApiClient {
         data: body || {},
         headers: requestHeaders,
         params,
+        timeout: 30000,
       });
       return [response.data as any, "Request successful"];
     } catch (error: unknown) {
