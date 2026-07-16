@@ -6,7 +6,6 @@ import {
   FiRefreshCw,
   FiArrowUpRight,
   FiArrowDownLeft,
-  FiDollarSign,
 } from "react-icons/fi";
 import { useAuth } from "@/context/AuthContext";
 import { useCorporateMembership } from "@/hooks/useCorporateMembership";
@@ -215,22 +214,17 @@ export default function WalletPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="flex w-full items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-5 shadow-sm sm:px-6">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#E7F1FF]">
-            <FiDollarSign className="h-6 w-6 text-[#0673ff]" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Wallet balance</p>
-            <p className="text-2xl font-bold text-gray-900 sm:text-3xl">
-              {naira(wallet?.balance)}
-            </p>
-          </div>
+      <div className="flex w-full flex-col gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div>
+          <p className="text-sm text-gray-500">Wallet balance</p>
+          <p className="text-2xl font-bold text-gray-900 sm:text-3xl">
+            {naira(wallet?.balance)}
+          </p>
         </div>
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setFundOpen(true)}
-            className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 sm:flex-none"
             style={{ backgroundColor: "#0673ff" }}
           >
             Fund wallet
@@ -239,7 +233,7 @@ export default function WalletPage() {
             onClick={handleRefresh}
             disabled={refreshing}
             aria-label="Refresh"
-            className="rounded-lg border border-gray-300 bg-white p-2.5 text-gray-600 hover:bg-gray-50 disabled:opacity-60"
+            className="shrink-0 rounded-lg border border-gray-300 bg-white p-2.5 text-gray-600 hover:bg-gray-50 disabled:opacity-60"
           >
             <FiRefreshCw
               className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}

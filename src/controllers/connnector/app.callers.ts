@@ -126,7 +126,11 @@ export const getTableDataBlob = async (path: string, params?: any) => {
   return data;
 };
 
-export const getSingleData = async (path: string, params?: any) => {
+export const getSingleData = async (
+  path: string,
+  params?: any,
+  options?: { silent?: boolean },
+) => {
   if (typeof window !== "undefined" && !NetworkService.checkConnection()) {
     throw new Error("No connection");
   }
@@ -134,6 +138,7 @@ export const getSingleData = async (path: string, params?: any) => {
     method: "GET",
     requireAuth: true,
     params,
+    silent: options?.silent,
   });
   return NetworkService.handleApiResponse([data]);
 };
