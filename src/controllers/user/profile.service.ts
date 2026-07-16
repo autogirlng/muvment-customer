@@ -23,6 +23,25 @@ export interface ProfileFormData {
   phoneNumber: string;
 }
 
+// The backend accepts an optional email on the same PATCH. When email changes it
+// reissues tokens and returns them, and marks the address unverified.
+export interface UpdateProfilePayload extends ProfileFormData {
+  countryCode?: string;
+  email?: string;
+}
+
+export interface UpdateProfileResult {
+  accessToken?: string;
+  refreshToken?: string;
+  userId?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  profilePictureUrl?: string;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+}
+
 export class ProfileService {
   private static readonly PROFILE_BASE_URL = "/api/v1/users/me";
 
@@ -35,8 +54,8 @@ export class ProfileService {
   }
 
   static async updateProfile(
-    formData: ProfileFormData
-  ): Promise<{ data: UserProfile }> {
+    formData: UpdateProfilePayload
+  ): Promise<UpdateProfileResult> {
     const response = await patchWithoutParams(this.PROFILE_BASE_URL, formData);
     if (!response) {
       throw new Error("Failed to update profile");
@@ -48,7 +67,9 @@ export class ProfileService {
     if (payload?.status === "FAILED" || payload?.errorCode) {
       throw new Error(payload.message || "Failed to update profile");
     }
-    return response as { data: UserProfile };
+    // The success envelope wraps the updated profile (and any reissued tokens)
+    // under data.
+    return (payload?.data ?? payload) as UpdateProfileResult;
   }
 
   static async updateProfilePicture(

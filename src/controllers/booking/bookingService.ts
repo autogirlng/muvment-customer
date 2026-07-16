@@ -374,11 +374,17 @@ export class BookingService {
         `/api/v1/rating-review/entity/${bookingId}`,
       );
 
-      if (!response || !response.data) {
+      // handleApiResponse returns { data, error }. On an error response (for
+      // example a 401 when a guest opens the link with no session) data is null
+      // and error is true, so treat that as "not reviewed" and show the form.
+      if (!response || response.error || !response.data) {
         return false;
       }
 
-      const content = response.data[0]?.data?.content;
+      const payload = Array.isArray(response.data)
+        ? response.data[0]?.data
+        : response.data;
+      const content = payload?.content;
       return Array.isArray(content) && content.length > 0;
     } catch {
       // The check is a convenience. If it cannot run, still show the form: the server

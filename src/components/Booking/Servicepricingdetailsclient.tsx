@@ -412,6 +412,23 @@ const ServicePricingBookingPage: React.FC = () => {
       {priceEstimate ? (
         <div className="mt-5 pt-5 border-t border-gray-200 space-y-3">
           <PriceRow label="Base fare" value={priceEstimate.basePrice || 0} />
+          {priceEstimate.couponDiscountAmount > 0 && (
+            <PriceRow
+              label={
+                priceEstimate.appliedCouponCode
+                  ? `Coupon discount (${priceEstimate.appliedCouponCode})`
+                  : "Coupon discount"
+              }
+              value={priceEstimate.couponDiscountAmount}
+              subLabel={
+                String(priceEstimate.appliedCouponCode || "").toUpperCase() ===
+                "WELCOME"
+                  ? "10% off your first ride, capped at ₦10,000"
+                  : undefined
+              }
+              isDiscount
+            />
+          )}
           {priceEstimate.platformFeeAmount > 0 && (
             <PriceRow
               label="Platform fee"
@@ -419,7 +436,7 @@ const ServicePricingBookingPage: React.FC = () => {
             />
           )}
           {priceEstimate.logisticsFee > 0 && (
-            <PriceRow label="Logistics fee" value={priceEstimate.logisticsFee} />
+            <PriceRow label="Outskirt fee" value={priceEstimate.logisticsFee} />
           )}
           {priceEstimate.vatAmount > 0 && (
             <PriceRow

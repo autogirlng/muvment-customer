@@ -6,6 +6,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import RouteTracker from "../general/RouteTracker";
 import TopProgressBar from "@/components/utils/TopProgressBar";
 import PendingFavouriteHandler from "@/components/Booking/PendingFavouriteHandler";
+import NotificationSocketListener from "@/components/utils/NotificationSocketListener";
 
 export default function ClientRoot({
   children,
@@ -31,6 +32,7 @@ export default function ClientRoot({
           <RouteTracker />
         </Suspense>
         <PendingFavouriteHandler />
+        <NotificationSocketListener />
         {children}
       </AuthProvider>
     </>

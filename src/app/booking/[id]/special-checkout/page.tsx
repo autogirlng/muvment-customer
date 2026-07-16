@@ -1333,6 +1333,36 @@ const ServicePricingCheckoutPage = () => {
                       {formatCurrency(priceEstimate.basePrice || 0)}
                     </span>
                   </div>
+                  {priceEstimate.couponDiscountAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span className="flex flex-col text-gray-500">
+                        <span>
+                          Coupon discount
+                          {priceEstimate.appliedCouponCode
+                            ? ` (${priceEstimate.appliedCouponCode})`
+                            : ""}
+                        </span>
+                        {String(
+                          priceEstimate.appliedCouponCode || "",
+                        ).toUpperCase() === "WELCOME" && (
+                          <span className="text-xs text-gray-400">
+                            10% off your first ride, capped at ₦10,000
+                          </span>
+                        )}
+                      </span>
+                      <span className="font-medium text-green-600">
+                        - {formatCurrency(priceEstimate.couponDiscountAmount)}
+                      </span>
+                    </div>
+                  )}
+                  {priceEstimate.logisticsFee > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Outskirt fee</span>
+                      <span className="font-medium text-gray-900">
+                        {formatCurrency(priceEstimate.logisticsFee)}
+                      </span>
+                    </div>
+                  )}
                   {priceEstimate.platformFeeAmount > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-500">Platform fee</span>
