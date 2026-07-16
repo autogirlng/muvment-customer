@@ -387,6 +387,11 @@ const CostBreakdown = ({
     if (payWithCorporate && orgId) {
       data.paymentMethod = "CORPORATE_WALLET";
       data.organizationId = orgId;
+    } else if (corp.isMember && orgId) {
+      // Member paying with their own card or transfer: keep the booking attached to the
+      // organization so it still shows under company bookings, but fund it through the
+      // gateway. The backend does not touch the wallet balance or the spend limit here.
+      data.organizationId = orgId;
     }
 
     setIsProcessing(true);
@@ -678,26 +683,24 @@ const CostBreakdown = ({
                     )}
                   </div>
 
-                  {!isStaff && (
-                    <div
-                      onClick={() => setPayWithCorporate(false)}
-                      className={cn(
-                        "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
-                        !payWithCorporate
-                          ? "border-blue-500 bg-blue-50/50"
-                          : "border-gray-100 bg-white hover:border-blue-200",
-                      )}
-                    >
-                      <p className="text-sm font-medium text-gray-900">
-                        Pay with card or transfer
-                      </p>
-                      {!payWithCorporate ? (
-                        <FiCheckCircle className="text-blue-600 min-w-[24px]" size={24} />
-                      ) : (
-                        <FiCircle className="text-gray-300 min-w-[24px]" size={24} />
-                      )}
-                    </div>
-                  )}
+                  <div
+                    onClick={() => setPayWithCorporate(false)}
+                    className={cn(
+                      "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md",
+                      !payWithCorporate
+                        ? "border-blue-500 bg-blue-50/50"
+                        : "border-gray-100 bg-white hover:border-blue-200",
+                    )}
+                  >
+                    <p className="text-sm font-medium text-gray-900">
+                      Pay with card or transfer
+                    </p>
+                    {!payWithCorporate ? (
+                      <FiCheckCircle className="text-blue-600 min-w-[24px]" size={24} />
+                    ) : (
+                      <FiCircle className="text-gray-300 min-w-[24px]" size={24} />
+                    )}
+                  </div>
                 </div>
               )}
 

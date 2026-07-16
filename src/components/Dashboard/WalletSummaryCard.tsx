@@ -41,29 +41,29 @@ export default function WalletSummaryCard() {
   return (
     <>
       <div className="flex-1 min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex h-full flex-col justify-between gap-4">
-          <div>
-            <p className="text-sm text-gray-500">Company wallet balance</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">
-              {naira(wallet?.balance ?? 0)}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex h-full flex-col justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm text-gray-500">Company wallet balance</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">
+                {naira(wallet?.balance ?? 0)}
+              </p>
+            </div>
             <button
               onClick={() => setFundOpen(true)}
-              className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+              className="shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
               style={{ backgroundColor: "#0673ff" }}
             >
               Fund wallet
             </button>
-            <button
-              onClick={() => router.push("/dashboard/business/wallet")}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              View wallet transactions
-              <FiArrowRight className="h-4 w-4" />
-            </button>
           </div>
+          <button
+            onClick={() => router.push("/dashboard/business/wallet")}
+            className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-[#0673ff] hover:text-[#0560d6] hover:underline"
+          >
+            View wallet transactions
+            <FiArrowRight className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
