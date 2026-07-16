@@ -50,7 +50,7 @@ export type CorporateMembership = {
 };
 
 export function useCorporateMembership(): CorporateMembership {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   // The login response calls it userId; /users/me calls it id. AuthContext normalizes
   // this, but fall back anyway so a missing id can never silently disable every
   // corporate feature. The key only scopes the cache.
@@ -63,6 +63,10 @@ export function useCorporateMembership(): CorporateMembership {
   const [loading, setLoading] = useState(orgs === null);
 
   const load = useCallback(async () => {
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
     if (!isAuthenticated) {
       setOrgs([]);
       setLoading(false);
@@ -72,11 +76,19 @@ export function useCorporateMembership(): CorporateMembership {
     const list = await fetchOrgs(userId || "current");
     setOrgs(list);
     setLoading(false);
-  }, [isAuthenticated, userId]);
+  }, [authLoading, isAuthenticated, userId]);
 
   useEffect(() => {
     let active = true;
     (async () => {
+      // While auth is still hydrating from cookies on a hard refresh, isAuthenticated
+      // is briefly false before the user loads. Stay in the loading state instead of
+      // reporting "no membership", which would make gated pages (like the wallet)
+      // redirect the user away before their organization has a chance to load.
+      if (authLoading) {
+        if (active) setLoading(true);
+        return;
+      }
       if (!isAuthenticated) {
         if (active) {
           setOrgs([]);
@@ -92,7 +104,7 @@ export function useCorporateMembership(): CorporateMembership {
     return () => {
       active = false;
     };
-  }, [isAuthenticated, userId]);
+  }, [authLoading, isAuthenticated, userId]);
 
   const refresh = useCallback(async () => {
     clearCorporateMembershipCache();

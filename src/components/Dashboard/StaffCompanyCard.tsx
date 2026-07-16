@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { FiArrowRight } from "react-icons/fi";
 import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 import {
   computeAllowance,
@@ -102,6 +104,15 @@ export default function StaffCompanyCard() {
           </>
         )}
       </div>
+
+      <Link
+        href="/booking/search"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+        style={{ backgroundColor: "#0673FF" }}
+      >
+        Book with company wallet
+        <FiArrowRight className="h-4 w-4" />
+      </Link>
     </div>
   );
 }
