@@ -12,14 +12,15 @@ interface UseNotificationSocketArgs {
   onNotification: (notification: RealtimeNotification) => void;
 }
 
-// Builds the SockJS URL from the API base. The base may or may not carry an /api
-// suffix depending on the environment, so strip any trailing /api or /api/v1 and
-// append /ws, which is where the backend registers the STOMP endpoint.
+// The backend runs under the /api context path, so the SockJS endpoint is at
+// <root>/api/ws (SockJS negotiates at /api/ws/info). NEXT_PUBLIC_API_URL is the
+// bare root that the rest of the app prefixes with /api/v1, so normalise it to
+// the root and append /api/ws.
 const buildSocketUrl = (): string | null => {
   const base = process.env.NEXT_PUBLIC_API_URL;
   if (!base) return null;
   const root = base.replace(/\/+$/, "").replace(/\/api(\/v1)?$/, "");
-  return `${root}/ws`;
+  return `${root}/api/ws`;
 };
 
 const parseNotification = (
