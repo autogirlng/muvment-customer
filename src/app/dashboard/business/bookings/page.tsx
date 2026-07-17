@@ -212,6 +212,16 @@ export default function CompanyBookingsPage() {
         </span>
       ),
     },
+    {
+      key: "bookingId",
+      label: "",
+      render: () => (
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-[#0673ff]">
+          Trip details
+          <FiArrowRight className="h-3.5 w-3.5" />
+        </span>
+      ),
+    },
   ];
 
   const data = bookings.map((b) => ({ ...b, id: b.bookingId }));
@@ -267,6 +277,7 @@ export default function CompanyBookingsPage() {
         hasMore={hasMore}
         loadingMore={loadingMore}
         onLoadMore={handleLoadMore}
+        onRowClick={(row) => router.push(`/dashboard/booking/${row.bookingId}`)}
         emptyTitle="No bookings yet"
         emptyMessage={
           corp.isAdmin
@@ -306,6 +317,10 @@ export default function CompanyBookingsPage() {
                   <span className="text-gray-700">
                     {rider ? `${rider} (guest)` : "Self"}
                   </span>
+                </span>
+                <span className="ml-auto inline-flex items-center gap-1 font-medium text-[#0673ff]">
+                  Trip details
+                  <FiArrowRight className="h-3.5 w-3.5" />
                 </span>
               </div>
             </div>
