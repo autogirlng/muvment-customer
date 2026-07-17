@@ -62,13 +62,15 @@ function SignupContent() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [accountType, setAccountType] = useState<"individual" | "business">(
-    "individual",
-  );
   const searchParams = useSearchParams();
   const ReferalCode = searchParams.get("code") || "";
   // A staff member arriving from a corporate invite email.
   const inviteToken = searchParams.get("inviteToken") || "";
+  // Arriving from the business page pre-selects the business account type.
+  const accountTypeParam = searchParams.get("type") || "";
+  const [accountType, setAccountType] = useState<"individual" | "business">(
+    accountTypeParam === "business" ? "business" : "individual",
+  );
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
@@ -78,6 +80,13 @@ function SignupContent() {
       router.replace("/dashboard");
     }
   }, [authLoading, isAuthenticated, router]);
+
+  // If the type param resolves after first paint, honor it.
+  useEffect(() => {
+    if (accountTypeParam === "business") {
+      setAccountType("business");
+    }
+  }, [accountTypeParam]);
 
   const handleChange = (name: string, value: string) => {
     if (name === "accountType") {

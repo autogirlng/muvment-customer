@@ -15,6 +15,7 @@ import {
   MdMailOutline,
   MdVolunteerActivism,
   MdLocationSearching,
+  MdBusinessCenter,
 } from "react-icons/md";
 import { FiLogIn, FiUserPlus } from "react-icons/fi";
 
@@ -64,6 +65,7 @@ export const menuItems = [
 
 export const guestMenuItems = [
   { name: "Explore", link: "/booking/search", icon: MdExplore },
+  { name: "For Business", link: "/muvment-for-business", icon: MdBusinessCenter },
   { name: "About us", link: "/about-us", icon: MdInfoOutline },
   { name: "Our Impact", link: "/impact", icon: MdVolunteerActivism },
   { name: "FAQ", link: "/faq", icon: MdQuestionMark },
