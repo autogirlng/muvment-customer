@@ -51,6 +51,7 @@ const footerNav: FooterNavProps[] = [
   {
     title: "Explore",
     links: [
+      { name: "Muvment for Business", link: "/muvment-for-business" },
       { name: "Get paid", link: "https://host.muvment.ng/" },
       { name: "Become a Driver", link: "https://host.muvment.ng/earn" },
       { name: "Book a vehicle", link: "/booking/search" },
