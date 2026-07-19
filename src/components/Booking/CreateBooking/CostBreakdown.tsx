@@ -110,6 +110,8 @@ const CostBreakdown = ({
   const [pricing, setPricing] = useState<EstimatedBookingPrice>();
   const [paymentGateway, setPaymentGateway] =
     useState<PaymentGateway>("PAYSTACK");
+  const [locationAcknowledged, setLocationAcknowledged] =
+    useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [unavailable, setUnavailable] = useState<boolean>(false);
   const retryCountRef = useRef(0);
@@ -534,7 +536,7 @@ const CostBreakdown = ({
       onActionChange({
         label: "Confirm & pay",
         onClick: () => processPaymentRef.current(),
-        disabled: overSpendable,
+        disabled: overSpendable || !locationAcknowledged,
         amount: pricing?.data?.data?.finalPrice,
       });
     } else {
@@ -552,6 +554,7 @@ const CostBreakdown = ({
     errorMessage,
     unavailable,
     overSpendable,
+    locationAcknowledged,
     pricing?.data?.data?.finalPrice,
   ]);
 
@@ -798,6 +801,33 @@ const CostBreakdown = ({
               </a>
               .
             </p>
+
+            <label
+              className={cn(
+                "mt-4 flex items-start gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all select-none",
+                locationAcknowledged
+                  ? "border-[#0673ff] bg-[#EAF2FF]"
+                  : "border-amber-300 bg-[#FFFBEB] hover:border-amber-400",
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={locationAcknowledged}
+                onChange={(e) => setLocationAcknowledged(e.target.checked)}
+                className="mt-0.5 h-5 w-5 flex-shrink-0 accent-[#0673ff]"
+              />
+              <span
+                className={cn(
+                  "text-xs leading-snug",
+                  locationAcknowledged ? "text-[#0d1320]" : "text-amber-900",
+                )}
+              >
+                I confirm my pickup, drop-off, and areas of use are correct and
+                complete. I understand outskirt and interstate areas attract
+                extra charges, and that refusing to pay these charges does not
+                entitle me to a refund.
+              </span>
+            </label>
           </section>
         )}
 
