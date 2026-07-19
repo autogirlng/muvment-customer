@@ -35,6 +35,10 @@ import BookingReassurance from "@/components/Booking/BookingReassurance";
 import { BookingService } from "@/controllers/booking/bookingService";
 import Footer from "@/components/HomeComponent/Footer";
 import cn from "classnames";
+import {
+  TripFootprintMap,
+  TripMapPoint,
+} from "@/components/Booking/TripFootprintMap";
 import { createData } from "@/controllers/connnector/app.callers";
 import PhoneNumberAndCountryField from "@/components/general/forms/phoneNumberAndCountryField";
 import { ProfileService } from "@/controllers/user/profile.service";
@@ -126,6 +130,8 @@ const ServicePricingCheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [paymentGateway, setPaymentGateway] =
     useState<PaymentGateway>("PAYSTACK");
+  const [locationAcknowledged, setLocationAcknowledged] =
+    useState<boolean>(false);
   // Corporate wallet payment (business accounts only)
   const [corpOrg, setCorpOrg] = useState<{ id: string; name: string } | null>(
     null,
@@ -824,10 +830,37 @@ const ServicePricingCheckoutPage = () => {
         ))}
       </div>
 
+      <label
+        className={cn(
+          "mt-4 mb-4 flex items-start gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all select-none",
+          locationAcknowledged
+            ? "border-[#0673ff] bg-[#EAF2FF]"
+            : "border-amber-300 bg-[#FFFBEB] hover:border-amber-400",
+        )}
+      >
+        <input
+          type="checkbox"
+          checked={locationAcknowledged}
+          onChange={(e) => setLocationAcknowledged(e.target.checked)}
+          className="mt-0.5 h-5 w-5 flex-shrink-0 accent-[#0673ff]"
+        />
+        <span
+          className={cn(
+            "text-xs leading-snug",
+            locationAcknowledged ? "text-[#0d1320]" : "text-amber-900",
+          )}
+        >
+          I confirm my pickup, drop-off, and areas of use are correct and
+          complete. I understand outskirt and interstate areas attract extra
+          charges, and that refusing to pay these charges does not entitle me to
+          a refund.
+        </span>
+      </label>
+
       {/* Pay now: desktop CTA (mobile uses the sticky bottom bar) */}
       <button
         onClick={handleBookNow}
-        disabled={isCreatingBooking}
+        disabled={isCreatingBooking || !locationAcknowledged}
         className="hidden w-full bg-[#0673FF] hover:bg-[#0560d6] text-white font-semibold py-3.5 px-4 rounded-xl transition disabled:bg-gray-300 disabled:cursor-not-allowed lg:flex items-center justify-center gap-2 text-sm"
       >
         {isCreatingBooking ? (
@@ -1014,6 +1047,39 @@ const ServicePricingCheckoutPage = () => {
                           </div>
                         </div>
                       )}
+                      {(() => {
+                        const pts: TripMapPoint[] = [];
+                        const tAny = trip as any;
+                        const pu = tAny.pickupCoordinates;
+                        if (
+                          pu &&
+                          typeof pu.lat === "number" &&
+                          typeof pu.lng === "number"
+                        )
+                          pts.push({
+                            lat: pu.lat,
+                            lng: pu.lng,
+                            label: trip.pickupLocation || "Pickup",
+                            kind: "pickup",
+                          });
+                        const doff = tAny.dropoffCoordinates;
+                        if (
+                          doff &&
+                          typeof doff.lat === "number" &&
+                          typeof doff.lng === "number"
+                        )
+                          pts.push({
+                            lat: doff.lat,
+                            lng: doff.lng,
+                            label: trip.dropoffLocation || "Drop-off",
+                            kind: "dropoff",
+                          });
+                        return pts.length > 0 ? (
+                          <div className="mt-3">
+                            <TripFootprintMap points={pts} height={180} />
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   );
                 })}
@@ -1422,7 +1488,7 @@ const ServicePricingCheckoutPage = () => {
           </div>
           <button
             onClick={handleBookNow}
-            disabled={isCreatingBooking}
+            disabled={isCreatingBooking || !locationAcknowledged}
             className="ml-auto flex-1 max-w-[62%] py-3 rounded-xl font-semibold text-sm transition bg-[#0673FF] hover:bg-[#0560d6] text-white disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isCreatingBooking ? (
