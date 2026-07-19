@@ -180,7 +180,13 @@ export const GoogleMapsLocationInput: React.FC<
 
     const request = {
       placeId: prediction.place_id,
-      fields: ["name", "formatted_address", "geometry", "address_components"],
+      fields: [
+        "name",
+        "formatted_address",
+        "geometry",
+        "address_components",
+        "types",
+      ],
     };
 
     placesServiceRef.current.getDetails(request, (place, status) => {
@@ -188,6 +194,43 @@ export const GoogleMapsLocationInput: React.FC<
         status === window.google.maps.places.PlacesServiceStatus.OK &&
         place
       ) {
+        // Reject selections too broad to price a trip from, for example a city,
+        // state, or country ("Lagos", "Lagos State", "Nigeria"). These are the
+        // entries that get priced as central and later disputed.
+        const placeTypes = place.types || [];
+        const broadTypes = [
+          "locality",
+          "administrative_area_level_1",
+          "administrative_area_level_2",
+          "country",
+          "political",
+          "colloquial_area",
+        ];
+        const preciseTypes = [
+          "street_address",
+          "premise",
+          "subpremise",
+          "establishment",
+          "point_of_interest",
+          "route",
+          "intersection",
+          "plus_code",
+        ];
+        const hasPrecise = placeTypes.some((t) => preciseTypes.includes(t));
+        const isBroad =
+          !hasPrecise && placeTypes.some((t) => broadTypes.includes(t));
+
+        if (isBroad) {
+          coordinates(type, null);
+          selectionMadeRef.current = false;
+          setSelectionError(
+            "That address is too general. Please pick your exact street or landmark.",
+          );
+          setShowDropdown(false);
+          setPredictions([]);
+          return;
+        }
+
         const latitude = place.geometry?.location?.lat() || 0;
         const longitude = place.geometry?.location?.lng() || 0;
         coordinates(type, { lat: latitude, lng: longitude });
@@ -221,18 +264,21 @@ export const GoogleMapsLocationInput: React.FC<
     setTimeout(() => {
       setShowDropdown(false);
     }, 200);
-    // Longer delay to let the async getDetails call complete before checking
+    // Give the async getDetails call time to finish before deciding the user
+    // left without choosing a suggestion, so a valid pick is not wrongly flagged.
     setTimeout(() => {
       if (
         hasInteractedRef.current &&
         !selectionMadeRef.current &&
         currentValueRef.current.trim()
       ) {
-        setSelectionError(
-          "Please select a location from the dropdown suggestions."
+        // Do not overwrite a more specific message (for example the too-general
+        // location message) that was already set during selection.
+        setSelectionError((prev) =>
+          prev ? prev : "Please pick your address from the suggestions list.",
         );
       }
-    }, 400);
+    }, 700);
   };
 
   const handleClear = () => {

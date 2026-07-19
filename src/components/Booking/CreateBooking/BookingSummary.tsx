@@ -17,6 +17,10 @@ import TextArea from "@/components/general/forms/textarea";
 import { RIDE_PURPOSES } from "@/helpers/metadata";
 import PersonalInformationForm from "./PersonalInformationForm";
 import BookingReassurance from "@/components/Booking/BookingReassurance";
+import {
+  TripFootprintMap,
+  TripMapPoint,
+} from "@/components/Booking/TripFootprintMap";
 
 type Props = {
   vehicle: any | null;
@@ -198,6 +202,28 @@ export default function BookingSummary({
   const selectedTypeNames = (trips || [])
     .map((t) => typeNameById.get(t?.tripDetails?.bookingType as string))
     .filter(Boolean) as string[];
+
+  // Area of use is required for non-interstate trips, so pricing reflects where
+  // the customer actually drives, including any outskirt areas. A trip missing
+  // its area of use blocks payment.
+  const anyTripMissingAreaOfUse = (trips || []).some((t) => {
+    const typeName = (
+      typeNameById.get(t?.tripDetails?.bookingType as string) || ""
+    ).toLowerCase();
+    if (typeName.includes("interstate")) return false;
+    const raw = t?.tripDetails?.areasOfUse;
+    let areas: unknown[] = [];
+    try {
+      areas = raw ? JSON.parse(raw) : [];
+    } catch {
+      areas = [];
+    }
+    const single = t?.tripDetails?.areaOfUse;
+    return (!Array.isArray(areas) || areas.length === 0) && !single;
+  });
+  if (anyTripMissingAreaOfUse) {
+    missingInfo.push("Area of use for each trip");
+  }
 
   const completionNotice =
     missingInfo.length > 0 ? (
@@ -418,6 +444,63 @@ export default function BookingSummary({
                       label="Areas of use"
                       value={areas}
                     />
+                    {(() => {
+                      const parseC = (raw: unknown) => {
+                        if (!raw) return null;
+                        try {
+                          const v =
+                            typeof raw === "string" ? JSON.parse(raw) : raw;
+                          if (
+                            v &&
+                            typeof v.lat === "number" &&
+                            typeof v.lng === "number"
+                          )
+                            return { lat: v.lat, lng: v.lng };
+                        } catch {}
+                        return null;
+                      };
+                      const pts: TripMapPoint[] = [];
+                      const pu = parseC(td?.pickupCoordinates);
+                      if (pu)
+                        pts.push({
+                          ...pu,
+                          label: td?.pickupLocation || "Pickup",
+                          kind: "pickup",
+                        });
+                      const doff = parseC(td?.dropoffCoordinates);
+                      if (doff)
+                        pts.push({
+                          ...doff,
+                          label: td?.dropoffLocation || "Drop-off",
+                          kind: "dropoff",
+                        });
+                      try {
+                        const list = td?.areasOfUse
+                          ? JSON.parse(td.areasOfUse)
+                          : [];
+                        if (Array.isArray(list)) {
+                          list.forEach((a: any) => {
+                            if (
+                              a &&
+                              typeof a.lat === "number" &&
+                              typeof a.lng === "number"
+                            )
+                              pts.push({
+                                lat: a.lat,
+                                lng: a.lng,
+                                label: a.name || "Area",
+                                kind: "area",
+                                isOutskirt: !!a.isOutskirts,
+                              });
+                          });
+                        }
+                      } catch {}
+                      return pts.length > 0 ? (
+                        <div className="pt-1">
+                          <TripFootprintMap points={pts} height={200} />
+                        </div>
+                      ) : null;
+                    })()}
                     <EstimatedPickupTime
                       tripStartDate={td?.tripStartDate || ""}
                       tripStartTime={td?.tripStartTime || ""}
@@ -512,7 +595,9 @@ export default function BookingSummary({
         submitText={action?.label || "Confirm & pay"}
         handleSubmit={action?.onClick}
         disableSubmitButton={
-          !action || action.disabled || (priceReady && missingInfo.length > 0)
+          !action ||
+          action.disabled ||
+          (priceReady && missingInfo.length > 0)
         }
         isSaveDraftloading={false}
         priceText={action?.amount ? ngn(action.amount) : undefined}
