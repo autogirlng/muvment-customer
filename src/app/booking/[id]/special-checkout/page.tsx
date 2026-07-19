@@ -851,9 +851,8 @@ const ServicePricingCheckoutPage = () => {
           )}
         >
           I confirm my pickup, drop-off, and areas of use are correct and
-          complete. I understand outskirt and interstate areas attract extra
-          charges, and that refusing to pay these charges does not entitle me to
-          a refund.
+          complete, and my price is based on them. If my trip requires extra
+          charges, my booking cannot be cancelled or refunded because of them.
         </span>
       </label>
 
