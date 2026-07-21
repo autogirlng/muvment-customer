@@ -5,7 +5,6 @@ import Vehicle from "./Vehicle";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
 import { FiBell, FiClock } from "react-icons/fi";
 import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
-import { format } from "date-fns";
 import { safeFormatDate, safeFormatTime } from "@/utils/safeDateTime";
 import cn from "classnames";
 import CostBreakdown from "./CostBreakdown";
@@ -693,7 +692,7 @@ const DurationDetails = ({
       <span>{title}</span>
     </p>
     <p>
-      {format(date, "do MMM yyyy")} | {format(time, "hh:mma")}
+      {safeFormatDate(date, "do MMM yyyy")} | {safeFormatTime(time, "hh:mma")}
     </p>
   </div>
 );

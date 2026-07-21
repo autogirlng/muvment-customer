@@ -13,6 +13,7 @@ import { FaHeart } from "react-icons/fa6";
 import { MdAirlineSeatReclineNormal } from "react-icons/md";
 import { getBookingOption } from "@/context/Constarain";
 import { clarityEvent } from "@/services/clarity";
+import { optimizeCloudinaryUrl } from "@/utils/cloudinary";
 import { trackVehicleView } from "@/services/analytics";
 import { useAuth } from "@/context/AuthContext";
 import { FavouriteService } from "@/controllers/favourites/favouriteService";
@@ -102,7 +103,8 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
       .filter(
         (url) =>
           url && (url.startsWith("http://") || url.startsWith("https://")),
-      );
+      )
+      .map((url) => optimizeCloudinaryUrl(url as string, 450));
   }, [photos]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -404,6 +406,8 @@ const VehicleCard: React.FC<VehicleCardPropsExtended> = ({
             <img
               src={currentImage}
               alt={name || "Vehicle"}
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover"
             />
           ) : (
