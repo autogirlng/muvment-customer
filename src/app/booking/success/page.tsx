@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
@@ -123,6 +123,7 @@ const BookingSuccessContent = () => {
   const [paymentGateway, setPaymentGateway] = useState<PaymentGateway>("PAYSTACK");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [copied, setCopied] = useState(false);
+  const purchaseRetryRef = useRef(false);
 
   useEffect(() => {
     if (!bookingId) {
@@ -151,7 +152,17 @@ const BookingSuccessContent = () => {
       const details = bookingData[0].data;
       setBookingDetails(details);
 
-      if (details?.bookingStatus === "CONFIRMED") {
+      // Payment has succeeded for both a confirmed booking and one that is paid
+      // but awaiting approval (business bookings). Only PENDING_PAYMENT means the
+      // money has not been taken yet. Tracking only CONFIRMED previously missed
+      // paid bookings that were still awaiting approval or whose confirmation
+      // arrived by webhook a moment after this page loaded, which under-reported
+      // revenue.
+      const paymentSucceeded =
+        details?.bookingStatus === "CONFIRMED" ||
+        details?.bookingStatus === "PENDING_APPROVAL";
+
+      if (paymentSucceeded) {
         clarityEvent("payment_succeeded", {
           booking_id: details?.bookingId ?? bookingId,
           invoice_number: details?.invoiceNumber,
@@ -177,6 +188,19 @@ const BookingSuccessContent = () => {
           booking_id: details?.bookingId ?? bookingId,
           status: details?.bookingStatus,
         });
+        // A booking can arrive here paid but still showing PENDING_PAYMENT for a
+        // few seconds while the payment webhook is processed. Re-check once after
+        // a short delay so a genuinely paid booking is still tracked. The
+        // localStorage guard above prevents any double counting.
+        if (
+          details?.bookingStatus === "PENDING_PAYMENT" &&
+          !purchaseRetryRef.current
+        ) {
+          purchaseRetryRef.current = true;
+          setTimeout(() => {
+            loadBookingDetails();
+          }, 5000);
+        }
       }
 
       const hasVehicle =
