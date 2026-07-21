@@ -8,6 +8,7 @@ import BookingSummary from "@/components/Booking/CreateBooking/BookingSummary";
 import Modal from "@/components/general/modal";
 import ScreenLoader from "@/components/utils/ScreenLoader";
 import { useRouter, useParams } from "next/navigation";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import { clarityEvent } from "@/services/clarity";
@@ -17,6 +18,7 @@ const steps = ["Confirm and pay"];
 
 export default function CreateBookingPageClient() {
   const router = useRouter();
+  const safeBack = useSafeBack();
   const params = useParams();
   const [vehicle, setVehicle] = useState<VehicleDetailsPublic | null>(null);
   const [vehicleImages, setVehicleImages] = useState<string[]>([]);
@@ -26,7 +28,7 @@ export default function CreateBookingPageClient() {
 
   useEffect(() => {
     if (!params.id) {
-      router.back();
+      safeBack("/explore");
     }
   }, [params.id]);
 
@@ -84,7 +86,7 @@ export default function CreateBookingPageClient() {
         <div className="mt-5 flex items-center gap-3">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => safeBack("/explore")}
             className="inline-flex items-center rounded-full border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
           >
             Go back
@@ -181,7 +183,7 @@ export default function CreateBookingPageClient() {
             </button>
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={() => safeBack("/explore")}
               className="w-full rounded-full px-5 py-2.5 text-sm font-medium text-grey-500 hover:text-grey-700 cursor-pointer"
             >
               Leave and cancel

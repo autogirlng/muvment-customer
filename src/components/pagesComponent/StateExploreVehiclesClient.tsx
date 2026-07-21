@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { Navbar } from "@/components/Navbar";
 import VehicleCard from "@/components/Booking/VehicleCard";
 import WelcomeOfferNote from "@/components/general/WelcomeOfferNote";
@@ -30,7 +30,7 @@ export default function StateExploreVehiclesClient({
   initialVehicles,
   initialTotalCount,
 }: StateExploreVehiclesClientProps) {
-  const router = useRouter();
+  const safeBack = useSafeBack();
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -116,7 +116,7 @@ export default function StateExploreVehiclesClient({
 
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => safeBack("/explore")}
             className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
           >
             <FiArrowLeft className="w-4 h-4" />

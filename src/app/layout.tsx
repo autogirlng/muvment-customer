@@ -13,6 +13,7 @@ import GoogleAnalytics from "@/components/general/GoogleAnalytics";
 import MetaPixel from "@/components/general/MetaPixel";
 import LiveChat from "@/components/LiveChat/LiveChat";
 import { InAppBrowserNotice } from "@/components/general/InAppBrowserNotice";
+import NavTracker from "@/components/general/NavTracker";
 
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
@@ -125,6 +126,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning>
         {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
+        <NavTracker />
         <QueryProvider>
           <ClientRoot>{children}</ClientRoot>
           <ToastContainer position="top-right" autoClose={3000} />

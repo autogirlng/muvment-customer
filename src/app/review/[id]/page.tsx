@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import {
   FiStar,
   FiCheckCircle,
@@ -99,6 +100,7 @@ const SignUpOffer = ({
 const ReviewContent = () => {
   const params = useParams();
   const router = useRouter();
+  const safeBack = useSafeBack();
   const searchParams = useSearchParams();
   const { user, accessToken, isAuthenticated } = useAuth();
   const bookingId = params.id || "";
@@ -284,7 +286,7 @@ const ReviewContent = () => {
               </button>
 
               <button
-                onClick={() => router.back()}
+                onClick={() => safeBack("/dashboard/my-trips")}
                 className="px-8 py-3.5 bg-white cursor-pointer text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-300 font-semibold shadow-md hover:shadow-lg border border-gray-200"
               >
                 Go Back

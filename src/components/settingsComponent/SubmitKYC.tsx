@@ -1,6 +1,7 @@
 "use client";
 import { useState, Suspense } from "react";
 import { notFound, useRouter, useSearchParams } from "next/navigation";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { MdBusiness, MdArrowBack, MdCheckCircle } from "react-icons/md";
 import { createData } from "@/controllers/connnector/app.callers";
 import { INDUSTRIES } from "@/components/settingsComponent/CreateOrganization";
@@ -27,6 +28,7 @@ type FieldErrors = Partial<Record<keyof Fields, string>>;
 
 const SubmitKYCPageContent = () => {
   const router = useRouter();
+  const safeBack = useSafeBack();
   const searchParams = useSearchParams();
   const [form, setForm] = useState<Fields>({
     cacNumber: "",
@@ -133,7 +135,7 @@ const SubmitKYCPageContent = () => {
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
         <button
-          onClick={() => router.back()}
+          onClick={() => safeBack("/dashboard/settings")}
           className="mb-6 flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-800"
         >
           <MdArrowBack className="h-4 w-4" /> Back

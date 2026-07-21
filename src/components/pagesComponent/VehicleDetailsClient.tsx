@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { formatCurrency } from "@/services/vechilePriceUtiles";
 import { format } from "date-fns";
 
@@ -121,6 +122,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   initialVehicleData,
 }) => {
   const router = useRouter();
+  const safeBack = useSafeBack();
   const { isAuthenticated } = useAuth();
 
   const [vehicle, setVehicle] = useState<any>(initialVehicleData);
@@ -750,7 +752,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
             {error || "Vehicle not found"}
           </p>
           <button
-            onClick={() => router.back()}
+            onClick={() => safeBack("/explore")}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Go Back
@@ -1756,7 +1758,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
             <div className=" rounded-xl flex-shrink p-4 sm:p-6 space-y-4">
               <button
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition cursor-pointer"
-                onClick={() => router.back()}
+                onClick={() => safeBack("/explore")}
               >
                 <FiArrowLeft size={18} />
                 <span>Back</span>

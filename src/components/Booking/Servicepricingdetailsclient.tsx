@@ -26,6 +26,7 @@ import SelectInput from "@/components/general/forms/select";
 import { GoogleMapsLocationInput } from "@/components/general/forms/GoogleMapsLocationInput";
 import Cookies from "js-cookie";
 import WelcomeOfferNote from "@/components/general/WelcomeOfferNote";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 interface TripDetails {
   id: string;
@@ -109,6 +110,7 @@ const ServicePricingBookingPage: React.FC = () => {
   const searchParams = useSearchParams();
   const slug = params?.id as string;
   const durationToken = searchParams?.get("duration") || null;
+  const safeBack = useSafeBack();
 
   const [pricing, setPricing] = useState<ServicePricingShowcase | null>(null);
   const [loading, setLoading] = useState(true);
@@ -214,7 +216,7 @@ const ServicePricingBookingPage: React.FC = () => {
 
   const handleBackClick = () => {
     ServicePricingStorage.clearStorage();
-    router.back();
+    safeBack("/");
   };
 
   const allComplete = useMemo(

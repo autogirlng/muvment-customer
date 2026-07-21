@@ -180,6 +180,11 @@ function TermsOfServiceClient() {
 
   const extraCharges = [
     {
+      title: "Outskirt and Interstate Areas:",
+      content:
+        "Booking prices are calculated from the pickup, drop-off, and areas of use you confirm at the time of booking, so you are required to state your full itinerary during this process. If, after your booking is confirmed and paid, your trip extends into outskirt or interstate areas, this attracts extra charges. You can review these charges on the platform before your booking is completed, and you are obligated to pay them. Customers must be transparent about their pickup and drop-off locations and areas of use so that pricing is accurate and applied correctly. Where a booking is cancelled because you do not agree to pay the additional charges required to adjust for an actual outskirt or interstate location, the booking fee will not be fully refunded.",
+    },
+    {
       title: "Late Night and Early Morning Bookings:",
       content:
         "Bookings that commence between 10:00 PM and 6:00 AM are subject to an additional fee to cover operational costs and the inconvenience associated with late-night or early-morning service. This fee will be specified at the time of booking.",

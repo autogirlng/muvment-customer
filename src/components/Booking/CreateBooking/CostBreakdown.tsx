@@ -2,6 +2,7 @@ import cn from "classnames";
 import { useEffect, useState, useRef } from "react";
 import { safeFormatDate, safeFormatTime } from "@/utils/safeDateTime";
 import { useRouter } from "next/navigation";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { createData, updateData } from "@/controllers/connnector/app.callers";
 import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 import { EstimatedBookingPrice, Trips } from "@/types/vehicleDetails";
@@ -117,6 +118,7 @@ const CostBreakdown = ({
   const retryCountRef = useRef(0);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const router = useRouter();
+  const safeBack = useSafeBack();
 
   // Corporate members can pay from the company wallet. Staff must: they never pay
   // personally, so the gateway options are hidden for them and every booking they make
@@ -524,7 +526,7 @@ const CostBreakdown = ({
     if (unavailable) {
       onActionChange({
         label: "Change trip details",
-        onClick: () => router.back(),
+        onClick: () => safeBack("/explore"),
         disabled: false,
         amount: pricing?.data?.data?.finalPrice,
       });
@@ -572,7 +574,7 @@ const CostBreakdown = ({
               <button
                 type="button"
                 onClick={() =>
-                  unavailable ? router.back() : estimateRef.current()
+                  unavailable ? safeBack("/explore") : estimateRef.current()
                 }
                 className="text-sm font-medium text-[#0673ff] hover:underline"
               >
