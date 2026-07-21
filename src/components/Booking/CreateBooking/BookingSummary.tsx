@@ -6,6 +6,7 @@ import { VehicleDetailsPublic } from "@/types/vehicleDetails";
 import { FiBell, FiClock } from "react-icons/fi";
 import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
 import { format } from "date-fns";
+import { safeFormatDate, safeFormatTime } from "@/utils/safeDateTime";
 import cn from "classnames";
 import CostBreakdown from "./CostBreakdown";
 import { TripDetails } from "@/types/vehicleDetails";
@@ -168,13 +169,13 @@ export default function BookingSummary({
     if (!firstTrip?.tripStartDate) return "";
     let out = "";
     try {
-      out = format(new Date(firstTrip.tripStartDate), "do MMM yyyy");
+      out = safeFormatDate(firstTrip.tripStartDate, "do MMM yyyy");
     } catch {
       return "";
     }
     if (firstTrip?.tripStartTime) {
       try {
-        out += ` · ${format(new Date(firstTrip.tripStartTime), "hh:mma")}`;
+        out += ` · ${safeFormatTime(firstTrip.tripStartTime, "hh:mma")}`;
       } catch {}
     }
     return out;
@@ -409,10 +410,10 @@ export default function BookingSummary({
                 return td?.areaOfUse || "N/A";
               })();
               const startDate = td?.tripStartDate
-                ? format(new Date(td.tripStartDate), "do MMM yyyy")
+                ? safeFormatDate(td.tripStartDate, "do MMM yyyy")
                 : "N/A";
               const startTime = td?.tripStartTime
-                ? format(new Date(td.tripStartTime), "hh:mma")
+                ? safeFormatTime(td.tripStartTime, "hh:mma")
                 : "";
               return (
                 <div

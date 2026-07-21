@@ -139,6 +139,7 @@ export const Navbar = ({
               width={1451}
               height={165}
               priority
+              sizes="170px"
               className="h-auto w-[150px] sm:w-[170px]"
             />
           </Link>
