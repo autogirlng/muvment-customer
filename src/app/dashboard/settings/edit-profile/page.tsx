@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { parsePhoneNumberFromString, CountryCode } from "libphonenumber-js";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import {
@@ -49,6 +50,7 @@ const fieldClasses =
 
 export default function EditProfilePage() {
   const router = useRouter();
+  const safeBack = useSafeBack();
   const { setTokens } = useAuth();
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -224,7 +226,7 @@ export default function EditProfilePage() {
     }
   };
 
-  const handleCancel = () => router.back();
+  const handleCancel = () => safeBack("/dashboard/settings");
 
   const displayImage = imageState.preview || profile?.profilePictureUrl;
   const initial =

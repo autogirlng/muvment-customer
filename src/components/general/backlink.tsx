@@ -1,6 +1,6 @@
-import { useRouter } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
 import React from "react";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 type Props = { backLink: string; className?: string; label?: string };
 
@@ -9,10 +9,10 @@ export default function BackLink({
     className,
     label = "Cancel",
 }: Props) {
-    const router = useRouter();
+    const safeBack = useSafeBack();
 
     const handleGoBack = () => {
-        router.back();
+        safeBack(backLink);
     };
 
     return (
