@@ -10,9 +10,19 @@ import {
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import ReactCalendar from "react-calendar";
+import dynamic from "next/dynamic";
 import "react-calendar/dist/Calendar.css";
 import "./booking-calendar.css";
+// react-calendar is a heavy dependency only needed once the date picker opens,
+// so it is loaded on demand to keep it out of the initial homepage bundle.
+const ReactCalendar = dynamic(() => import("react-calendar"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[280px] w-full items-center justify-center text-sm text-gray-400">
+      Loading calendar…
+    </div>
+  ),
+});
 import {
   FaCar,
   FaCarSide,
