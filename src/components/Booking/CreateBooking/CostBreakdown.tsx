@@ -1,6 +1,6 @@
 import cn from "classnames";
 import { useEffect, useState, useRef } from "react";
-import { format } from "date-fns";
+import { safeFormatDate, safeFormatTime } from "@/utils/safeDateTime";
 import { useRouter } from "next/navigation";
 import { createData, updateData } from "@/controllers/connnector/app.callers";
 import { useCorporateMembership } from "@/hooks/useCorporateMembership";
@@ -196,12 +196,12 @@ const CostBreakdown = ({
 
       tripSegments.push({
         bookingTypeId: trip?.tripDetails?.bookingType,
-        startDate: format(
-          new Date(trip?.tripDetails?.tripStartDate || ""),
+        startDate: safeFormatDate(
+          trip?.tripDetails?.tripStartDate,
           "yyyy-MM-dd",
         ),
-        startTime: format(
-          new Date(trip?.tripDetails?.tripStartTime || ""),
+        startTime: safeFormatTime(
+          trip?.tripDetails?.tripStartTime,
           "HH:mm:ss",
         ),
         pickupLatitude: pickup.lat,
@@ -823,9 +823,9 @@ const CostBreakdown = ({
                 )}
               >
                 I confirm my pickup, drop-off, and areas of use are correct and
-                complete. I understand outskirt and interstate areas attract
-                extra charges, and that refusing to pay these charges does not
-                entitle me to a refund.
+                complete, and my price is based on them. If my trip requires
+                extra charges, my booking cannot be cancelled or refunded
+                because of them.
               </span>
             </label>
           </section>
