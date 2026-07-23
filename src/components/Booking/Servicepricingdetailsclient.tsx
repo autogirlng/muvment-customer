@@ -27,6 +27,12 @@ import { GoogleMapsLocationInput } from "@/components/general/forms/GoogleMapsLo
 import Cookies from "js-cookie";
 import WelcomeOfferNote from "@/components/general/WelcomeOfferNote";
 import { useSafeBack } from "@/hooks/useSafeBack";
+import { isLagosCoordinate } from "@/helpers/lagos";
+import { requiresAreaOfUse } from "@/helpers/areaOfUse";
+import AreaOfUseSelect, {
+  SelectedArea,
+} from "@/components/Booking/AreaOfUseSelect";
+import { getAreasForCity } from "@/data/lagosAreas";
 
 interface TripDetails {
   id: string;
@@ -39,6 +45,7 @@ interface TripDetails {
   dropoffLocation: string;
   dropoffCoordinates: { lat: number; lng: number } | null;
   dropoffRegion: string;
+  areasOfUse: SelectedArea[];
 }
 
 // Special booking currently operates in Lagos only. A selection resolves to
@@ -49,6 +56,10 @@ const normaliseState = (s?: string) =>
   (s || "").toLowerCase().replace(/\bstate\b/g, "").trim();
 const isSupportedState = (s?: string) =>
   normaliseState(s) === normaliseState(SPECIAL_BOOKING_STATE);
+
+// isLagosCoordinate is the coordinate backstop for the Lagos-only rule. It lives
+// in a shared helper so the home page and dashboard booking form apply the exact
+// same box before handing off to this flow.
 
 interface Trip {
   id: string;
@@ -93,15 +104,24 @@ const matchPriceId = (
   );
 };
 
-const tripComplete = (d: Partial<TripDetails>) =>
+const tripComplete = (
+  d: Partial<TripDetails>,
+  bookingTypeName?: string,
+) =>
   !!(
     d.bookingType &&
     d.tripStartDate &&
     d.tripStartTime &&
     d.pickupLocation &&
     d.pickupCoordinates &&
+    isLagosCoordinate(d.pickupCoordinates) &&
     d.dropoffLocation &&
-    d.dropoffCoordinates
+    d.dropoffCoordinates &&
+    isLagosCoordinate(d.dropoffCoordinates) &&
+    // Monthly packages are priced for the month rather than by area, so they
+    // are not asked for one.
+    (!requiresAreaOfUse(bookingTypeName) ||
+      (d.areasOfUse && d.areasOfUse.length > 0))
   );
 
 const ServicePricingBookingPage: React.FC = () => {
@@ -123,6 +143,7 @@ const ServicePricingBookingPage: React.FC = () => {
   const [estimateError, setEstimateError] = useState<string | null>(null);
   const [isEstimating, setIsEstimating] = useState(false);
   const estimateSeq = useRef(0);
+  const bootRef = useRef(false);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const [showStickyCar, setShowStickyCar] = useState(false);
@@ -143,8 +164,35 @@ const ServicePricingBookingPage: React.FC = () => {
   }, [slug]);
 
   // Preselect the duration handed over from the hero and carry the typed pickup.
+  // Runs once, when the pricing first loads, so it cannot overwrite later edits.
   useEffect(() => {
-    if (!pricing) return;
+    if (!pricing || bootRef.current) return;
+    bootRef.current = true;
+
+    // Coming back from checkout to change something: restore the itinerary the
+    // customer already filled in, so editing never costs them their details. The
+    // saved id has to match this package, otherwise the details belong to a
+    // different booking and are ignored.
+    try {
+      const savedId = sessionStorage.getItem("servicePricingId");
+      const savedRaw = sessionStorage.getItem("servicePricingTrips");
+      if (savedRaw && savedId && savedId === pricing.servicePricingId) {
+        const saved = JSON.parse(savedRaw);
+        if (Array.isArray(saved) && saved.length > 0) {
+          setTrips(
+            saved.map((t: any, i: number) => ({
+              id: t.id || `trip-${i}`,
+              tripDetails: t.tripDetails || {},
+            })),
+          );
+          sessionStorage.removeItem("muvment:hourlyPickup");
+          return;
+        }
+      }
+    } catch {
+      // fall through to a fresh start
+    }
+
     const prices = pricing.prices || [];
     const preId = matchPriceId(durationToken, prices);
     if (preId) {
@@ -160,7 +208,12 @@ const ServicePricingBookingPage: React.FC = () => {
       const raw = sessionStorage.getItem("muvment:hourlyPickup");
       if (raw) {
         const p = JSON.parse(raw);
-        if (p && typeof p.lat === "number" && typeof p.lng === "number") {
+        if (
+          p &&
+          typeof p.lat === "number" &&
+          typeof p.lng === "number" &&
+          isLagosCoordinate({ lat: p.lat, lng: p.lng })
+        ) {
           setTrips((prev) =>
             prev.map((t, i) =>
               i === 0
@@ -220,8 +273,18 @@ const ServicePricingBookingPage: React.FC = () => {
   };
 
   const allComplete = useMemo(
-    () => trips.length > 0 && trips.every((t) => tripComplete(t.tripDetails)),
-    [trips],
+    () =>
+      trips.length > 0 &&
+      trips.every((t) =>
+        tripComplete(
+          t.tripDetails,
+          (pricing?.prices || []).find(
+            (p: { bookingTypeId: string; bookingTypeName: string }) =>
+              p.bookingTypeId === t.tripDetails.bookingType,
+          )?.bookingTypeName,
+        ),
+      ),
+    [trips, pricing],
   );
 
   const addTrip = () => {
@@ -236,6 +299,7 @@ const ServicePricingBookingPage: React.FC = () => {
           dropoffLocation: lastTrip.tripDetails.dropoffLocation,
           dropoffCoordinates: lastTrip.tripDetails.dropoffCoordinates,
           dropoffRegion: lastTrip.tripDetails.dropoffRegion,
+          areasOfUse: lastTrip.tripDetails.areasOfUse,
         }
       : {};
     setTrips([...trips, { id: newId, tripDetails: prefilled }]);
@@ -283,6 +347,13 @@ const ServicePricingBookingPage: React.FC = () => {
           pickupLongitude: trip.tripDetails.pickupCoordinates?.lng || 0.1,
           dropoffLatitude: trip.tripDetails.dropoffCoordinates?.lat || 0.1,
           dropoffLongitude: trip.tripDetails.dropoffCoordinates?.lng || 0.1,
+          areaOfUse: (trip.tripDetails.areasOfUse || [])
+            .filter((a) => a.lat != null && a.lng != null)
+            .map((a) => ({
+              areaOfUseLatitude: a.lat,
+              areaOfUseLongitude: a.lng,
+              areaOfUseName: a.name,
+            })),
         })),
       };
       const response =
@@ -336,6 +407,16 @@ const ServicePricingBookingPage: React.FC = () => {
     );
     sessionStorage.setItem("servicePricingId", pricing.servicePricingId);
     sessionStorage.setItem("yearRangeId", pricing.yearRangeId);
+    // Remember this page so the checkout can send the customer straight back
+    // here to edit, with the duration they picked still applied.
+    try {
+      sessionStorage.setItem(
+        "servicePricingReturnUrl",
+        `${window.location.pathname}${window.location.search}`,
+      );
+    } catch {
+      // fall back to plain back navigation from the checkout
+    }
     router.push(`/booking/${pricing.servicePricingId}/special-checkout`);
   };
 
@@ -727,6 +808,23 @@ const TripCard = ({
   const [sameAsPickup, setSameAsPickup] = useState(false);
   const [pickupError, setPickupError] = useState("");
   const [dropoffError, setDropoffError] = useState("");
+  // Special booking runs in Lagos only, so the picker offers Lagos areas.
+  const serviceAreas = useMemo(() => getAreasForCity("Lagos"), []);
+
+  const selectedTypeName =
+    bookingOptions.find(
+      (o: { value: string; option: string }) => o.value === details.bookingType,
+    )?.option || "";
+  const isAirportType = selectedTypeName.toLowerCase().includes("airport");
+
+  // An airport trip runs between an address and a terminal, so returning to the
+  // pickup is not offered. Clear it if it was ticked before the type changed,
+  // otherwise the drop-off field would stay hidden with no way to enter one.
+  useEffect(() => {
+    if (isAirportType && sameAsPickup) {
+      setSameAsPickup(false);
+    }
+  }, [isAirportType, sameAsPickup]);
 
   // Keep the drop-off mirrored to the pickup while the box is ticked. The
   // pickup region is mirrored too so a valid Lagos pickup keeps the drop-off
@@ -921,15 +1019,17 @@ const TripCard = ({
               <FiMapPin className="w-3.5 h-3.5 text-gray-400" />
               Drop-off location
             </label>
-            <label className="mb-2 flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={sameAsPickup}
-                onChange={(e) => setSameAsPickup(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-[#0673ff] focus:ring-[#0673ff]"
-              />
-              Return to pickup location
-            </label>
+            {!isAirportType && (
+              <label className="mb-2 flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={sameAsPickup}
+                  onChange={(e) => setSameAsPickup(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-[#0673ff] focus:ring-[#0673ff]"
+                />
+                Return to pickup location
+              </label>
+            )}
             {!sameAsPickup && (
               <GoogleMapsLocationInput
                 value={details.dropoffLocation || ""}
@@ -943,6 +1043,34 @@ const TripCard = ({
               />
             )}
           </div>
+
+          {requiresAreaOfUse(selectedTypeName) && (
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <label className="block text-xs font-medium text-gray-700">
+                  Area of use
+                </label>
+                <span className="rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10px] font-medium text-[#0673ff]">
+                  Required
+                </span>
+              </div>
+              <p className="mb-2 text-[11px] leading-snug text-gray-500">
+                Add at least one area you plan to drive to during the booking,
+                beyond your pickup and drop-off. Outskirt areas affect the price.
+              </p>
+              <AreaOfUseSelect
+                areas={serviceAreas}
+                value={details.areasOfUse || []}
+                disabled={false}
+                onChange={(areas) => onUpdate(trip.id, "areasOfUse", areas)}
+              />
+              {(details.areasOfUse || []).length === 0 && (
+                <p className="mt-1.5 text-[11px] leading-snug text-amber-600">
+                  Add at least one area so your price is correct.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
