@@ -46,7 +46,16 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        // Images uploaded before media moved to S3 are still served from here.
         hostname: "res.cloudinary.com",
+      },
+      {
+        protocol: "https",
+        // Uploads now live in the S3 bucket, whose host carries the bucket and
+        // region and so differs between environments. next/image refuses any
+        // host that is not listed here, so without this profile pictures and
+        // other uploads would fail to render rather than merely look wrong.
+        hostname: "**.amazonaws.com",
       },
     ],
     formats: ["image/avif", "image/webp"],

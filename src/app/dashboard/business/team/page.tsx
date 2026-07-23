@@ -1,6 +1,9 @@
 "use client";
 
+import DashboardLoader from "@/components/general/DashboardLoader";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/controllers/connnector/queryKeys";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
@@ -57,14 +60,76 @@ export default function BusinessTeamPage() {
   const corp = useCorporateMembership();
   const router = useRouter();
 
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [noOrg, setNoOrg] = useState(false);
-  const [members, setMembers] = useState<OrganizationMember[]>([]);
-  const [invites, setInvites] = useState<OrganizationInvite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  const canLoad =
+    !isLoading && !corp.loading && !!user && corp.isOwnerLike;
+
+  // The organisation, its members, its pending invites and the wallet balance
+  // are each cached. Coming back to this screen shows what was already loaded
+  // instead of calling the API again; every action below marks the affected
+  // lists out of date so nothing is left showing stale data.
+  const { data: org, isLoading: orgLoading } = useQuery({
+    queryKey: queryKeys.organization,
+    enabled: canLoad,
+    queryFn: async () => {
+      const orgs = await OrganizationService.getMyOrganizations();
+      return Array.isArray(orgs) && orgs.length > 0 ? orgs[0] : null;
+    },
+  });
+
+  const orgId: string | null = org?.id ?? null;
+  const noOrg = canLoad && !orgLoading && !orgId;
+
+  const { data: members = [], isLoading: membersLoading } = useQuery({
+    queryKey: queryKeys.team(orgId ?? undefined),
+    enabled: !!orgId,
+    queryFn: async (): Promise<OrganizationMember[]> => {
+      const list = await OrganizationService.getMembers(orgId as string);
+      return Array.isArray(list) ? list : [];
+    },
+  });
+
+  const { data: invites = [] } = useQuery({
+    queryKey: queryKeys.teamInvites(orgId ?? undefined),
+    enabled: !!orgId,
+    queryFn: async (): Promise<OrganizationInvite[]> => {
+      const list = await OrganizationService.getPendingInvites(
+        orgId as string,
+      );
+      return Array.isArray(list) ? list : [];
+    },
+  });
+
   // Admins can read the wallet balance; used to flag members whose limit outruns it.
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const { data: walletBalance = null } = useQuery({
+    queryKey: queryKeys.orgWallet(orgId ?? undefined),
+    enabled: !!orgId,
+    queryFn: async (): Promise<number | null> => {
+      const info = await OrganizationService.getWalletInfo(orgId as string);
+      return info ? Number(info.balance ?? 0) : null;
+    },
+  });
+
+  const loading = !canLoad || orgLoading || (!!orgId && membersLoading);
+
+  // Kept as load(orgId) so every action below reads the same as before. It now
+  // marks the member and invite lists out of date rather than refetching by
+  // hand, which keeps the cache and the screen in step.
+  const load = useCallback(
+    async (_id?: string | null) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.team(orgId ?? undefined),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.teamInvites(orgId ?? undefined),
+        }),
+      ]);
+    },
+    [queryClient, orgId],
+  );
 
   const [tab, setTab] = useState<Tab>("members");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -109,57 +174,17 @@ export default function BusinessTeamPage() {
     }
   };
 
-  const load = useCallback(async (id: string) => {
-    const [memberList, inviteList] = await Promise.all([
-      OrganizationService.getMembers(id),
-      OrganizationService.getPendingInvites(id),
-    ]);
-    setMembers(Array.isArray(memberList) ? memberList : []);
-    setInvites(Array.isArray(inviteList) ? inviteList : []);
-  }, []);
-
+  // Access control only; the data itself is fetched by the queries above.
   useEffect(() => {
     if (isLoading || corp.loading) return;
     if (!user) {
       router.replace("/auth/login");
       return;
     }
-    if (!corp.loading && !corp.isOwnerLike) {
+    if (!corp.isOwnerLike) {
       router.replace("/dashboard");
-      return;
     }
-    let active = true;
-    (async () => {
-      const orgs = await OrganizationService.getMyOrganizations();
-      if (!active) return;
-      const org = Array.isArray(orgs) && orgs.length > 0 ? orgs[0] : null;
-      if (!org?.id) {
-        setNoOrg(true);
-        setLoading(false);
-        return;
-      }
-      setOrgId(org.id);
-      await load(org.id);
-      if (!active) return;
-      setLoading(false);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [isLoading, corp.loading, corp.isOwnerLike, user, router, load]);
-
-  // Pull the wallet balance so we can warn about limits that exceed it.
-  useEffect(() => {
-    if (!orgId) return;
-    let active = true;
-    (async () => {
-      const info = await OrganizationService.getWalletInfo(orgId);
-      if (active) setWalletBalance(info ? Number(info.balance ?? 0) : null);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [orgId]);
+  }, [isLoading, corp.loading, corp.isOwnerLike, user, router]);
 
   const counts = useMemo(() => {
     let activeCount = 0;
@@ -332,7 +357,7 @@ export default function BusinessTeamPage() {
   if (isLoading || loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#0673FF] border-t-transparent" />
+        <DashboardLoader />
       </div>
     );
   }

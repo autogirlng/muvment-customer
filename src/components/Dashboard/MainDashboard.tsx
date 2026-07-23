@@ -224,7 +224,7 @@ export default function Dashboard(): React.ReactElement {
         (setup.isBusiness || !corp.isMember) && (
           <DashboardFirstBookingOffer
             onBook={openBook}
-            needsSetup={setup.isBusiness && !setup.setupComplete}
+            needsSetup={setup.isBusiness && !setup.canBook}
             onSetup={() => router.push("/business-setup")}
           />
         )}

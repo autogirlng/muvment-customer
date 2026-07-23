@@ -3,7 +3,6 @@ import Icons from "@/components/general/forms/icons";
 import { useEffect, ReactNode, useState } from "react";
 import { useParams } from "next/navigation";
 import Collapse from "@/components/general/collapsible";
-import { FiBell } from "react-icons/fi";
 import { format } from "date-fns";
 import cn from "classnames";
 import { Navbar } from "@/components/Navbar";
@@ -124,16 +123,6 @@ const PendingPayment = () => {
                                 className="bg-[#F9FAFB] border border-[#98a2b3] rounded-3xl py-5 px-7"
                             >
                                 <Vehicle photos={vehicleImages} />
-                                <div className="bg-[#F7F9FC] py-3 w-full  px-3 flex items-center space-x-2 rounded-t-xl">
-                                    <FiBell
-                                        size={40}
-                                        color="#F38218 "
-                                        className="p-2 bg-[#FBE2B7] rounded-lg border-[#F38218] border-1"
-                                    />
-                                    <span className="text-sm font-medium text-gray-800">
-                                        1 day advance notice required before booking
-                                    </span>
-                                </div>
                                 <div className="w-full md:w-3/5 space-y-8 mt-5">
                                     <div className="space-y-2">
                                         <h2 className="text-lg text-gray-800 pb-1">Vehicle Details</h2>

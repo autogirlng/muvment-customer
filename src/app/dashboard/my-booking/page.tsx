@@ -1,5 +1,8 @@
 "use client";
 
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/controllers/connnector/queryKeys";
+import DashboardLoader from "@/components/general/DashboardLoader";
 import React, {
   useState,
   useEffect,
@@ -38,25 +41,22 @@ import {
 type ViewMode = "list" | "calendar";
 
 const BookingHistoryPage = () => {
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedBookings, setSelectedBookings] = useState<Booking[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [calendarTrips, setCalendarTrips] = useState<any[]>([]);
-  const [calendarLoaded, setCalendarLoaded] = useState(false);
-  const [calendarLoading, setCalendarLoading] = useState(false);
-  const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<Omit<BookingFilters, "page" | "size">>(
     {},
+  );
+  const [debouncedSearch, setDebouncedSearch] = useState<string | undefined>(
+    undefined,
   );
   const PAGE_SIZE = 10;
 
   const router = useRouter();
   const setup = useBusinessSetup();
-  const needsSetup = setup.isBusiness && !setup.setupComplete;
+  // Only creating the business gates booking. An unfunded wallet is still
+  // prompted for on the dashboard, but they can pay by card in the meantime.
+  const needsSetup = setup.isBusiness && !setup.canBook;
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Transform raw API item to flat booking object
@@ -83,103 +83,77 @@ const BookingHistoryPage = () => {
     vehicleName: item.vehicle ? item.vehicle.name : "Awaiting",
   });
 
-  // Fetch a specific page; if reset=true, replace bookings instead of appending
-  const fetchPage = useCallback(
-    async (pageNumber: number, reset = false) => {
-      try {
-        reset ? setLoading(true) : setLoadingMore(true);
-
-        const response = await BookingService.getMyBookings({
-          ...filters,
-          page: pageNumber,
-          size: PAGE_SIZE,
-        });
-
-        const content = response.data.content;
-        const totalPages: number = response.data.totalPages ?? 1;
-        const transformed = content.map(transformItem);
-
-        setBookings((prev) =>
-          reset ? transformed : [...prev, ...transformed],
-        );
-        setHasMore(pageNumber + 1 < totalPages);
-      } catch (error) {
-        console.error("Error loading bookings:", error);
-        toast.error("Failed to load bookings.");
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-    },
-    [filters],
-  );
-
-  // Reset to page 0 whenever filters change
+  // Debounce the search box so typing does not fire a request per keystroke.
   useEffect(() => {
-    setPage(0);
-    setHasMore(true);
-    fetchPage(0, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.bookingStatus]);
-
-  // Debounce search term changes
-  useEffect(() => {
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {
-      setPage(0);
-      setHasMore(true);
-      fetchPage(0, true);
-    }, 500);
-
-    return () => {
-      if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const t = setTimeout(() => setDebouncedSearch(filters.searchTerm), 500);
+    return () => clearTimeout(t);
   }, [filters.searchTerm]);
 
-  // Load next page when page state increments (triggered by DataTable sentinel)
-  useEffect(() => {
-    if (page === 0) return; // page 0 is handled by the filter effects above
-    fetchPage(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  // Pages are cached per filter combination, so returning to this screen shows
+  // what was already loaded without calling the API again. Changing a filter is
+  // a different key and fetches once.
+  const {
+    data: pagedData,
+    isLoading: loading,
+    isFetchingNextPage: loadingMore,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: [
+      ...queryKeys.myBookings,
+      filters.bookingStatus ?? "all",
+      debouncedSearch ?? "",
+    ],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const response = await BookingService.getMyBookings({
+        ...filters,
+        searchTerm: debouncedSearch,
+        page: pageParam as number,
+        size: PAGE_SIZE,
+      });
+      return {
+        items: (response.data.content || []).map(transformItem),
+        page: pageParam as number,
+        totalPages: response.data.totalPages ?? 1,
+      };
+    },
+    getNextPageParam: (last) =>
+      last.page + 1 < last.totalPages ? last.page + 1 : undefined,
+  });
+
+  const bookings = useMemo(
+    () => (pagedData?.pages ?? []).flatMap((p) => p.items),
+    [pagedData],
+  );
+  const hasMore = !!hasNextPage;
 
   const handleLoadMore = useCallback(() => {
     if (!loadingMore && hasMore) {
-      setPage((prev) => prev + 1);
+      fetchNextPage();
     }
-  }, [loadingMore, hasMore]);
+  }, [loadingMore, hasMore, fetchNextPage]);
 
-  // The calendar needs every trip, not just the loaded list pages, so it fetches
-  // the full set once the calendar view is opened and whenever the status filter
-  // changes.
-  useEffect(() => {
-    if (viewMode !== "calendar") return;
-    let cancelled = false;
-    const loadAll = async () => {
-      try {
-        setCalendarLoading(true);
-        const response = await BookingService.getMyBookings({
-          bookingStatus: filters.bookingStatus,
-          page: 0,
-          size: 1000,
-        });
-        if (cancelled) return;
-        const content = response.data.content || [];
-        setCalendarTrips(content.map(transformItem));
-        setCalendarLoaded(true);
-      } catch (error) {
-        console.error("Error loading calendar trips:", error);
-      } finally {
-        if (!cancelled) setCalendarLoading(false);
-      }
-    };
-    loadAll();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode, filters.bookingStatus]);
+  // The calendar needs every trip, not just the loaded list pages. Cached per
+  // status filter and only fetched once the calendar view is opened, so the
+  // large call is not repeated each time the view is switched back.
+  const {
+    data: calendarTrips = [],
+    isLoading: calendarLoading,
+    isFetched: calendarLoaded,
+  } = useQuery({
+    queryKey: [...queryKeys.myBookings, "calendar", filters.bookingStatus ?? "all"],
+    enabled: viewMode === "calendar",
+    queryFn: async () => {
+      const response = await BookingService.getMyBookings({
+        bookingStatus: filters.bookingStatus,
+        page: 0,
+        size: 1000,
+      });
+      return (response.data.content || []).map(transformItem);
+    },
+  });
+
 
   const handleBookingClick = (booking: Booking) => {
     router.push(`/dashboard/booking/${booking.bookingId}`);
@@ -387,7 +361,7 @@ const BookingHistoryPage = () => {
           style={{ backgroundColor: "#0673ff" }}
         >
           <FiPlus className="w-4 h-4" />
-          <span>{needsSetup ? "Set up business" : "New booking"}</span>
+          <span>{needsSetup ? "Set up business" : "Book a vehicle"}</span>
         </button>
       </div>
 
@@ -449,9 +423,7 @@ const BookingHistoryPage = () => {
 
         {/* Content */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0673ff] mx-auto" />
-          </div>
+          <DashboardLoader />
         ) : viewMode === "list" ? (
           <div className="overflow-x-auto">
             <DataTable<Booking & { id: number }>
@@ -544,9 +516,7 @@ const BookingHistoryPage = () => {
         ) : (
           <div className="overflow-x-auto">
             {calendarLoading && !calendarLoaded ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0673ff] mx-auto" />
-              </div>
+              <DashboardLoader />
             ) : (
               <CalendarView
                 bookings={calendarFiltered}

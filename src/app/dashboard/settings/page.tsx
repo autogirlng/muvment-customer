@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/controllers/connnector/queryKeys";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -43,35 +45,32 @@ export default function SettingsPage() {
   const [active, setActive] = useState<TabKey>("profile");
   const [tabMenuOpen, setTabMenuOpen] = useState(false);
   const tabMenuRef = React.useRef<HTMLDivElement>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchProfile = async () => {
-    try {
-      setError(null);
-      setLoading(true);
+  // The profile is cached, so switching tabs or leaving and coming back does
+  // not call the API again. Editing the profile invalidates this key.
+  const {
+    data: profile = null,
+    isLoading: loading,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.profile,
+    queryFn: async (): Promise<UserProfile | null> => {
       const response = await ProfileService.getMyProfile();
       const respData: any = response?.data;
-      let profileData: UserProfile | null = null;
       if (Array.isArray(respData)) {
         const first = respData[0];
-        profileData = (first && (first.data ?? first)) as UserProfile | null;
-      } else {
-        profileData = respData as UserProfile | null;
+        return (first && (first.data ?? first)) as UserProfile | null;
       }
-      setProfile(profileData);
-    } catch (err: any) {
-      console.error("Failed to fetch profile:", err);
-      setError(err?.message || "Failed to load profile");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return respData as UserProfile | null;
+    },
+  });
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  const error = queryError
+    ? (queryError as Error)?.message || "Failed to load profile"
+    : null;
+  const fetchProfile = () => {
+    refetch();
+  };
 
   useEffect(() => {
     if (!tabMenuOpen) return;

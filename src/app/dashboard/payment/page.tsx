@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardLoader from "@/components/general/DashboardLoader";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { FiSearch, FiShare2, FiCopy, FiCheck, FiEye, FiCreditCard } from "react-icons/fi";
@@ -369,7 +370,7 @@ const PaymentHistoryPage = () => {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0673ff] mx-auto" />
+            <DashboardLoader size="inline" />
           </div>
         ) : (
           <DataTable<Payment>

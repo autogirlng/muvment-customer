@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSafeBack } from "@/hooks/useSafeBack";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/controllers/connnector/queryKeys";
 import { parsePhoneNumberFromString, CountryCode } from "libphonenumber-js";
 import { FiArrowLeft, FiCamera } from "react-icons/fi";
 import {
@@ -51,6 +53,7 @@ const fieldClasses =
 export default function EditProfilePage() {
   const router = useRouter();
   const safeBack = useSafeBack();
+  const queryClient = useQueryClient();
   const { setTokens } = useAuth();
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -132,6 +135,7 @@ export default function EditProfilePage() {
       const data = new FormData();
       data.append("file", file);
       await ProfileService.updateProfilePicture(data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile });
       await fetchProfile();
       setImageState({ file: null, preview: null, error: null });
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -208,6 +212,9 @@ export default function EditProfilePage() {
         );
       }
 
+      // The settings page reads a cached profile, so it has to be marked out
+      // of date or the saved changes would not show.
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile });
       router.push("/dashboard/settings");
     } catch (error) {
       const message =

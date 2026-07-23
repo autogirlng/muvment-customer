@@ -8,12 +8,18 @@ import { OrganizationService } from "@/controllers/organization/Organization.ser
 // Step 1 is creating the business (hasOrg), step 2 is funding the wallet
 // (walletFunded). setupComplete is true once both are done, and is always true for a
 // personal (non-business) account, since those have nothing to set up.
+//
+// canBook is the separate question of whether the account may book at all. Once
+// the business exists they can book and pay by card through Monnify or Paystack,
+// so funding the wallet is a step we still prompt for on the dashboard but is
+// not a condition of booking.
 export type BusinessSetup = {
   loading: boolean;
   isBusiness: boolean;
   hasOrg: boolean;
   walletFunded: boolean;
   setupComplete: boolean;
+  canBook: boolean;
   orgId: string | null;
 };
 
@@ -51,6 +57,15 @@ export function useBusinessSetup(): BusinessSetup {
   const hasOrg = !!orgId;
   const loading = corp.loading || (isBusiness && !checked);
   const setupComplete = !isBusiness || (hasOrg && walletFunded);
+  const canBook = !isBusiness || hasOrg;
 
-  return { loading, isBusiness, hasOrg, walletFunded, setupComplete, orgId };
+  return {
+    loading,
+    isBusiness,
+    hasOrg,
+    walletFunded,
+    setupComplete,
+    canBook,
+    orgId,
+  };
 }

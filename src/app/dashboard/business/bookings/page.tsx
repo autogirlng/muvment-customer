@@ -1,8 +1,9 @@
 "use client";
 
+import DashboardLoader from "@/components/general/DashboardLoader";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiFileText, FiArrowRight } from "react-icons/fi";
+import { FiFileText, FiArrowRight, FiPlus } from "react-icons/fi";
 import { useCorporateMembership } from "@/hooks/useCorporateMembership";
 import { OrganizationService } from "@/controllers/organization/Organization.service";
 import { OrganizationBooking } from "@/types/Organization.type";
@@ -126,7 +127,7 @@ export default function CompanyBookingsPage() {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex min-h-[50vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#0673ff]" />
+          <DashboardLoader size="inline" />
         </div>
       </div>
     );
@@ -241,11 +242,21 @@ export default function CompanyBookingsPage() {
             </p>
           </div>
         </div>
-        <p className="hidden max-w-xs text-right text-sm text-gray-400 sm:block">
-          {corp.isAdmin
-            ? "Every trip booked on the company wallet, across your team."
-            : "Trips you booked on the company wallet, including trips for guests."}
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="hidden max-w-xs text-right text-sm text-gray-400 lg:block">
+            {corp.isAdmin
+              ? "Every trip booked on the company wallet, across your team."
+              : "Trips you booked on the company wallet, including trips for guests."}
+          </p>
+          <button
+            onClick={() => router.push("/booking/search")}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+            style={{ backgroundColor: "#0673ff" }}
+          >
+            <FiPlus className="h-4 w-4" />
+            Book a Vehicle
+          </button>
+        </div>
       </div>
 
       {data.length === 0 ? (

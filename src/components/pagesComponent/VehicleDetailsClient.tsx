@@ -66,6 +66,8 @@ import LoginPromptModal from "../Booking/Loginpromptmodal";
 import VehicleAvailabilityModal from "@/components/Booking/VehicleAvailabilityModal";
 import TopRatedBadge from "@/components/Booking/TopRatedBadge";
 import { requiresAreaOfUse } from "@/helpers/areaOfUse";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/controllers/connnector/queryKeys";
 import {
   setPendingFavourite,
   FAVOURITES_CHANGED_EVENT,
@@ -123,6 +125,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 }) => {
   const router = useRouter();
   const safeBack = useSafeBack();
+  const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
 
   const [vehicle, setVehicle] = useState<any>(initialVehicleData);
@@ -823,6 +826,10 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         current,
       );
       setIsFavorited(isFavourited);
+      // The favourites list is cached and does not refetch on its own, so it
+      // has to be marked out of date or an unfavourited vehicle would still be
+      // listed there.
+      queryClient.invalidateQueries({ queryKey: queryKeys.favourites });
     } catch (e) {
       console.error("Failed to toggle favourite", e);
     } finally {

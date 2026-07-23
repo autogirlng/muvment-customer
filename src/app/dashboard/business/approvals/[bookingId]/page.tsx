@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardLoader from "@/components/general/DashboardLoader";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -124,7 +125,7 @@ export default function ApprovalDetailPage() {
   if (corp.loading || loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#0673ff]" />
+        <DashboardLoader size="inline" />
       </div>
     );
   }

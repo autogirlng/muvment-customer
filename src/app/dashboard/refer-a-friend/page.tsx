@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardLoader from "@/components/general/DashboardLoader";
 import DataTable, { TableColumn } from "@/components/utils/TableComponent";
 import {
   ProfileService,
@@ -440,7 +441,7 @@ export default function ReferralPage() {
           </h3>
           {loading ? (
             <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-              <div className="mx-auto inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-[#0673ff]" />
+              <DashboardLoader size="inline" />
               <p className="mt-4 text-gray-600">Loading referrals...</p>
             </div>
           ) : referrals.length === 0 ? (

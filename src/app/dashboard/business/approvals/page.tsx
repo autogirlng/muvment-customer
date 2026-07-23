@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardLoader from "@/components/general/DashboardLoader";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiCheckCircle, FiClock } from "react-icons/fi";
@@ -108,7 +109,7 @@ export default function ApprovalsPage() {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex min-h-[50vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#0673ff]" />
+          <DashboardLoader size="inline" />
         </div>
       </div>
     );

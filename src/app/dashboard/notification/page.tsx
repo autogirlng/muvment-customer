@@ -1,71 +1,124 @@
 "use client";
 
+import DashboardLoader from "@/components/general/DashboardLoader";
 import {
   NotificationService,
   Notification,
 } from "@/controllers/notification/notificationService";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/controllers/connnector/queryKeys";
 import {
   IoNotificationsOutline,
   IoTrashOutline,
   IoClose,
   IoEllipsisVertical,
+  IoCheckmarkDoneOutline,
 } from "react-icons/io5";
 
+type NotificationList = { items: Notification[]; total: number };
+
+// Walks the paged endpoint once and returns the whole list. Cached under a
+// single key, so returning to this page does not call the API again; the
+// handlers below keep the cache correct after a change.
+const fetchAllNotifications = async (): Promise<NotificationList> => {
+  const size = 50;
+  let pageIndex = 0;
+  let all: Notification[] = [];
+  let total = 0;
+  while (true) {
+    const res = await NotificationService.getUserNotifications(pageIndex, size);
+    const content: Notification[] = res?.data?.content || [];
+    total = res?.data?.totalElements ?? total;
+    all = all.concat(content);
+    pageIndex += 1;
+    if (content.length < size || all.length >= total || pageIndex > 50) break;
+  }
+  return { items: all, total: total || all.length };
+};
+
 const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState<
     string | null
   >(null);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
 
-  const fetchNotifications = useCallback(async () => {
+  const { data, isLoading: loading } = useQuery({
+    queryKey: queryKeys.notifications,
+    queryFn: fetchAllNotifications,
+  });
+
+  const notifications = data?.items ?? [];
+  const totalCount = data?.total ?? 0;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // Single place to write the cached list, so every change on this page keeps
+  // the count and the rows in step.
+  const writeList = (
+    update: (current: NotificationList) => NotificationList,
+  ) => {
+    queryClient.setQueryData<NotificationList>(
+      queryKeys.notifications,
+      (current) => update(current ?? { items: [], total: 0 }),
+    );
+  };
+
+  // Marking as read updates the list first so the change is instant, then
+  // persists it. If the request fails the item is put back as unread rather
+  // than showing a state the server does not have.
+  const handleMarkAsRead = async (id: string) => {
+    const target = notifications.find((n) => n.id === id);
+    if (!target || target.isRead) return;
+    const setRead = (value: boolean) =>
+      writeList((current) => ({
+        ...current,
+        items: current.items.map((n) =>
+          n.id === id ? { ...n, isRead: value } : n,
+        ),
+      }));
+    setRead(true);
     try {
-      setLoading(true);
-      const size = 50;
-      let pageIndex = 0;
-      let all: Notification[] = [];
-      let total = 0;
-      while (true) {
-        const res = await NotificationService.getUserNotifications(
-          pageIndex,
-          size,
-        );
-        const content: Notification[] = res?.data?.content || [];
-        total = res?.data?.totalElements ?? total;
-        all = all.concat(content);
-        pageIndex += 1;
-        if (content.length < size || all.length >= total || pageIndex > 50)
-          break;
-      }
-      setNotifications(all);
-      setTotalCount(total || all.length);
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error);
-    } finally {
-      setLoading(false);
+      await NotificationService.markAsRead(id);
+    } catch {
+      setRead(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+  const handleMarkAllAsRead = async () => {
+    const previous = notifications;
+    if (!previous.some((n) => !n.isRead)) return;
+    setMarkingAll(true);
+    writeList((current) => ({
+      ...current,
+      items: current.items.map((n) => ({ ...n, isRead: true })),
+    }));
+    try {
+      await NotificationService.markAllAsRead();
+    } catch {
+      writeList((current) => ({ ...current, items: previous }));
+    } finally {
+      setMarkingAll(false);
+      setMenuOpen(false);
+    }
+  };
 
   const handleDeleteNotification = async (id: string) => {
     try {
       setDeleting(id);
       await NotificationService.deleteNotification(id);
 
-      // Update local state
-      const newNotifications = notifications.filter((n) => n.id !== id);
-      setNotifications(newNotifications);
-      setTotalCount((prev) => prev - 1);
+      // Remove it from the cache so the row does not come back when the page
+      // is revisited.
+      writeList((current) => ({
+        items: current.items.filter((n) => n.id !== id),
+        total: Math.max(0, current.total - 1),
+      }));
 
       setShowDeleteModal(false);
       setNotificationToDelete(null);
@@ -81,8 +134,7 @@ const NotificationsPage = () => {
       setDeletingAll(true);
       const allIds = notifications.map((n) => n.id);
       await NotificationService.deleteAllNotifications(allIds);
-      setNotifications([]);
-      setTotalCount(0);
+      writeList(() => ({ items: [], total: 0 }));
     } catch (error) {
       console.error("Failed to delete all notifications:", error);
     } finally {
@@ -266,6 +318,18 @@ const NotificationsPage = () => {
                   />
                   <div className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-lg">
                     <button
+                      onClick={handleMarkAllAsRead}
+                      disabled={unreadCount === 0 || markingAll}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300"
+                    >
+                      <IoCheckmarkDoneOutline size={18} />
+                      {markingAll
+                        ? "Marking as read..."
+                        : unreadCount > 0
+                          ? `Mark all as read (${unreadCount})`
+                          : "All caught up"}
+                    </button>
+                    <button
                       onClick={() => {
                         setMenuOpen(false);
                         setShowDeleteAllModal(true);
@@ -285,12 +349,7 @@ const NotificationsPage = () => {
         {/* Notifications List */}
         <div className="space-y-6">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-16 h-16 border-4 border-gray-200 border-t-[#0673ff] rounded-full animate-spin mb-4"></div>
-              <p className="text-gray-600 font-medium">
-                Loading notifications...
-              </p>
-            </div>
+            <DashboardLoader />
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
               <div className="p-4 bg-gray-100 rounded-full mb-4">
@@ -317,10 +376,26 @@ const NotificationsPage = () => {
                         notification.isRead ? "" : "bg-[#E7F1FF]/40"
                       }`}
                     >
-                      <div className="min-w-0 flex-1">
+                      <div
+                        className={`min-w-0 flex-1 ${
+                          notification.isRead ? "" : "cursor-pointer"
+                        }`}
+                        role={notification.isRead ? undefined : "button"}
+                        tabIndex={notification.isRead ? undefined : 0}
+                        onClick={() => handleMarkAsRead(notification.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleMarkAsRead(notification.id);
+                          }
+                        }}
+                      >
                         <div className="flex items-center gap-2">
                           {!notification.isRead && (
-                            <span className="h-2 w-2 shrink-0 rounded-full bg-[#0673ff]" />
+                            <span
+                              className="h-2 w-2 shrink-0 rounded-full bg-[#0673ff]"
+                              aria-label="Unread"
+                            />
                           )}
                           <h3
                             className={`truncate text-sm leading-tight text-gray-900 ${

@@ -1,5 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import DashboardLoader from "@/components/general/DashboardLoader";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/controllers/connnector/queryKeys";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import VehicleCard from "@/components/Booking/VehicleCard";
@@ -13,71 +16,62 @@ import { BiHeart, BiSolidHeart } from "react-icons/bi";
 
 const BRAND = "#0673ff";
 
+const fetchFavouriteVehicles = async () => {
+  const { data } = await getSingleData("/api/v1/favourite-vehicle");
+  const { data: favoritesData } = data[0] as FavouritesVehicleData;
+
+  return (
+    favoritesData?.vehicles?.map((vehicle) => {
+      const {
+        city,
+        extraHourlyRate,
+        willProvideDriver,
+        willProvideFuel,
+        numberOfSeats,
+        photos,
+        name,
+        id,
+      } = vehicle;
+      return {
+        id,
+        slug: (vehicle as any)?.slug,
+        city,
+        extraHourlyRate,
+        willProvideDriver,
+        willProvideFuel,
+        numberOfSeats,
+        photos,
+        name,
+        allPricingOptions: vehicle?.pricing,
+        vehicleTypeName: vehicle?.vehicleMake.name || "",
+        bookingType: vehicle?.pricing[0]?.bookingTypeId || "",
+      };
+    }) || []
+  );
+};
+
 export default function FavouritesVehiclesClient() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const router = useRouter();
 
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<boolean>(false);
-
-  const getFavouriteVehicles = async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const { data } = await getSingleData("/api/v1/favourite-vehicle");
-      const { data: favoritesData } = data[0] as FavouritesVehicleData;
-
-      const mapped = favoritesData?.vehicles?.map((vehicle) => {
-        const {
-          city,
-          extraHourlyRate,
-          willProvideDriver,
-          willProvideFuel,
-          numberOfSeats,
-          photos,
-          name,
-          id,
-        } = vehicle;
-        return {
-          id,
-          slug: (vehicle as any)?.slug,
-          city,
-          extraHourlyRate,
-          willProvideDriver,
-          willProvideFuel,
-          numberOfSeats,
-          photos,
-          name,
-          allPricingOptions: vehicle?.pricing,
-          vehicleTypeName: vehicle?.vehicleMake.name || "",
-          bookingType: vehicle?.pricing[0]?.bookingTypeId || "",
-        };
-      });
-      setVehicles(mapped || []);
-    } catch (err) {
-      console.error("Error fetching favourite vehicles:", err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getFavouriteVehicles();
-  }, []);
+  // Cached, so moving between dashboard pages and back does not call the API
+  // again. Adding or removing a favourite elsewhere invalidates this key.
+  const {
+    data: vehicles = [],
+    isLoading: loading,
+    isError: error,
+    refetch: getFavouriteVehicles,
+  } = useQuery({
+    queryKey: queryKeys.favourites,
+    queryFn: fetchFavouriteVehicles,
+  });
 
   const wrap = "p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto";
 
   if (loading) {
     return (
       <div className={wrap}>
-        <div className="flex items-center justify-center py-24">
-          <FiLoader
-            className="w-12 h-12 animate-spin"
-            style={{ color: BRAND }}
-          />
-        </div>
+        <DashboardLoader />
       </div>
     );
   }
@@ -88,7 +82,7 @@ export default function FavouritesVehiclesClient() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center max-w-md mx-auto">
           <p className="text-gray-600 mb-4">An error occurred. Try again later.</p>
           <button
-            onClick={getFavouriteVehicles}
+            onClick={() => getFavouriteVehicles()}
             className="px-6 py-2.5 rounded-full text-white font-semibold hover:opacity-90 transition"
             style={{ backgroundColor: BRAND }}
           >

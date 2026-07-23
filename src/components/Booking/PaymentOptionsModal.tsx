@@ -27,7 +27,7 @@ export default function PaymentOptionsModal({
   bookingId,
   amount,
 }: PaymentOptionsModalProps) {
-  const [gateway, setGateway] = useState<Gateway>("PAYSTACK");
+  const [gateway, setGateway] = useState<Gateway>("MONNIFY");
   const [processing, setProcessing] = useState(false);
 
   if (!isOpen) return null;
@@ -129,14 +129,14 @@ export default function PaymentOptionsModal({
           </h3>
           <div className="flex flex-col gap-3">
             <Option
-              value="PAYSTACK"
-              img="/images/paymentgateway/paystack1.svg"
-              alt="Paystack"
-            />
-            <Option
               value="MONNIFY"
               img="/images/paymentgateway/monnify.svg"
               alt="Monnify"
+            />
+            <Option
+              value="PAYSTACK"
+              img="/images/paymentgateway/paystack1.svg"
+              alt="Paystack"
             />
           </div>
 

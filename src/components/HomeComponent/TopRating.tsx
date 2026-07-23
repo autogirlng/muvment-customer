@@ -1,5 +1,7 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/controllers/connnector/queryKeys";
 import { VehicleSearchService } from "@/controllers/booking/vechicle";
 import type { TopVehicle } from "./TopVech";
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -27,6 +29,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
   const [hasMore, setHasMore] = useState(true);
   const [ready, setReady] = useState(false);
 
+  const queryClient = useQueryClient();
   const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set());
   const [favouriteLoading, setFavouriteLoading] = useState<Set<string>>(
     new Set(),
@@ -121,6 +124,7 @@ const TopRatedVehicles: React.FC<TopRatedVehiclesProps> = ({ bookingId }) => {
       const { updatedFavouriteIds } =
         await FavouriteVehicleService.toggleFavourite(vehicleId, currentList);
       setFavouriteIds(new Set(updatedFavouriteIds));
+      queryClient.invalidateQueries({ queryKey: queryKeys.favourites });
     } catch {
       setFavouriteIds((prev) => {
         const next = new Set(prev);

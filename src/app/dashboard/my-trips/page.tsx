@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import DashboardLoader from "@/components/general/DashboardLoader";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/controllers/connnector/queryKeys";
 import { useRouter } from "next/navigation";
 import { useBusinessSetup } from "@/hooks/useBusinessSetup";
 import { FiMapPin, FiArrowRight, FiPlus, FiInbox, FiUser } from "react-icons/fi";
@@ -36,72 +39,68 @@ const timeLabel = (d?: string) =>
       })
     : "";
 
+const fetchMyTrips = async (): Promise<Trip[]> => {
+  const body = await BookingService.getMyBookings({
+    page: 0,
+    size: 1000,
+  } as any);
+  const content: any[] = body?.data?.content ?? [];
+  return (
+    content
+      .map((item) => ({
+        segmentId: item.id,
+        bookingId: item.booking?.bookingId,
+        status: item.booking?.bookingStatus,
+        vehicleName: item.vehicle?.name || "Vehicle",
+        start: item.startDateTime,
+        end: item.endDateTime,
+        pickup: item.pickupLocationString,
+        dropoff: item.dropoffLocationString,
+        bookingType: item.bookingType?.name,
+      }))
+      // A booking waiting on admin approval is not a confirmed trip yet; it shows in
+      // My bookings, not here.
+      .filter((t) => t.status !== "PENDING_APPROVAL")
+  );
+};
+
 const MyTripsPage = () => {
   const router = useRouter();
   const setup = useBusinessSetup();
-  const needsSetup = setup.isBusiness && !setup.setupComplete;
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tripInfo, setTripInfo] = useState<Record<string, any>>({});
+  // Only creating the business gates booking; funding the wallet does not.
+  const needsSetup = setup.isBusiness && !setup.canBook;
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const body = await BookingService.getMyBookings({
-          page: 0,
-          size: 1000,
-        } as any);
-        const content: any[] = body?.data?.content ?? [];
-        const mapped: Trip[] = content
-          .map((item) => ({
-            segmentId: item.id,
-            bookingId: item.booking?.bookingId,
-            status: item.booking?.bookingStatus,
-            vehicleName: item.vehicle?.name || "Vehicle",
-            start: item.startDateTime,
-            end: item.endDateTime,
-            pickup: item.pickupLocationString,
-            dropoff: item.dropoffLocationString,
-            bookingType: item.bookingType?.name,
-          }))
-          // A booking waiting on admin approval is not a confirmed trip yet; it shows in
-          // My bookings, not here.
-          .filter((t) => t.status !== "PENDING_APPROVAL");
-        setTrips(mapped);
-      } catch (e) {
-        console.error("Error loading trips:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const { data: trips = [], isLoading: loading } = useQuery({
+    queryKey: queryKeys.myTrips,
+    queryFn: fetchMyTrips,
+  });
 
-  useEffect(() => {
-    if (!trips.length) return;
+  // Live status for trips from today onwards, one call per segment. Cached
+  // against the exact set of ids, so coming back to this page does not repeat
+  // the whole fan out.
+  const upcomingIds = useMemo(() => {
     const startOfToday = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
-    const ids = trips
+    return trips
       .filter((t) => t.start && new Date(t.start).getTime() >= startOfToday)
       .map((t) => t.segmentId)
       .filter(Boolean)
       .slice(0, 30);
-    if (!ids.length) return;
-    let cancelled = false;
-    (async () => {
+  }, [trips]);
+
+  const { data: tripInfo = {} } = useQuery({
+    queryKey: [...queryKeys.myTrips, "segments", upcomingIds.join(",")],
+    enabled: upcomingIds.length > 0,
+    queryFn: async () => {
       const results = await Promise.allSettled(
-        ids.map((id) => BookingService.getTripBySegment(id)),
+        upcomingIds.map((id) => BookingService.getTripBySegment(id)),
       );
-      if (cancelled) return;
       const map: Record<string, any> = {};
       results.forEach((r, i) => {
-        if (r.status === "fulfilled" && r.value) map[ids[i]] = r.value;
+        if (r.status === "fulfilled" && r.value) map[upcomingIds[i]] = r.value;
       });
-      setTripInfo(map);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [trips]);
+      return map;
+    },
+  });
 
   const groups = useMemo(() => {
     const now = new Date();
@@ -216,14 +215,12 @@ const MyTripsPage = () => {
           style={{ backgroundColor: "#0673ff" }}
         >
           <FiPlus className="h-4 w-4" />
-          {needsSetup ? "Set up business" : "New booking"}
+          {needsSetup ? "Set up business" : "Book a vehicle"}
         </button>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0673ff] border-t-transparent" />
-        </div>
+        <DashboardLoader />
       ) : trips.length === 0 ? (
         <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">

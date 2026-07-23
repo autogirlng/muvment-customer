@@ -2,6 +2,7 @@ import {
   deleteWithParams,
   getSingleData,
   getTableData,
+  patchDataNoBody,
 } from "../connnector/app.callers";
 
 export interface Notification {
@@ -41,6 +42,30 @@ export class NotificationService {
       return response.data;
     } catch (error) {
       console.error("Error fetching notifications:", error);
+      throw error;
+    }
+  }
+
+  // Marks one notification as read. The list is updated straight away on the
+  // page, so this only has to persist the change.
+  static async markAsRead(notificationId: string): Promise<any> {
+    try {
+      return await patchDataNoBody(
+        `${this.DELETE_NOTIFICATION_URL}/${notificationId}`,
+      );
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      throw error;
+    }
+  }
+
+  static async markAllAsRead(): Promise<any> {
+    try {
+      return await patchDataNoBody(
+        `${this.DELETE_NOTIFICATION_URL}/read-all`,
+      );
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
       throw error;
     }
   }
