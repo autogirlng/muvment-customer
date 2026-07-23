@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { MdBusiness, MdArrowBack, MdCheckCircle } from "react-icons/md";
 import { createData } from "@/controllers/connnector/app.callers";
 
@@ -93,6 +94,7 @@ export const CreateOrganizationPage = ({
   redirectTo?: string;
 } = {}) => {
   const router = useRouter();
+  const safeBack = useSafeBack();
 
   const getStashedName = (): string => {
     if (typeof window === "undefined") return "";
@@ -171,7 +173,7 @@ export const CreateOrganizationPage = ({
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
           <button
-            onClick={() => router.back()}
+            onClick={() => safeBack("/dashboard/settings")}
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors"
           >
             <MdArrowBack className="w-4 h-4" /> Back

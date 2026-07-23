@@ -26,6 +26,7 @@ import SelectInput from "@/components/general/forms/select";
 import { GoogleMapsLocationInput } from "@/components/general/forms/GoogleMapsLocationInput";
 import Cookies from "js-cookie";
 import WelcomeOfferNote from "@/components/general/WelcomeOfferNote";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 interface TripDetails {
   id: string;
@@ -34,9 +35,20 @@ interface TripDetails {
   tripStartTime: string;
   pickupLocation: string;
   pickupCoordinates: { lat: number; lng: number } | null;
+  pickupRegion: string;
   dropoffLocation: string;
   dropoffCoordinates: { lat: number; lng: number } | null;
+  dropoffRegion: string;
 }
+
+// Special booking currently operates in Lagos only. A selection resolves to
+// Lagos when Google returns its state (administrative_area_level_1) as "Lagos".
+// The comparison strips a trailing "state" so "Lagos" and "Lagos State" both pass.
+const SPECIAL_BOOKING_STATE = "Lagos";
+const normaliseState = (s?: string) =>
+  (s || "").toLowerCase().replace(/\bstate\b/g, "").trim();
+const isSupportedState = (s?: string) =>
+  normaliseState(s) === normaliseState(SPECIAL_BOOKING_STATE);
 
 interface Trip {
   id: string;
@@ -98,6 +110,7 @@ const ServicePricingBookingPage: React.FC = () => {
   const searchParams = useSearchParams();
   const slug = params?.id as string;
   const durationToken = searchParams?.get("duration") || null;
+  const safeBack = useSafeBack();
 
   const [pricing, setPricing] = useState<ServicePricingShowcase | null>(null);
   const [loading, setLoading] = useState(true);
@@ -203,7 +216,7 @@ const ServicePricingBookingPage: React.FC = () => {
 
   const handleBackClick = () => {
     ServicePricingStorage.clearStorage();
-    router.back();
+    safeBack("/");
   };
 
   const allComplete = useMemo(
@@ -219,8 +232,10 @@ const ServicePricingBookingPage: React.FC = () => {
           bookingType: lastTrip.tripDetails.bookingType,
           pickupLocation: lastTrip.tripDetails.pickupLocation,
           pickupCoordinates: lastTrip.tripDetails.pickupCoordinates,
+          pickupRegion: lastTrip.tripDetails.pickupRegion,
           dropoffLocation: lastTrip.tripDetails.dropoffLocation,
           dropoffCoordinates: lastTrip.tripDetails.dropoffCoordinates,
+          dropoffRegion: lastTrip.tripDetails.dropoffRegion,
         }
       : {};
     setTrips([...trips, { id: newId, tripDetails: prefilled }]);
@@ -608,6 +623,19 @@ const ServicePricingBookingPage: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-[#CFE0FF] bg-[#EAF2FF] px-4 py-3">
+                  <FiMapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#0673FF]" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#0d1320]">
+                      Available in Lagos only
+                    </p>
+                    <p className="mt-0.5 text-xs leading-snug text-gray-600">
+                      Special booking currently runs within Lagos. Pickup and
+                      drop-off must both be Lagos addresses.
+                    </p>
+                  </div>
+                </div>
+
                 <div className="space-y-4">
                   {trips.map((trip, index) => (
                     <TripCard
@@ -697,17 +725,28 @@ const TripCard = ({
   const details = trip.tripDetails;
 
   const [sameAsPickup, setSameAsPickup] = useState(false);
+  const [pickupError, setPickupError] = useState("");
+  const [dropoffError, setDropoffError] = useState("");
 
-  // Keep the drop-off mirrored to the pickup while the box is ticked.
+  // Keep the drop-off mirrored to the pickup while the box is ticked. The
+  // pickup region is mirrored too so a valid Lagos pickup keeps the drop-off
+  // valid without a second lookup.
   useEffect(() => {
     if (!sameAsPickup) return;
     onUpdate(trip.id, "dropoffLocation", details.pickupLocation || "");
+    onUpdate(trip.id, "dropoffRegion", details.pickupRegion || "");
+    setDropoffError("");
     if (details.pickupCoordinates) {
       onUpdate(trip.id, "dropoffCoordinates", details.pickupCoordinates);
     }
     // onUpdate is intentionally omitted to avoid a render loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sameAsPickup, details.pickupLocation, details.pickupCoordinates]);
+  }, [
+    sameAsPickup,
+    details.pickupLocation,
+    details.pickupCoordinates,
+    details.pickupRegion,
+  ]);
 
   const tripStartDate = details.tripStartDate
     ? new Date(details.tripStartDate)
@@ -754,6 +793,32 @@ const TripCard = ({
     coordinates: { lat: number; lng: number } | null,
   ) => {
     onUpdate(trip.id, type, coordinates);
+  };
+
+  // Enforce the Lagos-only rule as soon as a place resolves. A selection is
+  // rejected only when its state is known and is not Lagos, so a valid Lagos
+  // address whose state Google omits is never wrongly blocked. Rejecting clears
+  // the coordinates, which keeps the estimate and the confirm button disabled.
+  const handleRegion = (
+    type: string,
+    region: { state: string; city: string },
+  ) => {
+    const isPickup = type === "pickupCoordinates";
+    const regionField = isPickup ? "pickupRegion" : "dropoffRegion";
+    const setError = isPickup ? setPickupError : setDropoffError;
+    const label = isPickup ? "pickup" : "drop-off";
+
+    onUpdate(trip.id, regionField, region.state || "");
+
+    if (region.state && !isSupportedState(region.state)) {
+      onUpdate(trip.id, type, null);
+      setError(
+        `Special booking is available in Lagos only. Please choose a ${label} address within Lagos.`,
+      );
+      return;
+    }
+
+    setError("");
   };
 
   return (
@@ -825,6 +890,8 @@ const TripCard = ({
               onChange={(value) => onUpdate(trip.id, "pickupLocation", value)}
               placeholder="Enter pickup address"
               coordinates={handleCoordinates}
+              onRegion={handleRegion}
+              error={pickupError}
               type="pickupCoordinates"
               disabled={false}
             />
@@ -869,6 +936,8 @@ const TripCard = ({
                 onChange={(value) => onUpdate(trip.id, "dropoffLocation", value)}
                 placeholder="Enter drop-off location"
                 coordinates={handleCoordinates}
+                onRegion={handleRegion}
+                error={dropoffError}
                 type="dropoffCoordinates"
                 disabled={false}
               />

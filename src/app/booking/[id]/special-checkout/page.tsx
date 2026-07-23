@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { useAuth } from "@/context/AuthContext";
 import { OrganizationService } from "@/controllers/organization/Organization.service";
 import { useCorporateMembership } from "@/hooks/useCorporateMembership";
@@ -96,6 +97,7 @@ type PaymentGateway = "MONNIFY" | "PAYSTACK";
 
 const ServicePricingCheckoutPage = () => {
   const router = useRouter();
+  const safeBack = useSafeBack();
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
   const corpMembership = useCorporateMembership();
@@ -922,7 +924,7 @@ const ServicePricingCheckoutPage = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 lg:pb-8">
         <button
-          onClick={() => router.back()}
+          onClick={() => safeBack("/")}
           className="group inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-5 transition"
         >
           <FiChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />

@@ -227,9 +227,11 @@ function TimePicker({
     }
   }, [value]);
 
-  // Handle clicking outside to close dropdown
+  // Handle clicking outside to close dropdown. Listen for touch as well as
+  // mouse so that on mobile and in-app browsers a tap outside closes it, and a
+  // tap on a time row is not swallowed by a mouse-only handler.
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
@@ -241,7 +243,11 @@ function TimePicker({
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   const handleTimeSelect = (timeValue: string) => {
@@ -332,11 +338,16 @@ function TimePicker({
             {timeOptions.map((time, index) => (
               <div
                 key={index}
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
                   if (!time?.available) return;
                   handleTimeSelect(time.value);
                 }}
-                className={`px-4 py-2 text-sm transition-colors duration-150 ease-in-out ${
+                onTouchStart={() => {
+                  if (!time?.available) return;
+                  handleTimeSelect(time.value);
+                }}
+                className={`px-4 py-3 text-sm transition-colors duration-150 ease-in-out select-none ${
                   !time?.available
                     ? "text-gray-300 line-through cursor-not-allowed"
                     : selectedTime === time.value

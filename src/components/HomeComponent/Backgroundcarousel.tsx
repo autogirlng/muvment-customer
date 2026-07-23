@@ -42,7 +42,9 @@ export default function BackgroundCarousel({
             fill
             className="object-cover w-full h-full"
             priority={index === 0}
-            quality={75}
+            loading={index === 0 ? "eager" : "lazy"}
+            fetchPriority={index === 0 ? "high" : "auto"}
+            quality={70}
             sizes="100vw"
           />
         </div>
