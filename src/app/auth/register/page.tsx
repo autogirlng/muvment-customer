@@ -74,6 +74,50 @@ function SignupContent() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
+  // An invited person should not have to remember which address the invitation
+  // went to. Signing up with a different one leaves the invitation unaccepted,
+  // so the address is looked up from the token, filled in, and locked.
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteOrg, setInviteOrg] = useState("");
+  const [inviteChecking, setInviteChecking] = useState(!!inviteToken);
+  const [inviteError, setInviteError] = useState("");
+
+  useEffect(() => {
+    if (!inviteToken) return;
+    let alive = true;
+    (async () => {
+      try {
+        const base = process.env.NEXT_PUBLIC_API_URL || "";
+        const res = await fetch(
+          `${base}/api/v1/public/invites/${encodeURIComponent(inviteToken)}`,
+          { headers: { "Content-Type": "application/json" } },
+        );
+        const body = await res.json().catch(() => null);
+        const email = body?.data?.email || "";
+        if (!alive) return;
+        if (res.ok && email) {
+          setInviteEmail(email);
+          setInviteOrg(body?.data?.inviterName || "");
+          setFormValues((prev) => ({ ...prev, email }));
+        } else {
+          setInviteError(
+            "We could not open this invitation. It may have been used already or withdrawn. Please ask for a new one.",
+          );
+        }
+      } catch {
+        if (alive)
+          setInviteError(
+            "We could not open this invitation. It may have been used already or withdrawn. Please ask for a new one.",
+          );
+      } finally {
+        if (alive) setInviteChecking(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [inviteToken]);
+
   // Keep an already-signed-in user off the signup form.
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -392,13 +436,29 @@ function SignupContent() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {inviteToken && (
-                <div className="rounded-lg bg-[#EAF2FF] px-4 py-3">
-                  <p className="text-sm font-medium text-[#0673FF]">
-                    You have been invited to join a company
-                  </p>
-                  <p className="mt-0.5 text-xs text-gray-600">
-                    Sign up with the email address the invitation was sent to.
-                  </p>
+                <div
+                  className={`rounded-lg px-4 py-3 ${
+                    inviteError
+                      ? "bg-[#FEF3F2] border border-[#FDA29B]"
+                      : "bg-[#EAF2FF]"
+                  }`}
+                >
+                  {inviteError ? (
+                    <p className="text-sm text-[#912018]">{inviteError}</p>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-[#0673FF]">
+                        {inviteOrg
+                          ? `You have been invited to join ${inviteOrg}`
+                          : "You have been invited to join a company"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-gray-600">
+                        {inviteChecking
+                          ? "Opening your invitation..."
+                          : "Your invitation email address is filled in below."}
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -632,13 +692,25 @@ function SignupContent() {
                   value={formValues.email}
                   onChange={(e) => handleChange("email", e.target.value)}
                   onBlur={() => handleBlur("email")}
-                  placeholder="Enter email address"
+                  readOnly={!!inviteEmail}
+                  aria-readonly={!!inviteEmail}
+                  placeholder={
+                    inviteChecking ? "Loading your invitation..." : "Enter email address"
+                  }
                   className={`w-full px-4 py-3 rounded-lg border ${
                     touched.email && errors.email
                       ? "border-red-500"
                       : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-[#0673FF]`}
+                  } focus:outline-none focus:ring-2 focus:ring-[#0673FF] ${
+                    inviteEmail ? "bg-gray-50 text-gray-600 cursor-not-allowed" : ""
+                  }`}
                 />
+                {inviteEmail && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    This is the address your invitation was sent to, so it cannot
+                    be changed.
+                  </p>
+                )}
                 {touched.email && errors.email && (
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
                 )}

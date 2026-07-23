@@ -292,7 +292,7 @@ const DashboardLayoutClient = ({
       <div className="lg:pl-64 pb-20 lg:pb-0">
         <header className="sticky top-0 z-20 bg-white border-b border-gray-100 h-16 flex items-center gap-3 px-4 lg:px-8">
           <Link
-            href="/dashboard"
+            href="/"
             aria-label="Muvment home"
             className="lg:hidden shrink-0"
           >

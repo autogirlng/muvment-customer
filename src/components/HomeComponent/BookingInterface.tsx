@@ -45,6 +45,11 @@ import { ServicePricingService } from "@/controllers/booking/Servicepricingservi
 import { getBookingOption } from "@/context/Constarain";
 import { trackVehicleSearch } from "@/services/analytics";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
+import { isLagosCoordinate } from "@/helpers/lagos";
+import {
+  SUPPORTED_AIRPORTS,
+  SupportedAirport,
+} from "@/data/airports";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 import BackgroundCarousel from "./Backgroundcarousel";
 
@@ -112,35 +117,6 @@ function iconForVehicleType(name: string) {
 
 // Airports Muvment operates at. Used for the default suggestions and to check
 // that a searched airport is one we serve.
-type SupportedAirport = {
-  code: string;
-  name: string;
-  city: string;
-  lat: number;
-  lng: number;
-  keywords: string;
-};
-
-const SUPPORTED_AIRPORTS: SupportedAirport[] = [
-  // Lagos: one international terminal and two domestic terminals (GAT and MMA2)
-  { code: "LOS-INT", name: "Lagos International (MMIA, Murtala Muhammed)", city: "Lagos", lat: 6.5774, lng: 3.3212, keywords: "los mmia mma1 mm1 murtala muhammed ikeja terminal 1 terminal 2 international" },
-  { code: "LOS-MMA2", name: "Lagos Domestic (MMA2)", city: "Lagos", lat: 6.5839, lng: 3.3214, keywords: "los mma2 mm2 bi-courtney murtala muhammed ikeja domestic local terminal 2 ibom dana valuejet air peace" },
-  { code: "LOS-GAT", name: "Lagos Domestic (GAT)", city: "Lagos", lat: 6.5836, lng: 3.3210, keywords: "los gat general aviation terminal murtala muhammed ikeja domestic local air peace arik" },
-  // Abuja: separate international and domestic terminals
-  { code: "ABV-INT", name: "Abuja International (Nnamdi Azikiwe)", city: "Abuja", lat: 9.0067, lng: 7.2631, keywords: "abv nnamdi azikiwe naia international" },
-  { code: "ABV-DOM", name: "Abuja Domestic (Nnamdi Azikiwe)", city: "Abuja", lat: 9.0067, lng: 7.2631, keywords: "abv nnamdi azikiwe naia domestic local" },
-  // Port Harcourt (Omagwa): international and domestic
-  { code: "PHC-INT", name: "Port Harcourt International (Omagwa)", city: "Port Harcourt", lat: 5.0153, lng: 6.9500, keywords: "phc phia omagwa rivers international" },
-  { code: "PHC-DOM", name: "Port Harcourt Domestic (Omagwa)", city: "Port Harcourt", lat: 5.0153, lng: 6.9500, keywords: "phc phia omagwa rivers domestic local" },
-  // Enugu (Akanu Ibiam): international and domestic
-  { code: "ENU-INT", name: "Enugu International (Akanu Ibiam)", city: "Enugu", lat: 6.4739, lng: 7.5611, keywords: "enu akanu ibiam emene international" },
-  { code: "ENU-DOM", name: "Enugu Domestic (Akanu Ibiam)", city: "Enugu", lat: 6.4739, lng: 7.5611, keywords: "enu akanu ibiam emene domestic local" },
-  // Benin City: single airport, mostly domestic
-  { code: "BNI", name: "Benin Airport", city: "Benin City", lat: 6.3169, lng: 5.5995, keywords: "bni benin city ogba domestic local" },
-  // Accra (Kotoka): Terminal 3 international, Terminal 2 domestic
-  { code: "ACC-T3", name: "Accra International (Kotoka, Terminal 3)", city: "Accra", lat: 5.6061, lng: -0.1682, keywords: "acc kotoka kia ghana terminal 3 t3 international" },
-  { code: "ACC-T2", name: "Accra Domestic (Kotoka, Terminal 2)", city: "Accra", lat: 5.6061, lng: -0.1682, keywords: "acc kotoka kia ghana terminal 2 t2 domestic local" },
-];
 
 function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
   const R = 6371;
@@ -661,7 +637,7 @@ function AirportField({
     <div ref={anchorRef} className="relative">
       {!compact && (
         <label className={labelClass}>
-          {direction === "pickup" ? "Destination airport" : "Arrival airport"}
+          {direction === "pickup" ? "Arrival airport" : "Destination airport"}
         </label>
       )}
       <button
@@ -997,83 +973,97 @@ function BookingSearchInner({
   useEffect(() => {
     let alive = true;
     (async () => {
-      try {
-        const { rawBookingOptions } = await getBookingOption();
-        const options: any[] = rawBookingOptions || [];
+      // These three do not depend on each other, so they go out together. They
+      // used to run one after another, which meant the form was not usable
+      // until four round trips had completed in sequence.
+      const [optionRes, allTypesRes, vehicleTypesRes] = await Promise.allSettled(
+        [
+          getBookingOption(),
+          BookingService.getAllBookingTypes(),
+          VehicleSearchService.getVehicleTypes(),
+        ],
+      );
+
+      // Vehicle categories are a visible field, so apply them as soon as they
+      // arrive rather than behind the boat lookup.
+      if (alive && vehicleTypesRes.status === "fulfilled") {
+        const types: any[] = vehicleTypesRes.value || [];
+        setCategoryOptions(
+          types
+            // Boat is its own booking type with a dedicated flow, so it is
+            // not offered as a vehicle category for within state, interstate
+            // or airport.
+            .filter(
+              (t: any) =>
+                String(t?.name || "")
+                  .trim()
+                  .toUpperCase() !== "BOAT",
+            )
+            .map((t: any) => ({
+              value: t.id,
+              label: formatTypeName(t.name),
+              icon: iconForVehicleType(t.name),
+            })),
+        );
+      }
+
+      const ids = {
+        twelveH: "",
+        twentyFourH: "",
+        monthly: "",
+        airport: "",
+        interstate: "",
+        boat: "",
+      };
+      if (optionRes.status === "fulfilled") {
+        const options: any[] = optionRes.value?.rawBookingOptions || [];
         const idFor = (match: (n: string) => boolean) =>
           options.find((t) => match(String(t?.name || "").toLowerCase()))?.id ||
           "";
-        const ids = {
-          twelveH: idFor((n) => n.includes("12")),
-          twentyFourH: idFor((n) => n.includes("24")),
-          monthly: idFor((n) => n.includes("month")),
-          airport: idFor((n) => n.includes("airport")),
-          interstate: idFor((n) => n.includes("interstate")),
-          boat: idFor((n) => n.includes("boat")),
-        };
+        ids.twelveH = idFor((n) => n.includes("12"));
+        ids.twentyFourH = idFor((n) => n.includes("24"));
+        ids.monthly = idFor((n) => n.includes("month"));
+        ids.airport = idFor((n) => n.includes("airport"));
+        ids.interstate = idFor((n) => n.includes("interstate"));
+        ids.boat = idFor((n) => n.includes("boat"));
         if (alive) setTypeIds(ids);
+      }
 
-        // Each boat spot is priced as its own booking type. The Boat Trip type
-        // carries the curated spot names; we match those names to the booking
-        // type of the same name and use that booking type id for the search.
-        const curated = ids.boat
-          ? await VehicleSearchService.getDestinations(ids.boat)
-          : [];
-        let spots: { id: string; name: string }[] = [];
+      // Each boat spot is priced as its own booking type. The Boat Trip type
+      // carries the curated spot names; we match those names to the booking
+      // type of the same name and use that booking type id for the search.
+      // This needs the boat type id, so it can only start once the options are
+      // known, and nothing else on the form waits for it.
+      let spots: { id: string; name: string }[] = [];
+      if (ids.boat) {
         try {
-          const allTypes = await BookingService.getAllBookingTypes();
+          const curated = await VehicleSearchService.getDestinations(ids.boat);
+          const allTypes: any[] =
+            allTypesRes.status === "fulfilled" ? allTypesRes.value || [] : [];
           const norm = (s: string) => String(s || "").trim().toLowerCase();
           const aliases: Record<string, string> = { ilashe: "illashe" };
           const typeByName = new Map<string, string>();
-          (allTypes || []).forEach((t: any) => {
+          allTypes.forEach((t: any) => {
             if (t?.id) typeByName.set(norm(t.name), t.id);
           });
           spots = (curated || [])
             .map((d: any) => {
               const key = norm(d?.name);
-              const id = typeByName.get(key) || typeByName.get(aliases[key]) || "";
+              const id =
+                typeByName.get(key) || typeByName.get(aliases[key]) || "";
               return id ? { id, name: d?.name } : null;
             })
             .filter((s): s is { id: string; name: string } => !!s);
         } catch {
           spots = [];
         }
-        if (alive) {
-          setBoatDestinations(spots);
-          setBoatSpotIds(spots.map((s) => s.id));
-        }
-      } catch {
-        // Leave destinations empty; the fields show an empty state.
-      } finally {
-        if (alive) {
-          setDestLoading(false);
-          setBoatReady(true);
-        }
       }
 
-      try {
-        const types = await VehicleSearchService.getVehicleTypes();
-        if (alive) {
-          setCategoryOptions(
-            (types || [])
-              // Boat is its own booking type with a dedicated flow, so it is
-              // not offered as a vehicle category for within state, interstate
-              // or airport.
-              .filter(
-                (t: any) =>
-                  String(t?.name || "")
-                    .trim()
-                    .toUpperCase() !== "BOAT",
-              )
-              .map((t: any) => ({
-                value: t.id,
-                label: formatTypeName(t.name),
-                icon: iconForVehicleType(t.name),
-              })),
-          );
-        }
-      } catch {
-        // Category stays optional; an empty list just means no filter.
+      if (alive) {
+        setBoatDestinations(spots);
+        setBoatSpotIds(spots.map((s) => s.id));
+        setDestLoading(false);
+        setBoatReady(true);
       }
     })();
     return () => {
@@ -1275,6 +1265,12 @@ function BookingSearchInner({
       setTriedSubmit(true);
       return;
     }
+    if (!isLagosCoordinate(pickup)) {
+      setError(
+        "Hourly packages (3 and 6 hours) are available in Lagos only. Please choose a pickup within Lagos.",
+      );
+      return;
+    }
     try {
       sessionStorage.setItem(
         "muvment:hourlyPickup",
@@ -1329,8 +1325,8 @@ function BookingSearchInner({
         return "an airport";
       case "airportAddress":
         return airportDirection === "pickup"
-          ? "a pickup location"
-          : "a drop-off location";
+          ? "a drop-off location"
+          : "a pickup location";
       case "withinLocation":
         return "a location";
       case "startLocation":
@@ -1392,7 +1388,7 @@ function BookingSearchInner({
         setTriedSubmit(false);
         setError(
           `Your ${
-            airportDirection === "pickup" ? "pickup" : "drop-off"
+            airportDirection === "pickup" ? "drop-off" : "pickup"
           } location looks too far from ${selectedAirport.name}. Airport trips have to be in the same city. Pick an airport in the same city as your location, or change the location.`,
         );
         return;
@@ -1418,19 +1414,8 @@ function BookingSearchInner({
         const air = selectedAirport;
         const addr = selectedAddress;
         if (airportDirection === "pickup") {
-          // Ride to the airport: pickup is the address, drop-off is the airport.
-          if (addr?.lat && addr?.lng) {
-            loc = {
-              name: addr.name || "Pickup location",
-              lat: addr.lat,
-              lng: addr.lng,
-            };
-          }
-          if (air?.lat && air?.lng) {
-            airportDropoff = { name: air.name, lat: air.lat, lng: air.lng };
-          }
-        } else {
-          // Ride from the airport: pickup is the airport, drop-off is the address.
+          // Collected at the airport: pickup is the airport, drop-off is the
+          // address.
           if (air?.lat && air?.lng) {
             loc = { name: air.name, lat: air.lat, lng: air.lng };
           }
@@ -1440,6 +1425,19 @@ function BookingSearchInner({
               lat: addr.lat,
               lng: addr.lng,
             };
+          }
+        } else {
+          // Taken to the airport: pickup is the address, drop-off is the
+          // airport.
+          if (addr?.lat && addr?.lng) {
+            loc = {
+              name: addr.name || "Pickup location",
+              lat: addr.lat,
+              lng: addr.lng,
+            };
+          }
+          if (air?.lat && air?.lng) {
+            airportDropoff = { name: air.name, lat: air.lat, lng: air.lng };
           }
         }
       } else if (bookingType === "boat") {
@@ -1673,31 +1671,9 @@ function BookingSearchInner({
           {airportDirection === "pickup" ? (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               <div>
-                <LocationField
-                  key="airport-address"
-                  label="Pickup location"
-                  placeholder="Where should the driver pick you up?"
-                  onSelect={onPickAddress}
-                  initial={selectedAddress}
-                />
-                {fieldErr("airportAddress", "Add a pickup location")}
-              </div>
-              <div>
                 <AirportField
                   key="airport-field"
                   direction="pickup"
-                  userLoc={userLoc}
-                  onSelect={setSelectedAirport}
-                />
-                {fieldErr("airport", "Select an airport")}
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <div>
-                <AirportField
-                  key="airport-field"
-                  direction="dropoff"
                   userLoc={userLoc}
                   onSelect={setSelectedAirport}
                 />
@@ -1712,6 +1688,28 @@ function BookingSearchInner({
                   initial={selectedAddress}
                 />
                 {fieldErr("airportAddress", "Add a drop-off location")}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <div>
+                <LocationField
+                  key="airport-address"
+                  label="Pickup location"
+                  placeholder="Where should the driver pick you up?"
+                  onSelect={onPickAddress}
+                  initial={selectedAddress}
+                />
+                {fieldErr("airportAddress", "Add a pickup location")}
+              </div>
+              <div>
+                <AirportField
+                  key="airport-field"
+                  direction="dropoff"
+                  userLoc={userLoc}
+                  onSelect={setSelectedAirport}
+                />
+                {fieldErr("airport", "Select an airport")}
               </div>
             </div>
           )}
@@ -1951,16 +1949,16 @@ function BookingSearchInner({
       const addressField = (
         <LocationField
           compact
-          label={airportDirection === "pickup" ? "Pickup" : "Drop-off"}
-          placeholder={airportDirection === "pickup" ? "Pickup" : "Drop-off"}
+          label={airportDirection === "pickup" ? "Drop-off" : "Pickup"}
+          placeholder={airportDirection === "pickup" ? "Drop-off" : "Pickup"}
           onSelect={onPickAddress}
           initial={selectedAddress}
         />
       );
       return (
         <>
-          {barCell(airportDirection === "pickup" ? addressField : airportField)}
           {barCell(airportDirection === "pickup" ? airportField : addressField)}
+          {barCell(airportDirection === "pickup" ? addressField : airportField)}
           {barCellFixed(
             <DateField
               compact

@@ -7,7 +7,9 @@ import { ReactNode } from "react";
 import cn from "classnames";
 import { format } from "date-fns";
 import AreaOfUseSelect, { SelectedArea } from "./AreaOfUseSelect";
+import AirportSelect from "./AirportSelect";
 import { getAreasForCity, CityArea } from "@/data/lagosAreas";
+import { requiresAreaOfUse } from "@/helpers/areaOfUse";
 import { GoogleMapsLocationInput } from "../general/forms/GoogleMapsLocationInput";
 import {
   ITripPerDaySelect,
@@ -356,6 +358,36 @@ const TripAccordion = ({
   const durationMatch = selectedTypeName.match(/(\d+)\s*hour/i);
   const isAirportType = selectedTypeName.toLowerCase().includes("airport");
 
+  // Which end of the trip is the airport. "pickup" means we collect the
+  // customer at the terminal and drop them at an address; "dropoff" is the
+  // reverse. Defaults to pickup.
+  const [airportDirection, setAirportDirection] = useState<
+    "pickup" | "dropoff"
+  >("pickup");
+
+  // Switching direction swaps which field takes an airport, so the old values
+  // no longer fit and are cleared. Leaving them would mean an address sitting
+  // in the airport field, or a terminal in the address field.
+  const handleAirportDirection = (d: "pickup" | "dropoff") => {
+    if (d === airportDirection) return;
+    setAirportDirection(d);
+    setDropoffLocation("");
+    onChange("pickupLocation", "");
+    coordinates("pickupCoordinates", null);
+    onChange("dropoffLocation", "");
+    coordinates("dropoffCoordinates", null);
+  };
+
+  // An airport trip runs between an address and a terminal, so returning to the
+  // pickup is not a possible choice and the option is not offered. If it was
+  // ticked before the type was changed, clear it, otherwise the drop-off field
+  // would stay hidden with no way to enter one.
+  useEffect(() => {
+    if (isAirportType && sameAsPickup) {
+      setSameAsPickup(false);
+    }
+  }, [isAirportType, sameAsPickup]);
+
   const tileDisabled = availabilityMap
     ? ({ date, view }: { date: Date; view: string }) => {
         if (view !== "month") return false;
@@ -538,15 +570,57 @@ const TripAccordion = ({
               </div>
             )}
 
+            {isAirportType && !partnerLock && (
+              <div>
+                <p className="mb-1.5 text-xs font-semibold text-gray-600">
+                  Which end is the airport?
+                </p>
+                <div className="flex gap-2">
+                  {(["pickup", "dropoff"] as const).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => handleAirportDirection(d)}
+                      className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                        airportDirection === d
+                          ? "border-[#0673ff] bg-[#EAF2FF] text-[#0560d6]"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      {d === "pickup" ? "Pickup" : "Drop off"}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] leading-snug text-gray-500">
+                  {airportDirection === "pickup"
+                    ? "We collect you at the airport and drop you at your address."
+                    : "We collect you at your address and drop you at the airport."}
+                </p>
+              </div>
+            )}
+
             <InputSection title="Pickup Location">
-              <GoogleMapsLocationInput
-                disabled={disabled || (!!partnerLock && !isAirportType)}
-                value={pickupLocation}
-                onChange={(value) => onChange("pickupLocation", value)}
-                placeholder="Enter location"
-                coordinates={coordinates}
-                type="pickupCoordinates"
-              />
+              {isAirportType && !partnerLock && airportDirection === "pickup" ? (
+                <AirportSelect
+                  value={pickupLocation}
+                  disabled={disabled}
+                  onSelect={(a) => {
+                    if (!a) return;
+                    onChange("pickupLocation", a.name);
+                    coordinates("pickupCoordinates", { lat: a.lat, lng: a.lng });
+                  }}
+                />
+              ) : (
+                <GoogleMapsLocationInput
+                  disabled={disabled || (!!partnerLock && !isAirportType)}
+                  value={pickupLocation}
+                  onChange={(value) => onChange("pickupLocation", value)}
+                  placeholder="Enter location"
+                  coordinates={coordinates}
+                  type="pickupCoordinates"
+                />
+              )}
               {partnerLock && !isAirportType && partnerName && (
                 <p className="mt-1 text-[11px] text-gray-500">
                   Pickup is fixed to {partnerName}.
@@ -569,15 +643,14 @@ const TripAccordion = ({
                 <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
               </svg>
               <p className="text-[11px] leading-snug text-amber-800">
-                Enter your exact address so your price is correct. If your trip
-                goes beyond the areas you enter, extra charges apply and your
-                booking is not refundable because of them.
+                Enter your exact address for correct pricing. Trips beyond the
+                areas you enter attract extra charges, which are not refundable.
               </p>
             </div>
 
             <InputSection title="Drop-off Location">
               <div className="w-full space-y-2">
-                {!(partnerLock && isAirportType) && (
+                {!isAirportType && (
                   <label className="flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -589,16 +662,33 @@ const TripAccordion = ({
                     Return to pickup location
                   </label>
                 )}
-                {!sameAsPickup && (
-                  <GoogleMapsLocationInput
-                    disabled={disabled || (!!partnerLock && isAirportType)}
-                    value={dropoffLocation}
-                    onChange={(value) => onChange("dropoffLocation", value)}
-                    placeholder="Enter location"
-                    coordinates={coordinates}
-                    type="dropoffCoordinates"
-                  />
-                )}
+                {!sameAsPickup &&
+                  (isAirportType &&
+                  !partnerLock &&
+                  airportDirection === "dropoff" ? (
+                    <AirportSelect
+                      value={dropoffLocation}
+                      disabled={disabled}
+                      onSelect={(a) => {
+                        if (!a) return;
+                        setDropoffLocation(a.name);
+                        onChange("dropoffLocation", a.name);
+                        coordinates("dropoffCoordinates", {
+                          lat: a.lat,
+                          lng: a.lng,
+                        });
+                      }}
+                    />
+                  ) : (
+                    <GoogleMapsLocationInput
+                      disabled={disabled || (!!partnerLock && isAirportType)}
+                      value={dropoffLocation}
+                      onChange={(value) => onChange("dropoffLocation", value)}
+                      placeholder="Enter location"
+                      coordinates={coordinates}
+                      type="dropoffCoordinates"
+                    />
+                  ))}
                 {partnerLock && isAirportType && partnerName && (
                   <p className="mt-1 text-[11px] text-gray-500">
                     Drop-off is fixed to {partnerName}. Choose your airport as the
@@ -608,7 +698,7 @@ const TripAccordion = ({
               </div>
             </InputSection>
 
-            {!isInterstateType && (
+            {requiresAreaOfUse(selectedTypeName) && (
             <div>
               <div className="flex items-center gap-2 mb-1.5">
                 <p className="text-xs font-semibold text-gray-600">

@@ -3,7 +3,7 @@ import { useEffect, useState, ReactNode } from "react";
 import Collapse from "@/components/general/collapsible";
 import Vehicle from "./Vehicle";
 import { VehicleDetailsPublic } from "@/types/vehicleDetails";
-import { FiBell, FiClock } from "react-icons/fi";
+import { FiClock } from "react-icons/fi";
 import { useItineraryForm } from "@/hooks/vehicle-details/useItineraryForm";
 import { safeFormatDate, safeFormatTime } from "@/utils/safeDateTime";
 import cn from "classnames";
@@ -17,6 +17,7 @@ import TextArea from "@/components/general/forms/textarea";
 import { RIDE_PURPOSES } from "@/helpers/metadata";
 import PersonalInformationForm from "./PersonalInformationForm";
 import BookingReassurance from "@/components/Booking/BookingReassurance";
+import { requiresAreaOfUse } from "@/helpers/areaOfUse";
 import {
   TripFootprintMap,
   TripMapPoint,
@@ -203,14 +204,14 @@ export default function BookingSummary({
     .map((t) => typeNameById.get(t?.tripDetails?.bookingType as string))
     .filter(Boolean) as string[];
 
-  // Area of use is required for non-interstate trips, so pricing reflects where
-  // the customer actually drives, including any outskirt areas. A trip missing
-  // its area of use blocks payment.
+  // Area of use is required for the within state hires, so pricing reflects
+  // where the customer actually drives, including any outskirt areas. Airport,
+  // boat, interstate and monthly bookings are priced differently and do not
+  // collect it. A trip missing a required area of use blocks payment.
   const anyTripMissingAreaOfUse = (trips || []).some((t) => {
-    const typeName = (
-      typeNameById.get(t?.tripDetails?.bookingType as string) || ""
-    ).toLowerCase();
-    if (typeName.includes("interstate")) return false;
+    const typeName =
+      typeNameById.get(t?.tripDetails?.bookingType as string) || "";
+    if (!requiresAreaOfUse(typeName)) return false;
     const raw = t?.tripDetails?.areasOfUse;
     let areas: unknown[] = [];
     try {
@@ -298,19 +299,6 @@ export default function BookingSummary({
         >
           <Vehicle photos={vehicleImages} />
           <div className="bg-[#F9FAFB] border border-[#EAECF0] py-4 w-full px-4 rounded-xl space-y-3">
-            {/* Advance Notice */}
-            <div className="flex items-center space-x-3">
-              <FiBell
-                size={30}
-                className="p-2 bg-[#FBE2B7] rounded-lg border border-[#F38218] flex-shrink-0"
-              />
-              <span className="text-sm font-medium text-gray-800">
-                {vehicleDetails?.data.advanceNotice
-                  ? `${vehicleDetails.data.advanceNotice} advance notice required before booking`
-                  : "Advance notice may be required before booking"}
-              </span>
-            </div>
-
             {/* Delivery Time */}
             <div className="flex items-center space-x-3">
               <FiClock
@@ -399,6 +387,11 @@ export default function BookingSummary({
           <div className="space-y-4">
             {trips.map((trip, index) => {
               const td = trip?.tripDetails;
+              // Airport, boat, interstate and monthly bookings are not asked for
+              // an area of use, so the row is left out entirely rather than
+              // shown as N/A.
+              const tripTypeName =
+                typeNameById.get(td?.bookingType as string) || "";
               const areas = (() => {
                 try {
                   const list = td?.areasOfUse ? JSON.parse(td.areasOfUse) : [];
@@ -406,8 +399,9 @@ export default function BookingSummary({
                     return list.map((a: any) => a.name).join(", ");
                   }
                 } catch {}
-                return td?.areaOfUse || "N/A";
+                return td?.areaOfUse || "";
               })();
+              const showAreas = requiresAreaOfUse(tripTypeName) && !!areas;
               const startDate = td?.tripStartDate
                 ? safeFormatDate(td.tripStartDate, "do MMM yyyy")
                 : "N/A";
@@ -439,11 +433,13 @@ export default function BookingSummary({
                       label="Drop-off"
                       value={td?.dropoffLocation || "N/A"}
                     />
-                    <SummaryRow
-                      icon={Icons.ic_location}
-                      label="Areas of use"
-                      value={areas}
-                    />
+                    {showAreas && (
+                      <SummaryRow
+                        icon={Icons.ic_location}
+                        label="Areas of use"
+                        value={areas}
+                      />
+                    )}
                     {(() => {
                       const parseC = (raw: unknown) => {
                         if (!raw) return null;
