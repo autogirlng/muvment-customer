@@ -46,6 +46,10 @@ import { getBookingOption } from "@/context/Constarain";
 import { trackVehicleSearch } from "@/services/analytics";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
 import { isLagosCoordinate } from "@/helpers/lagos";
+import {
+  SUPPORTED_AIRPORTS,
+  SupportedAirport,
+} from "@/data/airports";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 import BackgroundCarousel from "./Backgroundcarousel";
 
@@ -113,35 +117,6 @@ function iconForVehicleType(name: string) {
 
 // Airports Muvment operates at. Used for the default suggestions and to check
 // that a searched airport is one we serve.
-type SupportedAirport = {
-  code: string;
-  name: string;
-  city: string;
-  lat: number;
-  lng: number;
-  keywords: string;
-};
-
-const SUPPORTED_AIRPORTS: SupportedAirport[] = [
-  // Lagos: one international terminal and two domestic terminals (GAT and MMA2)
-  { code: "LOS-INT", name: "Lagos International (MMIA, Murtala Muhammed)", city: "Lagos", lat: 6.5774, lng: 3.3212, keywords: "los mmia mma1 mm1 murtala muhammed ikeja terminal 1 terminal 2 international" },
-  { code: "LOS-MMA2", name: "Lagos Domestic (MMA2)", city: "Lagos", lat: 6.5839, lng: 3.3214, keywords: "los mma2 mm2 bi-courtney murtala muhammed ikeja domestic local terminal 2 ibom dana valuejet air peace" },
-  { code: "LOS-GAT", name: "Lagos Domestic (GAT)", city: "Lagos", lat: 6.5836, lng: 3.3210, keywords: "los gat general aviation terminal murtala muhammed ikeja domestic local air peace arik" },
-  // Abuja: separate international and domestic terminals
-  { code: "ABV-INT", name: "Abuja International (Nnamdi Azikiwe)", city: "Abuja", lat: 9.0067, lng: 7.2631, keywords: "abv nnamdi azikiwe naia international" },
-  { code: "ABV-DOM", name: "Abuja Domestic (Nnamdi Azikiwe)", city: "Abuja", lat: 9.0067, lng: 7.2631, keywords: "abv nnamdi azikiwe naia domestic local" },
-  // Port Harcourt (Omagwa): international and domestic
-  { code: "PHC-INT", name: "Port Harcourt International (Omagwa)", city: "Port Harcourt", lat: 5.0153, lng: 6.9500, keywords: "phc phia omagwa rivers international" },
-  { code: "PHC-DOM", name: "Port Harcourt Domestic (Omagwa)", city: "Port Harcourt", lat: 5.0153, lng: 6.9500, keywords: "phc phia omagwa rivers domestic local" },
-  // Enugu (Akanu Ibiam): international and domestic
-  { code: "ENU-INT", name: "Enugu International (Akanu Ibiam)", city: "Enugu", lat: 6.4739, lng: 7.5611, keywords: "enu akanu ibiam emene international" },
-  { code: "ENU-DOM", name: "Enugu Domestic (Akanu Ibiam)", city: "Enugu", lat: 6.4739, lng: 7.5611, keywords: "enu akanu ibiam emene domestic local" },
-  // Benin City: single airport, mostly domestic
-  { code: "BNI", name: "Benin Airport", city: "Benin City", lat: 6.3169, lng: 5.5995, keywords: "bni benin city ogba domestic local" },
-  // Accra (Kotoka): Terminal 3 international, Terminal 2 domestic
-  { code: "ACC-T3", name: "Accra International (Kotoka, Terminal 3)", city: "Accra", lat: 5.6061, lng: -0.1682, keywords: "acc kotoka kia ghana terminal 3 t3 international" },
-  { code: "ACC-T2", name: "Accra Domestic (Kotoka, Terminal 2)", city: "Accra", lat: 5.6061, lng: -0.1682, keywords: "acc kotoka kia ghana terminal 2 t2 domestic local" },
-];
 
 function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
   const R = 6371;
@@ -662,7 +637,7 @@ function AirportField({
     <div ref={anchorRef} className="relative">
       {!compact && (
         <label className={labelClass}>
-          {direction === "pickup" ? "Destination airport" : "Arrival airport"}
+          {direction === "pickup" ? "Arrival airport" : "Destination airport"}
         </label>
       )}
       <button
@@ -1350,8 +1325,8 @@ function BookingSearchInner({
         return "an airport";
       case "airportAddress":
         return airportDirection === "pickup"
-          ? "a pickup location"
-          : "a drop-off location";
+          ? "a drop-off location"
+          : "a pickup location";
       case "withinLocation":
         return "a location";
       case "startLocation":
@@ -1413,7 +1388,7 @@ function BookingSearchInner({
         setTriedSubmit(false);
         setError(
           `Your ${
-            airportDirection === "pickup" ? "pickup" : "drop-off"
+            airportDirection === "pickup" ? "drop-off" : "pickup"
           } location looks too far from ${selectedAirport.name}. Airport trips have to be in the same city. Pick an airport in the same city as your location, or change the location.`,
         );
         return;
@@ -1439,19 +1414,8 @@ function BookingSearchInner({
         const air = selectedAirport;
         const addr = selectedAddress;
         if (airportDirection === "pickup") {
-          // Ride to the airport: pickup is the address, drop-off is the airport.
-          if (addr?.lat && addr?.lng) {
-            loc = {
-              name: addr.name || "Pickup location",
-              lat: addr.lat,
-              lng: addr.lng,
-            };
-          }
-          if (air?.lat && air?.lng) {
-            airportDropoff = { name: air.name, lat: air.lat, lng: air.lng };
-          }
-        } else {
-          // Ride from the airport: pickup is the airport, drop-off is the address.
+          // Collected at the airport: pickup is the airport, drop-off is the
+          // address.
           if (air?.lat && air?.lng) {
             loc = { name: air.name, lat: air.lat, lng: air.lng };
           }
@@ -1461,6 +1425,19 @@ function BookingSearchInner({
               lat: addr.lat,
               lng: addr.lng,
             };
+          }
+        } else {
+          // Taken to the airport: pickup is the address, drop-off is the
+          // airport.
+          if (addr?.lat && addr?.lng) {
+            loc = {
+              name: addr.name || "Pickup location",
+              lat: addr.lat,
+              lng: addr.lng,
+            };
+          }
+          if (air?.lat && air?.lng) {
+            airportDropoff = { name: air.name, lat: air.lat, lng: air.lng };
           }
         }
       } else if (bookingType === "boat") {
@@ -1694,31 +1671,9 @@ function BookingSearchInner({
           {airportDirection === "pickup" ? (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               <div>
-                <LocationField
-                  key="airport-address"
-                  label="Pickup location"
-                  placeholder="Where should the driver pick you up?"
-                  onSelect={onPickAddress}
-                  initial={selectedAddress}
-                />
-                {fieldErr("airportAddress", "Add a pickup location")}
-              </div>
-              <div>
                 <AirportField
                   key="airport-field"
                   direction="pickup"
-                  userLoc={userLoc}
-                  onSelect={setSelectedAirport}
-                />
-                {fieldErr("airport", "Select an airport")}
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <div>
-                <AirportField
-                  key="airport-field"
-                  direction="dropoff"
                   userLoc={userLoc}
                   onSelect={setSelectedAirport}
                 />
@@ -1733,6 +1688,28 @@ function BookingSearchInner({
                   initial={selectedAddress}
                 />
                 {fieldErr("airportAddress", "Add a drop-off location")}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <div>
+                <LocationField
+                  key="airport-address"
+                  label="Pickup location"
+                  placeholder="Where should the driver pick you up?"
+                  onSelect={onPickAddress}
+                  initial={selectedAddress}
+                />
+                {fieldErr("airportAddress", "Add a pickup location")}
+              </div>
+              <div>
+                <AirportField
+                  key="airport-field"
+                  direction="dropoff"
+                  userLoc={userLoc}
+                  onSelect={setSelectedAirport}
+                />
+                {fieldErr("airport", "Select an airport")}
               </div>
             </div>
           )}
@@ -1972,16 +1949,16 @@ function BookingSearchInner({
       const addressField = (
         <LocationField
           compact
-          label={airportDirection === "pickup" ? "Pickup" : "Drop-off"}
-          placeholder={airportDirection === "pickup" ? "Pickup" : "Drop-off"}
+          label={airportDirection === "pickup" ? "Drop-off" : "Pickup"}
+          placeholder={airportDirection === "pickup" ? "Drop-off" : "Pickup"}
           onSelect={onPickAddress}
           initial={selectedAddress}
         />
       );
       return (
         <>
-          {barCell(airportDirection === "pickup" ? addressField : airportField)}
           {barCell(airportDirection === "pickup" ? airportField : addressField)}
+          {barCell(airportDirection === "pickup" ? addressField : airportField)}
           {barCellFixed(
             <DateField
               compact

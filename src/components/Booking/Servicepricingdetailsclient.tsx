@@ -28,6 +28,7 @@ import Cookies from "js-cookie";
 import WelcomeOfferNote from "@/components/general/WelcomeOfferNote";
 import { useSafeBack } from "@/hooks/useSafeBack";
 import { isLagosCoordinate } from "@/helpers/lagos";
+import { requiresAreaOfUse } from "@/helpers/areaOfUse";
 import AreaOfUseSelect, {
   SelectedArea,
 } from "@/components/Booking/AreaOfUseSelect";
@@ -103,7 +104,10 @@ const matchPriceId = (
   );
 };
 
-const tripComplete = (d: Partial<TripDetails>) =>
+const tripComplete = (
+  d: Partial<TripDetails>,
+  bookingTypeName?: string,
+) =>
   !!(
     d.bookingType &&
     d.tripStartDate &&
@@ -114,8 +118,10 @@ const tripComplete = (d: Partial<TripDetails>) =>
     d.dropoffLocation &&
     d.dropoffCoordinates &&
     isLagosCoordinate(d.dropoffCoordinates) &&
-    d.areasOfUse &&
-    d.areasOfUse.length > 0
+    // Monthly packages are priced for the month rather than by area, so they
+    // are not asked for one.
+    (!requiresAreaOfUse(bookingTypeName) ||
+      (d.areasOfUse && d.areasOfUse.length > 0))
   );
 
 const ServicePricingBookingPage: React.FC = () => {
@@ -267,8 +273,18 @@ const ServicePricingBookingPage: React.FC = () => {
   };
 
   const allComplete = useMemo(
-    () => trips.length > 0 && trips.every((t) => tripComplete(t.tripDetails)),
-    [trips],
+    () =>
+      trips.length > 0 &&
+      trips.every((t) =>
+        tripComplete(
+          t.tripDetails,
+          (pricing?.prices || []).find(
+            (p: { bookingTypeId: string; bookingTypeName: string }) =>
+              p.bookingTypeId === t.tripDetails.bookingType,
+          )?.bookingTypeName,
+        ),
+      ),
+    [trips, pricing],
   );
 
   const addTrip = () => {
@@ -795,6 +811,21 @@ const TripCard = ({
   // Special booking runs in Lagos only, so the picker offers Lagos areas.
   const serviceAreas = useMemo(() => getAreasForCity("Lagos"), []);
 
+  const selectedTypeName =
+    bookingOptions.find(
+      (o: { value: string; option: string }) => o.value === details.bookingType,
+    )?.option || "";
+  const isAirportType = selectedTypeName.toLowerCase().includes("airport");
+
+  // An airport trip runs between an address and a terminal, so returning to the
+  // pickup is not offered. Clear it if it was ticked before the type changed,
+  // otherwise the drop-off field would stay hidden with no way to enter one.
+  useEffect(() => {
+    if (isAirportType && sameAsPickup) {
+      setSameAsPickup(false);
+    }
+  }, [isAirportType, sameAsPickup]);
+
   // Keep the drop-off mirrored to the pickup while the box is ticked. The
   // pickup region is mirrored too so a valid Lagos pickup keeps the drop-off
   // valid without a second lookup.
@@ -988,15 +1019,17 @@ const TripCard = ({
               <FiMapPin className="w-3.5 h-3.5 text-gray-400" />
               Drop-off location
             </label>
-            <label className="mb-2 flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={sameAsPickup}
-                onChange={(e) => setSameAsPickup(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-[#0673ff] focus:ring-[#0673ff]"
-              />
-              Return to pickup location
-            </label>
+            {!isAirportType && (
+              <label className="mb-2 flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={sameAsPickup}
+                  onChange={(e) => setSameAsPickup(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-[#0673ff] focus:ring-[#0673ff]"
+                />
+                Return to pickup location
+              </label>
+            )}
             {!sameAsPickup && (
               <GoogleMapsLocationInput
                 value={details.dropoffLocation || ""}
@@ -1011,31 +1044,33 @@ const TripCard = ({
             )}
           </div>
 
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <label className="block text-xs font-medium text-gray-700">
-                Area of use
-              </label>
-              <span className="rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10px] font-medium text-[#0673ff]">
-                Required
-              </span>
-            </div>
-            <p className="mb-2 text-[11px] leading-snug text-gray-500">
-              Add at least one area you plan to drive to during the booking,
-              beyond your pickup and drop-off. Outskirt areas affect the price.
-            </p>
-            <AreaOfUseSelect
-              areas={serviceAreas}
-              value={details.areasOfUse || []}
-              disabled={false}
-              onChange={(areas) => onUpdate(trip.id, "areasOfUse", areas)}
-            />
-            {(details.areasOfUse || []).length === 0 && (
-              <p className="mt-1.5 text-[11px] leading-snug text-amber-600">
-                Add at least one area so your price is correct.
+          {requiresAreaOfUse(selectedTypeName) && (
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <label className="block text-xs font-medium text-gray-700">
+                  Area of use
+                </label>
+                <span className="rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10px] font-medium text-[#0673ff]">
+                  Required
+                </span>
+              </div>
+              <p className="mb-2 text-[11px] leading-snug text-gray-500">
+                Add at least one area you plan to drive to during the booking,
+                beyond your pickup and drop-off. Outskirt areas affect the price.
               </p>
-            )}
-          </div>
+              <AreaOfUseSelect
+                areas={serviceAreas}
+                value={details.areasOfUse || []}
+                disabled={false}
+                onChange={(areas) => onUpdate(trip.id, "areasOfUse", areas)}
+              />
+              {(details.areasOfUse || []).length === 0 && (
+                <p className="mt-1.5 text-[11px] leading-snug text-amber-600">
+                  Add at least one area so your price is correct.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>

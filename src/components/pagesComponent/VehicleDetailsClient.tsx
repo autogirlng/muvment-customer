@@ -33,7 +33,6 @@ import {
   FiHeart,
   FiLoader,
   FiArrowLeft,
-  FiBell,
   FiTag,
   FiInfo,
   FiX,
@@ -66,6 +65,7 @@ import { FavouriteVehicleService } from "@/controllers/booking/favouritevehicles
 import LoginPromptModal from "../Booking/Loginpromptmodal";
 import VehicleAvailabilityModal from "@/components/Booking/VehicleAvailabilityModal";
 import TopRatedBadge from "@/components/Booking/TopRatedBadge";
+import { requiresAreaOfUse } from "@/helpers/areaOfUse";
 import {
   setPendingFavourite,
   FAVOURITES_CHANGED_EVENT,
@@ -335,9 +335,30 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     }
     return !!(d.areaOfUse && String(d.areaOfUse).trim());
   };
+  // Area of use only applies to the within state hires. Airport, boat,
+  // interstate and monthly bookings are priced on a different basis and never
+  // ask for it, so the requirement is decided per trip from that trip's booking
+  // type rather than for the page as a whole.
+  const bookingTypeNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (vehicle?.allPricingOptions || []).forEach((o: any) => {
+      if (o?.bookingTypeId)
+        map.set(String(o.bookingTypeId), String(o.bookingTypeName || ""));
+    });
+    return map;
+  }, [vehicle]);
+
+  const tripNeedsAreaOfUse = (d?: { bookingType?: string } | null) =>
+    requiresAreaOfUse(
+      bookingTypeNameById.get(String(d?.bookingType || "")) || "",
+    );
+
   const areaOfUseComplete =
-    isInterstateFlow ||
-    (trips.length > 0 && trips.every((t) => hasAreaOfUse(t.tripDetails)));
+    trips.length === 0 ||
+    trips.every(
+      (t) =>
+        !tripNeedsAreaOfUse(t.tripDetails) || hasAreaOfUse(t.tripDetails),
+    );
   const formsComplete = isTripFormsComplete && areaOfUseComplete;
   const interstateTypeId = urlBookingTypeId;
   const dayTypeId =
@@ -1671,7 +1692,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
       const m = (missingByTrip || []).find((x) => x.id === t.id);
       const labels = m ? labelsForFields(m.fields) : [];
       if (
-        !isInterstateFlow &&
+        tripNeedsAreaOfUse(t.tripDetails) &&
         !hasAreaOfUse(t.tripDetails) &&
         !labels.includes("Area of use")
       ) {
@@ -1905,19 +1926,6 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                   vehicle.photos?.map((photo: any) => photo.cloudinaryUrl) || []
                 }
               />
-            </div>
-
-            <div className="bg-[#F7F9FC] py-4 w-full px-4 rounded-t-xl space-y-3">
-              <div className="flex items-center space-x-3">
-                <FiBell
-                  size={30}
-                  className="p-2 bg-[#FBE2B7] rounded-lg border border-[#F38218] flex-shrink-0"
-                />
-                <span className="text-sm font-medium text-gray-800">
-                  {vehicle?.advanceNotice || "1 day"} advance notice required
-                  before booking
-                </span>
-              </div>
             </div>
 
             <div className="p-6 lg:p-8 flex flex-col lg:flex-row lg:items-start gap-8">
