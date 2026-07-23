@@ -314,6 +314,31 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   )
     .toLowerCase()
     .includes("interstate");
+
+  // Area of use is required for every non-interstate trip: it shows a Required
+  // badge in the form and drives pricing. It is stored either as a list
+  // (areasOfUse) or as a single typed location (areaOfUse), so a trip counts as
+  // having it when either is present. Interstate trips do not collect it, so the
+  // requirement is skipped there. This is folded into formsComplete below so the
+  // estimate, the confirm button, and the checklist all treat it as required.
+  const hasAreaOfUse = (
+    d?: { areasOfUse?: string; areaOfUse?: string } | null,
+  ) => {
+    if (!d) return false;
+    try {
+      if (d.areasOfUse) {
+        const arr = JSON.parse(d.areasOfUse);
+        if (Array.isArray(arr) && arr.length > 0) return true;
+      }
+    } catch {
+      // fall through to the single-location check
+    }
+    return !!(d.areaOfUse && String(d.areaOfUse).trim());
+  };
+  const areaOfUseComplete =
+    isInterstateFlow ||
+    (trips.length > 0 && trips.every((t) => hasAreaOfUse(t.tripDetails)));
+  const formsComplete = isTripFormsComplete && areaOfUseComplete;
   const interstateTypeId = urlBookingTypeId;
   const dayTypeId =
     vehicle?.allPricingOptions?.find((o: any) =>
@@ -418,7 +443,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 
   const tripsSignature = JSON.stringify(trips);
   useEffect(() => {
-    if (!isTripFormsComplete) return;
+    if (!formsComplete) return;
     if (isInterstateFlow && !interstateRegionValid) {
       setContinueBooking(false);
       setPricing(undefined);
@@ -441,7 +466,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    isTripFormsComplete,
+    formsComplete,
     tripsSignature,
     couponCode,
     isInterstateFlow,
@@ -453,14 +478,14 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   // longer matches a selected place), drop any earlier estimate so a stale
   // price cannot be confirmed.
   useEffect(() => {
-    if (!isTripFormsComplete) {
+    if (!formsComplete) {
       setContinueBooking(false);
       setPricing(undefined);
       setPriceErrorMessage("");
       priceRetryRef.current = 0;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTripFormsComplete]);
+  }, [formsComplete]);
 
   const generateBookingOptions = () => {
     const types: VehicleBookingOptions[] = vehicle?.allPricingOptions;
@@ -487,6 +512,37 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 
   useEffect(() => {
     sessionStorage.removeItem("bookingId");
+
+    // Coming back from the confirm step to change something. The itinerary is
+    // restored as it was and no seeding runs, so nothing the customer entered is
+    // touched. This is deliberately independent of the URL: seeding from the
+    // search params would rebuild the trips from pickup and dates alone and drop
+    // the drop-off, area of use and any other edits made on this page.
+    try {
+      const resumeId = sessionStorage.getItem("resumeBookingEdit");
+      const savedRaw = sessionStorage.getItem("trips");
+      if (
+        resumeId &&
+        initialVehicleData?.id &&
+        resumeId === initialVehicleData.id &&
+        savedRaw
+      ) {
+        const saved = JSON.parse(savedRaw);
+        if (Array.isArray(saved) && saved.length > 0) {
+          sessionStorage.removeItem("resumeBookingEdit");
+          setTrips(
+            saved.map((t: Record<string, string>) => {
+              const { id, ...details } = t;
+              return { id: id || "trip-0", tripDetails: details };
+            }),
+          );
+          return;
+        }
+      }
+      sessionStorage.removeItem("resumeBookingEdit");
+    } catch {
+      // fall through to the normal seeding below
+    }
 
     // Prefill the itinerary from the search params: pickup location, start date,
     // start time, booking type, and the trip length all carry over. Drop-off is
@@ -536,11 +592,19 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     try {
       const savedRaw = sessionStorage.getItem("trips");
       const saved = savedRaw ? JSON.parse(savedRaw) : null;
+      const sameVehicle =
+        !!initialVehicleData?.id &&
+        sessionStorage.getItem("tripsVehicleId") === initialVehicleData.id;
+      const sameSearch = sessionStorage.getItem("tripsSeedSig") === seedSig;
+      // Keep what the customer already entered for this vehicle. Seeding only
+      // takes over when the URL carries a genuinely different search, so coming
+      // back to edit, reloading, or arriving without the search params all keep
+      // the itinerary rather than rebuilding it from pickup and dates alone.
       if (
-        hasSearch &&
-        sessionStorage.getItem("tripsSeedSig") === seedSig &&
         Array.isArray(saved) &&
-        saved.length > 0
+        saved.length > 0 &&
+        sameVehicle &&
+        (!hasSearch || sameSearch)
       ) {
         setTrips(
           saved.map((t: Record<string, string>) => {
@@ -592,6 +656,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
         });
         sessionStorage.setItem("trips", JSON.stringify(flat));
         sessionStorage.setItem("tripsSeedSig", seedSig);
+      if (initialVehicleData?.id)
+        sessionStorage.setItem("tripsVehicleId", initialVehicleData.id);
         setTrips(nested);
         return;
       }
@@ -600,6 +666,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     if (Object.keys(base).length === 0 && !startDate) {
       sessionStorage.removeItem("trips");
       sessionStorage.setItem("tripsSeedSig", seedSig);
+      if (initialVehicleData?.id)
+        sessionStorage.setItem("tripsVehicleId", initialVehicleData.id);
       setTrips([{ id: "trip-0", tripDetails: {} }]);
       return;
     }
@@ -640,6 +708,8 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
 
     sessionStorage.setItem("trips", JSON.stringify(flat));
     sessionStorage.setItem("tripsSeedSig", seedSig);
+      if (initialVehicleData?.id)
+        sessionStorage.setItem("tripsVehicleId", initialVehicleData.id);
     setTrips(nested);
   }, []);
 
@@ -925,14 +995,29 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     }
   };
 
+  // The saved itinerary is only restored when this page is opened with the same
+  // search in the URL, so store the full address (path and query) before moving
+  // on. The confirm step uses it to bring the customer back here to edit with
+  // everything intact; a bare URL would look like a fresh visit and reset it.
+  const rememberDetailsUrl = () => {
+    try {
+      sessionStorage.setItem(
+        "bookingDetailsReturnUrl",
+        `${window.location.pathname}${window.location.search}`,
+      );
+    } catch {
+      // the confirm step falls back to plain back navigation
+    }
+  };
   const handlePrimaryAction = () => {
-    if (!isTripFormsComplete || isEstimating) return;
+    if (!formsComplete || isEstimating) return;
     // Recover from a failed estimate without leaving the page.
     if (priceErrorMessage && !continueBooking) {
       estimatePrice();
       return;
     }
     if (continueBooking) {
+      rememberDetailsUrl();
       router.push(
         `/booking/create/${vehicle.id}${isAuthenticated ? "" : "?user=guest"}`,
       );
@@ -996,7 +1081,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     : selectedBookingTypeName.includes("interstate")
       ? "Interstate trips are priced for travel between states, based on your route."
       : selectedBookingTypeName.includes("hour")
-        ? "This is a within-city booking for the period you select, so you can move around central locations freely. Going to an outskirts area can be added and will be reflected in the price."
+        ? "Move freely around the city for the period you book. Outskirts trips can be added and will be reflected in the price."
         : "Prices shown are for trips within the city. Outskirts areas can be added and will be reflected in the price.";
 
   const baseType = trips[0]?.tripDetails?.bookingType as string | undefined;
@@ -1201,7 +1286,6 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
               <p className="text-xs font-semibold text-gray-800">Trip length</p>
               <p className="text-[11px] leading-snug text-gray-500">
                 {trips.length} {trips.length === 1 ? "day" : "days"} selected.
-                Change the dates from the availability calendar.
               </p>
             </div>
             <button
@@ -1211,6 +1295,49 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
             >
               Change dates
             </button>
+          </div>
+        )}
+
+        {allowsMultiDay && trips.length > 1 && !isInterstateFlow && (
+          <div className="mb-4">
+            <div
+              role="group"
+              aria-label="Choose how the days are planned"
+              className="flex gap-1 rounded-xl border border-[#E4E7EC] bg-[#F5F8FD] p-1"
+            >
+              <button
+                type="button"
+                aria-pressed={sameForAllDays}
+                onClick={() => {
+                  applyToAllTrips(trips[0]?.id || "");
+                  setSameForAllDays(true);
+                }}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  sameForAllDays
+                    ? "bg-white text-[#0560d6] shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Same for all days
+              </button>
+              <button
+                type="button"
+                aria-pressed={!sameForAllDays}
+                onClick={() => setSameForAllDays(false)}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  !sameForAllDays
+                    ? "bg-white text-[#0560d6] shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Different by day
+              </button>
+            </div>
+            <p className="mt-1.5 px-1 text-[11px] leading-snug text-gray-500">
+              {sameForAllDays
+                ? "One plan applies to every day."
+                : "Set each day separately."}
+            </p>
           </div>
         )}
 
@@ -1304,24 +1431,6 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
           ))
         ) : sameForAllDays ? (
           <>
-            <div className="mb-3 flex items-center gap-2 rounded-xl border border-[#0673ff]/20 bg-[#EAF2FF] px-3 py-2 text-xs text-[#0560d6]">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              <span>
-                One plan for all {trips.length} days. Fill it once; every day is
-                set.
-              </span>
-            </div>
             {trips[0] && (
               <TripAccordion
                 key={`plan-${tripsVersion}-${resyncKey}`}
@@ -1355,13 +1464,6 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
                 availabilityMap={availabilityMap}
               />
             )}
-            <button
-              type="button"
-              onClick={() => setSameForAllDays(false)}
-              className="mt-2 text-[#0673ff] text-xs font-medium cursor-pointer"
-            >
-              Need a day to be different?
-            </button>
           </>
         ) : (
           <>
@@ -1396,16 +1498,6 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
               className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#0673ff]/40 text-[#0673ff] text-sm font-medium py-2.5 hover:bg-[#0673ff]/5 transition cursor-pointer"
             >
               + Add a different day
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                applyToAllTrips(trips[0]?.id || "");
-                setSameForAllDays(true);
-              }}
-              className="mt-2 w-full text-center text-[#0673ff] text-xs font-medium underline underline-offset-2 hover:text-[#0560d6] cursor-pointer"
-            >
-              Use one plan for all days
             </button>
           </>
         )}
@@ -1574,11 +1666,19 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     }
     return out;
   };
-  const pendingByDay = (missingByTrip || [])
-    .map((m) => ({
-      day: trips.findIndex((t) => t.id === m.id) + 1,
-      labels: labelsForFields(m.fields),
-    }))
+  const pendingByDay = trips
+    .map((t, idx) => {
+      const m = (missingByTrip || []).find((x) => x.id === t.id);
+      const labels = m ? labelsForFields(m.fields) : [];
+      if (
+        !isInterstateFlow &&
+        !hasAreaOfUse(t.tripDetails) &&
+        !labels.includes("Area of use")
+      ) {
+        labels.push("Area of use");
+      }
+      return { day: idx + 1, labels };
+    })
     .filter((d) => d.labels.length > 0);
   const pendingAllSame =
     pendingByDay.length > 0 &&
@@ -1606,7 +1706,7 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
     return items;
   })();
 
-  const pendingChecklist = isTripFormsComplete ? null : isInterstateFlow ? (
+  const pendingChecklist = formsComplete ? null : isInterstateFlow ? (
     interstatePending.length > 0 ? (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
         <p className="text-sm font-semibold text-amber-900">
@@ -1668,12 +1768,12 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
   ) : null;
 
   const isPricePending =
-    isTripFormsComplete && !continueBooking && !priceErrorMessage;
+    formsComplete && !continueBooking && !priceErrorMessage;
   const isPriceLoading = isEstimating || isPricePending;
   const canConfirmBooking =
-    continueBooking && !isEstimating && isTripFormsComplete;
+    continueBooking && !isEstimating && formsComplete;
   const canRetryEstimate =
-    isTripFormsComplete &&
+    formsComplete &&
     !continueBooking &&
     !isEstimating &&
     !!priceErrorMessage;
@@ -2125,9 +2225,10 @@ const VehicleDetailsClient: React.FC<VehicleDetailsClientProps> = ({
           <WelcomeOfferNote />
 
           <button
-            onClick={() =>
-              router.push(`/booking/create/${vehicle.id}?user=guest`)
-            }
+            onClick={() => {
+              rememberDetailsUrl();
+              router.push(`/booking/create/${vehicle.id}?user=guest`);
+            }}
             className="w-full py-3.5 text-sm font-semibold text-white rounded-full bg-[#0673ff] hover:bg-[#0560d6] shadow-sm transition cursor-pointer"
           >
             Continue as guest

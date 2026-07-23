@@ -131,7 +131,7 @@ const ServicePricingCheckoutPage = () => {
   const [isUserDataLocked, setIsUserDataLocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [paymentGateway, setPaymentGateway] =
-    useState<PaymentGateway>("PAYSTACK");
+    useState<PaymentGateway>("MONNIFY");
   const [locationAcknowledged, setLocationAcknowledged] =
     useState<boolean>(false);
   // Corporate wallet payment (business accounts only)
@@ -150,6 +150,38 @@ const ServicePricingCheckoutPage = () => {
     string | null
   >(null);
   const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
+  const [showCancel, setShowCancel] = useState(false);
+
+  // Editing is a safe, non-destructive step back: the itinerary stays in the
+  // session and the pricing page restores it. Prefer the exact page the customer
+  // came from (it carries the duration they chose) and fall back to history.
+  const goToEditTrip = () => {
+    let returnUrl = "";
+    try {
+      returnUrl = sessionStorage.getItem("servicePricingReturnUrl") || "";
+    } catch {
+      returnUrl = "";
+    }
+    if (returnUrl) {
+      router.push(returnUrl);
+      return;
+    }
+    safeBack("/");
+  };
+
+  // Cancelling is the destructive path, so it clears the saved itinerary. Only
+  // reachable after the confirmation dialog.
+  const cancelBooking = () => {
+    try {
+      sessionStorage.removeItem("servicePricingTrips");
+      sessionStorage.removeItem("servicePricingEstimate");
+      sessionStorage.removeItem("servicePricingReturnUrl");
+    } catch {
+      // nothing to clear
+    }
+    setShowCancel(false);
+    router.push("/");
+  };
   const [generatedBookingId, setGeneratedBookingId] = useState<string | null>(
     null,
   );
@@ -491,6 +523,13 @@ const ServicePricingCheckoutPage = () => {
         dropoffLocationString: trip.dropoffLocation || "string",
         dropoffLatitude: trip.dropoffCoordinates?.lat || 0.1,
         dropoffLongitude: trip.dropoffCoordinates?.lng || 0.1,
+        areaOfUse: (trip.areasOfUse || [])
+          .filter((a: any) => a?.lat != null && a?.lng != null)
+          .map((a: any) => ({
+            areaOfUseLatitude: a.lat,
+            areaOfUseLongitude: a.lng,
+            areaOfUseName: a.name,
+          })),
       };
     });
 
@@ -803,7 +842,7 @@ const ServicePricingCheckoutPage = () => {
       })()}
 
       <div className={cn("space-y-2.5 mb-4", payWithCorporate && "hidden")}>
-        {(["PAYSTACK", "MONNIFY"] as PaymentGateway[]).map((gw) => (
+        {(["MONNIFY", "PAYSTACK"] as PaymentGateway[]).map((gw) => (
           <div
             key={gw}
             onClick={() => setPaymentGateway(gw)}
@@ -923,13 +962,22 @@ const ServicePricingCheckoutPage = () => {
       <div className="h-20" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 lg:pb-8">
-        <button
-          onClick={() => safeBack("/")}
-          className="group inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-5 transition"
-        >
-          <FiChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-          <span className="font-medium text-sm">Back</span>
-        </button>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <button
+            onClick={goToEditTrip}
+            className="group inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+          >
+            <FiChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+            <span className="font-medium text-sm">Edit trip details</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowCancel(true)}
+            className="inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-800"
+          >
+            Cancel booking
+          </button>
+        </div>
 
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
           Complete your booking
@@ -1684,6 +1732,47 @@ const ServicePricingCheckoutPage = () => {
             </div>
           );
         })()}
+
+      {showCancel && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900">
+              Cancel this booking?
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-600">
+              Your trip details are saved. If you only want to change something,
+              go back and edit them instead. Cancelling clears this booking and
+              the vehicle will not be held for you.
+            </p>
+            <div className="mt-6 flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowCancel(false)}
+                className="w-full rounded-full bg-[#0673ff] px-5 py-3.5 text-sm font-semibold text-white transition hover:opacity-90"
+              >
+                Keep booking
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCancel(false);
+                  goToEditTrip();
+                }}
+                className="w-full rounded-full border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                Edit trip details
+              </button>
+              <button
+                type="button"
+                onClick={cancelBooking}
+                className="w-full rounded-full px-5 py-2.5 text-sm font-medium text-gray-500 transition hover:text-gray-700"
+              >
+                Cancel booking
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

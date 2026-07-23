@@ -569,9 +569,8 @@ const TripAccordion = ({
                 <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
               </svg>
               <p className="text-[11px] leading-snug text-amber-800">
-                Enter your exact address so your price is correct. If your trip
-                goes beyond the areas you enter, extra charges apply and your
-                booking is not refundable because of them.
+                Enter your exact address for correct pricing. Trips beyond the
+                areas you enter attract extra charges, which are not refundable.
               </p>
             </div>
 

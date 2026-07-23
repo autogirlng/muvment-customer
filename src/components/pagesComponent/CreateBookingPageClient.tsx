@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import cn from "classnames";
 import Image from "next/image";
 import Link from "next/link";
-import { FiClock, FiLock } from "react-icons/fi";
+import { FiClock, FiLock, FiArrowLeft } from "react-icons/fi";
 import BookingSummary from "@/components/Booking/CreateBooking/BookingSummary";
 import Modal from "@/components/general/modal";
 import ScreenLoader from "@/components/utils/ScreenLoader";
@@ -69,6 +69,35 @@ export default function CreateBookingPageClient() {
     setCurrentStep(step);
   };
 
+  // Editing is non-destructive, but only if we return to the same address the
+  // customer came from: the details page restores the saved itinerary by
+  // matching the search in the URL, and a bare URL reads as a fresh visit and
+  // resets it. Use the remembered address, otherwise step back through history,
+  // which also keeps the original query.
+  const goToEditTrip = () => {
+    // Tell the details page this is a return trip, so it restores the itinerary
+    // instead of seeding a new one. This does not depend on the URL, so the
+    // details survive however the page is reached.
+    try {
+      if (params?.id) {
+        sessionStorage.setItem("resumeBookingEdit", String(params.id));
+      }
+    } catch {
+      // the details page will seed from the URL as before
+    }
+    let returnUrl = "";
+    try {
+      returnUrl = sessionStorage.getItem("bookingDetailsReturnUrl") || "";
+    } catch {
+      returnUrl = "";
+    }
+    if (returnUrl) {
+      router.push(returnUrl);
+      return;
+    }
+    safeBack(`/booking/details/${params?.id}`);
+  };
+
   if (loading) {
     return <ScreenLoader />;
   }
@@ -127,13 +156,24 @@ export default function CreateBookingPageClient() {
             <FiLock className="w-4 h-4 text-grey-400" />
             <span>Secure checkout</span>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowCancel(true)}
-            className="col-start-3 justify-self-end inline-flex items-center rounded-full border border-grey-200 px-4 py-1.5 text-sm font-medium text-grey-600 hover:bg-grey-50 hover:text-grey-800 cursor-pointer"
-          >
-            Cancel
-          </button>
+          <div className="col-start-3 justify-self-end flex items-center gap-2">
+            <button
+              type="button"
+              onClick={goToEditTrip}
+              className="group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-[#0673ff] hover:bg-[#EAF2FF] cursor-pointer"
+            >
+              <FiArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+              <span className="hidden sm:inline">Edit trip details</span>
+              <span className="sm:hidden">Edit</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCancel(true)}
+              className="inline-flex items-center rounded-full border border-grey-200 px-4 py-1.5 text-sm font-medium text-grey-600 hover:bg-grey-50 hover:text-grey-800 cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </header>
 
@@ -168,10 +208,13 @@ export default function CreateBookingPageClient() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#E7F1FF]">
             <FiClock className="h-7 w-7 text-[#0673ff]" />
           </div>
-          <h3 className="text-xl font-bold text-grey-900">You're almost done</h3>
+          <h3 className="text-xl font-bold text-grey-900">
+            Cancel this booking?
+          </h3>
           <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-grey-600">
-            You're one step away from booking this vehicle. If you leave now your
-            details won't be submitted, and the vehicle won't be held for you.
+            Your trip details are saved. If you only want to change something, go
+            back and edit them instead. Cancelling means your booking is not
+            submitted and the vehicle will not be held for you.
           </p>
           <div className="mt-6 flex flex-col gap-2.5">
             <button
@@ -179,14 +222,24 @@ export default function CreateBookingPageClient() {
               onClick={() => setShowCancel(false)}
               className="w-full rounded-full bg-[#0673ff] px-5 py-3.5 text-sm font-semibold text-white hover:opacity-90 cursor-pointer"
             >
-              Keep editing
+              Keep booking
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowCancel(false);
+                goToEditTrip();
+              }}
+              className="w-full rounded-full border border-grey-200 px-5 py-3 text-sm font-semibold text-grey-700 hover:bg-grey-50 cursor-pointer"
+            >
+              Edit trip details
             </button>
             <button
               type="button"
               onClick={() => safeBack("/explore")}
               className="w-full rounded-full px-5 py-2.5 text-sm font-medium text-grey-500 hover:text-grey-700 cursor-pointer"
             >
-              Leave and cancel
+              Cancel booking
             </button>
           </div>
         </div>

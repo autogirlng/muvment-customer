@@ -45,6 +45,7 @@ import { ServicePricingService } from "@/controllers/booking/Servicepricingservi
 import { getBookingOption } from "@/context/Constarain";
 import { trackVehicleSearch } from "@/services/analytics";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
+import { isLagosCoordinate } from "@/helpers/lagos";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 import BackgroundCarousel from "./Backgroundcarousel";
 
@@ -997,83 +998,97 @@ function BookingSearchInner({
   useEffect(() => {
     let alive = true;
     (async () => {
-      try {
-        const { rawBookingOptions } = await getBookingOption();
-        const options: any[] = rawBookingOptions || [];
+      // These three do not depend on each other, so they go out together. They
+      // used to run one after another, which meant the form was not usable
+      // until four round trips had completed in sequence.
+      const [optionRes, allTypesRes, vehicleTypesRes] = await Promise.allSettled(
+        [
+          getBookingOption(),
+          BookingService.getAllBookingTypes(),
+          VehicleSearchService.getVehicleTypes(),
+        ],
+      );
+
+      // Vehicle categories are a visible field, so apply them as soon as they
+      // arrive rather than behind the boat lookup.
+      if (alive && vehicleTypesRes.status === "fulfilled") {
+        const types: any[] = vehicleTypesRes.value || [];
+        setCategoryOptions(
+          types
+            // Boat is its own booking type with a dedicated flow, so it is
+            // not offered as a vehicle category for within state, interstate
+            // or airport.
+            .filter(
+              (t: any) =>
+                String(t?.name || "")
+                  .trim()
+                  .toUpperCase() !== "BOAT",
+            )
+            .map((t: any) => ({
+              value: t.id,
+              label: formatTypeName(t.name),
+              icon: iconForVehicleType(t.name),
+            })),
+        );
+      }
+
+      const ids = {
+        twelveH: "",
+        twentyFourH: "",
+        monthly: "",
+        airport: "",
+        interstate: "",
+        boat: "",
+      };
+      if (optionRes.status === "fulfilled") {
+        const options: any[] = optionRes.value?.rawBookingOptions || [];
         const idFor = (match: (n: string) => boolean) =>
           options.find((t) => match(String(t?.name || "").toLowerCase()))?.id ||
           "";
-        const ids = {
-          twelveH: idFor((n) => n.includes("12")),
-          twentyFourH: idFor((n) => n.includes("24")),
-          monthly: idFor((n) => n.includes("month")),
-          airport: idFor((n) => n.includes("airport")),
-          interstate: idFor((n) => n.includes("interstate")),
-          boat: idFor((n) => n.includes("boat")),
-        };
+        ids.twelveH = idFor((n) => n.includes("12"));
+        ids.twentyFourH = idFor((n) => n.includes("24"));
+        ids.monthly = idFor((n) => n.includes("month"));
+        ids.airport = idFor((n) => n.includes("airport"));
+        ids.interstate = idFor((n) => n.includes("interstate"));
+        ids.boat = idFor((n) => n.includes("boat"));
         if (alive) setTypeIds(ids);
+      }
 
-        // Each boat spot is priced as its own booking type. The Boat Trip type
-        // carries the curated spot names; we match those names to the booking
-        // type of the same name and use that booking type id for the search.
-        const curated = ids.boat
-          ? await VehicleSearchService.getDestinations(ids.boat)
-          : [];
-        let spots: { id: string; name: string }[] = [];
+      // Each boat spot is priced as its own booking type. The Boat Trip type
+      // carries the curated spot names; we match those names to the booking
+      // type of the same name and use that booking type id for the search.
+      // This needs the boat type id, so it can only start once the options are
+      // known, and nothing else on the form waits for it.
+      let spots: { id: string; name: string }[] = [];
+      if (ids.boat) {
         try {
-          const allTypes = await BookingService.getAllBookingTypes();
+          const curated = await VehicleSearchService.getDestinations(ids.boat);
+          const allTypes: any[] =
+            allTypesRes.status === "fulfilled" ? allTypesRes.value || [] : [];
           const norm = (s: string) => String(s || "").trim().toLowerCase();
           const aliases: Record<string, string> = { ilashe: "illashe" };
           const typeByName = new Map<string, string>();
-          (allTypes || []).forEach((t: any) => {
+          allTypes.forEach((t: any) => {
             if (t?.id) typeByName.set(norm(t.name), t.id);
           });
           spots = (curated || [])
             .map((d: any) => {
               const key = norm(d?.name);
-              const id = typeByName.get(key) || typeByName.get(aliases[key]) || "";
+              const id =
+                typeByName.get(key) || typeByName.get(aliases[key]) || "";
               return id ? { id, name: d?.name } : null;
             })
             .filter((s): s is { id: string; name: string } => !!s);
         } catch {
           spots = [];
         }
-        if (alive) {
-          setBoatDestinations(spots);
-          setBoatSpotIds(spots.map((s) => s.id));
-        }
-      } catch {
-        // Leave destinations empty; the fields show an empty state.
-      } finally {
-        if (alive) {
-          setDestLoading(false);
-          setBoatReady(true);
-        }
       }
 
-      try {
-        const types = await VehicleSearchService.getVehicleTypes();
-        if (alive) {
-          setCategoryOptions(
-            (types || [])
-              // Boat is its own booking type with a dedicated flow, so it is
-              // not offered as a vehicle category for within state, interstate
-              // or airport.
-              .filter(
-                (t: any) =>
-                  String(t?.name || "")
-                    .trim()
-                    .toUpperCase() !== "BOAT",
-              )
-              .map((t: any) => ({
-                value: t.id,
-                label: formatTypeName(t.name),
-                icon: iconForVehicleType(t.name),
-              })),
-          );
-        }
-      } catch {
-        // Category stays optional; an empty list just means no filter.
+      if (alive) {
+        setBoatDestinations(spots);
+        setBoatSpotIds(spots.map((s) => s.id));
+        setDestLoading(false);
+        setBoatReady(true);
       }
     })();
     return () => {
@@ -1273,6 +1288,12 @@ function BookingSearchInner({
   const goToHourlyPackage = () => {
     if (!pkgClass || !(pickup && pickup.lat)) {
       setTriedSubmit(true);
+      return;
+    }
+    if (!isLagosCoordinate(pickup)) {
+      setError(
+        "Hourly packages (3 and 6 hours) are available in Lagos only. Please choose a pickup within Lagos.",
+      );
       return;
     }
     try {
