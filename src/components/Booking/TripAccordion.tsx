@@ -528,7 +528,10 @@ const TripAccordion = ({
                   onChange={(date: Date) =>
                     onChange("tripStartTime", date.toString())
                   }
-                  timeType="start"
+                  // Flights arrive and depart at any hour, so an airport trip
+                  // is offered every slot. Other bookings still start from
+                  // 6:00 AM.
+                  timeType={isAirportType ? "all" : "start"}
                   availableTimes={availableTimes}
                   selectedDate={tripStartDate}
                   minLeadMinutes={180}
