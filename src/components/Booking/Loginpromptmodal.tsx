@@ -127,11 +127,23 @@ const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
 
           <p className="text-center text-xs text-gray-400 mt-4">
             By continuing, you agree to our{" "}
-            <a href="/terms" className="text-[#0673ff] hover:underline">
+            {/* Opened in a new tab so reading the terms does not close this
+                dialog and lose the vehicle the person was saving. */}
+            <a
+              href="/policy/terms-conditions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#0673ff] hover:underline"
+            >
               Terms
             </a>{" "}
             and{" "}
-            <a href="/privacy" className="text-[#0673ff] hover:underline">
+            <a
+              href="/policy/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#0673ff] hover:underline"
+            >
               Privacy Policy
             </a>
             .
