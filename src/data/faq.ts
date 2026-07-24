@@ -132,13 +132,13 @@ export const faqSections: FaqSection[] = [
         id: "faq-fuel-during",
         question: "Do I need to fuel the car during my rental?",
         answer:
-          "Daily rentals start with a half tank of fuel included. If the fuel runs out during your trip, you top up enough to complete the journey, with a minimum refuel of ₦12,000 for sedans and ₦20,000 for SUVs. For self-drive rentals, fuel is not included and you are fully responsible for fuelling.",
+          "Every booking starts with fuel included: 30 litres for sedans and 35 litres for SUVs. If the fuel runs out during your trip, you top up enough to complete the journey, with a minimum refuel of ₦12,000 for sedans and ₦20,000 for SUVs. Monthly bookings are the exception, where fuel is not included unless you request it.",
       },
       {
         id: "faq-full-tank",
         question: "Can I start with a full tank?",
         answer:
-          "Yes, as a paid add-on. It must be confirmed and paid before the vehicle is handed over, and the amount is confirmed at booking.",
+          "Yes. Ask for it when you book, or tell our booking team before your trip starts: ₦35,000 for a sedan and ₦55,000 for an SUV. It must be confirmed and paid before your booking starts, and it is available on both standard rentals and travel bookings. The minimum refuel amounts still apply if the fuel runs out during your trip.",
       },
     ],
   },
@@ -150,7 +150,7 @@ export const faqSections: FaqSection[] = [
         id: "faq-comes-with-driver",
         question: "Do all Muvment rentals come with a driver?",
         answer:
-          "Yes, by default. Every rental includes a vetted, experienced chauffeur who knows the city. It is the simpler, safer choice: no security deposit, no liability if something happens, and no navigating traffic yourself. Self-drive is available on select vehicles (see the Self-Drive section).",
+          "Yes. Every rental includes a vetted, experienced chauffeur who knows the city, so there is no security deposit to pay, no liability if something happens, and no navigating traffic yourself.",
       },
       {
         id: "faq-same-driver",
@@ -306,7 +306,7 @@ export const faqSections: FaqSection[] = [
         id: "faq-interstate-rules",
         question: "What are the rules for interstate trips?",
         answer:
-          "Accommodation must be provided by the customer for the driver. A full tank of fuel is provided at the start, and the client fuels from there once it finishes. For safety, we do not allow night travel on interstate trips; all interstate trips run during the day.",
+          "Accommodation must be provided by the customer for the driver. Fuel is provided at the start, 30 litres for sedans and 35 litres for SUVs, and the client fuels from there once it finishes. For safety, we do not allow night travel on interstate trips; all interstate trips run during the day.",
       },
       {
         id: "faq-benin-republic",
@@ -379,24 +379,6 @@ export const faqSections: FaqSection[] = [
         question: "Are online car rental bookings reliable in Nigeria?",
         answer:
           "They are when you use a platform with real-time booking and verified inventory like Muvment, rather than an informal operator.",
-      },
-    ],
-  },
-  {
-    id: "self-drive",
-    label: "Self-Drive",
-    items: [
-      {
-        id: "faq-self-drive-offer",
-        question: "Do you offer self-drive rentals?",
-        answer:
-          "Yes, on select vehicles. Self-drive requires document verification before approval, which is completed within 48 hours of payment.",
-      },
-      {
-        id: "faq-self-drive-responsibilities",
-        question: "What are my responsibilities on a self-drive rental?",
-        answer:
-          "You handle fuel and minor repairs (such as a battery or flat tyre) during the rental. Major repairs, especially engine work, must be reported to Muvment immediately. You must keep the vehicle within the area specified in your agreement; going outside it can forfeit your caution fee or balance.",
       },
     ],
   },

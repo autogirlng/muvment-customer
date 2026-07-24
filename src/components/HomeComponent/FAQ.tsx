@@ -103,14 +103,14 @@ const defaultFAQs: FAQItem[] = [
       "The standard rental period is 12 hours. Going beyond that attracts overtime charges that depend on the vehicle category, and you can see the applicable rates at checkout.",
   },
   {
-    title: "Do your cars come with a driver, or can I self-drive?",
+    title: "Do your cars come with a driver?",
     content:
-      "Most bookings come with a professional chauffeur and fuel included. Self-drive is also available on selected vehicles; for self-drive, fuel is not included and you are responsible for fuelling.",
+      "Yes. Every booking comes with a professional chauffeur, and fuel is included at the start of your trip: 30 litres for sedans and 35 litres for SUVs.",
   },
   {
     title: "Do I need to fuel the car during my rental?",
     content:
-      "For chauffeured daily rentals you start with a half tank included. If it runs low, you top up enough to finish the trip, with a minimum of ₦12,000 for sedans and ₦20,000 for SUVs.",
+      "You start with 30 litres for a sedan or 35 litres for an SUV. If it runs low, you top up enough to finish the trip, with a minimum of ₦12,000 for sedans and ₦20,000 for SUVs. If you would rather start with a full tank, you can add it to your booking for ₦35,000 on a sedan or ₦55,000 on an SUV, confirmed and paid before your booking starts.",
   },
   {
     title: "Can I book a trip outside Lagos?",

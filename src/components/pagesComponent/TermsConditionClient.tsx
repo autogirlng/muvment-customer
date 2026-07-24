@@ -87,7 +87,7 @@ function TermsOfServiceClient() {
     },
     {
       title:
-        "A full tank of fuel is given on interstate trip and once it finishes, the client will have to fuel from there.",
+        "Fuel is given at the start of an interstate trip, 30 litres for sedans and 35 litres for SUVs, and once it finishes the client will have to fuel from there.",
     },
     {
       title:
@@ -99,7 +99,7 @@ function TermsOfServiceClient() {
     {
       title: "Standard Fuel Provision",
       content:
-        "All bookings, including standard rentals and travel/journey bookings, will commence with a half tank of fuel. This applies to all vehicle types across all booking categories.",
+        "All bookings, including standard rentals and travel/journey bookings, will commence with 30 litres of fuel for sedans and 35 litres for SUVs. Monthly bookings are the exception: fuel is not included unless it is requested and agreed as part of your arrangement.",
     },
     {
       title: "Full Tank Add-On",
@@ -107,7 +107,7 @@ function TermsOfServiceClient() {
         "Customers who require a full tank of fuel at the start of their booking may request this as a paid add-on, subject to the following charges",
       subItems: ["Sedan vehicles: +₦35,000", "SUV vehicles: +₦55,000"],
       otherContent:
-        "This charge must be confirmed and paid prior to vehicle handover or departure. The add-on is available for both standard rentals and travel bookings.",
+        "This charge must be confirmed and paid before the booking starts. The add-on is available for both standard rentals and travel bookings.",
     },
 
     {
@@ -120,12 +120,6 @@ function TermsOfServiceClient() {
       ],
       otherContent:
         "This minimum refuel requirement applies regardless of whether a full tank add-on was purchased at the start of the booking.",
-    },
-
-    {
-      title: "Customer Responsibility",
-      content:
-        "Vehicles must be returned with no less fuel than was provided at the start of the booking. Any shortfall will be charged at prevailing fuel rates.",
     },
   ];
 
