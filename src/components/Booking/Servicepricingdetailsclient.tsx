@@ -1097,7 +1097,9 @@ const TripCard = ({
                 onChange={(date: Date) =>
                   onUpdate(trip.id, "tripStartTime", date.toString())
                 }
-                timeType="start"
+                // Airport packages follow flight times, so every slot is
+                // offered. Other packages still start from 6:00 AM.
+                timeType={isAirportType ? "all" : "start"}
                 disabled={false}
                 selectedDate={tripStartDate}
                 minLeadMinutes={180}

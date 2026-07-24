@@ -696,14 +696,21 @@ function TimeField({
   value,
   onChange,
   compact = false,
+  allHours = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   compact?: boolean;
+  allHours?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
-  const slots = useMemo(() => generateTimeSlots(), []);
+  // Flights arrive and depart at any hour, so an airport search offers every
+  // slot. Other bookings still start from 6:00 AM.
+  const slots = useMemo(
+    () => generateTimeSlots(allHours ? 0 : 6),
+    [allHours],
+  );
   const current = slots.find((s) => s.value === value);
   return (
     <div ref={anchorRef} className="relative">
@@ -1575,7 +1582,11 @@ function BookingSearchInner({
       />
       <div>
         <label className={labelClass}>Time (Nigeria time)</label>
-        <TimeField value={time} onChange={setTime} />
+        <TimeField
+          value={time}
+          onChange={setTime}
+          allHours={bookingType === "airport"}
+        />
       </div>
     </div>
   );
@@ -1967,7 +1978,12 @@ function BookingSearchInner({
               onChange={(v) => setSingleDate(v)}
             />,
           )}
-          {barCellFixed(<TimeField compact value={time} onChange={setTime} />)}
+          {barCellFixed(<TimeField
+            compact
+            value={time}
+            onChange={setTime}
+            allHours={bookingType === "airport"}
+          />)}
           {barCellOptional(
             <CategoryField
               compact
@@ -2000,7 +2016,11 @@ function BookingSearchInner({
               onChange={(v) => setSingleDate(v)}
             />,
           )}
-          {barCellFixed(<TimeField compact value={time} onChange={setTime} />)}
+          {barCellFixed(<TimeField
+            compact
+            value={time}
+            onChange={setTime}
+          />)}
           {barCellOptional(
             <CategoryField
               compact
@@ -2024,7 +2044,11 @@ function BookingSearchInner({
             onChange={(v) => setSingleDate(v)}
           />,
         )}
-        {barCellFixed(<TimeField compact value={time} onChange={setTime} />)}
+        {barCellFixed(<TimeField
+            compact
+            value={time}
+            onChange={setTime}
+          />)}
       </>
     );
   };
